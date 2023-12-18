@@ -41,7 +41,7 @@ android {
 
     buildTypes {
         all {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             isShrinkResources = false
             // don't use proguard-android-optimize.txt, it is too aggressive, it is more trouble than it is worth
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")

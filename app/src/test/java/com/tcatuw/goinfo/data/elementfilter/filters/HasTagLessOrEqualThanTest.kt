@@ -1,5 +1,6 @@
 package com.tcatuw.goinfo.data.elementfilter.filters
 
+import com.tcatuw.goinfo.data.elementfilter.matches
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -1,6 +1,7 @@
 package com.tcatuw.goinfo.data.elementfilter.filters
 
 import com.tcatuw.goinfo.data.elementfilter.dateDaysAgo
+import com.tcatuw.goinfo.data.elementfilter.matches
 import com.tcatuw.goinfo.osm.toCheckDateString
 import kotlin.test.Test
 import kotlin.test.assertEquals
