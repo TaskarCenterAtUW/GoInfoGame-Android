@@ -7,7 +7,7 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/mapFragment"
-        android:name="de.westnordost.streetcomplete.screens.main.map.MainMapFragment"
+        android:name="com.tcatuw.goinfo.screens.main.map.MainMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:layout="@layout/fragment_map"
@@ -34,7 +34,7 @@
         android:animateLayoutChanges="true"
         tools:ignore="RtlHardcoded">
 
-        <de.westnordost.streetcomplete.screens.main.PointerPinView
+        <com.tcatuw.goinfo.screens.main.PointerPinView
             android:id="@+id/locationPointerPin"
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -45,7 +45,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/answers_counter_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.AnswersCounterFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.AnswersCounterFragment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:layout="@layout/fragment_answers_counter"
@@ -54,7 +54,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/upload_button_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.UploadButtonFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.UploadButtonFragment"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             tools:layout="@layout/fragment_upload_button"
@@ -63,7 +63,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/main_menu_button_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.MainMenuButtonFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.MainMenuButtonFragment"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             tools:layout="@layout/fragment_main_menu_button"
@@ -72,7 +72,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/overlays_button_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.OverlaysButtonFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.OverlaysButtonFragment"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             tools:layout="@layout/fragment_overlays_button"
@@ -81,7 +81,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/messages_button_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.MessagesButtonFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.MessagesButtonFragment"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             tools:layout="@layout/fragment_messages_button"
@@ -135,7 +135,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintBottom_toTopOf="@id/gpsTrackingButton"/>
 
-        <de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
+        <com.tcatuw.goinfo.screens.main.controls.LocationStateButton
             android:id="@+id/gpsTrackingButton"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
@@ -150,7 +150,7 @@
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/undo_button_fragment"
-            android:name="de.westnordost.streetcomplete.screens.main.controls.UndoButtonFragment"
+            android:name="com.tcatuw.goinfo.screens.main.controls.UndoButtonFragment"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             tools:layout="@layout/fragment_undo_button"

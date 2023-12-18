@@ -1,0 +1,36 @@
+package com.tcatuw.goinfo.quests.traffic_calming_type
+
+import com.tcatuw.goinfo.R
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.BUMP
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.CHICANE
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.CHOKER
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.CUSHION
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.HUMP
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.ISLAND
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.RUMBLE_STRIP
+import com.tcatuw.goinfo.quests.traffic_calming_type.TrafficCalmingType.TABLE
+import com.tcatuw.goinfo.view.image_select.Item
+
+fun TrafficCalmingType.asItem() = Item(this, iconResId, titleResId)
+
+private val TrafficCalmingType.titleResId: Int get() = when (this) {
+    BUMP ->         R.string.quest_traffic_calming_type_bump
+    HUMP ->         R.string.quest_traffic_calming_type_hump
+    TABLE ->        R.string.quest_traffic_calming_type_table
+    CUSHION ->      R.string.quest_traffic_calming_type_cushion
+    ISLAND ->       R.string.quest_traffic_calming_type_island
+    CHOKER ->       R.string.quest_traffic_calming_type_choker
+    CHICANE ->      R.string.quest_traffic_calming_type_chicane
+    RUMBLE_STRIP -> R.string.quest_traffic_calming_type_rumble_strip
+}
+
+private val TrafficCalmingType.iconResId: Int get() = when (this) {
+    BUMP ->         R.drawable.traffic_calming_bump
+    HUMP ->         R.drawable.traffic_calming_hump
+    TABLE ->        R.drawable.traffic_calming_table
+    CUSHION ->      R.drawable.traffic_calming_cushion
+    ISLAND ->       R.drawable.traffic_calming_island
+    CHOKER ->       R.drawable.traffic_calming_choker
+    CHICANE ->      R.drawable.traffic_calming_chicane
+    RUMBLE_STRIP -> R.drawable.traffic_calming_rumble_strip
+}

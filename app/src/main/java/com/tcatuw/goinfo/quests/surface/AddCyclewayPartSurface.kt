@@ -1,0 +1,48 @@
+package com.tcatuw.goinfo.quests.surface
+
+import com.tcatuw.goinfo.R
+import com.tcatuw.goinfo.data.osm.geometry.ElementGeometry
+import com.tcatuw.goinfo.data.osm.osmquests.OsmFilterQuestType
+import com.tcatuw.goinfo.data.user.achievements.EditTypeAchievement.BICYCLIST
+import com.tcatuw.goinfo.data.user.achievements.EditTypeAchievement.OUTDOORS
+import com.tcatuw.goinfo.osm.Tags
+import com.tcatuw.goinfo.osm.surface.SurfaceAndNote
+import com.tcatuw.goinfo.osm.surface.applyTo
+import com.tcatuw.goinfo.osm.surface.updateCommonSurfaceFromFootAndCyclewaySurface
+
+class AddCyclewayPartSurface : OsmFilterQuestType<SurfaceAndNote>() {
+
+    override val elementFilter = """
+        ways with (
+          highway = cycleway
+          or (highway ~ path|footway and bicycle and bicycle != no)
+          or (highway = bridleway and bicycle ~ designated|yes)
+        )
+        and segregated = yes
+        and !sidewalk
+        and (
+          !cycleway:surface
+          or cycleway:surface older today -8 years
+          or (
+            cycleway:surface ~ paved|unpaved
+            and !cycleway:surface:note
+            and !note:cycleway:surface
+          )
+        )
+        and (access !~ private|no or (foot and foot !~ private|no) or (bicycle and bicycle !~ private|no))
+        and ~path|footway|cycleway|bridleway !~ link
+    """
+    override val changesetComment = "Specify cycleway path surfaces"
+    override val wikiLink = "Key:surface"
+    override val icon = R.drawable.ic_quest_bicycleway_surface
+    override val achievements = listOf(BICYCLIST, OUTDOORS)
+
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_cyclewayPartSurface_title
+
+    override fun createForm() = AddPathPartSurfaceForm()
+
+    override fun applyAnswerTo(answer: SurfaceAndNote, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        answer.applyTo(tags, "cycleway")
+        updateCommonSurfaceFromFootAndCyclewaySurface(tags)
+    }
+}

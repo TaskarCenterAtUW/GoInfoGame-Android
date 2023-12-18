@@ -22,12 +22,12 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
         </intent>
-        <package android:name="de.westnordost.streetmeasure"/>
+        <package android:name="com.tcatuw.goinfo"/>
         <package android:name="com.android.vending"/>
     </queries>
 
     <application
-        android:name="de.westnordost.streetcomplete.StreetCompleteApplication"
+        android:name="com.tcatuw.goinfo.StreetCompleteApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
@@ -36,7 +36,7 @@
         android:supportsRtl="true">
         <activity
             android:windowSoftInputMode="adjustResize"
-            android:name="de.westnordost.streetcomplete.screens.MainActivity"
+            android:name="com.tcatuw.goinfo.screens.MainActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true">
             <intent-filter>
@@ -67,32 +67,32 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.westnordost.streetcomplete.screens.settings.SettingsActivity"
+            android:name="com.tcatuw.goinfo.screens.settings.SettingsActivity"
             android:label="@string/action_settings"
-            android:parentActivityName="de.westnordost.streetcomplete.screens.MainActivity"
+            android:parentActivityName="com.tcatuw.goinfo.screens.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MANAGE_NETWORK_USAGE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name="de.westnordost.streetcomplete.screens.FragmentContainerActivity" />
-        <activity android:name="de.westnordost.streetcomplete.screens.about.AboutActivity" />
+        <activity android:name="com.tcatuw.goinfo.screens.FragmentContainerActivity" />
+        <activity android:name="com.tcatuw.goinfo.screens.about.AboutActivity" />
         <activity
-            android:name="de.westnordost.streetcomplete.screens.settings.debug.ShowQuestFormsActivity"
+            android:name="com.tcatuw.goinfo.screens.settings.debug.ShowQuestFormsActivity"
             android:configChanges="orientation|screenSize|uiMode" />
         <activity
-            android:name="de.westnordost.streetcomplete.screens.settings.debug.ShowLinksActivity"
+            android:name="com.tcatuw.goinfo.screens.settings.debug.ShowLinksActivity"
             android:configChanges="orientation|screenSize|uiMode" />
         <activity
-            android:name="de.westnordost.streetcomplete.screens.user.UserActivity"
+            android:name="com.tcatuw.goinfo.screens.user.UserActivity"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
         <service
-            android:name="de.westnordost.streetcomplete.data.download.DownloadService"
+            android:name="com.tcatuw.goinfo.data.download.DownloadService"
             android:foregroundServiceType="dataSync" />
         <service
-            android:name="de.westnordost.streetcomplete.data.upload.UploadService"
+            android:name="com.tcatuw.goinfo.data.upload.UploadService"
             android:foregroundServiceType="dataSync" />
         <provider
             android:name="androidx.core.content.FileProvider"

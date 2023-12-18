@@ -13,7 +13,7 @@
         android:alpha="0"
         android:src="@drawable/scissors_animation"/>
 
-    <de.westnordost.streetcomplete.view.SlidingRelativeLayout
+    <com.tcatuw.goinfo.view.SlidingRelativeLayout
         android:layout_width="@dimen/quest_form_width"
         android:layout_height="match_parent"
         android:id="@+id/bottomSheetContainer"
@@ -45,7 +45,7 @@
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
-                <de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout
+                <com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/speech_bubble_none"
@@ -93,7 +93,7 @@
 
                     </LinearLayout>
 
-                </de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout>
+                </com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout>
 
             </FrameLayout>
 
@@ -128,6 +128,6 @@
             android:visibility="gone"
             />
 
-    </de.westnordost.streetcomplete.view.SlidingRelativeLayout>
+    </com.tcatuw.goinfo.view.SlidingRelativeLayout>
 
 </RelativeLayout>

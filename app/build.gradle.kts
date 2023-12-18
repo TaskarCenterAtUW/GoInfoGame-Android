@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "de.westnordost.streetcomplete"
+        applicationId = "com.tcatuw.goinfo"
         minSdk = 21
         targetSdk = 33
         versionCode = 5500
@@ -79,7 +79,7 @@ android {
         )
         abortOnError = false
     }
-    namespace = "de.westnordost.streetcomplete"
+    namespace = "com.tcatuw.goinfo"
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -250,7 +250,7 @@ tasks.register<DownloadAndConvertPresetIconsTask>("downloadAndConvertPresetIcons
     targetDir = "$projectDir/src/main/res/drawable/"
     iconSize = 34
     transformName = { "ic_preset_" + it.replace('-', '_') }
-    indexFile = "$projectDir/src/main/java/de/westnordost/streetcomplete/view/PresetIconIndex.kt"
+    indexFile = "$projectDir/src/main/java/com.tcatuw.goinfo/view/PresetIconIndex.kt"
 }
 
 tasks.register<UpdateAppTranslationsTask>("updateTranslations") {

@@ -21,21 +21,21 @@ allprojects {
 val poEditorProjectId = "97843"
 
 tasks.register<UpdateWebsiteTranslationsTask>("updateWebsiteTranslations") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetDir = "$projectDir/../streetcomplete-website/res"
     projectId = poEditorProjectId
     apiToken = properties["POEditorAPIToken"] as String
 }
 
 tasks.register<UpdateStoreDescriptionsTask>("updateStoreDescriptions") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetDir = "$projectDir/metadata"
     projectId = poEditorProjectId
     apiToken = properties["POEditorAPIToken"] as String
 }
 
 tasks.register<SophoxCountValueByCountryTask>("updateAtmOperators") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetFile = "$projectDir/res/country_metadata/atmOperators.yml"
     osmTag = "operator"
     sparqlQueryPart = "osmt:amenity 'atm';"
@@ -44,7 +44,7 @@ tasks.register<SophoxCountValueByCountryTask>("updateAtmOperators") {
 }
 
 tasks.register<SophoxCountValueByCountryTask>("updateClothesContainerOperators") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetFile = "$projectDir/res/country_metadata/clothesContainerOperators.yml"
     osmTag = "operator"
     sparqlQueryPart = "osmt:amenity 'recycling'; osmt:recycling_type 'container'; osmt:recycling:clothes 'yes';"
@@ -53,7 +53,7 @@ tasks.register<SophoxCountValueByCountryTask>("updateClothesContainerOperators")
 }
 
 tasks.register<SophoxCountValueByCountryTask>("updateChargingStationOperators") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetFile = "$projectDir/res/country_metadata/chargingStationOperators.yml"
     osmTag = "operator"
     sparqlQueryPart = "osmt:amenity 'charging_station';"
@@ -62,16 +62,16 @@ tasks.register<SophoxCountValueByCountryTask>("updateChargingStationOperators") 
 }
 
 tasks.register<GenerateQuestListTask>("generateQuestList") {
-    group = "streetcomplete"
+    group = "goinfo"
     targetFile = "$projectDir/quest-list.csv"
     projectDirectory = projectDir
-    sourceDirectory = projectDir.resolve("app/src/main/java/de/westnordost/streetcomplete/")
+    sourceDirectory = projectDir.resolve("app/src/main/java/com.tcatuw.goinfo/")
     iconsDirectory = projectDir.resolve("res/graphics/quest/")
     noteQuestFile = sourceDirectory.resolve("data/osmnotes/notequests/OsmNoteQuestType.kt")
 }
 
 tasks.register<UpdateContributorStatisticsTask>("updateContributorStatistics") {
-    group = "streetcomplete"
+    group = "goinfo"
     skipCommits = setOf(
         "ae7a244dd60ccfc91cf2dc01bf9e60c8d6a81616", // some weird force-merge or something
         "f3bc67328c3be989835e44eb33e769f49da479e1", // just a large re-import of orchard-produce images
@@ -99,8 +99,8 @@ tasks.register<UpdateContributorStatisticsTask>("updateContributorStatistics") {
     githubApiToken = properties["GithubApiToken"] as String
 }
 
-tasks.register("updateStreetCompleteData") {
-    group = "streetcomplete"
+tasks.register("updategoinfoData") {
+    group = "goinfo"
     dependsOn(
         "updateStoreDescriptions",
         "updateContributorStatistics",

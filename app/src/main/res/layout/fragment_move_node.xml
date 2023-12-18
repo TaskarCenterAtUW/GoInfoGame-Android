@@ -42,7 +42,7 @@
 
     </RelativeLayout>
 
-    <de.westnordost.streetcomplete.view.SlidingRelativeLayout
+    <com.tcatuw.goinfo.view.SlidingRelativeLayout
         android:layout_width="@dimen/quest_form_width"
         android:layout_height="match_parent"
         android:id="@+id/bottomSheetContainer"
@@ -59,7 +59,7 @@
             android:clipToPadding="false"
             android:layout_alignParentBottom="true">
 
-            <de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout
+            <com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/speech_bubble_none"
@@ -117,7 +117,7 @@
 
             </LinearLayout>
 
-        </de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout>
+        </com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout>
 
         </FrameLayout>
 
@@ -141,6 +141,6 @@
             tools:scaleY="1"
             android:padding="20dp"/>
 
-    </de.westnordost.streetcomplete.view.SlidingRelativeLayout>
+    </com.tcatuw.goinfo.view.SlidingRelativeLayout>
 
 </RelativeLayout>

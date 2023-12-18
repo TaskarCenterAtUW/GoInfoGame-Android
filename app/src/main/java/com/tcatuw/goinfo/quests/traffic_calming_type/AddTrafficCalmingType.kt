@@ -1,0 +1,26 @@
+package com.tcatuw.goinfo.quests.traffic_calming_type
+
+import com.tcatuw.goinfo.R
+import com.tcatuw.goinfo.data.osm.geometry.ElementGeometry
+import com.tcatuw.goinfo.data.osm.osmquests.OsmFilterQuestType
+import com.tcatuw.goinfo.data.user.achievements.EditTypeAchievement.CAR
+import com.tcatuw.goinfo.data.user.achievements.EditTypeAchievement.PEDESTRIAN
+import com.tcatuw.goinfo.osm.Tags
+
+class AddTrafficCalmingType : OsmFilterQuestType<TrafficCalmingType>() {
+
+    override val elementFilter = "nodes with traffic_calming = yes"
+    override val changesetComment = "Specify traffic calming types"
+    override val wikiLink = "Key:traffic_calming"
+    override val icon = R.drawable.ic_quest_car_bumpy
+    override val isDeleteElementEnabled = true
+    override val achievements = listOf(PEDESTRIAN, CAR)
+
+    override fun getTitle(tags: Map<String, String>) = R.string.quest_traffic_calming_type_title
+
+    override fun createForm() = AddTrafficCalmingTypeForm()
+
+    override fun applyAnswerTo(answer: TrafficCalmingType, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["traffic_calming"] = answer.osmValue
+    }
+}

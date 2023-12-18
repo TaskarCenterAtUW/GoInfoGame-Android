@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<de.westnordost.streetcomplete.view.SlidingRelativeLayout
+<com.tcatuw.goinfo.view.SlidingRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -97,7 +97,7 @@
                     android:clipChildren="false"
                     android:clipToPadding="false">
 
-                    <de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout
+                    <com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:id="@+id/speechbubbleContentContainer"
@@ -141,7 +141,7 @@
 
                             </LinearLayout>
 
-                        </de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout>
+                        </com.tcatuw.goinfo.view.MaskSpeechbubbleCornersFrameLayout>
 
                 </LinearLayout>
 
@@ -192,6 +192,6 @@
         android:visibility="gone"
         />
 
-</de.westnordost.streetcomplete.view.SlidingRelativeLayout>
+</com.tcatuw.goinfo.view.SlidingRelativeLayout>
 
 

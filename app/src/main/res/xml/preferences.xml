@@ -6,14 +6,14 @@
         android:key="quests_overlays"
         android:title="@string/pref_category_quests_overlays">
 
-        <de.westnordost.streetcomplete.screens.ActivatablePreference
-            android:fragment="de.westnordost.streetcomplete.screens.settings.questselection.QuestPresetsFragment"
+        <com.tcatuw.goinfo.screens.ActivatablePreference
+            android:fragment="com.tcatuw.goinfo.screens.settings.questselection.QuestPresetsFragment"
             android:key="quest_presets"
             android:title="@string/action_manage_presets"
             android:widgetLayout="@layout/widget_image_next" />
 
-        <de.westnordost.streetcomplete.screens.ActivatablePreference
-            android:fragment="de.westnordost.streetcomplete.screens.settings.questselection.QuestSelectionFragment"
+        <com.tcatuw.goinfo.screens.ActivatablePreference
+            android:fragment="com.tcatuw.goinfo.screens.settings.questselection.QuestSelectionFragment"
             android:key="quests"
             android:title="@string/pref_title_quests2"
             android:widgetLayout="@layout/widget_image_next" />
@@ -100,7 +100,7 @@
             android:key="quests.restore.hidden"
             android:title="@string/pref_title_quests_restore_hidden" />
 
-        <de.westnordost.streetcomplete.screens.settings.NumberPickerPreference
+        <com.tcatuw.goinfo.screens.settings.NumberPickerPreference
             android:key="map.tilecache"
             android:title="@string/pref_title_map_cache"
             android:defaultValue="50"

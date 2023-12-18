@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <de.westnordost.streetcomplete.view.StreetSideSelectPuzzle
+        <com.tcatuw.goinfo.view.StreetSideSelectPuzzle
             android:id="@+id/puzzleView"
             android:layout_width="match_parent"
             android:layout_height="@dimen/street_side_puzzle_height"

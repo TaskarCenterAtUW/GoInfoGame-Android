@@ -18,7 +18,7 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <de.westnordost.streetcomplete.view.CircularMaskFrameLayout
+        <com.tcatuw.goinfo.view.CircularMaskFrameLayout
             android:id="@+id/commentAvatarImageContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -32,7 +32,7 @@
                 android:scaleType="fitCenter"
                 android:background="@drawable/background_avatar"/>
 
-        </de.westnordost.streetcomplete.view.CircularMaskFrameLayout>
+        </com.tcatuw.goinfo.view.CircularMaskFrameLayout>
 
         <FrameLayout
             android:id="@+id/commentBubble"

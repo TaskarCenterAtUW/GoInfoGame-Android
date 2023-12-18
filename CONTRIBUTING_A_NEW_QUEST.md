@@ -72,11 +72,11 @@ Base the new quest on one that exists already.
 
 Find one that has the same type of interface as the one that you are trying to implement.
 
-Are you trying to implement a quest that will have simple yes/no answer? Take [`AddBusStopLit`](app/src/main/java/de/westnordost/streetcomplete/quests/bus_stop_lit/AddBusStopLit.kt) quest as a base. Or [`AddTracktype`](app/src/main/java/de/westnordost/streetcomplete/quests/tracktype/AddTracktype.kt) where the mapper will be selecting one of presented images.
+Are you trying to implement a quest that will have simple yes/no answer? Take [`AddBusStopLit`](app/src/main/java/com.tcatuw.goinfo/quests/bus_stop_lit/AddBusStopLit.kt) quest as a base. Or [`AddTracktype`](app/src/main/java/com.tcatuw.goinfo/quests/tracktype/AddTracktype.kt) where the mapper will be selecting one of presented images.
 
-Is it going to be asked for POIs and should be disabled by default? [`AddWheelchairAccessBusiness`](app/src/main/java/de/westnordost/streetcomplete/quests/wheelchair_access/AddWheelchairAccessBusiness.kt) may be a good base.
+Is it going to be asked for POIs and should be disabled by default? [`AddWheelchairAccessBusiness`](app/src/main/java/com.tcatuw.goinfo/quests/wheelchair_access/AddWheelchairAccessBusiness.kt) may be a good base.
 
-Quests are grouped in [one folder](app/src/main/java/de/westnordost/streetcomplete/quests).
+Quests are grouped in [one folder](app/src/main/java/com.tcatuw.goinfo/quests).
 
 Implementing quest by duplicating and modifiying existing one is the recommended method.
 
@@ -92,7 +92,7 @@ You will find an [XML file](app/src/main/res/values/strings.xml) with an entry l
 
 The identifier `quest_placeName_title` is a string reference, used in the code to allow translations.
 
-Search for this identifier in `*.kt` files, it should appear in the quest file (in this case [AddPlaceName.kt](app/src/main/java/de/westnordost/streetcomplete/quests/place_name/AddPlaceName.kt)).
+Search for this identifier in `*.kt` files, it should appear in the quest file (in this case [AddPlaceName.kt](app/src/main/java/com.tcatuw.goinfo/quests/place_name/AddPlaceName.kt)).
 
 This method can often be used to locate relevant code.
 
@@ -114,11 +114,11 @@ This can be also used to locate relevant code, especially helpful if some change
 
 # Copying
 
-Duplicate the relevant quest folder from [`app/src/main/java/de/westnordost/streetcomplete/quests`](app/src/main/java/de/westnordost/streetcomplete). Some contain multiple quests, in such case delete unnecessary files.
+Duplicate the relevant quest folder from [`app/src/main/java/com.tcatuw.goinfo/quests`](app/src/main/java/com.tcatuw.goinfo). Some contain multiple quests, in such case delete unnecessary files.
 
 Some quests are entirely defined in a single file, some have additional answer class, custom interface or utility classes.
 
-For example, lets imagine that new quest will ask whether [AED](https://wiki.openstreetmap.org/wiki/Tag:emergency%3Ddefibrillator) is placed indoor or outdoor. A very similar in mechanics quest with simple yes/no question is for example [quest asking "Is this bicycle parking covered (protected from rain)?"](app/src/main/java/de/westnordost/streetcomplete/quests/bike_parking_cover/AddBikeParkingCover.kt).
+For example, lets imagine that new quest will ask whether [AED](https://wiki.openstreetmap.org/wiki/Tag:emergency%3Ddefibrillator) is placed indoor or outdoor. A very similar in mechanics quest with simple yes/no question is for example [quest asking "Is this bicycle parking covered (protected from rain)?"](app/src/main/java/com.tcatuw.goinfo/quests/bike_parking_cover/AddBikeParkingCover.kt).
 
 So, as the first step: lets copy [`app/src/main/java/de/streetcomplete/StreetComplete/quests/bike_parking_cover/`](app/src/main/java/de/streetcomplete/StreetComplete/quests/bike_parking_cover) folder into `app/src/main/java/de/streetcomplete/StreetComplete/quests/defibrillator/`.
 
@@ -130,7 +130,7 @@ After the quest is copied it is necessary to adjust it a bit so it is not a dupl
 
 Change its class name and the file name to the new one.
 
-In copied code change package info (things like `package de.westnordost.streetcomplete.quests.defibrillator` at the top) to match the new folder containing the quest.
+In copied code change package info (things like `package com.tcatuw.goinfo.quests.defibrillator` at the top) to match the new folder containing the quest.
 
 When committing changes be careful to not change already existing quest - only new code (using built-in refactoring rename will affect also `QuestsModule.kt` entry for an existing quest).
 
@@ -138,7 +138,7 @@ See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tuto
 
 # Add the quest to the list of active ones
 
-Adjust [QuestsModule.kt](app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt) file. It contains a big list of active quests, ordered by priority. Read [what governs their priority](app/src/main/java/de/westnordost/streetcomplete/quests/QuestsModule.kt#L172-L195) but do not worry too much, it can be tweaked later.
+Adjust [QuestsModule.kt](app/src/main/java/com.tcatuw.goinfo/quests/QuestsModule.kt) file. It contains a big list of active quests, ordered by priority. Read [what governs their priority](app/src/main/java/com.tcatuw.goinfo/quests/QuestsModule.kt#L172-L195) but do not worry too much, it can be tweaked later.
 
 Each quest is associated with a number in this list. These numbers are used to identify the quest uniquely and can be used to save presets as QR codes. When adding a new quest, use the next consecutive number that is not yet in the list. Put the quest in order of priority, even if it means the numbers are not sorted.
 
@@ -152,7 +152,7 @@ See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tuto
 
 At this point prepared template can be modified to achieve the intended effect.
 
-See for example [simple yes/no quest asking whether AED is indoor or outdoor](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/blob/a9fd3efe96cbc6241b3b0f65d4a2be27f1c6afb8/app/src/main/java/de/westnordost/streetcomplete/quests/defibrillator/AddIsDefibrillatorIndoor.kt).
+See for example [simple yes/no quest asking whether AED is indoor or outdoor](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/blob/a9fd3efe96cbc6241b3b0f65d4a2be27f1c6afb8/app/src/main/java/com.tcatuw.goinfo/quests/defibrillator/AddIsDefibrillatorIndoor.kt).
 
 ## Element selection
 
@@ -179,7 +179,7 @@ This query will be limited to object which fulfill some requirements.
 - `and !indoor`
   - and `indoor` key must not be present at all, to show only ones where this tag is still missing
 
-See the documentation of [`ElementFilterExpression`](app/src/main/java/de/westnordost/streetcomplete/data/elementfilter/ElementFilterExpression.kt) for a complete documentation of the syntax. You can look around some quests to see more examples of such element filter expressions.
+See the documentation of [`ElementFilterExpression`](app/src/main/java/com.tcatuw.goinfo/data/elementfilter/ElementFilterExpression.kt) for a complete documentation of the syntax. You can look around some quests to see more examples of such element filter expressions.
 
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/2726ff1c7b3121825e808c4566e6e534392121b3) in the example repository.
@@ -236,7 +236,7 @@ See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tuto
 override val achievements = listOf(LIFESAVER)
 ```
 
-In quest achievements, list what is relevant to the given quest, see the full list of available ones in [AchievementsModule.kt](app/src/main/java/de/westnordost/streetcomplete/data/user/achievements/AchievementsModule.kt)
+In quest achievements, list what is relevant to the given quest, see the full list of available ones in [AchievementsModule.kt](app/src/main/java/com.tcatuw.goinfo/data/user/achievements/AchievementsModule.kt)
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/f043440b43ad84d321c7aae4fd03095c34af8eb4) in the example repository.
 
@@ -264,11 +264,11 @@ Form defines interface used by mappers.
 
 In this case, the simplest possible is used.
 
-But sometimes more complex ones are needed, see for example [AddBridgeStructure.kt](app/src/main/java/de/westnordost/streetcomplete/quests/bridge_structure/AddBridgeStructure.kt)
+But sometimes more complex ones are needed, see for example [AddBridgeStructure.kt](app/src/main/java/com.tcatuw.goinfo/quests/bridge_structure/AddBridgeStructure.kt)
 
 `override fun createForm() = AddBridgeStructureForm()`
 
-With form defined in [AddBridgeStructureForm](app/src/main/java/de/westnordost/streetcomplete/quests/bridge_structure/AddBridgeStructureForm.kt)
+With form defined in [AddBridgeStructureForm](app/src/main/java/com.tcatuw.goinfo/quests/bridge_structure/AddBridgeStructureForm.kt)
 
 ## applyAnswerTo
 
@@ -309,7 +309,7 @@ override fun getHighlightedElements(element: Element, getMapData: () -> MapDataW
 
 which causes nearby `emergency = defibrillator` nodes to be shown.
 
-See [also other optional properties](app/src/main/java/de/westnordost/streetcomplete/data/osm/osmquests/OsmElementQuestType.kt).
+See [also other optional properties](app/src/main/java/com.tcatuw.goinfo/data/osm/osmquests/OsmElementQuestType.kt).
 
 See [this step](https://github.com/matkoniecz/StreetComplete_quest_creation_tutorial/commit/1d648e56562d16a5dc3588ca7de8558f97d5919a) in the example repository.
 
@@ -432,7 +432,7 @@ Article about [null safety related syntax](https://kotlinlang.org/docs/null-safe
 As mentioned, the user interface must leave no space for misunderstandings, it must be concise and quick and easy to use. Also sounds obvious, but you will quickly find out that a balance must be found between covering all the edge cases and designing the form to be as straightforward and clutterless as possible.
 
 - Design the main form clutter-free so that it is straightforward for the majority of use cases.
-- Allow to answer popular edge cases, but don't clutter up the main form with that. A good pattern is to move such answers into the "Other answers..." menu. E.g. look at the [opening hours quest](app/src/main/java/de/westnordost/streetcomplete/quests/opening_hours/AddOpeningHoursForm.kt#L40-L48).
+- Allow to answer popular edge cases, but don't clutter up the main form with that. A good pattern is to move such answers into the "Other answers..." menu. E.g. look at the [opening hours quest](app/src/main/java/com.tcatuw.goinfo/quests/opening_hours/AddOpeningHoursForm.kt#L40-L48).
 - Don't rely on the "leave a note" fallback too much. It is not intended and does not work as a regular answer but is designed to cover the case that the question was invalid itself because it was based on wrong data like i.e. the place does not exist anymore.
 - The information the user should fill in should be as atomic as possible. Users are impatient, i.e. do not let them fill out a whole address with street name etc. when just the house number is fine too.
 - "A picture is worth a thousand words": Often the term for certain things may not be enough to convey the meaning of certain predefined answers. Do you know what a wheelbender is? You will know if you see the photo.
@@ -470,7 +470,7 @@ After adding a photo, remember to update [the credits file](app/src/main/res/aut
 
 Some quests are asked not only when tag is missing but also when it is likely to be outdated. To achieve this `elementFilter` needs to query not only elements missing some tags.
 
-Typical code is in [quest asking about motorcycle parking capacity](app/src/main/java/de/westnordost/streetcomplete/quests/motorcycle_parking_capacity/AddMotorcycleParkingCapacity.kt):
+Typical code is in [quest asking about motorcycle parking capacity](app/src/main/java/com.tcatuw.goinfo/quests/motorcycle_parking_capacity/AddMotorcycleParkingCapacity.kt):
 
 ```kotlin
 override val elementFilter = """
@@ -503,15 +503,15 @@ Matches like `surface ~ earth|dirt|ground` are possible and are evaluated as "`s
 `access !~ private|no` will be evaluated to "`access` is neither `private` nor `no`"
 
 
-But using regexp like `surface ~ ^(.*)[0-9]$` is [also possible](app/src/test/java/de/westnordost/streetcomplete/data/elementfilter/filters/ElementFilterOverpassKtTest.kt#L79-L88).
+But using regexp like `surface ~ ^(.*)[0-9]$` is [also possible](app/src/test/java/com.tcatuw.goinfo/data/elementfilter/filters/ElementFilterOverpassKtTest.kt#L79-L88).
 
-It is possible to check for [age of elements](app/src/main/java/de/westnordost/streetcomplete/quests/construction/MarkCompletedHighwayConstruction.kt#L13-L17) or implement a [fully custom tag parsing](app/src/main/java/de/westnordost/streetcomplete/quests/opening_hours/AddOpeningHours.kt#L137-L151), still combined with filter syntax.
+It is possible to check for [age of elements](app/src/main/java/com.tcatuw.goinfo/quests/construction/MarkCompletedHighwayConstruction.kt#L13-L17) or implement a [fully custom tag parsing](app/src/main/java/com.tcatuw.goinfo/quests/opening_hours/AddOpeningHours.kt#L137-L151), still combined with filter syntax.
 
-It is possible to share and reuse [information about tagging schemes](app/src/main/java/de/westnordost/streetcomplete/quests/surface/AddRoadSurface.kt#L18).
+It is possible to share and reuse [information about tagging schemes](app/src/main/java/com.tcatuw.goinfo/quests/surface/AddRoadSurface.kt#L18).
 
 (this info is gathered [here](/app/src/main/java/de/streetcomplete/StreetComplete/data/meta/OsmTaggings.kt))
 
-Even more complex ones using different class bases are possible. Such as what was needed by the [address quest](app/src/main/java/de/westnordost/streetcomplete/quests/address/AddAddressStreet.kt) or the [crossing quest](app/src/main/java/de/westnordost/streetcomplete/quests/crossing/AddCrossing.kt) but it is better to start from something simpler.
+Even more complex ones using different class bases are possible. Such as what was needed by the [address quest](app/src/main/java/com.tcatuw.goinfo/quests/address/AddAddressStreet.kt) or the [crossing quest](app/src/main/java/com.tcatuw.goinfo/quests/crossing/AddCrossing.kt) but it is better to start from something simpler.
 
 It allows it to make complex geometry checks, but writing them is also far more complex.
 

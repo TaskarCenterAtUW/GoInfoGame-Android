@@ -42,7 +42,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/speech_bubble_none"/>
 
-        <de.westnordost.streetcomplete.view.CircularMaskFrameLayout
+        <com.tcatuw.goinfo.view.CircularMaskFrameLayout
             android:id="@+id/titleView"
             android:layout_width="@dimen/quest_statistics_country_icon_width"
             android:layout_height="@dimen/quest_statistics_country_icon_height"
@@ -62,7 +62,7 @@
                 android:src="@drawable/ic_flag_in"
                 android:scaleType="fitCenter"/>
 
-        </de.westnordost.streetcomplete.view.CircularMaskFrameLayout>
+        </com.tcatuw.goinfo.view.CircularMaskFrameLayout>
 
         <LinearLayout
             android:id="@+id/dialogContentContainer"
