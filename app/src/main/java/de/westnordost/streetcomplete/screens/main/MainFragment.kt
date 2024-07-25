@@ -261,9 +261,9 @@ class MainFragment :
             .addCallback(viewLifecycleOwner, sheetBackPressedCallback)
         sheetBackPressedCallback.isEnabled = bottomSheetFragment is IsCloseableBottomSheet
 
-        observe(controlsViewModel.isAutoSync) { isAutoSync ->
-            binding.uploadButton.isGone = isAutoSync
-        }
+        // observe(controlsViewModel.isAutoSync) { isAutoSync ->
+        //     binding.uploadButton.isGone = isAutoSync
+        // }
         observe(controlsViewModel.unsyncedEditsCount) { count ->
             binding.uploadButton.uploadableCount = count
         }
@@ -273,10 +273,10 @@ class MainFragment :
             // (Undoing quest while also uploading it at the same time)
             binding.undoButton.isEnabled = !isUploadInProgress
         }
-        observe(controlsViewModel.messagesCount) { messagesCount ->
-            binding.messagesButton.messagesCount = messagesCount
-            binding.messagesButton.isGone = messagesCount <= 0
-        }
+        // observe(controlsViewModel.messagesCount) { messagesCount ->
+        //     binding.messagesButton.messagesCount = messagesCount
+        //     binding.messagesButton.isGone = messagesCount <= 0
+        // }
         observe(controlsViewModel.isUploadingOrDownloading) { isUploadingOrDownloading ->
             binding.starsCounterView.showProgress = isUploadingOrDownloading
         }

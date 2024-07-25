@@ -114,12 +114,12 @@ class MainActivity :
         mainFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as MainFragment?
         if (savedInstanceState == null) {
             supportFragmentManager.commit { add(LocationRequestFragment(), TAG_LOCATION_REQUEST) }
-            if (!prefs.hasShownTutorial && !userLoginController.isLoggedIn) {
-                supportFragmentManager.commit {
-                    setCustomAnimations(R.anim.fade_in_from_bottom, R.anim.fade_out_to_bottom)
-                    add(R.id.fragment_container, TutorialFragment())
-                }
-            }
+            // if (!prefs.hasShownTutorial && !userLoginController.isLoggedIn) {
+            //     supportFragmentManager.commit {
+            //         setCustomAnimations(R.anim.fade_in_from_bottom, R.anim.fade_out_to_bottom)
+            //         add(R.id.fragment_container, TutorialFragment())
+            //     }
+            // }
         }
 
         elementEditsSource.addListener(elementEditsListener)

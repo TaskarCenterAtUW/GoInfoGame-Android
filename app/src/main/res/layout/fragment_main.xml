@@ -92,6 +92,7 @@
             android:layout_height="@dimen/map_button_size"
             android:background="@drawable/round_white_button"
             android:elevation="4dp"
+            android:visibility="gone"
             app:srcCompat="@drawable/ic_overlay_black_24dp"
             android:contentDescription="@string/action_overlays"
             android:scaleType="centerInside"
@@ -103,6 +104,7 @@
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             style="@style/RoundWhiteButton"
+            android:visibility="gone"
             app:layout_constraintRight_toLeftOf="@+id/uploadButton"
             app:layout_constraintTop_toTopOf="parent"
             />
