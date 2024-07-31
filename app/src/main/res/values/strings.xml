@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- This ( app/src/main/res/values/strings.xml ) is the source file for the app’s strings in en-US.
+<?xml version="1.0" encoding="utf-8"?><!-- This ( app/src/main/res/values/strings.xml ) is the source file for the app’s strings in en-US.
      All other strings.xml are imported from POEditor crowd translation platform.
 
      The strings are sorted into categories to
@@ -1777,4 +1776,8 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="lane_narrowing_traffic_calming_choked_island">Curb extension + traffic island</string>
     <string name="lane_narrowing_traffic_calming_none">No narrowed lane here</string>
 
+    <!--    Adding for GIG-->
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="title_activity_work_space">WorkSpaceActivity</string>
 </resources>

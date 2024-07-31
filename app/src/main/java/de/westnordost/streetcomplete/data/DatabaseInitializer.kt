@@ -25,6 +25,7 @@ import de.westnordost.streetcomplete.data.user.statistics.EditTypeStatisticsTabl
 import de.westnordost.streetcomplete.data.visiblequests.QuestPresetsTable
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderTable
 import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeTable
+import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
@@ -98,6 +99,9 @@ object DatabaseInitializer {
         // logs
         db.exec(LogsTable.CREATE)
         db.exec(LogsTable.INDEX_CREATE)
+
+        // For GIG
+        db.exec(WorkSpaceTable.CREATE)
     }
 
     fun onUpgrade(db: Database, oldVersion: Int, newVersion: Int) {

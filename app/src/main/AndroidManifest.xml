@@ -17,48 +17,64 @@
 
     Foreground service types exists since Android 10.
     -->
-
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
-    <uses-feature android:name="android.hardware.screen.portrait" />
-
-    <!-- Tangram-ES needs at least OpenGL ES 2.0, without it, the app is not usable. -->
-    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.screen.portrait" /> <!-- Tangram-ES needs at least OpenGL ES 2.0, without it, the app is not usable. -->
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
 
     <queries>
+
         <!-- open location in another app -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
+
             <data android:scheme="geo" />
         </intent>
-        <package android:name="de.westnordost.streetmeasure"/>
-        <package android:name="com.android.vending"/>
+
+        <package android:name="de.westnordost.streetmeasure" />
+        <package android:name="com.android.vending" />
     </queries>
 
     <application
-        android:name="de.westnordost.streetcomplete.StreetCompleteApplication"
+        android:name=".StreetCompleteApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
         <activity
-            android:windowSoftInputMode="adjustResize"
-            android:name="de.westnordost.streetcomplete.screens.MainActivity"
+            android:name=".screens.workspaces.WorkSpaceActivity"
+            android:exported="true"
+            android:label="@string/title_activity_work_space"
+            android:theme="@style/AppTheme">
+
+        </activity>
+        <activity
+            android:name=".screens.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="geo" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
@@ -69,32 +85,33 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="streetcomplete" />
             </intent-filter>
         </activity>
         <activity
-            android:name="de.westnordost.streetcomplete.screens.settings.SettingsActivity"
-            android:label="@string/action_settings"
-            android:parentActivityName="de.westnordost.streetcomplete.screens.MainActivity"
+            android:name=".screens.settings.SettingsActivity"
             android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/action_settings"
+            android:parentActivityName=".screens.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MANAGE_NETWORK_USAGE" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name="de.westnordost.streetcomplete.screens.FragmentContainerActivity" />
+        <activity android:name=".screens.FragmentContainerActivity" />
         <activity
-            android:name="de.westnordost.streetcomplete.screens.about.AboutActivity"
-            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
-            />
+            android:name=".screens.about.AboutActivity"
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode" />
         <activity
-            android:name="de.westnordost.streetcomplete.screens.user.UserActivity"
+            android:name=".screens.user.UserActivity"
             android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
-        <!-- For WorkManager -->
+            tools:ignore="LockedOrientationActivity" /> <!-- For WorkManager -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
@@ -108,15 +125,14 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
-        </provider>
-
-        <!-- Disable the Android WorkManager in favour of the org.koin.androidx.workmanager.koin.workManagerFactory -->
+        </provider> <!-- Disable the Android WorkManager in favour of the org.koin.androidx.workmanager.koin.workManagerFactory -->
         <!-- As per the Koin Work Manager instructions https://insert-koin.io/docs/reference/koin-android/workmanager -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
+
             <!-- If you are using androidx.startup to initialize other components -->
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"

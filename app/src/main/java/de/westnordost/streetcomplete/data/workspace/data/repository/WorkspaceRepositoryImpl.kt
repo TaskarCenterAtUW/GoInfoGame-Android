@@ -1,0 +1,26 @@
+package de.westnordost.streetcomplete.data.workspace.data.repository
+
+import de.westnordost.streetcomplete.data.workspace.WorkspaceDao
+import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceApiService
+import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
+import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
+class WorkspaceRepositoryImpl(
+    private val apiService: WorkspaceApiService,
+    private val dao: WorkspaceDao,
+) : WorkspaceRepository {
+
+    override fun getWorkspaces(): Flow<List<Workspace>> = flow {
+        emit(dao.getAll())
+        val workspaces = apiService.getWorkspaces()
+        dao.put(workspaces)
+        emit(workspaces)
+    }
+
+    override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = flow {
+
+    }
+}
