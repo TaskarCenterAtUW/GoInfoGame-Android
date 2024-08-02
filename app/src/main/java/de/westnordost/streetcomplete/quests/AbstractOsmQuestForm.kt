@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -11,8 +12,10 @@ import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.core.view.children
+import androidx.lifecycle.lifecycleScope
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.AddressModel
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
@@ -45,6 +48,10 @@ import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.add
 import de.westnordost.streetcomplete.view.checkIsSurvey
 import de.westnordost.streetcomplete.view.confirmIsSurvey
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,7 +71,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val featureDictionaryLazy: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
     private val recentLocationStore: RecentLocationStore by inject()
-
+    private val httpClient : HttpClient by inject()
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
@@ -119,7 +126,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         super.onViewCreated(view, savedInstanceState)
 
         setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
-        setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary))
+        viewLifecycleOwner.lifecycleScope.launch {
+            getAddress()
+        }
     }
 
     override fun onStart() {
@@ -128,8 +137,34 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     protected fun updateButtonPanel() {
-        val otherAnswersItem = AnswerItem(R.string.quest_generic_otherAnswers2) { showOtherAnswers() }
-        setButtonPanelAnswers(listOf(otherAnswersItem) + buttonPanelAnswers)
+        // val otherAnswersItem = AnswerItem(R.string.quest_generic_otherAnswers2) { showOtherAnswers() }
+        setButtonPanelAnswers(buttonPanelAnswers)
+    }
+
+    private suspend fun getAddress(){
+        val response = httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
+        if (response.status == HttpStatusCode.OK){
+            val address = response.body<AddressModel>()
+            Log.d("Address", address.toString())
+            var extraText = ""
+            val location = listener?.displayedMapLocation
+            if (location != null) {
+                val pointLocation = Location("Quest").apply {
+                    latitude = geometry.center.latitude
+                    longitude = geometry.center.longitude
+                }
+                val distance = location.distanceTo(pointLocation)/1000
+                setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary).toString() + " " + address.address?.road + " " + distance + " Kms")
+            }
+            else{
+                setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary).toString() + " " + address.address?.road)
+
+            }
+        } else{
+            setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary))
+        }
+
+
     }
 
     private fun assembleOtherAnswers(): List<IAnswerItem> {

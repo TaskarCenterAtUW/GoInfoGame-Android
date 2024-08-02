@@ -6,8 +6,11 @@ import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.http.userAgent
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -19,6 +22,11 @@ val appModule = module {
     single { DatabaseLogger(get()) }
     single { SoundFx(androidContext()) }
     single { HttpClient {
+        install(ContentNegotiation){
+            json(Json {
+                ignoreUnknownKeys = true
+            })
+        }
         defaultRequest {
             userAgent(ApplicationConstants.USER_AGENT)
         }

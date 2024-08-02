@@ -15,3 +15,4 @@ quest-list.csv
 /buildSrc/build/
 /buildSrc/.gradle
 /projectFilesBackup*/
+.idea/codeStyles

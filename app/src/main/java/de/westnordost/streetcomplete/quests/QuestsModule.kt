@@ -142,6 +142,7 @@ import de.westnordost.streetcomplete.quests.shop_type.CheckShopExistence
 import de.westnordost.streetcomplete.quests.shop_type.CheckShopType
 import de.westnordost.streetcomplete.quests.shop_type.SpecifyShopType
 import de.westnordost.streetcomplete.quests.sidewalk.AddSidewalk
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddLongFormSidewalk
 import de.westnordost.streetcomplete.quests.smoking.AddSmoking
 import de.westnordost.streetcomplete.quests.smoothness.AddPathSmoothness
 import de.westnordost.streetcomplete.quests.smoothness.AddRoadSmoothness
@@ -242,14 +243,14 @@ fun questTypeRegistry(
     /* always first: notes - they mark a mistake in the data so potentially every quest for that
     element is based on wrong data while the note is not resolved */
     //GIG quests
-    0 to AddCrossing(),
-    1 to AddCrossingIsland(),
-    2 to AddCrossingMarkings(),
-    3 to AddSidewalkSurface(),
-    4 to AddTactilePavingSteps(),
-    5 to AddStepsIncline(),
-    6 to AddTactilePavingCrosswalk(),
-    7 to AddKerbHeight()
+    // 1 to AddCrossing(),
+    // 8 to AddCrossingIsland(),
+    // 10 to AddCrossingMarkings(),
+    // 31 to AddSidewalkSurface(),
+    // 27 to AddTactilePavingSteps(),
+    // 32 to AddStepsIncline(),
+    // 14 to AddTactilePavingCrosswalk(),
+    // 19 to AddKerbHeight()
 
     // 0 to OsmNoteQuestType,
     //
@@ -495,11 +496,11 @@ fun questTypeRegistry(
     //
     // 133 to AddFuelSelfService(),
     // 156 to CheckShopExistence(getFeature), // after opening hours and similar so they will be preferred if enabled
-    //
-    // /* ↓ 5.quests that are very numerous ---------------------------------------------------- */
-    //
-    // // roads
-    // 134 to AddSidewalk(), // for any pedestrian routers, needs minimal thinking
+
+    /* ↓ 5.quests that are very numerous ---------------------------------------------------- */
+
+    // roads
+    134 to AddLongFormSidewalk(), // for any pedestrian routers, needs minimal thinking
     // 135 to AddRoadSurface(), // used by BRouter, OsmAnd, OSRM, graphhopper, HOT map style... - sometimes requires way to be split
     // 136 to AddTracktype(), // widely used in map rendering - OSM Carto, OsmAnd...
     // 137 to AddCycleway(getCountryInfoByLocation), // for any cyclist routers (and cyclist maps)

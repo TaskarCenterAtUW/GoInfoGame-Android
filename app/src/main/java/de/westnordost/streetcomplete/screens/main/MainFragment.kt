@@ -72,6 +72,7 @@ import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -330,6 +331,13 @@ class MainFragment :
                 mapFragment?.hideOverlay()
             }
         }
+        doLongForm()
+    }
+
+    private fun doLongForm(){
+        val processSampleJson = ProcessSampleJson()
+        val result = processSampleJson.processSampleJson()
+        println(result)
     }
 
     @UiThread
@@ -422,14 +430,14 @@ class MainFragment :
     override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) { }
 
     override fun onLongPress(x: Float, y: Float) {
-        val point = PointF(x, y)
-        val position = mapFragment?.getPositionAt(point) ?: return
-        if (bottomSheetFragment != null || editHistoryFragment != null) return
-
-        binding.contextMenuView.translationX = x
-        binding.contextMenuView.translationY = y
-
-        showMapContextMenu(position)
+        // val point = PointF(x, y)
+        // val position = mapFragment?.getPositionAt(point) ?: return
+        // if (bottomSheetFragment != null || editHistoryFragment != null) return
+        //
+        // binding.contextMenuView.translationX = x
+        // binding.contextMenuView.translationY = y
+        //
+        // showMapContextMenu(position)
     }
 
     /* ---------------------------- LocationAwareMapFragment.Listener --------------------------- */
