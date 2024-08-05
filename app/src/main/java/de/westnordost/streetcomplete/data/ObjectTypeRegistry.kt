@@ -5,22 +5,26 @@ package de.westnordost.streetcomplete.data
  *  2. or recalled by ordinal
  *  3. or iterated in the order as specified in the constructor
  */
-open class ObjectTypeRegistry<T>(ordinalsAndEntries: List<Pair<Int, T & Any>>) : AbstractList<T>() {
+open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T & Any>>) : AbstractList<T>() {
 
-    private val byName: Map<String, T>
-    private val byOrdinal: Map<Int, T>
-    private val ordinalByObject: Map<T, Int>
-    private val objects = ordinalsAndEntries.map { it.second }
+    private lateinit var byName: Map<String, T>
+    private lateinit var byOrdinal: Map<Int, T>
+    private lateinit var ordinalByObject: Map<T, Int>
+    private var objects = ordinalsAndEntries.map { it.second }.toMutableList()
 
     init {
+        initFunc(ordinalsAndEntries)
+    }
+
+    private fun initFunc(ordinalsAndEntries: List<Pair<Int, T & Any>>) {
         val byNameMap = mutableMapOf<String, T>()
         val highestOrdinal = ordinalsAndEntries.maxBy { it.first }.first
         val byOrdinalMap = HashMap<Int, T>(highestOrdinal + 1)
         for ((ordinal, objectType) in ordinalsAndEntries) {
             val typeName = objectType::class.simpleName!!
-            require(!byNameMap.containsKey(typeName)) {
-                "A object type's name must be unique! \"$typeName\" is defined twice!"
-            }
+            // require(!byNameMap.containsKey(typeName)) {
+            //     "A object type's name must be unique! \"$typeName\" is defined twice!"
+            // }
             require(!byOrdinalMap.containsKey(ordinal)) {
                 val otherTypeName = byOrdinalMap[ordinal]!!::class.simpleName!!
                 "Duplicate ordinal for \"$typeName\" and \"$otherTypeName\""
@@ -38,6 +42,18 @@ open class ObjectTypeRegistry<T>(ordinalsAndEntries: List<Pair<Int, T & Any>>) :
     fun getByOrdinal(ordinal: Int): T? = byOrdinal[ordinal]
 
     fun getOrdinalOf(type: T): Int? = ordinalByObject[type]
+
+    fun addItem(item: List<Pair<Int, T & Any>>) {
+        objects.clear()
+        ordinalsAndEntries.clear()
+        ordinalsAndEntries.addAll(item)
+        objects = ordinalsAndEntries.map { it.second }.toMutableList()
+        initFunc(ordinalsAndEntries)
+    }
+
+    fun clearAll() {
+        objects.clear()
+    }
 
     override val size: Int get() = objects.size
     override fun get(index: Int): T = objects[index]

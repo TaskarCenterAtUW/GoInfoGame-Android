@@ -331,13 +331,6 @@ class MainFragment :
                 mapFragment?.hideOverlay()
             }
         }
-        doLongForm()
-    }
-
-    private fun doLongForm(){
-        val processSampleJson = ProcessSampleJson()
-        val result = processSampleJson.processSampleJson()
-        println(result)
     }
 
     @UiThread

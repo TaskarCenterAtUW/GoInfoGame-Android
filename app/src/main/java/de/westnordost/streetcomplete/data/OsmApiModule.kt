@@ -14,8 +14,8 @@ import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-private const val OSM_API_URL = "https://master.apis.dev.openstreetmap.org/api/0.6/"
-
+private const val OSM_API_URL = "https://workspaces-osm-stage.sidewalks.washington.edu/api/0.6/"
+//https://workspaces-osm-stage.sidewalks.washington.edu/api/0.6/
 val osmApiModule = module {
     factory { Cleaner(get(), get(), get(), get(), get(), get()) }
     factory { CacheTrimmer(get(), get()) }

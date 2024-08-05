@@ -10,14 +10,12 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.MAXSPEED_TYPE_KEYS
 import de.westnordost.streetcomplete.osm.Tags
-import de.westnordost.streetcomplete.osm.sidewalk.LeftAndRightSidewalk
 import de.westnordost.streetcomplete.osm.sidewalk.Sidewalk.INVALID
 import de.westnordost.streetcomplete.osm.sidewalk.any
-import de.westnordost.streetcomplete.osm.sidewalk.applyTo
 import de.westnordost.streetcomplete.osm.sidewalk.parseSidewalkSides
 import de.westnordost.streetcomplete.osm.surface.UNPAVED_SURFACES
 
-class AddLongFormSidewalk: OsmElementQuestType<String> {
+class AddGenericLong(filter : String): OsmElementQuestType<String> {
     override val changesetComment = "Specify whether roads have sidewalks"
     override val wikiLink = "Key:sidewalk"
     override val icon = R.drawable.ic_quest_sidewalk
@@ -27,7 +25,8 @@ class AddLongFormSidewalk: OsmElementQuestType<String> {
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter("""
             ways with (
-                highway ~ path|footway|steps
+                highway ~ footway
+                and footway ~ sidewalk
               )
               and foot !~ no|private
               and access !~ no|private
@@ -51,9 +50,8 @@ class AddLongFormSidewalk: OsmElementQuestType<String> {
 
     override fun isApplicableTo(element: Element): Boolean =
         roadsFilter.matches(element)
-            && (untaggedRoadsFilter.matches(element) || element.hasInvalidOrIncompleteSidewalkTags())
 
-    override fun createForm() = AddSidewalkLongForm()
+    override fun createForm() = AddGenericLongForm()
 
     // override fun applyAnswerTo(answer: LeftAndRightSidewalk, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
     //     answer.applyTo(tags)
@@ -65,19 +63,10 @@ private val roadsFilter by lazy { """
     ways with
       (
         (
-          highway ~ trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service
-          and motorroad != yes
-          and expressway != yes
-          and foot != no
-        )
-        or
-        (
-          highway ~ motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|service
-          and (foot ~ yes|designated or bicycle ~ yes|designated)
+          highway ~ footway
+          and footway ~ sidewalk
         )
       )
-      and area != yes
-      and access !~ private|no
 """.toElementFilterExpression() }
 
 // streets that do not have sidewalk tagging yet

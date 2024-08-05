@@ -12,9 +12,12 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
 import de.westnordost.streetcomplete.data.quest.QuestKey
+import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
@@ -23,11 +26,14 @@ import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMap
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.distanceTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonObject
 import org.koin.android.ext.android.inject
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
@@ -61,9 +67,11 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         fun onClickedElement(elementKey: ElementKey)
         fun onClickedMapAt(position: LatLon, clickAreaSizeInMeters: Double)
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     enum class PinMode { NONE, QUESTS, EDITS }
+
     var pinMode: PinMode = PinMode.QUESTS
         set(value) {
             if (field == value) return
@@ -105,6 +113,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     /* ------------------------------------ Lifecycle ------------------------------------------- */
 
     override suspend fun onMapReady() {
+        doLongForm()
         val ctrl = controller ?: return
         ctrl.setPickRadius(8f)
         geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl)
@@ -112,20 +121,34 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         selectedPinsMapComponent = SelectedPinsMapComponent(requireContext(), ctrl)
         geometryMapComponent = FocusGeometryMapComponent(ctrl)
 
-        questPinsManager = QuestPinsManager(ctrl, pinsMapComponent!!, questTypeOrderSource, questTypeRegistry, resources, visibleQuestsSource)
+        questPinsManager = QuestPinsManager(
+            ctrl,
+            pinsMapComponent!!,
+            questTypeOrderSource,
+            questTypeRegistry,
+            resources,
+            visibleQuestsSource
+        )
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
 
-        editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, resources)
+        editHistoryPinsManager =
+            EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, resources)
         viewLifecycleOwner.lifecycle.addObserver(editHistoryPinsManager!!)
         editHistoryPinsManager!!.isVisible = pinMode == PinMode.EDITS
 
         styleableOverlayMapComponent = StyleableOverlayMapComponent(resources, ctrl)
-        styleableOverlayManager = StyleableOverlayManager(ctrl, styleableOverlayMapComponent!!, mapDataSource, selectedOverlaySource)
+        styleableOverlayManager = StyleableOverlayManager(
+            ctrl,
+            styleableOverlayMapComponent!!,
+            mapDataSource,
+            selectedOverlaySource
+        )
         viewLifecycleOwner.lifecycle.addObserver(styleableOverlayManager!!)
 
         downloadedAreaMapComponent = DownloadedAreaMapComponent(ctrl)
-        downloadedAreaManager = DownloadedAreaManager(ctrl, downloadedAreaMapComponent!!, downloadedTilesSource)
+        downloadedAreaManager =
+            DownloadedAreaManager(ctrl, downloadedAreaMapComponent!!, downloadedTilesSource)
         viewLifecycleOwner.lifecycle.addObserver(downloadedAreaManager!!)
 
         selectedOverlaySource.addListener(overlayListener)
@@ -159,6 +182,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                             return@launch
                         }
                     }
+
                     PinMode.EDITS -> {
                         val props = controller?.pickLabel(x, y)?.properties
                         val editKey = props?.let { editHistoryPinsManager?.getEditKey(it) }
@@ -167,6 +191,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                             return@launch
                         }
                     }
+
                     PinMode.NONE -> {}
                 }
             }
@@ -197,7 +222,8 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         val clickPos = controller?.screenPositionToLatLon(PointF(x, y)) ?: return
 
         val fingerRadius = context.resources.dpToPx(CLICK_AREA_SIZE_IN_DP) / 2
-        val fingerEdgeClickPos = controller?.screenPositionToLatLon(PointF(x + fingerRadius, y)) ?: return
+        val fingerEdgeClickPos =
+            controller?.screenPositionToLatLon(PointF(x + fingerRadius, y)) ?: return
         val fingerRadiusInMeters = clickPos.distanceTo(fingerEdgeClickPos)
 
         listener?.onClickedMapAt(clickPos, fingerRadiusInMeters)
@@ -264,7 +290,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     override fun putMarkerForCurrentHighlighting(
         geometry: ElementGeometry,
         @DrawableRes drawableResId: Int?,
-        title: String?
+        title: String?,
     ) {
         geometryMarkersMapComponent?.put(geometry, drawableResId, title)
     }
@@ -288,10 +314,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                 editHistoryPinsManager?.isVisible = false
                 questPinsManager?.isVisible = true
             }
+
             PinMode.EDITS -> {
                 questPinsManager?.isVisible = false
                 editHistoryPinsManager?.isVisible = true
             }
+
             else -> {
                 questPinsManager?.isVisible = false
                 editHistoryPinsManager?.isVisible = false
@@ -308,5 +336,26 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     companion object {
         // see streetcomplete.yaml for the definitions of the below layers
         private const val CLICK_AREA_SIZE_IN_DP = 48
+    }
+
+    // For GIG
+    private fun doLongForm() {
+        val processSampleJson = ProcessSampleJson()
+        val result: JsonArray = processSampleJson.processSampleJson() as JsonArray
+        println(result)
+        // questTypeRegistry.clearAll()
+        val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
+        for ((index, item) in result.withIndex()) {
+            val jsonObject = item.jsonObject
+            Log.d("LongForm", jsonObject["element_type"].toString())
+            // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
+            questTypes.add(index to AddGenericLong(jsonObject["quest_query"].toString()))
+        }
+        questTypeRegistry.addItem(questTypes)
+        // val new_registry = QuestTypeRegistry(questTypes)
+        // component.reloadDependency(new_registry)
+
+        // decidedQuestTypeRegistry = QuestTypeRegistry(questTypes)
+
     }
 }
