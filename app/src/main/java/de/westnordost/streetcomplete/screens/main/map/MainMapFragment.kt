@@ -346,7 +346,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
             // val jsonObject = item.jsonObject
             // Log.d("LongForm", jsonObject["element_type"].toString())
             // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
-            // if (index == 0) continue
+            //if (index == 0) continue
 
             questTypes.add(index to AddGenericLong(item))
             break

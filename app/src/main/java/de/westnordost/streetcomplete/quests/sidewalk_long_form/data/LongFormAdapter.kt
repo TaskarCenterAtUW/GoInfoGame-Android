@@ -2,16 +2,14 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.os.Handler
-import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.google.android.material.chip.Chip
@@ -25,10 +23,14 @@ import de.westnordost.streetcomplete.util.Listeners
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
-
+    var givenItems = listOf<LongFormItem<T>>()
     var items = listOf<LongFormItem<T>>()
         set(value) {
-            field = value.filter { it.visible }
+            if (givenItems.isEmpty()) {
+                givenItems = value
+            }
+
+            field = manageVisibility(value).filter { it.visible }
             notifyDataSetChanged()
         }
     var answerMap: MutableMap<Int, Pair<String, String>> = mutableMapOf()
@@ -50,10 +52,49 @@ class LongFormAdapter<T> :
 
     val listeners = Listeners<OnDataEnteredListener>()
 
+    fun manageVisibility(itemCopy : List<LongFormItem<T>>): List<LongFormItem<T>> {
+        for (item in itemCopy) {
+            val quest = item.options as Quest
+
+            val requiredUserInput= quest.questAnswerDependency?.requiredValue
+            val requiredQuestId = quest.questAnswerDependency?.questionId
+
+
+            if (requiredUserInput == null || requiredQuestId == null){
+                itemCopy[itemCopy.indexOf(item)].visible = true
+                continue
+            }
+            val filteredQuest = itemCopy.filter { (it.options as Quest).questId ==
+                requiredQuestId }
+
+            if (filteredQuest[0].userInput in requiredUserInput){
+                itemCopy[itemCopy.indexOf(item)].visible = true
+            }else{
+                itemCopy[itemCopy.indexOf(item)].visible = false
+            }
+
+            // if (answerMap.contains(quest.questAnswerDependency?.questionId)) {
+            //     if (quest.questAnswerDependency?.requiredValue?.contains(
+            //             answerMap[quest.questAnswerDependency.questionId]?.second
+            //         ) == true
+            //     ){
+            //         itemCopy[itemCopy.indexOf(item)].visible = true
+            //     }else{
+            //         itemCopy[itemCopy.indexOf(item)].visible = false
+            //     }
+            // } else if (quest.questAnswerDependency?.questionId!=null){
+            //     itemCopy[itemCopy.indexOf(item)].visible = false
+            // } else {
+            //     itemCopy[itemCopy.indexOf(item)].visible = true
+            // }
+        }
+        return itemCopy
+    }
+
     inner class ExclusiveChoiceViewHolder(val binding: CellLongFormItemExclusiveChoiceBinding) :
         ViewHolder(binding.root) {
 
-        fun bind(item: LongFormItem<*>) {
+        fun bind(item: LongFormItem<*>, position: Int) {
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.title
@@ -76,24 +117,31 @@ class LongFormAdapter<T> :
                         ).show()
                     }
 
-                    if (answerMap[quest.questId]?.second == questItem?.value) {
+                    // var index = 0
+                    // val currentItem = givenItems.filterIndexed { index,it -> (it.options as Quest).questId == quest.questId }
+
+                    if (items[position].userInput == questItem?.value) {
                         chip.isChecked = true
                     } else {
                         chip.isChecked = false
                     }
-                    setColor(chip.isChecked, chip)
+                    // setColor(chip.isChecked, chip)
 
 
                     chip.setOnCheckedChangeListener { _, isChecked ->
-                        setColor(isChecked, chip)
-                        if (isChecked)
-                            listeners.forEach {
-                                it.onDataEntered(
-                                    quest.questId!!,
-                                    quest.questTag.toString(),
-                                    questItem?.value.toString()
-                                )
-                            }
+                        // setColor(isChecked, chip)
+                        val index = givenItems.indexOfFirst { (it.options as Quest).questId == quest.questId }
+                        if (isChecked){
+                            givenItems[index].userInput = questItem?.value
+                        }
+                        items = givenItems
+                            // listeners.forEach {
+                            //     it.onDataEntered(
+                            //         quest.questId!!,
+                            //         quest.questTag.toString(),
+                            //         questItem?.value.toString()
+                            //     )
+                            // }
                     }
                     binding.chipGroup.addView(chip)
                 }
@@ -136,72 +184,41 @@ class LongFormAdapter<T> :
 
     inner class InputViewHolder(val binding: CellLongFormItemInputBinding) :
         ViewHolder(binding.root) {
-        fun bind(item: LongFormItem<*>) {
+        fun bind(item: LongFormItem<*>, position: Int) {
 
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.title
             binding.description.text = item.description
 
-            val quest = item.options as Quest
-
-
-
-            if (answerMap[quest.questId] != null) {
-
-                binding.input.editText?.setText(answerMap[quest.questId]?.second)
-                // Optionally clear focus if it was set during scrolling or other interactions
-                binding.input.clearFocus()
-                //setTextWithoutCursor(binding.input, answerMap[quest.questId]?.second.toString())
+            binding.input.editText?.setText(item.userInput)
+            binding.input.editText?.setOnFocusChangeListener { v, hasFocus ->
+                // if (!hasFocus) {
+                //     // val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
+                //     // givenItems[index].userInput = binding.input.editText?.text.toString()
+                //     items = givenItems
+                // }
             }
-
-
-            binding.input.editText?.setOnEditorActionListener { _, actionId, _ ->
-                if (actionId in intArrayOf(
-                        EditorInfo.IME_ACTION_DONE,
-                        EditorInfo.IME_ACTION_GO,
-                        EditorInfo.IME_ACTION_NEXT
-                    )
+            binding.input.editText?.addTextChangedListener(object : TextWatcher{
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int,
                 ) {
-                    val enteredText = binding.input.editText?.text.toString()
-                    listeners.forEach {
-                        it.onDataEntered(
-                            quest.questId!!,
-                            quest.questTag.toString(),
-                            enteredText
-                        )
-                    }
-                    true // Consume the event
-                } else {
-                    false // Let the system handle other actions
-                }
-            }
 
-            // binding.input.addTextChangedListener(object : TextWatcher{
-            //     override fun beforeTextChanged(
-            //         s: CharSequence?,
-            //         start: Int,
-            //         count: Int,
-            //         after: Int,
-            //     ) {
-            //     }
-            //
-            //     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            //
-            //     }
-            //
-            //     override fun afterTextChanged(s: Editable?) {
-            //         searchRunnable?.let { handler.removeCallbacks(it) }
-            //
-            //         // Define the new search runnable
-            //         searchRunnable = Runnable {
-            //             listeners.forEach { it.onDataEntered(quest.questId!!, quest.questTag.toString(),s.toString()) }
-            //         }
-            //
-            //         // Post the new search runnable with a delay (e.g., 500ms)
-            //         handler.postDelayed(searchRunnable!!, 500)
-            //     }
-            // })
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
+                    givenItems[index].userInput = s.toString()
+                    items[position].userInput = s.toString()
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+
+                }
+            })
         }
 
         private fun setTextWithoutCursor(editText: TextInputEditText, newText: String) {
@@ -288,11 +305,11 @@ class LongFormAdapter<T> :
             holder.bind(items[position])
         }
         if (holder is LongFormAdapter<*>.ExclusiveChoiceViewHolder) {
-            holder.bind(items[position])
+            holder.bind(items[position], position)
         }
 
         if (holder is LongFormAdapter<*>.InputViewHolder) {
-            holder.bind(items[position])
+            holder.bind(items[position], position)
         }
     }
 

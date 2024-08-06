@@ -50,27 +50,28 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         val itemCopy = items
         val mapCopy = answerMap
 
-        for (item in itemCopy) {
-            val quest = item.options as Quest
-
-            if (answerMap.contains(quest.questAnswerDependency?.questionId)) {
-                if (quest.questAnswerDependency?.requiredValue?.contains(
-                        answerMap[quest.questAnswerDependency.questionId]?.second
-                    ) == true
-                ){
-                    itemCopy[itemCopy.indexOf(item)].visible = true
-                }else{
-                    itemCopy[itemCopy.indexOf(item)].visible = false
-                }
-            } else if (quest.questAnswerDependency?.questionId!=null){
-                itemCopy[itemCopy.indexOf(item)].visible = false
-            } else {
-                itemCopy[itemCopy.indexOf(item)].visible = true
-            }
-        }
-        adapter.answerMap = mapCopy
+        // for (item in itemCopy) {
+        //     val quest = item.options as Quest
+        //
+        //     if (answerMap.contains(quest.questAnswerDependency?.questionId)) {
+        //         if (quest.questAnswerDependency?.requiredValue?.contains(
+        //                 answerMap[quest.questAnswerDependency.questionId]?.second
+        //             ) == true
+        //         ){
+        //             itemCopy[itemCopy.indexOf(item)].visible = true
+        //         }else{
+        //             itemCopy[itemCopy.indexOf(item)].visible = false
+        //         }
+        //     } else if (quest.questAnswerDependency?.questionId!=null){
+        //         itemCopy[itemCopy.indexOf(item)].visible = false
+        //     } else {
+        //         itemCopy[itemCopy.indexOf(item)].visible = true
+        //     }
+        // }
+        // adapter.answerMap = mapCopy
         adapter.items = itemCopy
     }
 }
 
-data class LongFormItem<T>(val options: T, val title: String?, val description: String?, var visible : Boolean = true)
+data class LongFormItem<T>(val options: T, val title: String?, val description: String?,
+    var visible : Boolean = true, var userInput : String? = null)
