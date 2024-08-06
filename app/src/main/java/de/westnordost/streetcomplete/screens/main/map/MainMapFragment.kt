@@ -26,14 +26,11 @@ import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMap
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
-import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.distanceTo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.jsonObject
 import org.koin.android.ext.android.inject
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
@@ -341,15 +338,18 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     // For GIG
     private fun doLongForm() {
         val processSampleJson = ProcessSampleJson()
-        val result: JsonArray = processSampleJson.processSampleJson() as JsonArray
+        val result = processSampleJson.processSampleJson()
         println(result)
         // questTypeRegistry.clearAll()
         val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result.withIndex()) {
-            val jsonObject = item.jsonObject
-            Log.d("LongForm", jsonObject["element_type"].toString())
-            // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
-            questTypes.add(index to AddGenericLong(jsonObject["quest_query"].toString()))
+            // val jsonObject = item.jsonObject
+            // Log.d("LongForm", jsonObject["element_type"].toString())
+            // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
+            // if (index == 0) continue
+
+            questTypes.add(index to AddGenericLong(item))
+            break
         }
         questTypeRegistry.addItem(questTypes)
         // val new_registry = QuestTypeRegistry(questTypes)

@@ -14,8 +14,11 @@ import de.westnordost.streetcomplete.osm.sidewalk.Sidewalk.INVALID
 import de.westnordost.streetcomplete.osm.sidewalk.any
 import de.westnordost.streetcomplete.osm.sidewalk.parseSidewalkSides
 import de.westnordost.streetcomplete.osm.surface.UNPAVED_SURFACES
+import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
 
-class AddGenericLong(filter : String): OsmElementQuestType<String> {
+class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Quest> {
     override val changesetComment = "Specify whether roads have sidewalks"
     override val wikiLink = "Key:sidewalk"
     override val icon = R.drawable.ic_quest_sidewalk
@@ -33,7 +36,7 @@ class AddGenericLong(filter : String): OsmElementQuestType<String> {
         """)
 
     override fun applyAnswerTo(
-        answer: String,
+        answer: Quest,
         tags: Tags,
         geometry: ElementGeometry,
         timestampEdited: Long,
@@ -51,7 +54,7 @@ class AddGenericLong(filter : String): OsmElementQuestType<String> {
     override fun isApplicableTo(element: Element): Boolean =
         roadsFilter.matches(element)
 
-    override fun createForm() = AddGenericLongForm()
+    override fun createForm() = AddGenericLongForm(item.quests)
 
     // override fun applyAnswerTo(answer: LeftAndRightSidewalk, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
     //     answer.applyTo(tags)
