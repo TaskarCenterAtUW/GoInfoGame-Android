@@ -1,6 +1,8 @@
 package de.westnordost.streetcomplete.data.maptiles
 
+import android.os.Build
 import de.westnordost.streetcomplete.ApplicationConstants
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.screens.main.map.VectorTileProvider
@@ -15,10 +17,10 @@ import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.internal.Version
 import java.io.IOException
 import kotlin.coroutines.resume
 
@@ -75,13 +77,16 @@ class MapTilesDownloader(
         /* adding trailing "&" because Tangram-ES also puts this at the end and the URL needs to be
            identical in order for the cache to work */
         val url = vectorTileProvider.getTileUrl(zoom, x, y) + "&"
-        val httpUrl = HttpUrl.parse(url)
+        val httpUrl = url.toHttpUrlOrNull()
         require(httpUrl != null) { "Invalid URL: $url" }
 
         val builder = Request.Builder()
             .url(httpUrl)
             .cacheControl(cacheConfig.cacheControl)
-        builder.header("User-Agent", ApplicationConstants.USER_AGENT + " / " + Version.userAgent())
+
+        val userAgent = "MyAppName/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE}; ${Build.MODEL})"
+
+        builder.header("User-Agent", ApplicationConstants.USER_AGENT + " / " + userAgent)
         val call = okHttpClient.newCall(builder.build())
 
         /* since we use coroutines and this is in the background anyway, why not use call.execute()?
@@ -95,11 +100,11 @@ class MapTilesDownloader(
 
             override fun onResponse(call: Call, response: Response) {
                 var size = 0
-                response.body()?.use { body ->
+                response.body?.use { body ->
                     // just get the bytes and let the cache magic do the rest...
                     size = body.bytes().size
                 }
-                val alreadyCached = response.cacheResponse() != null
+                val alreadyCached = response.cacheResponse != null
                 val logText = if (alreadyCached) "in cache" else "downloaded"
                 Log.v(TAG, "Tile $zoom/$x/$y $logText")
                 cont.resume(DownloadSuccess(alreadyCached, size))

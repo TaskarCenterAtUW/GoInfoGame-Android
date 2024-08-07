@@ -8,15 +8,23 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.google.android.material.chip.Chip
+import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemExclusiveChoiceBinding
+import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
 import de.westnordost.streetcomplete.quests.LongFormItem
-import de.westnordost.streetcomplete.util.Listeners
+import de.westnordost.streetcomplete.view.CharSequenceText
+import de.westnordost.streetcomplete.view.ImageUrl
+import de.westnordost.streetcomplete.view.Text
+import de.westnordost.streetcomplete.view.image_select.DisplayItem
+import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
+import de.westnordost.streetcomplete.view.image_select.Item2
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
@@ -26,7 +34,8 @@ class LongFormAdapter<T> :
         set(value) {
             if (givenItems.isEmpty()) {
                 givenItems = value
-                needRefreshIds = givenItems.map { (it.options as Quest).questAnswerDependency?.questionId }
+                needRefreshIds =
+                    givenItems.map { (it.options as Quest).questAnswerDependency?.questionId }
             }
 
             field = manageVisibility(value).filter { it.visible }
@@ -38,32 +47,34 @@ class LongFormAdapter<T> :
     enum class ViewType(val value: Int) {
         EXCLUSIVE_CHOICE(1),
         INPUT(2),
-        DEFAULT(3);
+        IMAGE(3),
+        DEFAULT(4);
 
         companion object {
             fun fromInt(value: Int): ViewType? = entries.find { it.value == value }
         }
     }
 
-
-    fun manageVisibility(itemCopy : List<LongFormItem<T>>): List<LongFormItem<T>> {
+    private fun manageVisibility(itemCopy: List<LongFormItem<T>>): List<LongFormItem<T>> {
         for (item in itemCopy) {
             val quest = item.options as Quest
 
-            val requiredUserInput= quest.questAnswerDependency?.requiredValue
+            val requiredUserInput = quest.questAnswerDependency?.requiredValue
             val requiredQuestId = quest.questAnswerDependency?.questionId
 
 
-            if (requiredUserInput == null || requiredQuestId == null){
+            if (requiredUserInput == null || requiredQuestId == null) {
                 itemCopy[itemCopy.indexOf(item)].visible = true
                 continue
             }
-            val filteredQuest = itemCopy.filter { (it.options as Quest).questId ==
-                requiredQuestId }
+            val filteredQuest = itemCopy.filter {
+                (it.options as Quest).questId ==
+                    requiredQuestId
+            }
 
-            if (filteredQuest[0].userInput in requiredUserInput){
+            if (filteredQuest[0].userInput in requiredUserInput) {
                 itemCopy[itemCopy.indexOf(item)].visible = true
-            }else{
+            } else {
                 itemCopy[itemCopy.indexOf(item)].visible = false
             }
         }
@@ -104,11 +115,12 @@ class LongFormAdapter<T> :
 
                     chip.setOnCheckedChangeListener { _, isChecked ->
                         // setColor(isChecked, chip)
-                        val index = givenItems.indexOfFirst { (it.options as Quest).questId == quest.questId }
-                        if (isChecked){
+                        val index =
+                            givenItems.indexOfFirst { (it.options as Quest).questId == quest.questId }
+                        if (isChecked) {
                             givenItems[index].userInput = questItem?.value
                         }
-                        if (quest.questId in needRefreshIds){
+                        if (quest.questId in needRefreshIds) {
                             items = givenItems
                         }
                     }
@@ -153,9 +165,15 @@ class LongFormAdapter<T> :
 
     inner class CustomTextWatcher : TextWatcher {
         private var position = 0
-
+        private var textInputLayout : TextInputLayout? = null
+        private var minValue : Int? = null
         fun updatePosition(position: Int) {
             this.position = position
+        }
+
+        fun updateInputLayout(textInputLayout : TextInputLayout, minValue : Int? = null){
+            this.textInputLayout = textInputLayout
+            this.minValue = minValue
         }
 
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -164,17 +182,24 @@ class LongFormAdapter<T> :
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
             val item = items[position]
 
-            val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
+            val index =
+                givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
             givenItems[index].userInput = s.toString()
         }
 
         override fun afterTextChanged(s: Editable?) {
+            val text = s.toString()
+            if (text.isNotBlank() && text.toInt() < minValue!!) {
+                textInputLayout?.error = "Value should be greater than $minValue"
+            }else{
+                textInputLayout?.error = null
+            }
         }
     }
 
     inner class InputViewHolder(
         val binding: CellLongFormItemInputBinding,
-        val customTextWatcher: CustomTextWatcher
+        private val customTextWatcher: CustomTextWatcher,
     ) :
         ViewHolder(binding.root) {
         fun bind(item: LongFormItem<*>, position: Int) {
@@ -188,8 +213,46 @@ class LongFormAdapter<T> :
             binding.input.editText?.setText(item.userInput)
 
             customTextWatcher.updatePosition(position)
-
+            customTextWatcher.updateInputLayout(binding.input, (item.options as Quest).questAnswerValidation?.min)
             binding.input.editText?.addTextChangedListener(customTextWatcher)
+        }
+    }
+
+    inner class ImageGridViewHolder(
+        val binding: CellLongFormItemImageGridBinding,
+    ) : ViewHolder(binding.root) {
+        fun bind(item: LongFormItem<*>, position: Int) {
+
+            binding.title.text = item.title
+            binding.description.text = item.description
+            val imageSelectAdapter = ImageSelectAdapter<Quest>(1)
+            binding.list.layoutManager = GridLayoutManager(binding.root.context, 4)
+            binding.list.isNestedScrollingEnabled = false
+            binding.list.adapter = imageSelectAdapter
+            val quest = item.options as Quest
+            imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
+                override fun onIndexSelected(index: Int) {
+                    // checkIsFormComplete()
+                    Toast.makeText(binding.root.context, index.toString()+"", Toast.LENGTH_SHORT).show()
+                    handleClick(quest.questId!!, quest.questAnswerChoices?.get(index)?.value!!)
+                }
+
+                override fun onIndexDeselected(index: Int) {
+                    // checkIsFormComplete()
+                    Toast.makeText(binding.root.context, index.toString() +"", Toast.LENGTH_SHORT).show()
+                }
+            })
+
+
+            imageSelectAdapter.items = quest.questAnswerChoices?.map {
+                Item2(quest, ImageUrl(), CharSequenceText(it?.choiceText!!), CharSequenceText("")) }!!
+
+        }
+
+        fun handleClick(questId : Int, userInput : String){
+            val index =
+                givenItems.indexOfFirst { (it.options as Quest).questId == questId }
+            givenItems[index].userInput = userInput
         }
     }
 
@@ -211,6 +274,15 @@ class LongFormAdapter<T> :
                     false
                 )
                 return InputViewHolder(binding, CustomTextWatcher())
+            }
+
+            ViewType.IMAGE.value -> {
+                val binding = CellLongFormItemImageGridBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                return ImageGridViewHolder(binding)
             }
 
             else -> {
@@ -241,8 +313,6 @@ class LongFormAdapter<T> :
         }
     }
 
-
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val longFormItem = items[position]
 
@@ -254,6 +324,10 @@ class LongFormAdapter<T> :
         }
 
         if (holder is LongFormAdapter<*>.InputViewHolder) {
+            holder.bind(items[position], position)
+        }
+
+        if (holder is LongFormAdapter<*>.ImageGridViewHolder) {
             holder.bind(items[position], position)
         }
     }

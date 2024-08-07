@@ -34,8 +34,13 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
         binding.submitButton.setOnClickListener {
-            val editedItems = adapter.items.map { it.visible }
-            print(editedItems.size)
+            val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
+            val tagList : MutableList<Pair<String, String>> = mutableListOf()
+            for (item in editedItems){
+                val quest = item.options as Quest
+                tagList.add(Pair(quest.questTag!!, item.userInput!!))
+            }
+            println(tagList.size)
         }
     }
 

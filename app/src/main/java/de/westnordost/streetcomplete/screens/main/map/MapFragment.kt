@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.main.map
 
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +22,7 @@ import com.mapzen.tangram.TouchInput.TapResponder
 import com.mapzen.tangram.networking.DefaultHttpHandler
 import com.mapzen.tangram.networking.HttpHandler
 import de.westnordost.streetcomplete.ApplicationConstants
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.maptiles.MapTilesDownloadCacheConfig
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -45,7 +47,6 @@ import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.internal.Version
 import org.koin.android.ext.android.inject
 
 /** Manages a map that remembers its last location*/
@@ -223,9 +224,11 @@ open class MapFragment :
         val builder = OkHttpClient.Builder().cache(cacheConfig.cache)
         return object : DefaultHttpHandler(builder) {
             override fun configureRequest(url: HttpUrl, builder: Request.Builder) {
+                val userAgent = "MyAppName/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE}; ${Build.MODEL})"
+
                 builder
                     .cacheControl(cacheConfig.tangramCacheControl)
-                    .header("User-Agent", ApplicationConstants.USER_AGENT + " / " + Version.userAgent())
+                    .header("User-Agent", ApplicationConstants.USER_AGENT + " / " + userAgent)
             }
         }
     }

@@ -239,7 +239,7 @@ dependencies {
 
     implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
-
+    implementation("io.coil-kt:coil:2.7.0")
 }
 
 /** Localizations that should be pulled from POEditor */

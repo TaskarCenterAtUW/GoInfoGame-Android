@@ -10,6 +10,7 @@ import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.decodeFromStream
 import de.westnordost.streetcomplete.view.DrawableImage
 import de.westnordost.streetcomplete.view.Image
+import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.ResImage
 
 inline fun <reified T> Resources.getYamlObject(@RawRes id: Int): T =
@@ -25,11 +26,12 @@ fun Resources.getBitmapDrawable(@DrawableRes id: Int): BitmapDrawable =
     getDrawable(id).asBitmapDrawable(this)
 
 fun Resources.getBitmapDrawable(image: Image): BitmapDrawable =
-    getDrawable(image).asBitmapDrawable(this)
+    getDrawable(image)!!.asBitmapDrawable(this)
 
-fun Resources.getDrawable(image: Image): Drawable = when (image) {
+fun Resources.getDrawable(image: Image): Drawable? = when (image) {
     is ResImage -> getDrawable(image.resId)
     is DrawableImage -> image.drawable
+    is ImageUrl -> null
 }
 
 /** return the number of density independent pixels for the given pixels */
