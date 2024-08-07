@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 
 abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
@@ -32,46 +33,17 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
-
-        adapter.listeners.add(object : LongFormAdapter.OnDataEnteredListener{
-            override fun onDataEntered(
-                questId: Int,
-                questTag: String?,
-                questValue: String?,
-            ) {
-                answerMap[questId] = Pair(questTag.toString(), questValue.toString())
-                setVisibilityOfItems()
-            }
-        })
-
+        binding.submitButton.setOnClickListener {
+            val editedItems = adapter.items.map { it.visible }
+            print(editedItems.size)
+        }
     }
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        val mapCopy = answerMap
-
-        // for (item in itemCopy) {
-        //     val quest = item.options as Quest
-        //
-        //     if (answerMap.contains(quest.questAnswerDependency?.questionId)) {
-        //         if (quest.questAnswerDependency?.requiredValue?.contains(
-        //                 answerMap[quest.questAnswerDependency.questionId]?.second
-        //             ) == true
-        //         ){
-        //             itemCopy[itemCopy.indexOf(item)].visible = true
-        //         }else{
-        //             itemCopy[itemCopy.indexOf(item)].visible = false
-        //         }
-        //     } else if (quest.questAnswerDependency?.questionId!=null){
-        //         itemCopy[itemCopy.indexOf(item)].visible = false
-        //     } else {
-        //         itemCopy[itemCopy.indexOf(item)].visible = true
-        //     }
-        // }
-        // adapter.answerMap = mapCopy
         adapter.items = itemCopy
     }
 }
 
-data class LongFormItem<T>(val options: T, val title: String?, val description: String?,
+data class LongFormItem<T>(val options: T, val title: String?, val description: String?, val questId : Int?,
     var visible : Boolean = true, var userInput : String? = null)

@@ -6,5 +6,6 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
 
 class AddGenericLongForm(val quests: List<Quest?>?) : ALongForm<Quest>() {
     override val items: List<LongFormItem<Quest>>
-        get() = quests.orEmpty().map { LongFormItem(it!!, it.questTitle, it.questDescription) }
+        get() = quests.orEmpty().map { LongFormItem(it!!, it.questTitle, it.questDescription, it.questId) }
+
 }

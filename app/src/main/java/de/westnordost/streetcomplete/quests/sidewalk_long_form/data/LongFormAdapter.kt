@@ -1,19 +1,16 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
-import android.content.Context
 import android.content.res.ColorStateList
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.google.android.material.chip.Chip
-import com.google.android.material.textfield.TextInputEditText
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemExclusiveChoiceBinding
@@ -24,18 +21,16 @@ import de.westnordost.streetcomplete.util.Listeners
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
     var givenItems = listOf<LongFormItem<T>>()
+    var needRefreshIds = listOf<Int?>()
     var items = listOf<LongFormItem<T>>()
         set(value) {
             if (givenItems.isEmpty()) {
                 givenItems = value
+                needRefreshIds = givenItems.map { (it.options as Quest).questAnswerDependency?.questionId }
             }
 
             field = manageVisibility(value).filter { it.visible }
             notifyDataSetChanged()
-        }
-    var answerMap: MutableMap<Int, Pair<String, String>> = mutableMapOf()
-        set(value) {
-            field = value
         }
 
     var cellLayoutId = R.layout.cell_long_form_item
@@ -50,7 +45,6 @@ class LongFormAdapter<T> :
         }
     }
 
-    val listeners = Listeners<OnDataEnteredListener>()
 
     fun manageVisibility(itemCopy : List<LongFormItem<T>>): List<LongFormItem<T>> {
         for (item in itemCopy) {
@@ -72,21 +66,6 @@ class LongFormAdapter<T> :
             }else{
                 itemCopy[itemCopy.indexOf(item)].visible = false
             }
-
-            // if (answerMap.contains(quest.questAnswerDependency?.questionId)) {
-            //     if (quest.questAnswerDependency?.requiredValue?.contains(
-            //             answerMap[quest.questAnswerDependency.questionId]?.second
-            //         ) == true
-            //     ){
-            //         itemCopy[itemCopy.indexOf(item)].visible = true
-            //     }else{
-            //         itemCopy[itemCopy.indexOf(item)].visible = false
-            //     }
-            // } else if (quest.questAnswerDependency?.questionId!=null){
-            //     itemCopy[itemCopy.indexOf(item)].visible = false
-            // } else {
-            //     itemCopy[itemCopy.indexOf(item)].visible = true
-            // }
         }
         return itemCopy
     }
@@ -117,16 +96,11 @@ class LongFormAdapter<T> :
                         ).show()
                     }
 
-                    // var index = 0
-                    // val currentItem = givenItems.filterIndexed { index,it -> (it.options as Quest).questId == quest.questId }
-
                     if (items[position].userInput == questItem?.value) {
                         chip.isChecked = true
                     } else {
                         chip.isChecked = false
                     }
-                    // setColor(chip.isChecked, chip)
-
 
                     chip.setOnCheckedChangeListener { _, isChecked ->
                         // setColor(isChecked, chip)
@@ -134,14 +108,9 @@ class LongFormAdapter<T> :
                         if (isChecked){
                             givenItems[index].userInput = questItem?.value
                         }
-                        items = givenItems
-                            // listeners.forEach {
-                            //     it.onDataEntered(
-                            //         quest.questId!!,
-                            //         quest.questTag.toString(),
-                            //         questItem?.value.toString()
-                            //     )
-                            // }
+                        if (quest.questId in needRefreshIds){
+                            items = givenItems
+                        }
                     }
                     binding.chipGroup.addView(chip)
                 }
@@ -182,7 +151,31 @@ class LongFormAdapter<T> :
         }
     }
 
-    inner class InputViewHolder(val binding: CellLongFormItemInputBinding) :
+    inner class CustomTextWatcher : TextWatcher {
+        private var position = 0
+
+        fun updatePosition(position: Int) {
+            this.position = position
+        }
+
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            val item = items[position]
+
+            val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
+            givenItems[index].userInput = s.toString()
+        }
+
+        override fun afterTextChanged(s: Editable?) {
+        }
+    }
+
+    inner class InputViewHolder(
+        val binding: CellLongFormItemInputBinding,
+        val customTextWatcher: CustomTextWatcher
+    ) :
         ViewHolder(binding.root) {
         fun bind(item: LongFormItem<*>, position: Int) {
 
@@ -191,60 +184,12 @@ class LongFormAdapter<T> :
             binding.title.text = item.title
             binding.description.text = item.description
 
+            binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText(item.userInput)
-            binding.input.editText?.setOnFocusChangeListener { v, hasFocus ->
-                // if (!hasFocus) {
-                //     // val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
-                //     // givenItems[index].userInput = binding.input.editText?.text.toString()
-                //     items = givenItems
-                // }
-            }
-            binding.input.editText?.addTextChangedListener(object : TextWatcher{
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ) {
 
-                }
+            customTextWatcher.updatePosition(position)
 
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    val index = givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
-                    givenItems[index].userInput = s.toString()
-                    items[position].userInput = s.toString()
-                }
-
-                override fun afterTextChanged(s: Editable?) {
-
-                }
-            })
-        }
-
-        private fun setTextWithoutCursor(editText: TextInputEditText, newText: String) {
-            // Save the current focus state
-            val hadFocus = editText.hasFocus()
-
-            // Temporarily disable focus
-            editText.clearFocus()
-            editText.isFocusable = false
-            editText.isFocusableInTouchMode = false
-
-            // Set the text
-            editText.setText(newText)
-
-            // Restore focusability
-            editText.isFocusable = true
-            editText.isFocusableInTouchMode = true
-
-            // Optionally hide the soft keyboard if it was shown
-            if (hadFocus) {
-                val imm = binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(editText.windowToken, 0)
-            }
-
-            // Clear focus again to ensure no cursor is shown
-            editText.clearFocus()
+            binding.input.editText?.addTextChangedListener(customTextWatcher)
         }
     }
 
@@ -265,7 +210,7 @@ class LongFormAdapter<T> :
                     parent,
                     false
                 )
-                return InputViewHolder(binding)
+                return InputViewHolder(binding, CustomTextWatcher())
             }
 
             else -> {
