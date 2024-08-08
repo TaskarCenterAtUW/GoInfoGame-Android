@@ -83,6 +83,8 @@ class LongFormAdapter<T> :
 
     inner class ExclusiveChoiceViewHolder(val binding: CellLongFormItemExclusiveChoiceBinding) :
         ViewHolder(binding.root) {
+        private var defaultColor : Int?= null
+        private var defaultTextColor : Int? = null
 
         fun bind(item: LongFormItem<*>, position: Int) {
             if (item.visible) binding.container.visibility =
@@ -97,6 +99,7 @@ class LongFormAdapter<T> :
                     val chip = Chip(binding.root.context)
                     // val chip = Chip(ContextThemeWrapper(binding.root.context, R.style.back))
                     chip.text = questItem?.choiceText
+                    defaultColor = chip.chipBackgroundColor?.defaultColor
                     chip.isCheckable = true
                     chip.setOnClickListener {
                         // Handle chip click here
@@ -112,9 +115,9 @@ class LongFormAdapter<T> :
                     } else {
                         chip.isChecked = false
                     }
-
+                    setColor(chip.isChecked, chip)
                     chip.setOnCheckedChangeListener { _, isChecked ->
-                        // setColor(isChecked, chip)
+                        setColor(isChecked, chip)
                         val index =
                             givenItems.indexOfFirst { (it.options as Quest).questId == quest.questId }
                         if (isChecked) {
@@ -129,9 +132,7 @@ class LongFormAdapter<T> :
             }
         }
 
-        fun setColor(isChecked: Boolean, chip: Chip) {
-            val defaultColor = chip.chipBackgroundColor?.defaultColor
-            val defaultTextColor = chip.textColors.defaultColor
+        private fun setColor(isChecked: Boolean, chip: Chip) {
             if (isChecked) {
                 chip.chipBackgroundColor = ColorStateList.valueOf(
                     ContextCompat.getColor(
@@ -149,6 +150,14 @@ class LongFormAdapter<T> :
                 )
             } else {
                 chip.chipBackgroundColor = defaultColor?.let { ColorStateList.valueOf(it) }
+                chip.setTextColor(
+                    ColorStateList.valueOf(
+                        ContextCompat.getColor(
+                            binding.root.context,
+                            R.color.traffic_black
+                        )
+                    )
+                )
             }
         }
     }

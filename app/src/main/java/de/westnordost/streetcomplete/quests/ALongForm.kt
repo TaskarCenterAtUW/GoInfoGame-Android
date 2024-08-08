@@ -17,7 +17,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     var answerMap : MutableMap<Int, Pair<String, String>> = mutableMapOf()
 
-    override val defaultExpanded = true
+    override val defaultExpanded = false
 
     protected abstract val items: List<LongFormItem<T>>
 

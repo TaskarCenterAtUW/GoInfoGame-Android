@@ -71,7 +71,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val featureDictionaryLazy: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
     private val recentLocationStore: RecentLocationStore by inject()
-    private val httpClient : HttpClient by inject()
+    private val httpClient: HttpClient by inject()
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
@@ -102,7 +102,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         fun onEdited(editType: ElementEditType, geometry: ElementGeometry)
 
         /** Called when the user chose to leave a note instead */
-        fun onComposeNote(editType: ElementEditType, element: Element, geometry: ElementGeometry, leaveNoteContext: String)
+        fun onComposeNote(
+            editType: ElementEditType,
+            element: Element,
+            geometry: ElementGeometry,
+            leaveNoteContext: String,
+        )
 
         /** Called when the user chose to split the way */
         fun onSplitWay(editType: ElementEditType, way: Way, geometry: ElementPolylinesGeometry)
@@ -113,6 +118,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         /** Called when the user chose to hide the quest instead */
         fun onQuestHidden(osmQuestKey: OsmQuestKey)
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,9 +147,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         setButtonPanelAnswers(buttonPanelAnswers)
     }
 
-    private suspend fun getAddress(){
-        val response = httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
-        if (response.status == HttpStatusCode.OK){
+    private suspend fun getAddress() {
+        val response =
+            httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
+        if (response.status == HttpStatusCode.OK) {
             val address = response.body<AddressModel>()
             Log.d("Address", address.toString())
             var extraText = ""
@@ -153,18 +160,44 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     latitude = geometry.center.latitude
                     longitude = geometry.center.longitude
                 }
-                val distance = location.distanceTo(pointLocation)/1000
-                setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary).toString() + " " + address.address?.road + " " + distance + " Kms")
+                val distance =
+                    String.format(Locale.getDefault(), "%.2f", location.distanceTo(pointLocation))
+                val bearing = location.bearingTo(pointLocation)
+                setTitleHintLabel(
+                    getNameAndLocationLabel(element, resources, featureDictionary)
+                        .toString() + "is near " + address.address?.road + " and towards ${
+                        getCardinalDirection(
+                            bearing
+                        )
+                    } at " + distance + " metres"
+                )
+            } else {
+                setTitleHintLabel(
+                    getNameAndLocationLabel(
+                        element,
+                        resources,
+                        featureDictionary
+                    ).toString() + " " + address.address?.road
+                )
             }
-            else{
-                setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary).toString() + " " + address.address?.road)
-
-            }
-        } else{
+        } else {
             setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary))
         }
+    }
 
-
+    private fun getCardinalDirection(bearing: Float): String {
+        val normalizedBearing = (bearing % 360 + 360) % 360 // Normalize to 0..360 range
+        return when (normalizedBearing) {
+            in 0f..22.5f, in 337.5f..360f -> "North"
+            in 22.5f..67.5f -> "North East"
+            in 67.5f..112.5f -> "East"
+            in 112.5f..157.5f -> "South East"
+            in 157.5f..202.5f -> "South"
+            in 202.5f..247.5f -> "South West"
+            in 247.5f..292.5f -> "West"
+            in 292.5f..337.5f -> "North West"
+            else -> "Invalid Bearing"
+        }
     }
 
     private fun assembleOtherAnswers(): List<IAnswerItem> {
@@ -179,7 +212,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
         if (element is Node // add moveNodeAnswer only if it's a free floating node
             && mapDataWithEditsSource.getWaysForNode(element.id).isEmpty()
-            && mapDataWithEditsSource.getRelationsForNode(element.id).isEmpty()) {
+            && mapDataWithEditsSource.getRelationsForNode(element.id).isEmpty()
+        ) {
             answers.add(AnswerItem(R.string.move_node) { onClickMoveNodeAnswer() })
         }
 
@@ -188,7 +222,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private fun createDeleteOrReplaceElementAnswer(): AnswerItem? {
-        val isDeletePoiEnabled = osmElementQuestType.isDeleteElementEnabled && element.type == ElementType.NODE
+        val isDeletePoiEnabled =
+            osmElementQuestType.isDeleteElementEnabled && element.type == ElementType.NODE
         val isReplacePlaceEnabled = osmElementQuestType.isReplacePlaceEnabled
         if (!isDeletePoiEnabled && !isReplacePlaceEnabled) return null
         check(!(isDeletePoiEnabled && isReplacePlaceEnabled)) {
@@ -205,7 +240,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private fun showOtherAnswers() {
-        val otherAnswersButton = view?.findViewById<ViewGroup>(R.id.buttonPanel)?.children?.firstOrNull() ?: return
+        val otherAnswersButton =
+            view?.findViewById<ViewGroup>(R.id.buttonPanel)?.children?.firstOrNull() ?: return
         val answers = assembleOtherAnswers()
         val popup = PopupMenu(requireContext(), otherAnswersButton)
         for (i in answers.indices) {
@@ -222,34 +258,41 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     protected fun onClickCantSay() {
-        context?.let { AlertDialog.Builder(it)
-            .setTitle(R.string.quest_leave_new_note_title)
-            .setMessage(R.string.quest_leave_new_note_description)
-            .setNegativeButton(R.string.quest_leave_new_note_no) { _, _ -> hideQuest() }
-            .setPositiveButton(R.string.quest_leave_new_note_yes) { _, _ -> composeNote() }
-            .show()
+        context?.let {
+            AlertDialog.Builder(it)
+                .setTitle(R.string.quest_leave_new_note_title)
+                .setMessage(R.string.quest_leave_new_note_description)
+                .setNegativeButton(R.string.quest_leave_new_note_no) { _, _ -> hideQuest() }
+                .setPositiveButton(R.string.quest_leave_new_note_yes) { _, _ -> composeNote() }
+                .show()
         }
     }
 
     private fun onClickSplitWayAnswer() {
-        context?.let { AlertDialog.Builder(it)
-            .setMessage(R.string.quest_split_way_description)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                listener?.onSplitWay(osmElementQuestType, element as Way, geometry as ElementPolylinesGeometry)
-            }
-            .show()
+        context?.let {
+            AlertDialog.Builder(it)
+                .setMessage(R.string.quest_split_way_description)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    listener?.onSplitWay(
+                        osmElementQuestType,
+                        element as Way,
+                        geometry as ElementPolylinesGeometry
+                    )
+                }
+                .show()
         }
     }
 
     private fun onClickMoveNodeAnswer() {
-        context?.let { AlertDialog.Builder(it)
-            .setMessage(R.string.quest_move_node_message)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                listener?.onMoveNode(osmElementQuestType, element as Node)
-            }
-            .show()
+        context?.let {
+            AlertDialog.Builder(it)
+                .setMessage(R.string.quest_move_node_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    listener?.onMoveNode(osmElementQuestType, element as Node)
+                }
+                .show()
         }
     }
 
@@ -334,10 +377,21 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         withContext(Dispatchers.IO) {
             if (action is UpdateElementTagsAction && !action.changes.isValid()) {
                 val questTitle = englishResources.getQuestTitle(osmElementQuestType, element.tags)
-                val text = createNoteTextForTooLongTags(questTitle, element.type, element.id, action.changes.changes)
+                val text = createNoteTextForTooLongTags(
+                    questTitle,
+                    element.type,
+                    element.id,
+                    action.changes.changes
+                )
                 noteEditsController.add(0, NoteEditAction.CREATE, geometry.center, text)
             } else {
-                addElementEditsController.add(osmElementQuestType, geometry, "survey", action, isSurvey)
+                addElementEditsController.add(
+                    osmElementQuestType,
+                    geometry,
+                    "survey",
+                    action,
+                    isSurvey
+                )
             }
         }
         listener?.onEdited(osmElementQuestType, geometry)
