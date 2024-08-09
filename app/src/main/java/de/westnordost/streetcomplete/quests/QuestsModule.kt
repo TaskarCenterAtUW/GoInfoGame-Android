@@ -9,8 +9,15 @@ import de.westnordost.streetcomplete.data.meta.getByLocation
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
+import de.westnordost.streetcomplete.quests.crossing.AddCrossing
+import de.westnordost.streetcomplete.quests.crossing_island.AddCrossingIsland
+import de.westnordost.streetcomplete.quests.crossing_markings.AddCrossingMarkings
+import de.westnordost.streetcomplete.quests.incline_direction.AddStepsIncline
 import de.westnordost.streetcomplete.quests.kerb_height.AddKerbHeight
 import de.westnordost.streetcomplete.quests.road_name.RoadNameSuggestionsSource
+import de.westnordost.streetcomplete.quests.surface.AddSidewalkSurface
+import de.westnordost.streetcomplete.quests.tactile_paving.AddTactilePavingCrosswalk
+import de.westnordost.streetcomplete.quests.tactile_paving.AddTactilePavingSteps
 import de.westnordost.streetcomplete.screens.measure.ArSupportChecker
 import de.westnordost.streetcomplete.util.ktx.getFeature
 import org.koin.core.qualifier.named
@@ -76,13 +83,13 @@ fun questTypeRegistry(
         /* always first: notes - they mark a mistake in the data so potentially every quest for that
         element is based on wrong data while the note is not resolved */
         //GIG quests
-        //1 to AddCrossing(),
-        //8 to AddCrossingIsland(),
-        // 10 to AddCrossingMarkings(),
-        // 31 to AddSidewalkSurface(),
-        // 27 to AddTactilePavingSteps(),
-        // 32 to AddStepsIncline(),
-        // 14 to AddTactilePavingCrosswalk(),
+        1 to AddCrossing(),
+        8 to AddCrossingIsland(),
+        10 to AddCrossingMarkings(),
+        31 to AddSidewalkSurface(),
+        27 to AddTactilePavingSteps(),
+        32 to AddStepsIncline(),
+        14 to AddTactilePavingCrosswalk(),
         19 to AddKerbHeight(),
 
 

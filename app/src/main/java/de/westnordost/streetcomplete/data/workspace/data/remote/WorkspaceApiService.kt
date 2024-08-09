@@ -21,12 +21,12 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
         try {
             val response =
                 httpClient.get("https://waylyticsosm.blob.core.windows.net/flows/workspaces-test/uwdataset.json")
-            Log.d("UNIQUE", response.body())
-            val workspaceResponse = json.decodeFromString<List<Workspace>>(response.body())
-            return workspaceResponse
+            val responseBody = response.body<List<Workspace>>()
+            return responseBody
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {
+            Log.d("UNIQUE", e.message.toString())
             throw Exception(e.message)
         }
     }

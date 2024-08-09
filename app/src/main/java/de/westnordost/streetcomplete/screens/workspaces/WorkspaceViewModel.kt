@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,10 +16,14 @@ abstract class WorkspaceViewModel : ViewModel() {
         username: String,
         password: String,
     ): StateFlow<WorkspaceLoginState>
+    abstract fun setLoginState(isLoggedIn : Boolean)
+    abstract fun setIsLongForm(isLongForm : Boolean)
 }
 
-class WorkspaceViewModelImpl(private val workspaceRepository: WorkspaceRepository) :
+class WorkspaceViewModelImpl(private val workspaceRepository: WorkspaceRepository, private val preferences: Preferences) :
     WorkspaceViewModel() {
+
+        val isLoggedIn : Boolean = preferences.workspaceLogin
 
     override val showWorkspaces: StateFlow<WorkspaceListState> = flow {
         workspaceRepository.getWorkspaces()
@@ -44,4 +49,12 @@ class WorkspaceViewModelImpl(private val workspaceRepository: WorkspaceRepositor
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = WorkspaceLoginState.loading()
     )
+
+    override fun setLoginState(isLoggedIn: Boolean) {
+        preferences.workspaceLogin = isLoggedIn
+    }
+
+    override fun setIsLongForm(isLongForm: Boolean) {
+        preferences.showLongForm = isLongForm
+    }
 }

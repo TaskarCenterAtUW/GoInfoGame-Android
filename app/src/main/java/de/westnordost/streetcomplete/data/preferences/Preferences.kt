@@ -7,6 +7,7 @@ import com.russhwolf.settings.float
 import com.russhwolf.settings.int
 import com.russhwolf.settings.long
 import com.russhwolf.settings.nullableString
+import com.russhwolf.settings.set
 import com.russhwolf.settings.string
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.ktx.putStringOrNull
@@ -68,6 +69,21 @@ class Preferences(private val prefs: ObservableSettings) {
 
     var oAuth2AccessToken: String? by prefs.nullableString(OAUTH2_ACCESS_TOKEN)
     val hasOAuth1AccessToken: Boolean get() = prefs.hasKey(OAUTH1_ACCESS_TOKEN)
+
+    var showLongForm : Boolean
+        set(value) {
+            prefs[WORKSPACE_SHOW_LONG_FORM] = value
+        }
+        get() =
+            prefs.getBoolean(WORKSPACE_SHOW_LONG_FORM, false)
+
+    var workspaceLogin : Boolean
+        set(value) {
+            prefs[WORKSPACE_LOGIN] = value
+        }
+        get() =
+            prefs.getBoolean(WORKSPACE_LOGIN, false)
+
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
@@ -263,5 +279,10 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val USER_LAST_TIMESTAMP_ACTIVE = "last_timestamp_active"
         private const val ACTIVE_DATES_RANGE = "active_days_range"
         private const val IS_SYNCHRONIZING_STATISTICS = "is_synchronizing_statistics"
+
+        //GIG WORKSPACE Keys
+        private const val WORKSPACE_LOGIN = "workspace.login"
+        private const val WORKSPACE_ACCESS_TOKEN = "workspace.accesstoken"
+        private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
     }
 }

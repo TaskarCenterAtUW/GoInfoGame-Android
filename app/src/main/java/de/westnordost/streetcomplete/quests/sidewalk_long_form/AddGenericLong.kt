@@ -14,25 +14,25 @@ import de.westnordost.streetcomplete.osm.sidewalk.Sidewalk.INVALID
 import de.westnordost.streetcomplete.osm.sidewalk.any
 import de.westnordost.streetcomplete.osm.sidewalk.parseSidewalkSides
 import de.westnordost.streetcomplete.osm.surface.UNPAVED_SURFACES
-import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
 
 class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Quest> {
     override val changesetComment = "Specify whether roads have sidewalks"
     override val wikiLink = "Key:sidewalk"
-    override val icon = R.drawable.ic_quest_sidewalk
+    override val icon = when (item.elementType) {
+        "Sidewalks" -> R.drawable.ic_quest_sidewalk
+        "Crossings" -> R.drawable.ic_quest_pedestrian_crossing
+        else -> R.drawable.ic_quest_kerb_type
+    }
     override val achievements = listOf(PEDESTRIAN)
     override val defaultDisabledMessage = R.string.default_disabled_msg_overlay
 
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter("""
-            ways with (
-                highway ~ footway
-                and footway ~ sidewalk
+            ${getNodeOrWay(item.elementType!!)} with (
+                ${item.questQuery}
               )
-              and foot !~ no|private
-              and access !~ no|private
         """)
 
     override fun applyAnswerTo(
@@ -52,7 +52,7 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Que
         mapData.filter { isApplicableTo(it) }
 
     override fun isApplicableTo(element: Element): Boolean =
-        roadsFilter.matches(element)
+        createRoadsFilter(item.questQuery!!, item.elementType!!).matches(element)
 
     override fun createForm() = AddGenericLongForm(item.quests)
 
@@ -61,16 +61,21 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Que
     // }
 }
 
-// streets that may have sidewalk tagging
-private val roadsFilter by lazy { """
-    ways with
+private fun getNodeOrWay(variable: String): String {
+    return when(variable) {
+        "Kerb" -> "nodes"
+        else -> "ways"
+    }
+}
+
+private fun createRoadsFilter(variable: String, elementType: String) = """
+    ${getNodeOrWay(elementType)} with
       (
         (
-          highway ~ footway
-          and footway ~ sidewalk
+          $variable
         )
       )
-""".toElementFilterExpression() }
+""".toElementFilterExpression()
 
 // streets that do not have sidewalk tagging yet
 /* the filter additionally filters out ways that are unlikely to have sidewalks:

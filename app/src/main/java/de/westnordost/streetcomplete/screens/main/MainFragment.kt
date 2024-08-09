@@ -394,6 +394,7 @@ class MainFragment :
         updateLocationPointerPin()
         mapFragment?.cameraPosition?.zoom?.let { updateCreateButtonEnablement(it) }
         listener?.onMapInitialized()
+        onClickDownload()
     }
 
     override fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {

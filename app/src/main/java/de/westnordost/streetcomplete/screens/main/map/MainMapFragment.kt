@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
@@ -46,6 +47,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private val mapDataSource: MapDataWithEditsSource by inject()
     private val selectedOverlaySource: SelectedOverlaySource by inject()
     private val downloadedTilesSource: DownloadedTilesSource by inject()
+    private val preferences : Preferences by inject()
 
     private var geometryMarkersMapComponent: GeometryMarkersMapComponent? = null
     private var pinsMapComponent: PinsMapComponent? = null
@@ -98,6 +100,10 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     override suspend fun onBeforeLoadScene() {
         super.onBeforeLoadScene()
+        if (preferences.showLongForm) {
+
+            doLongForm()
+        }
         val sceneUpdates = withContext(Dispatchers.IO) {
             questPinsSpriteSheet.sceneUpdates + iconsSpriteSheet.sceneUpdates
         }
@@ -110,7 +116,6 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     /* ------------------------------------ Lifecycle ------------------------------------------- */
 
     override suspend fun onMapReady() {
-        doLongForm()
         val ctrl = controller ?: return
         ctrl.setPickRadius(8f)
         geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl)
@@ -346,10 +351,10 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
             // val jsonObject = item.jsonObject
             // Log.d("LongForm", jsonObject["element_type"].toString())
             // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
-            if (index == 0) continue
+            //if (index == 0) continue
 
             questTypes.add(index to AddGenericLong(item))
-            break
+            //break
         }
         questTypeRegistry.addItem(questTypes)
         // val new_registry = QuestTypeRegistry(questTypes)

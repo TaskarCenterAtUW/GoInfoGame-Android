@@ -15,6 +15,6 @@ val workspaceModule = module {
     // single { GetWorkspaceUseCase(get()) }
     // single { LoginUseCase(get()) }
 
-    viewModel<WorkspaceViewModel> { WorkspaceViewModelImpl(get()) }
+    viewModel<WorkspaceViewModel> { WorkspaceViewModelImpl(get(), get()) }
 
 }

@@ -13,7 +13,7 @@ class WorkspaceDao(private val db: Database) {
         db.replaceMany(
             NAME,
             arrayOf(ID, TITLE, QUESTS),
-            responseItems.map { arrayOf(it.id, it.title, it.quests.joinToString(",")) }
+            responseItems.map { arrayOf(it.id, it.title, it.quests?.joinToString(",")) }
         )
     }
 
