@@ -176,6 +176,8 @@ open class MapFragment :
         val ctrl = binding.map.initMap(createHttpHandler())
         controller = ctrl
         if (ctrl == null) return
+        setInitialCameraPosition(CameraPosition(LatLon(latitude = 47.591466, longitude = -122.331570), 0f, 0f, 3f))
+
         lifecycle.addObserver(ctrl)
         registerResponders(ctrl)
 
@@ -334,8 +336,13 @@ open class MapFragment :
         return screenPositionOut
     }
 
-    val cameraPosition: CameraPosition?
+    var cameraPosition: CameraPosition?
         get() = controller?.cameraPosition
+        set(value) {
+            if (value != null) {
+                controller?.setCameraPosition(value)
+            }
+        }
 
     fun updateCameraPosition(
         duration: Long = 0,
