@@ -1,5 +1,8 @@
 package de.westnordost.streetcomplete.data
 
+import de.westnordost.streetcomplete.data.quest.Quest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+
 /** A class where objects of a certain type are
  *  1. registered and can be recalled by class name
  *  2. or recalled by ordinal
@@ -21,7 +24,11 @@ open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T
         val highestOrdinal = ordinalsAndEntries.maxBy { it.first }.first
         val byOrdinalMap = HashMap<Int, T>(highestOrdinal + 1)
         for ((ordinal, objectType) in ordinalsAndEntries) {
-            val typeName = objectType::class.simpleName!!
+            val typeName = if (objectType is AddGenericLong){
+                "${objectType.title}"
+            }else{
+                objectType::class.simpleName!!
+            }
             // require(!byNameMap.containsKey(typeName)) {
             //     "A object type's name must be unique! \"$typeName\" is defined twice!"
             // }

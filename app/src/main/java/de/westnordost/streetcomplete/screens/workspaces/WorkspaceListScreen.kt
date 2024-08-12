@@ -60,9 +60,9 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 fun finishAndLaunchNewActivity(context: Context) {
     val activity = context as? Activity
     activity?.let {
-        it.finish()
         val intent = Intent(it, MainActivity::class.java)
         it.startActivity(intent)
+        it.finish()
     }
 }
 

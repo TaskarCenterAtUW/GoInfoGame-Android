@@ -15,7 +15,7 @@
     <com.google.android.material.button.MaterialButton
             android:id="@+id/submitButton"
             app:cornerRadius="16dp"
-            android:text="Submit"
+            android:text="@string/submit"
             android:layout_marginHorizontal="32dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />

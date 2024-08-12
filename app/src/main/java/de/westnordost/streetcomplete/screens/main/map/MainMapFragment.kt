@@ -33,6 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import org.xmlpull.v1.XmlSerializer
+import java.io.FileOutputStream
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
  *  geometry, overlays... */
