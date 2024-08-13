@@ -3,6 +3,8 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,57 +12,112 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.screens.MainActivity
 
 @Composable
 fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    var isLongFormLoading by remember { mutableStateOf(false) }
+    val snackBarHostState = remember{SnackbarHostState()}
+    var snackBarMessage by remember { mutableStateOf<String?>(null) }
+
     val context = LocalContext.current
 
-    val onClick : (index : Int) -> Unit = { index ->
-        when (index) {
-            0 -> {
-                viewModel.setIsLongForm(true)
-            }
-
-            else -> {
-                viewModel.setIsLongForm(false)
-            }
-        }
-        finishAndLaunchNewActivity(context)
+    val onClick: (index: Int) -> Unit = { index ->
+        viewModel.setSelectedWorkspace(index)
     }
 
-    when(workspaceListState){
-        is WorkspaceListState.Loading -> {
-            // Show a loading indicator
-            CircularProgressIndicator(modifier)
-        }
-        is WorkspaceListState.Success -> {
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (workspaceListState) {
+            is WorkspaceListState.Loading -> {
+                // Show a loading indicator in the center of screen
+                isLoading = true
+            }
 
-            // Display the list of workspaces
-            WorkspaceList(onClick, modifier = modifier, items = (workspaceListState as WorkspaceListState.Success).workspaces)
+            is WorkspaceListState.Success -> {
+                isLoading = false
+                // Display the list of workspaces
+                WorkspaceList(
+                    onClick,
+                    modifier = modifier,
+                    items = (workspaceListState as WorkspaceListState.Success).workspaces
+                )
+            }
+
+            is WorkspaceListState.Error -> {
+                isLoading = false
+                // Show an error message
+                snackBarMessage = "Error: ${(workspaceListState as WorkspaceListState.Error).error}"
+            }
         }
-        is WorkspaceListState.Error -> {
-            // Show an error message
-            Text("Error: ${(workspaceListState as WorkspaceListState.Error).error}")
+
+        snackBarMessage?.let {
+            LaunchedEffect(snackBarHostState) {
+                snackBarHostState.showSnackbar(it)
+            }
         }
+
+
+        if (isLoading || isLongFormLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
+        val selectedWorkspaceState by viewModel.selectedWorkspace.collectAsState()
+        LaunchedEffect(selectedWorkspaceState) {
+            selectedWorkspaceState?.let { workspaceId ->
+                viewModel.getLongForm(workspaceId).collect { longFormState ->
+                    when (longFormState) {
+                        is WorkspaceLongFormState.Loading -> {
+                            // Handle loading state
+                            isLongFormLoading = true
+                        }
+                        is WorkspaceLongFormState.Success -> {
+                            isLongFormLoading = false
+                            viewModel.setIsLongForm(true)
+                            finishAndLaunchNewActivity(context, longFormState.longFormItems)
+                        }
+                        is WorkspaceLongFormState.Error -> {
+                            isLongFormLoading = false
+                            // Handle error state
+                            //Show snack bar
+                            snackBarMessage = "Error: ${longFormState.error}"
+                        }
+                    }
+                }
+            }
+        }
+        SnackbarHost(hostState = snackBarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
-fun finishAndLaunchNewActivity(context: Context) {
+fun finishAndLaunchNewActivity(
+    context: Context,
+    addLongFormResponseItems: List<AddLongFormResponseItem>,
+) {
     val activity = context as? Activity
     activity?.let {
         val intent = Intent(it, MainActivity::class.java)
+        intent.putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
         it.startActivity(intent)
         it.finish()
     }
@@ -70,11 +127,11 @@ fun finishAndLaunchNewActivity(context: Context) {
 fun WorkspaceList(
     onClick: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
-    items: List<Workspace> = emptyList()
+    items: List<Workspace> = emptyList(),
 ) {
     LazyColumn(modifier = modifier) {
         itemsIndexed(items) { index, workspace ->
-            WorkSpaceListItem(workspace = workspace,index, Modifier, onClick)
+            WorkSpaceListItem(workspace = workspace, workspace.id, Modifier, onClick)
         }
     }
 }
@@ -84,18 +141,18 @@ fun WorkSpaceListItem(
     workspace: Workspace,
     index: Int,
     modifier: Modifier = Modifier,
-    onClick: (index: Int) -> Unit
+    onClick: (index: Int) -> Unit,
 ) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,
-        onClick = {onClick(index)},
         modifier = modifier
             .padding(8.dp)
             .fillMaxWidth()
+            .clickable { onClick(index) }
     ) {
         Text(
-            text = workspace.title!!,
+            text = workspace.title,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )

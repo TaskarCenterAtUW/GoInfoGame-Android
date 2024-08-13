@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Workspace(
     val id: Int,
-    val quests: List<Int>,
+    val quests: List<Int>? = null,
     val title: String
 )

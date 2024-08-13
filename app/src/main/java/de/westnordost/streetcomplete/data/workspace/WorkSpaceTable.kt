@@ -13,7 +13,7 @@ object WorkSpaceTable {
         CREATE TABLE $NAME (
             ${Columns.ID} int PRIMARY KEY,
             ${Columns.TITLE} varchar(255) NOT NULL,
-            ${Columns.QUESTS}  text NOT NULL
+            ${Columns.QUESTS}  text
         );
     """
 }

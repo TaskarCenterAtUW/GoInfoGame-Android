@@ -21,7 +21,7 @@ class WorkspaceDao(private val db: Database) {
         db.query(NAME, where = "$ID = $id") {
             Workspace(
                 it.getInt(ID),
-                it.getString(QUESTS).split(",").map { number -> number.toInt() },
+                it.getStringOrNull(QUESTS)?.split(",")?.map { number -> number.toInt() },
                 it.getString(TITLE))
         }
 
@@ -29,7 +29,7 @@ class WorkspaceDao(private val db: Database) {
         db.query(NAME) {
             Workspace(
                 it.getInt(ID),
-                it.getString(QUESTS).split(",").map { number -> number.toInt() },
+                it.getStringOrNull(QUESTS)?.split(",")?.map { number -> number.toInt() },
                 it.getString(TITLE))
         }
 

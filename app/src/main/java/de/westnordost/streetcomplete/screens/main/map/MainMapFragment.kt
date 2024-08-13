@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.main.map
 
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Build
 import androidx.annotation.DrawableRes
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
@@ -18,6 +19,7 @@ import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
@@ -344,12 +346,20 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     // For GIG
     private fun doLongForm() {
-        val processSampleJson = ProcessSampleJson()
-        val result = processSampleJson.processSampleJson()
+        // val processSampleJson = ProcessSampleJson()
+        // val result = processSampleJson.processSampleJson()
+        val result: List<AddLongFormResponseItem>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity?.intent?.
+            getParcelableArrayListExtra("LONG_FORM",AddLongFormResponseItem::class.java)
+        } else {
+            activity?.intent?.
+            getParcelableArrayListExtra("LONG_FORM")
+        }
+
         println(result)
         // questTypeRegistry.clearAll()
         val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
-        for ((index, item) in result.withIndex()) {
+        for ((index, item) in result?.withIndex()!!) {
             // val jsonObject = item.jsonObject
             // Log.d("LongForm", jsonObject["element_type"].toString())
             // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
