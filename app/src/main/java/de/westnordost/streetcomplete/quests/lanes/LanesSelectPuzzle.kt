@@ -183,7 +183,7 @@ class LanesSelectPuzzle @JvmOverloads constructor(
         setWillNotDraw(false)
 
         val carResIds = if (isApril1st()) listOf(R.drawable.car_nyan) else CAR_RES_IDS
-        carBitmaps = carResIds.map { resources.getBitmapDrawable(it).bitmap }
+        carBitmaps = carResIds.map { resources.getBitmapDrawable(it, context).bitmap }
 
         binding = ViewLanesSelectPuzzleBinding.inflate(LayoutInflater.from(context), this)
 

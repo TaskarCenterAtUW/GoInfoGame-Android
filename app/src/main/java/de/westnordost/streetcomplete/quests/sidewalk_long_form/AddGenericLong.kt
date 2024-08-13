@@ -12,7 +12,7 @@ import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
 
-class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Quest> {
+class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<List<Quest?>> {
     override val changesetComment = "Specify whether roads have sidewalks"
     override val wikiLink = "Key:sidewalk"
     override val icon = when (item.elementType) {
@@ -30,7 +30,7 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Que
         """)
 
     override fun applyAnswerTo(
-        answer: Quest,
+        answer: List<Quest?>,
         tags: Tags,
         geometry: ElementGeometry,
         timestampEdited: Long,

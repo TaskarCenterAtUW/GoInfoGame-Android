@@ -20,7 +20,6 @@ import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
@@ -35,8 +34,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
-import org.xmlpull.v1.XmlSerializer
-import java.io.FileOutputStream
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
  *  geometry, overlays... */
@@ -122,7 +119,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     override suspend fun onMapReady() {
         val ctrl = controller ?: return
         ctrl.setPickRadius(8f)
-        geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl)
+        geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl, requireContext())
         pinsMapComponent = PinsMapComponent(ctrl)
         selectedPinsMapComponent = SelectedPinsMapComponent(requireContext(), ctrl)
         geometryMapComponent = FocusGeometryMapComponent(ctrl)

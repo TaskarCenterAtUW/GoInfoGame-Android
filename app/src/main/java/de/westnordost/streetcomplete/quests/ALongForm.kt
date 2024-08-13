@@ -19,7 +19,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     override val defaultExpanded = false
 
-    protected abstract val items: List<LongFormItem<T>>
+    protected abstract val items: T
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +37,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
             val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
             val tagList : MutableList<Pair<String, String>> = mutableListOf()
             for (item in editedItems){
-                val quest = item.options as Quest
-                tagList.add(Pair(quest.questTag!!, item.userInput!!))
+                tagList.add(Pair(item.questTag!!, item.userInput!!))
             }
             println(tagList.size)
         }
@@ -46,7 +45,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = itemCopy
+        adapter.items = itemCopy as List<Quest>
     }
 }
 
