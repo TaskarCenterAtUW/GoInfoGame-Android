@@ -29,11 +29,13 @@ sealed class WorkspaceLongFormState {
 }
 
 sealed class WorkspaceLoginState {
+    data object Init : WorkspaceLoginState()
     data object Loading : WorkspaceLoginState()
     data class Success(val loginResponse: LoginResponse) : WorkspaceLoginState()
     data class Error(val error: String?) : WorkspaceLoginState()
 
     companion object {
+        fun Init() = Init
         fun loading() = Loading
         fun success(loginResponse: LoginResponse) = Success(loginResponse)
         fun error(errorMessage: String?) = Error(errorMessage)

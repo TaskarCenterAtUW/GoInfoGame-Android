@@ -65,7 +65,7 @@ class Downloader(
             mutex.withLock {
                 coroutineScope {
                     // all downloaders run concurrently
-                    launch { notesDownloader.download(tilesBbox) }
+                    // launch { notesDownloader.download(tilesBbox) }
                     launch { mapDataDownloader.download(tilesBbox) }
                     launch { mapTilesDownloader.download(tilesBbox) }
                 }

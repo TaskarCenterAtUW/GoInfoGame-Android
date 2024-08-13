@@ -84,6 +84,20 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getBoolean(WORKSPACE_LOGIN, false)
 
+    var workspaceId : Int?
+        set(value) {
+            prefs[WORKSPACE_ID] = value
+        }
+        get() =
+            prefs.getIntOrNull(WORKSPACE_ID)
+
+    var workspaceToken : String?
+        set(value) {
+            prefs[WORKSPACE_ACCESS_TOKEN] = value
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
+
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
@@ -284,5 +298,6 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val WORKSPACE_LOGIN = "workspace.login"
         private const val WORKSPACE_ACCESS_TOKEN = "workspace.accesstoken"
         private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
+        private const val WORKSPACE_ID = "workspace.id"
     }
 }

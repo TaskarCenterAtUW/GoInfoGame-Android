@@ -1,15 +1,20 @@
 package de.westnordost.streetcomplete.screens.workspaces
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,11 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import de.westnordost.osmapi.OsmConnection
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.ui.theme.AppTheme
+import org.koin.android.ext.android.inject
+import org.koin.compose.koinInject
+import org.koin.java.KoinJavaComponent.inject
 
 @Composable
 fun LoginScreen(
@@ -32,44 +39,61 @@ fun LoginScreen(
 ) {
 
     val navToNextPage = {
-        viewModel.setLoginState(true)
         navController.navigate("workspace-list")
     }
-    LoginCard(navToNextPage,modifier)
+    val loginState by viewModel.loginState.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    val snackBarHostState = remember{ SnackbarHostState() }
+    var snackBarMessage by remember { mutableStateOf<String?>(null) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (loginState) {
+            is WorkspaceLoginState.Init -> {
+                isLoading = false
+            }
+            is WorkspaceLoginState.Loading -> {
+                isLoading = true
+            }
+
+            is WorkspaceLoginState.Error -> {
+                isLoading = false
+                Text(text = "Error: ${(loginState as WorkspaceLoginState.Error).error}")
+                snackBarMessage = (loginState as WorkspaceLoginState.Error).error
+            }
+
+            is WorkspaceLoginState.Success -> {
+                isLoading = false
+                val state= loginState as WorkspaceLoginState.Success
+                viewModel.setLoginState(true, state.loginResponse)
+                navToNextPage()
+                Text(text = "Success: ${(loginState as WorkspaceLoginState.Success).loginResponse}")
+            }
+        }
+        LoginCard(viewModel, modifier)
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+
+        snackBarMessage?.let {
+            LaunchedEffect(snackBarHostState) {
+                snackBarHostState.showSnackbar(it)
+            }
+        }
+    }
 }
 
-// fun startLogin(viewModel: WorkspaceViewModel, username: String, password : String){
-//     val workspaceListState by viewModel.showWorkspaces.collectAsState()
-//
-//     when(workspaceListState){
-//         is WorkspaceListState.Loading -> {
-//             // Show a loading indicator
-//             CircularProgressIndicator(modifier)
-//         }
-//         is WorkspaceListState.Success -> {
-//
-//             // Display the list of workspaces
-//             WorkspaceList(modifier = modifier, items = (workspaceListState as WorkspaceListState.Success).workspaces)
-//         }
-//         is WorkspaceListState.Error -> {
-//             // Show an error message
-//             Text("Error: ${(workspaceListState as WorkspaceListState.Error).error}")
-//         }
-//     }
-// }
-
 @Composable
-fun LoginCard(navController: () -> Unit, modifier: Modifier = Modifier) {
+fun LoginCard(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier.padding(24.dp)
         ) {
-
-            var email by remember { mutableStateOf("") }
-            var password by remember { mutableStateOf("") }
-
 
             Text(text = "Welcome!", style = MaterialTheme.typography.titleLarge)
             Text(text = "Please Login to your account!", style = MaterialTheme.typography.bodyMedium)
@@ -89,17 +113,12 @@ fun LoginCard(navController: () -> Unit, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(vertical = 16.dp),
                 )
 
-            Button(onClick = navController, modifier = Modifier.padding(vertical = 24.dp)) {
+            Button(onClick = {
+                viewModel.loginToWorkspace(email, password)
+            }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
             }
         }
     }
 }
 
-@Preview
-@Composable
-private fun WorkSpaceLoginPreview() {
-    AppTheme {
-        LoginCard({  })
-    }
-}

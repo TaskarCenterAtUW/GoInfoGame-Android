@@ -48,13 +48,13 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
         try {
             val response =
-                httpClient.post("https://tdei-usermanagement-be-dev.azurewebsites.net/api/v1/authenticate") {
+                httpClient.post("https://tdei-api-dev.azurewebsites.net/api/v1/authenticate") {
                     val user = User(username, password)
                     setBody(user)
                     contentType(ContentType.Application.Json)
                 }
 
-            val loginResponse = json.decodeFromString<LoginResponse>(response.body())
+            val loginResponse = response.body<LoginResponse>()
             return loginResponse
 
             // if OSM server does not return valid JSON, it is the server's fault, hence

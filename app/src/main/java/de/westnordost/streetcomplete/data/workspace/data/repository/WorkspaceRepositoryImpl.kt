@@ -29,6 +29,7 @@ class WorkspaceRepositoryImpl(
     }
 
     override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = flow {
-
+        val loginResponse = apiService.loginToWorkspace(username, password)
+        emit(loginResponse)
     }
 }
