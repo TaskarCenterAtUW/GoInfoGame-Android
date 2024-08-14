@@ -15,8 +15,8 @@ import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-private const val OSM_API_URL = "https://osm.workspaces-dev.sidewalks.washington.edu/api/0.6/" //Dev
-//private const val OSM_API_URL = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6/" //Stage
+//private const val OSM_API_URL = "https://osm.workspaces-dev.sidewalks.washington.edu/api/0.6/" //Dev
+private const val OSM_API_URL = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6/" //Stage
 //private const val OSM_API_URL = "https://master.apis.dev.openstreetmap.org/api/0.6/"
 //private const val OSM_API_URL = "https://master.apis.dev.openstreetmap.org/api/0.6/"
 //https://workspaces-osm-stage.sidewalks.washington.edu/api/0.6/

@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.data
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 
 class AllEditTypes(
-    registries: List<ObjectTypeRegistry<out EditType>>
+    var registries: MutableList<ObjectTypeRegistry<out EditType>>
 ) : AbstractCollection<EditType>() {
 
     private val byName = registries.flatten().associateByTo(LinkedHashMap()) { it.name }

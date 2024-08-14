@@ -22,7 +22,7 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun getWorkspaces(): List<Workspace> {
         try {
             val response =
-                httpClient.get("https://api.workspaces-dev.sidewalks.washington.edu/api/v1/workspaces/mine")
+                httpClient.get("https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces/mine")
             val responseBody = response.body<List<Workspace>>()
             return responseBody
 
@@ -35,7 +35,7 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun getLongFormForWorkspace(workspaceId: Int): List<AddLongFormResponseItem> {
         try {
             val response =
-                httpClient.get("https://api.workspaces-dev.sidewalks.washington.edu/api/v1/workspaces/${workspaceId}/quests/long")
+                httpClient.get("https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces/${workspaceId}/quests/long")
             val responseBody = response.body<List<AddLongFormResponseItem>>()
             return responseBody
 

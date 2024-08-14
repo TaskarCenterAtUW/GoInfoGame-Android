@@ -35,7 +35,11 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
         geometry: ElementGeometry,
         timestampEdited: Long,
     ) {
-        TODO("Not yet implemented")
+        for (quest in answer) {
+            if (quest != null) {
+                tags[quest.questTag!!] = quest.userInput.toString()
+            }
+        }
     }
 
     override fun getTitle(tags: Map<String, String>) = when (item.elementType) {

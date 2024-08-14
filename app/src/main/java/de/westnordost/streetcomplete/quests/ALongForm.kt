@@ -26,6 +26,16 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         adapter =  LongFormAdapter()
     }
 
+    override fun onClickOk() {
+        val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
+        val tagList : MutableList<Pair<String, String>> = mutableListOf()
+        for (item in editedItems){
+            tagList.add(Pair(item.questTag!!, item.userInput!!))
+        }
+
+        applyAnswer(editedItems as T)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.recyclerView.apply {
@@ -34,12 +44,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
         binding.submitButton.setOnClickListener {
-            val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
-            val tagList : MutableList<Pair<String, String>> = mutableListOf()
-            for (item in editedItems){
-                tagList.add(Pair(item.questTag!!, item.userInput!!))
-            }
-            println(tagList.size)
+            onClickOk()
         }
     }
 

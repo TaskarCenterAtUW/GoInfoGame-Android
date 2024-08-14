@@ -14,7 +14,7 @@ class UserLoginController(
     override val isLoggedIn: Boolean get() = accessToken != null
 
     override val accessToken: String? get() =
-        prefs.oAuth2AccessToken
+        prefs.workspaceToken
 
     fun logIn(accessToken: String) {
         prefs.oAuth2AccessToken = accessToken

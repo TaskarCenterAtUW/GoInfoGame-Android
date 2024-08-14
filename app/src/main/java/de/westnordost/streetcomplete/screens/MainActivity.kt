@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
@@ -21,6 +22,7 @@ import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.data.UnsyncedChangesCountSource
@@ -34,11 +36,15 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
+import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.data.upload.VersionBannedException
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfigController
 import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.data.visiblequests.QuestPresetsSource
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.screens.main.MainFragment
 import de.westnordost.streetcomplete.screens.main.messages.MessagesContainerFragment
 import de.westnordost.streetcomplete.screens.tutorial.OverlaysTutorialFragment
@@ -73,6 +79,10 @@ class MainActivity :
     private val questPresetsSource: QuestPresetsSource by inject()
     private val prefs: Preferences by inject()
 
+    private val questTypeRegistry: QuestTypeRegistry by inject()
+    private val allEditTypes : AllEditTypes by inject()
+    private val preferences : Preferences by inject()
+
     private var mainFragment: MainFragment? = null
 
     private val requestLocationPermissionResultReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -97,7 +107,10 @@ class MainActivity :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (preferences.showLongForm) {
 
+            doLongForm()
+        }
         LocalBroadcastManager.getInstance(this).registerReceiver(
             requestLocationPermissionResultReceiver,
             IntentFilter(LocationRequestFragment.REQUEST_LOCATION_PERMISSION_RESULT)
@@ -366,5 +379,38 @@ class MainActivity :
 
         // per application start settings
         private var dontShowRequestAuthorizationAgain = false
+    }
+
+    // For GIG
+    private fun doLongForm() {
+        // val processSampleJson = ProcessSampleJson()
+        // val result = processSampleJson.processSampleJson()
+        val result: List<AddLongFormResponseItem>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent?.
+            getParcelableArrayListExtra("LONG_FORM", AddLongFormResponseItem::class.java)
+        } else {
+            intent?.
+            getParcelableArrayListExtra("LONG_FORM")
+        }
+
+        println(result)
+        // questTypeRegistry.clearAll()
+        val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
+        for ((index, item) in result?.withIndex()!!) {
+            // val jsonObject = item.jsonObject
+            // Log.d("LongForm", jsonObject["element_type"].toString())
+            // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
+            //if (index == 0) continue
+
+            questTypes.add(index to AddGenericLong(item))
+            //break
+        }
+        questTypeRegistry.addItem(questTypes)
+        allEditTypes.registries = mutableListOf(questTypeRegistry)
+        // val new_registry = QuestTypeRegistry(questTypes)
+        // component.reloadDependency(new_registry)
+
+        // decidedQuestTypeRegistry = QuestTypeRegistry(questTypes)
+
     }
 }

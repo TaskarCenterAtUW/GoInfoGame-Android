@@ -157,7 +157,7 @@ class StreetCompleteApplication : Application() {
             editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
         }
 
-        if (isConnected) userUpdater.update()
+        // if (isConnected) userUpdater.update()
 
         enqueuePeriodicCleanupWork()
 

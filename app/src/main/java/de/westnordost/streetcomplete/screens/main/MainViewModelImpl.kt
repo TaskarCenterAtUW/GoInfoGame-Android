@@ -164,7 +164,7 @@ class MainViewModelImpl(
         send(userLoginSource.isLoggedIn)
         val listener = object : UserLoginSource.Listener {
             override fun onLoggedIn() { trySend(true) }
-            override fun onLoggedOut() { trySend(false) }
+            override fun onLoggedOut() { trySend(true) }
         }
         userLoginSource.addListener(listener)
         awaitClose { userLoginSource.removeListener(listener) }

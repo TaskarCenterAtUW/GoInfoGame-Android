@@ -226,7 +226,7 @@ class MapDataWithEditsSource internal constructor(
     }
 
     init {
-        rebuildLocalChanges()
+        //rebuildLocalChanges()
         mapDataController.addListener(mapDataListener)
         elementEditsController.addListener(elementEditsListener)
     }

@@ -6,9 +6,11 @@ import org.koin.dsl.module
 
 val allEditTypesModule = module {
     single {
-        AllEditTypes(listOf(
+        AllEditTypes(
+            mutableListOf(
             get<QuestTypeRegistry>(),
             get<OverlayRegistry>()
-        ))
+        )
+        )
     }
 }
