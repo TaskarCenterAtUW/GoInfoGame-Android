@@ -60,6 +60,7 @@ class WorkspaceViewModelImpl(
 
     override fun loginToWorkspace(username: String, password: String) {
         viewModelScope.launch {
+            _loginState.value = WorkspaceLoginState.loading()
             workspaceRepository.loginToWorkspace(username, password)
                 .catch { e -> _loginState.value = WorkspaceLoginState.error(e.message) }
                 .collect { loginResponse -> _loginState.value = WorkspaceLoginState.success(loginResponse) }

@@ -400,13 +400,15 @@ class MainActivity :
             // val jsonObject = item.jsonObject
             // Log.d("LongForm", jsonObject["element_type"].toString())
             // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
-            //if (index == 0) continue
+            if (index == 0 || index == 1) continue
 
             questTypes.add(index to AddGenericLong(item))
             //break
         }
         questTypeRegistry.addItem(questTypes)
+        allEditTypes.registries.clear()
         allEditTypes.registries = mutableListOf(questTypeRegistry)
+        allEditTypes.updateByName()
         // val new_registry = QuestTypeRegistry(questTypes)
         // component.reloadDependency(new_registry)
 

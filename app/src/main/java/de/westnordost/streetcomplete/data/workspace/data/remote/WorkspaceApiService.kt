@@ -22,7 +22,7 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun getWorkspaces(): List<Workspace> {
         try {
             val response =
-                httpClient.get("https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces/mine")
+                httpClient.get("${WorkspaceConstants.WORKSPACE_BASE_URL}/mine")
             val responseBody = response.body<List<Workspace>>()
             return responseBody
 
@@ -35,7 +35,7 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun getLongFormForWorkspace(workspaceId: Int): List<AddLongFormResponseItem> {
         try {
             val response =
-                httpClient.get("https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces/${workspaceId}/quests/long")
+                httpClient.get("${WorkspaceConstants.WORKSPACE_BASE_URL}/${workspaceId}/quests/long")
             val responseBody = response.body<List<AddLongFormResponseItem>>()
             return responseBody
 
@@ -48,8 +48,8 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
         try {
             val response =
-                httpClient.post("https://tdei-api-dev.azurewebsites.net/api/v1/authenticate") {
-                    val user = User(username, password)
+                httpClient.post(WorkspaceConstants.WORKSPACE_LOGIN_URL) {
+                    val user = User(username.trim(), password.trim())
                     setBody(user)
                     contentType(ContentType.Application.Json)
                 }

@@ -26,6 +26,9 @@ class UserLoginController(
         prefs.oAuth2AccessToken = null
         prefs.removeOAuth1Data()
         osmConnection.oAuthAccessToken = null
+        prefs.workspaceToken = null
+        prefs.workspaceLogin = false
+
         listeners.forEach { it.onLoggedOut() }
     }
 

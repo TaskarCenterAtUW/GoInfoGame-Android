@@ -91,14 +91,6 @@ class LongFormAdapter<T> :
                     chip.text = questItem?.choiceText
                     defaultColor = chip.chipBackgroundColor?.defaultColor
                     chip.isCheckable = true
-                    chip.setOnClickListener {
-                        // Handle chip click here
-                        Toast.makeText(
-                            binding.root.context,
-                            "Clicked: ${chip.text}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
 
                     if (items[position].userInput == questItem?.value) {
                         chip.isChecked = true
@@ -231,13 +223,11 @@ class LongFormAdapter<T> :
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    Toast.makeText(binding.root.context, index.toString()+"", Toast.LENGTH_SHORT).show()
                     handleClick(item.questId!!, item.questAnswerChoices?.get(index)?.value!!)
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
-                    Toast.makeText(binding.root.context, index.toString() +"", Toast.LENGTH_SHORT).show()
                 }
             })
 

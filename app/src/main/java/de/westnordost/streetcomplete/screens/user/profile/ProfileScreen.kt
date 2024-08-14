@@ -1,5 +1,8 @@
 package de.westnordost.streetcomplete.screens.user.profile
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +41,9 @@ import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
 import de.westnordost.streetcomplete.ui.theme.headlineLarge
 import de.westnordost.streetcomplete.ui.theme.titleLarge
@@ -118,7 +124,9 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.osm_profile).uppercase())
             }
-            OutlinedButton(onClick = { viewModel.logOutUser() }) {
+            OutlinedButton(onClick = { viewModel.logOutUser()
+            finishAndLaunchNewActivity(context)
+            }) {
                 Text(stringResource(R.string.user_logout).uppercase())
             }
         }
@@ -270,6 +278,17 @@ private fun StarCount(count: Int) {
             text = count.toString(),
             style = MaterialTheme.typography.titleLarge
         )
+    }
+}
+
+fun finishAndLaunchNewActivity(
+    context: Context
+) {
+    val activity = context as? Activity
+    activity?.let {
+        val intent = Intent(it, WorkSpaceActivity::class.java)
+        it.startActivity(intent)
+        it.finish()
     }
 }
 
