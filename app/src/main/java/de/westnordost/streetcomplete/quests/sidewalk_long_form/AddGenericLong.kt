@@ -11,6 +11,10 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
+import de.westnordost.streetcomplete.util.ktx.systemTimeNow
+import kotlinx.datetime.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<List<Quest?>> {
     override val changesetComment = "Specify whether roads have sidewalks"
@@ -21,6 +25,8 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
         else -> R.drawable.ic_quest_kerb_type
     }
     override val achievements = listOf(PEDESTRIAN)
+
+    private val currentTime = System.currentTimeMillis()
 
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter("""
@@ -40,6 +46,11 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
                 tags[quest.questTag!!] = quest.userInput.toString()
             }
         }
+        tags["ext:gig_complete"] = "yes"
+        //time stamp to date
+        val date = java.time.LocalDate.now(ZoneId.of("UTC"))
+        val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        tags["ext:gig_last_updated"] = "2024-08-13"
     }
 
     override fun getTitle(tags: Map<String, String>) = when (item.elementType) {
@@ -63,12 +74,10 @@ private fun getNodeOrWay(variable: String): String {
         else -> "ways"
     }
 }
-
+//          and ext:gig_complete !~ yes
+//          and ext:gig_last_updated older today -0 days
 private fun createRoadsFilter(variable: String, elementType: String) = """
     ${getNodeOrWay(elementType)} with
-      (
-        (
-          $variable
-        )
-      )
+     $variable
+     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
 """.toElementFilterExpression()

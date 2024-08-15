@@ -215,10 +215,12 @@
         tools:ignore="MissingConstraints" />
 
     <!-- is a RelativeLayout so that the child layout can, if it is not matching parent, use layout_alignParent* -->
+    <!-- set height to 80% -->
     <RelativeLayout
         android:id="@+id/map_bottom_sheet_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="200dp"
         android:clipChildren="false" />
 
 </RelativeLayout>

@@ -84,6 +84,7 @@ open class LocationAwareMapFragment : MapFragment() {
     interface Listener {
         /** Called after the map fragment updated its displayed location */
         fun onDisplayedLocationDidChange()
+        fun onLocationZoomed()
     }
 
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
@@ -221,6 +222,7 @@ open class LocationAwareMapFragment : MapFragment() {
                 zoomedYet = true
                 zoom = 19f
             }
+            listener?.onLocationZoomed()
         }
     }
 
@@ -282,6 +284,7 @@ open class LocationAwareMapFragment : MapFragment() {
     private fun restoreMapState() {
         isFollowingPosition = prefs.mapIsFollowing
         isNavigationMode = prefs.mapIsNavigationMode
+        listener?.onLocationZoomed()
     }
 
     private fun saveMapState() {

@@ -72,7 +72,6 @@ import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -118,6 +117,8 @@ import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.dialogs.RequestLoginDialog
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
@@ -195,6 +196,9 @@ class MainFragment :
         childFragmentManagerOrNull?.findFragmentByTag(EDIT_HISTORY) as? EditHistoryFragment
 
     private var mapOffsetWithOpenBottomSheet: RectF = RectF(0f, 0f, 0f, 0f)
+
+    private var delayJob: Job? = null
+
 
     interface Listener {
         fun onMapInitialized()
@@ -394,7 +398,6 @@ class MainFragment :
         updateLocationPointerPin()
         mapFragment?.cameraPosition?.zoom?.let { updateCreateButtonEnablement(it) }
         listener?.onMapInitialized()
-        onClickDownload()
     }
 
     override fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {
@@ -438,6 +441,15 @@ class MainFragment :
 
     override fun onDisplayedLocationDidChange() {
         updateLocationPointerPin()
+    }
+
+    override fun onLocationZoomed() {
+        //Run after delay
+        delayJob?.cancel() // Cancel any existing job
+        delayJob = viewLifecycleScope.launch {
+            delay(2000) // Wait for 600 ms
+            onClickDownload() // Execute the desired code
+        }
     }
 
     /* ---------------------------- MainMapFragment.Listener --------------------------- */
