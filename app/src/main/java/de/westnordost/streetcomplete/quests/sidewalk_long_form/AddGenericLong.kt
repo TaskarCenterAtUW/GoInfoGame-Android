@@ -50,7 +50,7 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
         //time stamp to date
         val date = java.time.LocalDate.now(ZoneId.of("UTC"))
         val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        tags["ext:gig_last_updated"] = "2024-08-13"
+        tags["ext:gig_last_updated"] = currentDate
     }
 
     override fun getTitle(tags: Map<String, String>) = when (item.elementType) {
@@ -76,8 +76,8 @@ private fun getNodeOrWay(variable: String): String {
 }
 //          and ext:gig_complete !~ yes
 //          and ext:gig_last_updated older today -0 days
+//     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
 private fun createRoadsFilter(variable: String, elementType: String) = """
     ${getNodeOrWay(elementType)} with
      $variable
-     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
 """.toElementFilterExpression()
