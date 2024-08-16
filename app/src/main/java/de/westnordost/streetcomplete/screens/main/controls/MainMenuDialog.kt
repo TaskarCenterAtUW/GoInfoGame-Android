@@ -54,7 +54,8 @@ class MainMenuDialog(
         if (indexInTeam != null) {
             binding.teamModeColorCircle.setIndexInTeam(indexInTeam)
         }
-        binding.disableTeamModeButton.isGone = indexInTeam == null
+        // binding.enableTeamModeButton.isGone = indexInTeam != null
+        // binding.disableTeamModeButton.isGone = indexInTeam == null
 
         binding.root.doOnPreDraw {
             binding.bigMenuItemsContainer.columnCount = binding.root.width / binding.profileButton.width

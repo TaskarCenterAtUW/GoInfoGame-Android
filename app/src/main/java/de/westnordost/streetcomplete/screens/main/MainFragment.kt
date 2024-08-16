@@ -90,6 +90,7 @@ import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
 import de.westnordost.streetcomplete.screens.main.overlays.OverlaySelectionAdapter
+import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
 import de.westnordost.streetcomplete.util.ktx.childFragmentManagerOrNull
@@ -179,6 +180,7 @@ class MainFragment :
 
     private val controlsViewModel by viewModel<MainViewModel>()
     private val editHistoryViewModel by viewModel<EditHistoryViewModel>()
+    private val profileViewModel by viewModel<ProfileViewModel>()
 
     private val binding by viewBinding(FragmentMainBinding::bind)
 
@@ -246,6 +248,7 @@ class MainFragment :
 
         binding.compassView.setOnClickListener { onClickCompassButton() }
         binding.gpsTrackingButton.setOnClickListener { onClickTrackingButton() }
+        onClickTrackingButton()
         binding.stopTracksButton.setOnClickListener { onClickTracksStop() }
         binding.zoomInButton.setOnClickListener { onClickZoomIn() }
         binding.zoomOutButton.setOnClickListener { onClickZoomOut() }
@@ -764,7 +767,7 @@ class MainFragment :
             if (controlsViewModel.isLoggedIn.value) {
                 controlsViewModel.upload()
             } else {
-                context?.let { RequestLoginDialog(it).show() }
+                context?.let { RequestLoginDialog(it, profileViewModel).show() }
             }
         } else {
             context?.toast(R.string.offline)

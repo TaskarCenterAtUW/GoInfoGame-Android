@@ -276,6 +276,7 @@ Each of you will then see different quests."</string>
     <string name="offline">"You are offline"</string>
 
     <string name="confirmation_authorize_now">"You need to authorize with your OSM user account to publish your answers. Authorize now?"</string>
+    <string name="auth_error_tdei">"Authorization failed: The user did not have all requested permissions. Logging out now"</string>
     <string name="confirmation_authorize_now_note2">You can also do this later on the profile screen.</string>
     <string name="later">"Later"</string>
     <string name="not_authorized">"Not authorized"</string>

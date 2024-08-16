@@ -49,6 +49,7 @@ import de.westnordost.streetcomplete.screens.main.MainFragment
 import de.westnordost.streetcomplete.screens.main.messages.MessagesContainerFragment
 import de.westnordost.streetcomplete.screens.tutorial.OverlaysTutorialFragment
 import de.westnordost.streetcomplete.screens.tutorial.TutorialFragment
+import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
 import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
@@ -59,6 +60,7 @@ import de.westnordost.streetcomplete.util.parseGeoUri
 import de.westnordost.streetcomplete.view.dialogs.RequestLoginDialog
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity :
     BaseActivity(),
@@ -84,6 +86,7 @@ class MainActivity :
     private val preferences : Preferences by inject()
 
     private var mainFragment: MainFragment? = null
+    private val profileViewModel by viewModel<ProfileViewModel>()
 
     private val requestLocationPermissionResultReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -235,7 +238,7 @@ class MainActivity :
         // new users should not be immediately pestered to login after each change (#1446)
         if (unsyncedChangesCountSource.getCount() < 3 || dontShowRequestAuthorizationAgain) return
 
-        RequestLoginDialog(this).show()
+        RequestLoginDialog(this, profileViewModel).show()
         dontShowRequestAuthorizationAgain = true
     }
 
@@ -280,7 +283,7 @@ class MainActivity :
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
                     userLoginController.logOut()
-                    RequestLoginDialog(this@MainActivity).show()
+                    RequestLoginDialog(this@MainActivity, profileViewModel).show()
                 } else {
                     crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
                         R.string.upload_error, e)

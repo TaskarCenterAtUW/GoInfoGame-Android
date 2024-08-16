@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.quests
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
@@ -33,7 +34,11 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
             tagList.add(Pair(item.questTag!!, item.userInput!!))
         }
 
-        applyAnswer(editedItems as T)
+        if (editedItems.isEmpty()) {
+            Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
+        }else{
+            applyAnswer(editedItems as T)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

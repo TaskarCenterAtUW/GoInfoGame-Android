@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -23,20 +25,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import de.westnordost.osmapi.OsmConnection
 import de.westnordost.streetcomplete.R
-import org.koin.android.ext.android.inject
-import org.koin.compose.koinInject
-import org.koin.java.KoinJavaComponent.inject
 
 @Composable
 fun LoginScreen(
     viewModel: WorkspaceViewModel,
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
 
     val navToNextPage = {
@@ -44,16 +43,19 @@ fun LoginScreen(
     }
     val loginState by viewModel.loginState.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
-    val snackBarHostState = remember{ SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (loginState) {
             is WorkspaceLoginState.Init -> {
                 isLoading = false
+                snackBarMessage = null
             }
+
             is WorkspaceLoginState.Loading -> {
                 isLoading = true
+                snackBarMessage = null
             }
 
             is WorkspaceLoginState.Error -> {
@@ -64,7 +66,8 @@ fun LoginScreen(
 
             is WorkspaceLoginState.Success -> {
                 isLoading = false
-                val state= loginState as WorkspaceLoginState.Success
+                snackBarMessage = null
+                val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse)
                 navToNextPage()
                 Text(text = "Success: ${(loginState as WorkspaceLoginState.Success).loginResponse}")
@@ -78,10 +81,13 @@ fun LoginScreen(
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it)
+                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite)
             }
         }
-        SnackbarHost(hostState = snackBarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        SnackbarHost(
+            hostState = snackBarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -98,22 +104,32 @@ fun LoginCard(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
         ) {
 
             Text(text = "Welcome!", style = MaterialTheme.typography.titleLarge)
-            Text(text = "Please Login to your account!", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Please Login to your account!",
+                style = MaterialTheme.typography.bodyMedium
+            )
             TextField(
-                value = email, onValueChange = {newText -> email = newText},
-                modifier = Modifier.padding(vertical = 16.dp),
+                value = email, onValueChange = { newText -> email = newText },
                 label = {
                     Text(text = stringResource(id = R.string.email))
-                }
+                },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
+                modifier = Modifier.padding(vertical = 16.dp)
             )
-            TextField(value = password,
-                onValueChange = {newText -> password = newText},
+            TextField(
+                value = password,
+                onValueChange = { newText -> password = newText },
                 label = {
                     Text(text = stringResource(id = R.string.password))
                 },
                 visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.padding(vertical = 16.dp),
-                )
+            )
 
             Button(onClick = {
                 viewModel.loginToWorkspace(email, password)
