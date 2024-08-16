@@ -8,7 +8,9 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -54,8 +56,13 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
                     contentType(ContentType.Application.Json)
                 }
 
-            val loginResponse = response.body<LoginResponse>()
-            return loginResponse
+            if (response.status == HttpStatusCode.OK){
+                val loginResponse = response.body<LoginResponse>()
+                return loginResponse
+            }else{
+                throw Exception("Login failed {${response.bodyAsText()}}")
+            }
+
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {

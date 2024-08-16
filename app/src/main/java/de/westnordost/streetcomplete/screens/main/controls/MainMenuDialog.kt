@@ -54,7 +54,6 @@ class MainMenuDialog(
         if (indexInTeam != null) {
             binding.teamModeColorCircle.setIndexInTeam(indexInTeam)
         }
-        binding.enableTeamModeButton.isGone = indexInTeam != null
         binding.disableTeamModeButton.isGone = indexInTeam == null
 
         binding.root.doOnPreDraw {

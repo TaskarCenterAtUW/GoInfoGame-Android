@@ -31,6 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="fill_vertical"
             android:padding="16dp"
+            android:visibility="gone"
             android:text="@string/action_settings"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableTopCompat="@drawable/ic_settings_48dp" />
@@ -42,6 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="fill_vertical"
             android:padding="16dp"
+            android:visibility="gone"
             android:text="@string/action_about2"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableTopCompat="@drawable/ic_info_outline_48dp" />
@@ -74,6 +76,7 @@
             android:layout_height="wrap_content"
             android:padding="8dp"
             android:text="@string/action_download"
+            android:visibility="gone"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableStartCompat="@drawable/ic_search_24dp" />
 
@@ -84,6 +87,7 @@
             android:layout_height="wrap_content"
             android:padding="8dp"
             android:text="@string/team_mode"
+            android:visibility="gone"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableStartCompat="@drawable/ic_team_mode_24dp" />
 
