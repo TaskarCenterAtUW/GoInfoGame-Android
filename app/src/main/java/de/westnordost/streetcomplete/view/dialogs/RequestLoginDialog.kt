@@ -32,9 +32,9 @@ class RequestLoginDialog(context: Context, profileViewModel: ProfileViewModel) :
     ) {
         val activity = context as? Activity
         activity?.let {
+            it.finishAffinity()
             val intent = Intent(it, WorkSpaceActivity::class.java)
             it.startActivity(intent)
-            it.finish()
         }
     }
 }
