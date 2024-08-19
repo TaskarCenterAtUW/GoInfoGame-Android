@@ -165,7 +165,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 val bearing = location.bearingTo(pointLocation)
                 setTitleHintLabel(
                     getNameAndLocationLabel(element, resources, featureDictionary)
-                        .toString() + "is near " + address.address?.road + " and towards ${
+                        .toString() + " is near " + address.address?.road + " and towards ${
                         getCardinalDirection(
                             bearing
                         )

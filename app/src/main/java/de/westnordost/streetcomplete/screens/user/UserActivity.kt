@@ -50,9 +50,9 @@ class UserActivity :
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {
             replaceMainFragment(when {
-                intent.getBooleanExtra(EXTRA_LAUNCH_AUTH, false) -> LoginFragment.create(true)
+//                intent.getBooleanExtra(EXTRA_LAUNCH_AUTH, false) -> LoginFragment.create(true)
                 viewModel.isLoggedIn.value -> UserFragment()
-                else -> LoginFragment.create()
+                else -> null
             })
         }
 

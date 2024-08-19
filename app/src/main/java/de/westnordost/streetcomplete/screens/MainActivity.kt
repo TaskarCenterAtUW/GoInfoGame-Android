@@ -282,7 +282,6 @@ class MainActivity :
                     toast(R.string.upload_server_error, Toast.LENGTH_LONG)
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
-                    userLoginController.logOut()
                     RequestLoginDialog(this@MainActivity, profileViewModel).show()
                 } else {
                     crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
@@ -304,7 +303,7 @@ class MainActivity :
                     toast(R.string.download_server_error, Toast.LENGTH_LONG)
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
-                    userLoginController.logOut()
+//                    userLoginController.logOut()
                 } else {
                     crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
                         R.string.download_error, e)

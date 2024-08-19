@@ -93,7 +93,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
     var workspaceToken : String?
         set(value) {
-            prefs[WORKSPACE_ACCESS_TOKEN] = value
+            prefs.putStringOrNull(WORKSPACE_ACCESS_TOKEN,value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)

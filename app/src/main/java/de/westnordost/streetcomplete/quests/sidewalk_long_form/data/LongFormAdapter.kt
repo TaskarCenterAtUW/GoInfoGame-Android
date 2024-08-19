@@ -104,6 +104,8 @@ class LongFormAdapter<T> :
                             givenItems.indexOfFirst { it.questId == item.questId }
                         if (isChecked) {
                             givenItems[index].userInput = questItem?.value
+                        }else{
+                            givenItems[index].userInput = null
                         }
                         if (item.questId in needRefreshIds) {
                             items = givenItems

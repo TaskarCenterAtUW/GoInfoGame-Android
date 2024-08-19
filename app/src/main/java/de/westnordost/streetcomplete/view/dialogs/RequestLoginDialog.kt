@@ -24,7 +24,7 @@ class RequestLoginDialog(context: Context, profileViewModel: ProfileViewModel) :
             profileViewModel.logOutUser()
             finishAndLaunchNewActivity(context)
         }
-        setButton(BUTTON_NEGATIVE, context.getString(R.string.undo_confirm_negative)) { _, _ -> }
+        setCancelable(false)
     }
 
     private fun finishAndLaunchNewActivity(
