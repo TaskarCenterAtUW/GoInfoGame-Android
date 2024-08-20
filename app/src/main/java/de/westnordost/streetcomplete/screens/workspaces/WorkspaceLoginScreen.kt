@@ -60,7 +60,6 @@ fun LoginScreen(
 
             is WorkspaceLoginState.Error -> {
                 isLoading = false
-                Text(text = "Error: ${(loginState as WorkspaceLoginState.Error).error}")
                 snackBarMessage = (loginState as WorkspaceLoginState.Error).error
             }
 
@@ -68,9 +67,8 @@ fun LoginScreen(
                 isLoading = false
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
-                viewModel.setLoginState(true, state.loginResponse)
+                viewModel.setLoginState(true, state.loginResponse,state.email)
                 navToNextPage()
-                Text(text = "Success: ${(loginState as WorkspaceLoginState.Success).loginResponse}")
             }
         }
         LoginCard(viewModel, modifier)

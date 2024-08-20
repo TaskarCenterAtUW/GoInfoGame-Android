@@ -47,6 +47,7 @@ import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
 import de.westnordost.streetcomplete.ui.theme.headlineLarge
 import de.westnordost.streetcomplete.ui.theme.titleLarge
+import de.westnordost.streetcomplete.ui.theme.titleSmall
 import de.westnordost.streetcomplete.util.ktx.openUri
 import java.util.Locale
 
@@ -95,7 +96,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             ) {
                 Text(
                     text = userName.orEmpty(),
-                    style = MaterialTheme.typography.headlineLarge
+                    style = MaterialTheme.typography.titleSmall
                 )
                 StarCount(editCount)
                 if (unsyncedChangesCount > 0) {

@@ -1,11 +1,15 @@
 package de.westnordost.streetcomplete.data.workspace.data.remote
 
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -15,7 +19,8 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-class WorkspaceApiService(private val httpClient: HttpClient) {
+class WorkspaceApiService(private val httpClient: HttpClient,
+    private val preferences: Preferences) {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
@@ -27,6 +32,23 @@ class WorkspaceApiService(private val httpClient: HttpClient) {
                 httpClient.get("${WorkspaceConstants.WORKSPACE_BASE_URL}/mine")
             val responseBody = response.body<List<Workspace>>()
             return responseBody
+
+            // if OSM server does not return valid JSON, it is the server's fault, hence
+        } catch (e: Exception) {
+            throw Exception(e.message)
+        }
+    }
+
+    suspend fun getTDEIUserDetails(emailId : String): UserInfoResponse {
+        try {
+            val response =
+                httpClient.get(WorkspaceConstants.TDEI_URL){
+                    parameter("user_name", emailId)
+                    headers {
+                        append("Authorization", "Bearer ${preferences.workspaceToken}")
+                    }
+                }
+            return response.body<UserInfoResponse>()
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {

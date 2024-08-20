@@ -33,7 +33,7 @@ class WorkspaceDao(private val db: Database) {
                 it.getString(TITLE))
         }
 
-    fun deleteAll(ids: List<Long>): Int {
+    fun deleteAll(ids: List<Int>): Int {
         if (ids.isEmpty()) return 0
         return db.delete(NAME, "$ID in (${ids.joinToString(",")})")
     }
