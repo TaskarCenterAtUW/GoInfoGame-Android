@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.osmnotes.NotesApiImpl
 import de.westnordost.streetcomplete.data.osmtracks.TracksApi
 import de.westnordost.streetcomplete.data.osmtracks.TracksApiImpl
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -31,7 +32,7 @@ val osmApiModule = module {
     factory { UserApi(get()) }
 
     single<OsmConnection> { GIGOsmConnection(
-        OSM_API_URL,
+        EnvironmentManager(get()).currentEnvironment.osmUrl,
         ApplicationConstants.USER_AGENT,
         get<Preferences>()
     ) }

@@ -4,10 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -30,10 +33,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 
 @Composable
 fun LoginScreen(
     viewModel: WorkspaceViewModel,
+    preferences: Preferences,
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
@@ -67,11 +74,11 @@ fun LoginScreen(
                 isLoading = false
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
-                viewModel.setLoginState(true, state.loginResponse,state.email)
+                viewModel.setLoginState(true, state.loginResponse, state.email)
                 navToNextPage()
             }
         }
-        LoginCard(viewModel, modifier)
+        LoginCard(viewModel, modifier, preferences)
 
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -90,7 +97,11 @@ fun LoginScreen(
 }
 
 @Composable
-fun LoginCard(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
+fun LoginCard(
+    viewModel: WorkspaceViewModel,
+    modifier: Modifier = Modifier,
+    preferences: Preferences
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -133,6 +144,31 @@ fun LoginCard(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
                 viewModel.loginToWorkspace(email, password)
             }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
+            }
+            EnvironmentDropdownMenu(viewModel = viewModel, preferences)
+        }
+    }
+}
+
+@Composable
+fun EnvironmentDropdownMenu(viewModel: WorkspaceViewModel, preferences: Preferences) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedEnvironment by remember { mutableStateOf(EnvironmentManager(preferences).currentEnvironment) }
+
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Button(onClick = { expanded = true }) {
+            Text(text = "Select Environment: ${selectedEnvironment.name}")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Environment.entries.forEach { environment ->
+                DropdownMenuItem(text = { Text(environment.name) }, onClick = {
+                    selectedEnvironment = environment
+                    expanded = false
+                    viewModel.setEnvironment(environment)
+                })
             }
         }
     }

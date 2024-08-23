@@ -80,4 +80,5 @@ private fun getNodeOrWay(variable: String): String {
 private fun createRoadsFilter(variable: String, elementType: String) = """
     ${getNodeOrWay(elementType)} with
      $variable
+     and ext:gig_complete !~ yes
 """.toElementFilterExpression()

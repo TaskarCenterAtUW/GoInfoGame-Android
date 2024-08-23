@@ -29,7 +29,7 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     suspend fun getWorkspaces(): List<Workspace> {
         try {
             val response =
-                httpClient.get("${WorkspaceConstants.WORKSPACE_BASE_URL}/mine")
+                httpClient.get("${EnvironmentManager(preferences).currentEnvironment.baseUrl}/mine")
             val responseBody = response.body<List<Workspace>>()
             return responseBody
 
@@ -42,7 +42,7 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     suspend fun getTDEIUserDetails(emailId : String): UserInfoResponse {
         try {
             val response =
-                httpClient.get(WorkspaceConstants.TDEI_URL){
+                httpClient.get(EnvironmentManager(preferences).currentEnvironment.tdeiUrl){
                     parameter("user_name", emailId)
                     headers {
                         append("Authorization", "Bearer ${preferences.workspaceToken}")
@@ -59,7 +59,7 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     suspend fun getLongFormForWorkspace(workspaceId: Int): List<AddLongFormResponseItem> {
         try {
             val response =
-                httpClient.get("${WorkspaceConstants.WORKSPACE_BASE_URL}/${workspaceId}/quests/long")
+                httpClient.get("${EnvironmentManager(preferences).currentEnvironment.baseUrl}/${workspaceId}/quests/long")
             val responseBody = response.body<List<AddLongFormResponseItem>>()
             return responseBody
 
@@ -72,7 +72,7 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
         try {
             val response =
-                httpClient.post(WorkspaceConstants.WORKSPACE_LOGIN_URL) {
+                httpClient.post(EnvironmentManager(preferences).currentEnvironment.loginUrl) {
                     val user = User(username.trim(), password.trim())
                     setBody(user)
                     contentType(ContentType.Application.Json)

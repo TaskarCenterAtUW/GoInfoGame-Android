@@ -105,6 +105,13 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_NAME)
 
+    var environment : String
+        set(value) {
+            prefs.putStringOrNull(ENVIRONMENT,value)
+        }
+        get() =
+            prefs.getString(ENVIRONMENT,"STAGE")
+
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
@@ -307,5 +314,6 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
         private const val WORKSPACE_ID = "workspace.id"
         private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"
+        private const val ENVIRONMENT = "environment"
     }
 }

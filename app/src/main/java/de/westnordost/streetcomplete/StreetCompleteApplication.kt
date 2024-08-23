@@ -154,7 +154,6 @@ class StreetCompleteApplication : Application() {
 
         applicationScope.launch {
             preloader.preload()
-            editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
         }
 
         // if (isConnected) userUpdater.update()

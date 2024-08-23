@@ -3,6 +3,8 @@ package de.westnordost.streetcomplete.screens.workspaces
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setIsLongForm(isLongForm: Boolean)
     abstract fun setSelectedWorkspace(workspaceId: Int)
     abstract fun getUserInfo(email : String)
+    abstract fun setEnvironment(environment: Environment)
 }
 
 class WorkspaceViewModelImpl(
@@ -84,6 +87,10 @@ class WorkspaceViewModelImpl(
                 preferences.workspaceUserName = "${response.username} \n ${response.firstName} ${response.lastName}"
             }
         }
+    }
+
+    override fun setEnvironment(environment: Environment) {
+        EnvironmentManager(preferences).currentEnvironment = environment
     }
 
     override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {

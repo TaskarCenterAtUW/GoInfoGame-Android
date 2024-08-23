@@ -76,7 +76,6 @@
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:text="@string/action_download"
-                android:visibility="gone"
                 android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
                 app:drawableStartCompat="@drawable/ic_search_24dp" />
 
