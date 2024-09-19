@@ -17,8 +17,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<List<Quest?>> {
-    override val changesetComment = "Specify whether roads have sidewalks"
-    override val wikiLink = "Key:sidewalk"
+    override val changesetComment = "Changes to ${item.elementType}"
+    override val wikiLink = "Key:${item.elementType?.lowercase()}"
     override val icon = when (item.elementType) {
         "Sidewalks" -> R.drawable.ic_quest_sidewalk
         "Crossings" -> R.drawable.ic_quest_pedestrian_crossing
