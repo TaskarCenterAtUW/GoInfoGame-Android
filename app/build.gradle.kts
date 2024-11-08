@@ -5,7 +5,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     kotlin("android")
-    kotlin("plugin.serialization") version "2.0.0"
+    kotlin("plugin.serialization")
     kotlin("plugin.compose") version "2.0.0"
     id("kotlin-parcelize")
 }
@@ -36,8 +36,8 @@ android {
         applicationId = "com.tcatuw.goinfo"
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 4
+        versionName = "1.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -241,6 +241,9 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
     implementation("io.coil-kt:coil:2.7.0")
+    implementation("io.ktor:ktor-client-logging:2.0.0")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
+
 }
 
 /** Localizations that should be pulled from POEditor */

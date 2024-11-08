@@ -93,10 +93,24 @@ class Preferences(private val prefs: ObservableSettings) {
 
     var workspaceToken : String?
         set(value) {
-            prefs[WORKSPACE_ACCESS_TOKEN] = value
+            prefs.putStringOrNull(WORKSPACE_ACCESS_TOKEN,value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
+
+    var workspaceUserName : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TDEI_USER_NAME)
+
+    var environment : String
+        set(value) {
+            prefs.putStringOrNull(ENVIRONMENT,value)
+        }
+        get() =
+            prefs.getString(ENVIRONMENT,"STAGE")
 
 
     fun clearUserData() {
@@ -299,5 +313,7 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val WORKSPACE_ACCESS_TOKEN = "workspace.accesstoken"
         private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
         private const val WORKSPACE_ID = "workspace.id"
+        private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"
+        private const val ENVIRONMENT = "environment"
     }
 }

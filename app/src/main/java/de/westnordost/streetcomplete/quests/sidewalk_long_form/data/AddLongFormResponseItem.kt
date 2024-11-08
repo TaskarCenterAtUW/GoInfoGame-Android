@@ -14,5 +14,5 @@ data class AddLongFormResponseItem(
     @SerialName("quest_query")
     val questQuery: String? = null,
     @SerialName("quests")
-    val quests: List<Quest?>? = null
+    val quests: List<Quest?> = emptyList()
 ) : Parcelable

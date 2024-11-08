@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.quests
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
@@ -19,11 +20,25 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     override val defaultExpanded = false
 
-    protected abstract val items: List<LongFormItem<T>>
+    protected abstract val items: T
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         adapter =  LongFormAdapter()
+    }
+
+    override fun onClickOk() {
+        val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
+        val tagList : MutableList<Pair<String, String>> = mutableListOf()
+        for (item in editedItems){
+            tagList.add(Pair(item.questTag!!, item.userInput!!))
+        }
+
+        if (editedItems.isEmpty()) {
+            Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
+        }else{
+            applyAnswer(editedItems as T)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -34,19 +49,13 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
         binding.submitButton.setOnClickListener {
-            val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
-            val tagList : MutableList<Pair<String, String>> = mutableListOf()
-            for (item in editedItems){
-                val quest = item.options as Quest
-                tagList.add(Pair(quest.questTag!!, item.userInput!!))
-            }
-            println(tagList.size)
+            onClickOk()
         }
     }
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = itemCopy
+        adapter.items = itemCopy as List<Quest>
     }
 }
 

@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete
 import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
 
 object ApplicationConstants {
-    const val NAME = "StreetComplete"
+    const val NAME = "GoInfoGame Android"
     const val USER_AGENT = NAME + " " + BuildConfig.VERSION_NAME
     const val QUESTTYPE_TAG_KEY = NAME + ":quest_type"
 

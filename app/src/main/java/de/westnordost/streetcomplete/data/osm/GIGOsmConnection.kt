@@ -102,9 +102,9 @@ class GIGOsmConnection(url: String, agent: String, private val preference: Prefe
         }
 
 
-        // preference.workspaceId?.let {
-        //     connection.setRequestProperty("X-Workspace", it.toString())
-        // }
+        preference.workspaceId?.let {
+            connection.setRequestProperty("X-Workspace", it.toString())
+        }
         if (writer != null && writer.contentType != null) {
             connection.setRequestProperty("Content-Type", writer.contentType)
             connection.setRequestProperty("charset", CHARSET.lowercase(Locale.UK))

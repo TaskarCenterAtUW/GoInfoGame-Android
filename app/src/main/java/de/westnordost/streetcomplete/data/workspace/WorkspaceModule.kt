@@ -10,7 +10,7 @@ import org.koin.dsl.module
 
 val workspaceModule = module {
     factory { WorkspaceDao(get()) }
-    single { WorkspaceApiService(get()) }
+    single { WorkspaceApiService(get(), get()) }
     single<WorkspaceRepository> { WorkspaceRepositoryImpl(get(), get()) }
     // single { GetWorkspaceUseCase(get()) }
     // single { LoginUseCase(get()) }

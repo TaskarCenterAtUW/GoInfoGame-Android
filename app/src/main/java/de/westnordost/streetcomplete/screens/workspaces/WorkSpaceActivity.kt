@@ -68,6 +68,7 @@ fun AppNavigator(innerPadding : PaddingValues, preferences: Preferences, modifie
         composable("home") {
             LoginScreen(
                 viewModel = koinViewModel(),
+                preferences,
                 navController,
                 modifier = modifier.padding(innerPadding)
             )

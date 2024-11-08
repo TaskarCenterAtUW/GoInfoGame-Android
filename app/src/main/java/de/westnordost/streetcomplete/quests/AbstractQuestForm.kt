@@ -1,11 +1,17 @@
 package de.westnordost.streetcomplete.quests
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.AnyThread
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
@@ -121,7 +127,9 @@ abstract class AbstractQuestForm :
         setTitleHintLabel(null)
         setHint(questType.hint?.let { resources.getString(it) })
         setHintImages(questType.hintImages.mapNotNull { requireContext().getDrawable(it) })
-
+        binding.cameraButton.setOnClickListener {
+            setCameraIntent()
+        }
         binding.okButton.setOnClickListener {
             if (!isFormComplete()) {
                 activity?.toast(R.string.no_changes)
@@ -153,6 +161,7 @@ abstract class AbstractQuestForm :
         super.onDestroyView()
         _binding = null
     }
+    open fun setCameraIntent() {}
 
     protected fun setTitle(text: CharSequence?) {
         binding.titleLabel.text = text

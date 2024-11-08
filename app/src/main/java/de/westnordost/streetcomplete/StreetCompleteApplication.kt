@@ -144,9 +144,9 @@ class StreetCompleteApplication : Application() {
         setLoggerInstances()
 
         // Force logout users who are logged in with OAuth 1.0a, they need to re-authenticate with OAuth 2
-        if (prefs.hasOAuth1AccessToken) {
-            userLoginController.logOut()
-        }
+//        if (prefs.hasOAuth1AccessToken) {
+//            userLoginController.logOut()
+//        }
 
         updateDefaultLocales()
 
@@ -154,10 +154,9 @@ class StreetCompleteApplication : Application() {
 
         applicationScope.launch {
             preloader.preload()
-            editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
         }
 
-        if (isConnected) userUpdater.update()
+        // if (isConnected) userUpdater.update()
 
         enqueuePeriodicCleanupWork()
 

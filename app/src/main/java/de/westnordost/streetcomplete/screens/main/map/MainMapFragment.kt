@@ -20,7 +20,6 @@ import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
@@ -35,8 +34,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
-import org.xmlpull.v1.XmlSerializer
-import java.io.FileOutputStream
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
  *  geometry, overlays... */
@@ -104,10 +101,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     override suspend fun onBeforeLoadScene() {
         super.onBeforeLoadScene()
-        if (preferences.showLongForm) {
 
-            doLongForm()
-        }
         val sceneUpdates = withContext(Dispatchers.IO) {
             questPinsSpriteSheet.sceneUpdates + iconsSpriteSheet.sceneUpdates
         }
@@ -122,7 +116,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     override suspend fun onMapReady() {
         val ctrl = controller ?: return
         ctrl.setPickRadius(8f)
-        geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl)
+        geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl, requireContext())
         pinsMapComponent = PinsMapComponent(ctrl)
         selectedPinsMapComponent = SelectedPinsMapComponent(requireContext(), ctrl)
         geometryMapComponent = FocusGeometryMapComponent(ctrl)
@@ -344,35 +338,5 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         private const val CLICK_AREA_SIZE_IN_DP = 48
     }
 
-    // For GIG
-    private fun doLongForm() {
-        // val processSampleJson = ProcessSampleJson()
-        // val result = processSampleJson.processSampleJson()
-        val result: List<AddLongFormResponseItem>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            activity?.intent?.
-            getParcelableArrayListExtra("LONG_FORM",AddLongFormResponseItem::class.java)
-        } else {
-            activity?.intent?.
-            getParcelableArrayListExtra("LONG_FORM")
-        }
 
-        println(result)
-        // questTypeRegistry.clearAll()
-        val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
-        for ((index, item) in result?.withIndex()!!) {
-            // val jsonObject = item.jsonObject
-            // Log.d("LongForm", jsonObject["element_type"].toString())
-            // // questTypes.add(index + 1 to AddLongFormSidewalk(jsonObject["quest_query"].toString()))
-            //if (index == 0) continue
-
-            questTypes.add(index to AddGenericLong(item))
-            //break
-        }
-        questTypeRegistry.addItem(questTypes)
-        // val new_registry = QuestTypeRegistry(questTypes)
-        // component.reloadDependency(new_registry)
-
-        // decidedQuestTypeRegistry = QuestTypeRegistry(questTypes)
-
-    }
 }

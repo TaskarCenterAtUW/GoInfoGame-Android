@@ -1,14 +1,21 @@
 package de.westnordost.streetcomplete.quests
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.location.Location
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.core.view.children
@@ -16,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AddressModel
+import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
@@ -37,7 +45,9 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenController
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
 import de.westnordost.streetcomplete.osm.replacePlace
 import de.westnordost.streetcomplete.quests.shop_type.ShopGoneDialog
@@ -50,7 +60,14 @@ import de.westnordost.streetcomplete.view.checkIsSurvey
 import de.westnordost.streetcomplete.view.confirmIsSurvey
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.append
+import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,6 +76,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
@@ -72,7 +90,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
     private val recentLocationStore: RecentLocationStore by inject()
     private val httpClient: HttpClient by inject()
+    private val preferences: Preferences by inject()
+    private val userLoginSource: UserLoginSource by inject()
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
+    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
     var addElementEditsController: AddElementEditsController = elementEditsController
@@ -126,6 +147,17 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
         val args = requireArguments()
         element = Json.decodeFromString(args.getString(ARG_ELEMENT)!!)
+        val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
+        cameraLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    // Handle the image capture result here
+                    val bitmap = result.data?.extras?.getParcelable<Bitmap>("data")
+                    startKartViewFlow(bitmap, displayedLocation)
+                } else {
+                    // Handle the error state here
+                }
+            }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -147,6 +179,103 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         setButtonPanelAnswers(buttonPanelAnswers)
     }
 
+    override fun setCameraIntent() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        try {
+            cameraLauncher.launch(takePictureIntent)
+        } catch (e: ActivityNotFoundException) {
+            // Display error state to the user
+        }
+    }
+
+    private fun startKartViewFlow(bitmap: Bitmap?, displayedLocation: Location?) {
+        viewLifecycleScope.launch {
+            val sequenceId = createSequence()
+            sequenceId?.apply {
+                val isUploaded = uploadImageInSequence(this, bitmap, displayedLocation)
+                if (isUploaded) {
+                    closeSequence(this)
+                } else {
+                    Log.e("KartViewFlow", "Image upload failed")
+                }
+            }
+        }
+    }
+
+    private suspend fun closeSequence(sequenceId: String) {
+        val token = "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+        val response = httpClient.post("https://api.openstreetcam.org/1.0/sequence/finished-uploading/") {
+            setBody(MultiPartFormDataContent(formData {
+                append("access_token", token)
+                append("sequenceId", sequenceId)
+            }))
+        }
+        if (response.status == HttpStatusCode.OK) {
+            val sequence = response.body<CreateSequenceResponse>()
+            Log.d("KartViewSequence", sequence.status.httpMessage)
+        } else {
+            Log.e("KartViewSequence", "Sequence close failed: ${response.status}")
+        }
+    }
+
+    private suspend fun uploadImageInSequence(
+        sequenceId: String,
+        bitmap: Bitmap?,
+        displayedLocation: Location?,
+    ) : Boolean {
+
+        bitmap?.let {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            it.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+
+            val response = httpClient.post("https://api.openstreetcam.org/1.0/photo/") {
+                setBody(MultiPartFormDataContent(formData {
+                    append(
+                        "access_token",
+                        "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+                    )
+                    append("sequenceId", sequenceId)
+                    append("sequenceIndex", 1)
+                    append(
+                        "coordinate",
+                        "${displayedLocation?.latitude},${displayedLocation?.longitude}"
+                    )
+                    append("photo", byteArray, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition, "filename=\"wework-kartaview.jpg\"")
+                    })
+                }))
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                Log.d("UploadImage", "Image uploaded successfully")
+                return true
+            } else {
+                Log.e("UploadImage", "Image upload failed: ${response.status}")
+                return false
+            }
+        }
+        return false
+    }
+
+    private suspend fun createSequence(): String? {
+        val token = "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+        val response = httpClient.post("https://api.openstreetcam.org/1.0/sequence/") {
+            setBody(MultiPartFormDataContent(formData {
+                append("access_token", token)
+            }))
+        }
+        if (response.status == HttpStatusCode.OK) {
+            val sequence = response.body<CreateSequenceResponse>()
+            sequence.osv.sequence?.id?.let { Log.d("KartViewSequence", it) }
+            Log.d("KartViewStatus", sequence.status.httpMessage)
+            return sequence.osv.sequence?.id
+        } else {
+            return null
+        }
+    }
+
     private suspend fun getAddress() {
         val response =
             httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
@@ -165,7 +294,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 val bearing = location.bearingTo(pointLocation)
                 setTitleHintLabel(
                     getNameAndLocationLabel(element, resources, featureDictionary)
-                        .toString() + "is near " + address.address?.road + " and towards ${
+                        .toString() + " is near " + address.address?.road + " and towards ${
                         getCardinalDirection(
                             bearing
                         )
@@ -399,9 +528,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     companion object {
         private const val ARG_ELEMENT = "element"
+        private const val ARG_DISPLAYED_LOCATION = "displayedLocation"
 
-        fun createArguments(element: Element) = bundleOf(
-            ARG_ELEMENT to Json.encodeToString(element)
+        fun createArguments(element: Element, displayedLocation: Location?) = bundleOf(
+            ARG_ELEMENT to Json.encodeToString(element),
+            ARG_DISPLAYED_LOCATION to displayedLocation
         )
     }
 }

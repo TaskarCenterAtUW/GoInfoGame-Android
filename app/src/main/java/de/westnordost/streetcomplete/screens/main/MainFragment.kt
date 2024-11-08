@@ -37,6 +37,7 @@ import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
+import de.westnordost.streetcomplete.data.edithistory.EditHistoryController
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.edithistory.icon
 import de.westnordost.streetcomplete.data.messages.Message
@@ -72,7 +73,6 @@ import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.ProcessSampleJson
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -91,6 +91,7 @@ import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
 import de.westnordost.streetcomplete.screens.main.overlays.OverlaySelectionAdapter
+import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
 import de.westnordost.streetcomplete.util.ktx.childFragmentManagerOrNull
@@ -99,6 +100,7 @@ import de.westnordost.streetcomplete.util.ktx.getLocationInWindow
 import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
 import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.observe
 import de.westnordost.streetcomplete.util.ktx.popIn
 import de.westnordost.streetcomplete.util.ktx.popOut
@@ -118,6 +120,8 @@ import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.dialogs.RequestLoginDialog
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
@@ -178,6 +182,7 @@ class MainFragment :
 
     private val controlsViewModel by viewModel<MainViewModel>()
     private val editHistoryViewModel by viewModel<EditHistoryViewModel>()
+    private val profileViewModel by viewModel<ProfileViewModel>()
 
     private val binding by viewBinding(FragmentMainBinding::bind)
 
@@ -195,6 +200,10 @@ class MainFragment :
         childFragmentManagerOrNull?.findFragmentByTag(EDIT_HISTORY) as? EditHistoryFragment
 
     private var mapOffsetWithOpenBottomSheet: RectF = RectF(0f, 0f, 0f, 0f)
+    private val editHistoryController: EditHistoryController by inject()
+
+    private var delayJob: Job? = null
+
 
     interface Listener {
         fun onMapInitialized()
@@ -234,6 +243,7 @@ class MainFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
 
         binding.mapControls.respectSystemInsets(View::setMargins)
         view.respectSystemInsets { windowInsets = it }
@@ -242,6 +252,7 @@ class MainFragment :
 
         binding.compassView.setOnClickListener { onClickCompassButton() }
         binding.gpsTrackingButton.setOnClickListener { onClickTrackingButton() }
+        onClickTrackingButton()
         binding.stopTracksButton.setOnClickListener { onClickTracksStop() }
         binding.zoomInButton.setOnClickListener { onClickZoomIn() }
         binding.zoomOutButton.setOnClickListener { onClickZoomOut() }
@@ -394,7 +405,6 @@ class MainFragment :
         updateLocationPointerPin()
         mapFragment?.cameraPosition?.zoom?.let { updateCreateButtonEnablement(it) }
         listener?.onMapInitialized()
-        onClickDownload()
     }
 
     override fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {
@@ -438,6 +448,15 @@ class MainFragment :
 
     override fun onDisplayedLocationDidChange() {
         updateLocationPointerPin()
+    }
+
+    override fun onLocationZoomed() {
+        //Run after delay
+        delayJob?.cancel() // Cancel any existing job
+        delayJob = viewLifecycleScope.launch {
+            delay(2000) // Wait for 600 ms
+            onClickDownload() // Execute the desired code
+        }
     }
 
     /* ---------------------------- MainMapFragment.Listener --------------------------- */
@@ -752,7 +771,7 @@ class MainFragment :
             if (controlsViewModel.isLoggedIn.value) {
                 controlsViewModel.upload()
             } else {
-                context?.let { RequestLoginDialog(it).show() }
+                context?.let { RequestLoginDialog(it, profileViewModel).show() }
             }
         } else {
             context?.toast(R.string.offline)
@@ -1165,7 +1184,9 @@ class MainFragment :
 
         if (quest is OsmQuest) {
             val element = withContext(Dispatchers.IO) { mapDataWithEditsSource.get(quest.elementType, quest.elementId) } ?: return
-            val osmArgs = AbstractOsmQuestForm.createArguments(element)
+            val osmArgs = AbstractOsmQuestForm.createArguments(element,
+                mapFragment.displayedLocation
+            )
             f.requireArguments().putAll(osmArgs)
 
             showInBottomSheet(f)

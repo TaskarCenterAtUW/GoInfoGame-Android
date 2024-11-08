@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.map.components
 
+import android.content.Context
 import android.content.res.Resources
 import android.graphics.drawable.BitmapDrawable
 import androidx.annotation.DrawableRes
@@ -17,7 +18,11 @@ import de.westnordost.streetcomplete.util.math.centerPointOfPolyline
 
 /** Manages putting some generic geometry markers with an optional drawable on the map. I.e. to
  *  show the geometry of elements surrounding the selected quest */
-class GeometryMarkersMapComponent(private val resources: Resources, private val ctrl: KtMapController) {
+class GeometryMarkersMapComponent(
+    private val resources: Resources,
+    private val ctrl: KtMapController,
+    private val requireContext: Context
+) {
 
     // markers: LatLon -> Marker Id
     private val markerIdsByPosition: MutableMap<LatLon, List<Long>> = HashMap()
@@ -150,7 +155,7 @@ class GeometryMarkersMapComponent(private val resources: Resources, private val 
 
     private fun getBitmapDrawable(@DrawableRes drawableResId: Int): BitmapDrawable {
         if (drawables[drawableResId] == null) {
-            drawables[drawableResId] = resources.getBitmapDrawable(drawableResId)
+            drawables[drawableResId] = resources.getBitmapDrawable(drawableResId, requireContext)
         }
         return drawables[drawableResId]!!
     }

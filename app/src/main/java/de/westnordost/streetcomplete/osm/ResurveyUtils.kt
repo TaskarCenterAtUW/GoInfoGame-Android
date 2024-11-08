@@ -9,7 +9,8 @@ import kotlinx.datetime.LocalDate
 fun getLastCheckDateKeys(key: String): Sequence<String> = sequenceOf(
     "$key:check_date", "check_date:$key",
     "$key:lastcheck", "lastcheck:$key",
-    "$key:last_checked", "last_checked:$key"
+    "$key:last_checked", "last_checked:$key",
+    "$key", ":$key",
 )
 
 val LAST_CHECK_DATE_KEYS = listOf(

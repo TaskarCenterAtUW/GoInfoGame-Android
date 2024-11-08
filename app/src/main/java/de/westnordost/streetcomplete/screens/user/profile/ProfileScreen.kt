@@ -1,5 +1,8 @@
 package de.westnordost.streetcomplete.screens.user.profile
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -38,9 +41,13 @@ import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
 import de.westnordost.streetcomplete.ui.theme.headlineLarge
 import de.westnordost.streetcomplete.ui.theme.titleLarge
+import de.westnordost.streetcomplete.ui.theme.titleSmall
 import de.westnordost.streetcomplete.util.ktx.openUri
 import java.util.Locale
 
@@ -89,7 +96,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             ) {
                 Text(
                     text = userName.orEmpty(),
-                    style = MaterialTheme.typography.headlineLarge
+                    style = MaterialTheme.typography.titleSmall
                 )
                 StarCount(editCount)
                 if (unsyncedChangesCount > 0) {
@@ -111,14 +118,16 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             val context = LocalContext.current
-            Button(onClick = {
-                context.openUri("https://www.openstreetmap.org/user/" + viewModel.userName.value)
+//            Button(onClick = {
+//                context.openUri("https://www.openstreetmap.org/user/" + viewModel.userName.value)
+//            }) {
+//                Icon(painterResource(R.drawable.ic_open_in_browser_24dp), null)
+//                Spacer(Modifier.width(8.dp))
+//                Text(stringResource(R.string.osm_profile).uppercase())
+//            }
+            OutlinedButton(onClick = { viewModel.logOutUser()
+            finishAndLaunchNewActivity(context)
             }) {
-                Icon(painterResource(R.drawable.ic_open_in_browser_24dp), null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.osm_profile).uppercase())
-            }
-            OutlinedButton(onClick = { viewModel.logOutUser() }) {
                 Text(stringResource(R.string.user_logout).uppercase())
             }
         }
@@ -127,65 +136,65 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
 
         // Statistics
 
-        var delay = 0
-
-        if (editCount > 0) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                val localStats = biggestSolvedCountCountryStatistics
-                if (localStats?.rank != null) {
-                    LocalRankBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
-                }
-                if (rank > 0) {
-                    RankBadge(rank, getAnimationDelay(delay++))
-                }
-                if (daysActive > 0) {
-                    DaysActiveBadge(daysActive, getAnimationDelay(delay++))
-                }
-                if (achievementLevels > 0) {
-                    AchievementLevelsBadge(achievementLevels, getAnimationDelay(delay++))
-                }
-            }
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.user_profile_current_week_title),
-                style = MaterialTheme.typography.titleLarge
-            )
-            StarCount(editCountCurrentWeek)
-        }
-        if (editCountCurrentWeek > 0) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                val localStats = biggestSolvedCountCurrentWeekCountryStatistics
-                if (localStats?.rank != null) {
-                    LocalRankCurrentWeekBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
-                }
-                if (rankCurrentWeek > 0) {
-                    RankCurrentWeekBadge(rankCurrentWeek, getAnimationDelay(delay++))
-                }
-            }
-        }
-        Text(
-            text = stringResource(R.string.user_profile_dates_mapped),
-            style = MaterialTheme.typography.titleLarge
-        )
-        BoxWithConstraints {
-            DatesActiveTable(
-                datesActive = datesActive.datesActive.toSet(),
-                datesActiveRange = datesActive.range,
-                modifier = Modifier.width(maxWidth.coerceAtMost(640.dp))
-            )
-        }
+//        var delay = 0
+//
+//        if (editCount > 0) {
+//            FlowRow(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceAround,
+//                verticalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                val localStats = biggestSolvedCountCountryStatistics
+//                if (localStats?.rank != null) {
+//                    LocalRankBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+//                }
+//                if (rank > 0) {
+//                    RankBadge(rank, getAnimationDelay(delay++))
+//                }
+//                if (daysActive > 0) {
+//                    DaysActiveBadge(daysActive, getAnimationDelay(delay++))
+//                }
+//                if (achievementLevels > 0) {
+//                    AchievementLevelsBadge(achievementLevels, getAnimationDelay(delay++))
+//                }
+//            }
+//        }
+//        Row(
+//            horizontalArrangement = Arrangement.spacedBy(4.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = stringResource(R.string.user_profile_current_week_title),
+//                style = MaterialTheme.typography.titleLarge
+//            )
+//            StarCount(editCountCurrentWeek)
+//        }
+//        if (editCountCurrentWeek > 0) {
+//            FlowRow(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceAround,
+//                verticalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                val localStats = biggestSolvedCountCurrentWeekCountryStatistics
+//                if (localStats?.rank != null) {
+//                    LocalRankCurrentWeekBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+//                }
+//                if (rankCurrentWeek > 0) {
+//                    RankCurrentWeekBadge(rankCurrentWeek, getAnimationDelay(delay++))
+//                }
+//            }
+//        }
+//        Text(
+//            text = stringResource(R.string.user_profile_dates_mapped),
+//            style = MaterialTheme.typography.titleLarge
+//        )
+//        BoxWithConstraints {
+//            DatesActiveTable(
+//                datesActive = datesActive.datesActive.toSet(),
+//                datesActiveRange = datesActive.range,
+//                modifier = Modifier.width(maxWidth.coerceAtMost(640.dp))
+//            )
+//        }
     }
 }
 
@@ -270,6 +279,17 @@ private fun StarCount(count: Int) {
             text = count.toString(),
             style = MaterialTheme.typography.titleLarge
         )
+    }
+}
+
+fun finishAndLaunchNewActivity(
+    context: Context
+) {
+    val activity = context as? Activity
+    activity?.let {
+        it.finishAffinity()
+        val intent = Intent(it, WorkSpaceActivity::class.java)
+        it.startActivity(intent)
     }
 }
 

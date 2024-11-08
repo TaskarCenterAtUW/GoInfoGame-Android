@@ -18,24 +18,20 @@ import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemExclusiveChoiceBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
-import de.westnordost.streetcomplete.quests.LongFormItem
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
-import de.westnordost.streetcomplete.view.Text
-import de.westnordost.streetcomplete.view.image_select.DisplayItem
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
-    var givenItems = listOf<LongFormItem<T>>()
+    var givenItems = emptyList<Quest>()
     var needRefreshIds = listOf<Int?>()
-    var items = listOf<LongFormItem<T>>()
+    var items : List<Quest> = emptyList()
         set(value) {
             if (givenItems.isEmpty()) {
                 givenItems = value
-                needRefreshIds =
-                    givenItems.map { (it.options as Quest).questAnswerDependency?.questionId }
+                needRefreshIds = givenItems.map { it.questAnswerDependency?.questionId }
             }
 
             field = manageVisibility(value).filter { it.visible }
@@ -55,28 +51,23 @@ class LongFormAdapter<T> :
         }
     }
 
-    private fun manageVisibility(itemCopy: List<LongFormItem<T>>): List<LongFormItem<T>> {
-        for (item in itemCopy) {
-            val quest = item.options as Quest
+    private fun manageVisibility(itemCopy: List<Quest>): List<Quest> {
+        for (quest in itemCopy) {
 
             val requiredUserInput = quest.questAnswerDependency?.requiredValue
             val requiredQuestId = quest.questAnswerDependency?.questionId
 
 
             if (requiredUserInput == null || requiredQuestId == null) {
-                itemCopy[itemCopy.indexOf(item)].visible = true
+                itemCopy[itemCopy.indexOf(quest)].visible = true
                 continue
             }
             val filteredQuest = itemCopy.filter {
-                (it.options as Quest).questId ==
+                it.questId ==
                     requiredQuestId
             }
 
-            if (filteredQuest[0].userInput in requiredUserInput) {
-                itemCopy[itemCopy.indexOf(item)].visible = true
-            } else {
-                itemCopy[itemCopy.indexOf(item)].visible = false
-            }
+            itemCopy[itemCopy.indexOf(quest)].visible = filteredQuest[0].userInput in requiredUserInput
         }
         return itemCopy
     }
@@ -86,29 +77,20 @@ class LongFormAdapter<T> :
         private var defaultColor : Int?= null
         private var defaultTextColor : Int? = null
 
-        fun bind(item: LongFormItem<*>, position: Int) {
+        fun bind(item: Quest, position: Int) {
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
-            binding.title.text = item.title
-            binding.description.text = item.description
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
             binding.chipGroup.removeAllViews()
-            val quest = item.options as Quest
 
-            quest.questAnswerChoices?.apply {
+            item.questAnswerChoices?.apply {
                 for (questItem in this) {
                     val chip = Chip(binding.root.context)
                     // val chip = Chip(ContextThemeWrapper(binding.root.context, R.style.back))
                     chip.text = questItem?.choiceText
                     defaultColor = chip.chipBackgroundColor?.defaultColor
                     chip.isCheckable = true
-                    chip.setOnClickListener {
-                        // Handle chip click here
-                        Toast.makeText(
-                            binding.root.context,
-                            "Clicked: ${chip.text}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
 
                     if (items[position].userInput == questItem?.value) {
                         chip.isChecked = true
@@ -119,11 +101,13 @@ class LongFormAdapter<T> :
                     chip.setOnCheckedChangeListener { _, isChecked ->
                         setColor(isChecked, chip)
                         val index =
-                            givenItems.indexOfFirst { (it.options as Quest).questId == quest.questId }
+                            givenItems.indexOfFirst { it.questId == item.questId }
                         if (isChecked) {
                             givenItems[index].userInput = questItem?.value
+                        }else{
+                            givenItems[index].userInput = null
                         }
-                        if (quest.questId in needRefreshIds) {
+                        if (item.questId in needRefreshIds) {
                             items = givenItems
                         }
                     }
@@ -163,12 +147,12 @@ class LongFormAdapter<T> :
     }
 
     class DefaultViewHolder(val binding: CellLongFormItemBinding) : ViewHolder(binding.root) {
-        fun bind(item: LongFormItem<*>) {
+        fun bind(item: Quest) {
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
 
-            binding.title.text = item.title
-            binding.description.text = item.description
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
         }
     }
 
@@ -192,7 +176,7 @@ class LongFormAdapter<T> :
             val item = items[position]
 
             val index =
-                givenItems.indexOfFirst { (it.options as Quest).questId == (item.options as Quest).questId }
+                givenItems.indexOfFirst { it.questId == item.questId }
             givenItems[index].userInput = s.toString()
         }
 
@@ -211,18 +195,18 @@ class LongFormAdapter<T> :
         private val customTextWatcher: CustomTextWatcher,
     ) :
         ViewHolder(binding.root) {
-        fun bind(item: LongFormItem<*>, position: Int) {
+        fun bind(item: Quest, position: Int) {
 
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
-            binding.title.text = item.title
-            binding.description.text = item.description
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
 
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText(item.userInput)
 
             customTextWatcher.updatePosition(position)
-            customTextWatcher.updateInputLayout(binding.input, (item.options as Quest).questAnswerValidation?.min)
+            customTextWatcher.updateInputLayout(binding.input, item.questAnswerValidation?.min)
             binding.input.editText?.addTextChangedListener(customTextWatcher)
         }
     }
@@ -230,37 +214,34 @@ class LongFormAdapter<T> :
     inner class ImageGridViewHolder(
         val binding: CellLongFormItemImageGridBinding,
     ) : ViewHolder(binding.root) {
-        fun bind(item: LongFormItem<*>, position: Int) {
+        fun bind(item: Quest, position: Int) {
 
-            binding.title.text = item.title
-            binding.description.text = item.description
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
             val imageSelectAdapter = ImageSelectAdapter<Quest>(1)
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 4)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
-            val quest = item.options as Quest
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    Toast.makeText(binding.root.context, index.toString()+"", Toast.LENGTH_SHORT).show()
-                    handleClick(quest.questId!!, quest.questAnswerChoices?.get(index)?.value!!)
+                    handleClick(item.questId!!, item.questAnswerChoices?.get(index)?.value!!)
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
-                    Toast.makeText(binding.root.context, index.toString() +"", Toast.LENGTH_SHORT).show()
                 }
             })
 
 
-            imageSelectAdapter.items = quest.questAnswerChoices?.map {
-                Item2(quest, ImageUrl(), CharSequenceText(it?.choiceText!!), CharSequenceText("")) }!!
+            imageSelectAdapter.items = item.questAnswerChoices?.map {
+                Item2(item, ImageUrl(), CharSequenceText(it?.choiceText!!), CharSequenceText("")) }!!
 
         }
 
         fun handleClick(questId : Int, userInput : String){
             val index =
-                givenItems.indexOfFirst { (it.options as Quest).questId == questId }
+                givenItems.indexOfFirst { it.questId == questId }
             givenItems[index].userInput = userInput
         }
     }
@@ -310,15 +291,18 @@ class LongFormAdapter<T> :
     }
 
     override fun getItemViewType(position: Int): Int {
-        val item: LongFormItem<T> = items[position]
-        val quest = item.options as Quest
+        val quest = items[position]
 
-        if (quest.questType == "ExclusiveChoice") {
-            return ViewType.EXCLUSIVE_CHOICE.value
-        } else if (quest.questType == "Numeric") {
-            return ViewType.INPUT.value
-        } else {
-            return ViewType.DEFAULT.value
+        return when (quest.questType) {
+            "ExclusiveChoice" -> {
+                ViewType.EXCLUSIVE_CHOICE.value
+            }
+            "Numeric" -> {
+                ViewType.INPUT.value
+            }
+            else -> {
+                ViewType.DEFAULT.value
+            }
         }
     }
 

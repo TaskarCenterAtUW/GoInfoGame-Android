@@ -16,14 +16,16 @@ open class FragmentContainerActivity(
         supportFragmentManager.findFragmentById(R.id.fragment_container)
 
     protected fun replaceMainFragment(
-        f: Fragment,
+        f: Fragment?,
         customOptions: (FragmentTransaction.() -> Unit)? = null,
     ) {
-        supportFragmentManager.popBackStack("main", FragmentManager.POP_BACK_STACK_INCLUSIVE)
-        supportFragmentManager.commit {
-            customOptions?.invoke(this)
-            replace(R.id.fragment_container, f)
-            setPrimaryNavigationFragment(f)
+        if (f != null) {
+            supportFragmentManager.popBackStack("main", FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            supportFragmentManager.commit {
+                customOptions?.invoke(this)
+                replace(R.id.fragment_container, f)
+                setPrimaryNavigationFragment(f)
+            }
         }
     }
 }

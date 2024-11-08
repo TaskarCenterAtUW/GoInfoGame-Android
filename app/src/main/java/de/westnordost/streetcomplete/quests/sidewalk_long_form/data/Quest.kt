@@ -26,5 +26,7 @@ data class Quest(
     @SerialName("quest_title")
     val questTitle: String? = null,
     @SerialName("quest_type")
-    val questType: String? = null
+    val questType: String? = null,
+    var visible :Boolean = true,
+    var userInput : String? = null
 ) : Parcelable

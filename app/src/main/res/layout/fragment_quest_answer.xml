@@ -29,6 +29,14 @@
             android:clipChildren="true"
             app:behavior_peekHeight="@dimen/quest_form_peekHeight">
 
+            <ImageView
+                    android:id="@+id/cameraButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="right"
+                    android:src="@drawable/ic_camera_measure_24dp"
+                    />
+
             <LinearLayout
                 android:id="@+id/speechBubbleTitleContainer"
                 android:background="@drawable/speech_bubble_top"

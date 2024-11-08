@@ -2,8 +2,9 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import de.westnordost.osmapi.OsmConnection
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,9 +24,11 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract val loginState: StateFlow<WorkspaceLoginState>
     abstract val selectedWorkspace: StateFlow<Int?>
     abstract fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState>
-    abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse)
+    abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email : String)
     abstract fun setIsLongForm(isLongForm: Boolean)
     abstract fun setSelectedWorkspace(workspaceId: Int)
+    abstract fun getUserInfo(email : String)
+    abstract fun setEnvironment(environment: Environment)
 }
 
 class WorkspaceViewModelImpl(
@@ -60,9 +63,10 @@ class WorkspaceViewModelImpl(
 
     override fun loginToWorkspace(username: String, password: String) {
         viewModelScope.launch {
+            _loginState.value = WorkspaceLoginState.loading()
             workspaceRepository.loginToWorkspace(username, password)
                 .catch { e -> _loginState.value = WorkspaceLoginState.error(e.message) }
-                .collect { loginResponse -> _loginState.value = WorkspaceLoginState.success(loginResponse) }
+                .collect { loginResponse -> _loginState.value = WorkspaceLoginState.success(loginResponse, username) }
         }
     }
 
@@ -76,9 +80,23 @@ class WorkspaceViewModelImpl(
         initialValue = WorkspaceLongFormState.loading()
     )
 
-    override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse) {
+    override fun getUserInfo(email: String) {
+        viewModelScope.launch {
+            val response = workspaceRepository.getUserInfo(email)
+            response.let {
+                preferences.workspaceUserName = "${response.username} \n ${response.firstName} ${response.lastName}"
+            }
+        }
+    }
+
+    override fun setEnvironment(environment: Environment) {
+        EnvironmentManager(preferences).currentEnvironment = environment
+    }
+
+    override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {
         preferences.workspaceLogin = isLoggedIn
         preferences.workspaceToken = loginResponse.access_token
+        getUserInfo(email)
     }
 
     override fun setIsLongForm(isLongForm: Boolean) {
