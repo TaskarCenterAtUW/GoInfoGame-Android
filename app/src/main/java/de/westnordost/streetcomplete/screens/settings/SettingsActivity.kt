@@ -140,7 +140,10 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
         f.requireArguments().putAll(
             AbstractQuestForm.createArguments(quest.key, quest.type, geometry, 30.0f, 0.0f)
         )
-        f.requireArguments().putAll(AbstractOsmQuestForm.createArguments(element))
+        f.requireArguments().putAll(AbstractOsmQuestForm.createArguments(
+            element,
+            null
+        ))
         f.hideOsmQuestController = object : HideOsmQuestController {
             override fun hide(key: OsmQuestKey) {}
         }

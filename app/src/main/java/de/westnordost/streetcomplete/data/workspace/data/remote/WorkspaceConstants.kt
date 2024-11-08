@@ -15,10 +15,10 @@ enum class Environment(
         "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6/"
     ),
     DEV(
-        "https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces",
-        "https://tdei-gateway-stage.azurewebsites.net/api/v1/authenticate",
-        "https://tdei-usermanagement-stage.azurewebsites.net/api/v1/user-profile",
-        "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6/"
+        "https://api.workspaces-dev.sidewalks.washington.edu/api/v1/workspaces",
+        "https://tdei-api-dev.azurewebsites.net/api/v1/authenticate",
+        "https://tdei-usermanagement-be-dev.azurewebsites.net/api/v1/user-profile",
+        "https://osm.workspaces-dev.sidewalks.washington.edu/api/0.6/"
     ),
 }
 

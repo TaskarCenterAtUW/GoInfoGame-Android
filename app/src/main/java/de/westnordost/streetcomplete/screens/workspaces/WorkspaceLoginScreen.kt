@@ -145,7 +145,7 @@ fun LoginCard(
             }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
             }
-            // EnvironmentDropdownMenu(viewModel = viewModel, preferences)
+            EnvironmentDropdownMenu(viewModel = viewModel, preferences)
         }
     }
 }

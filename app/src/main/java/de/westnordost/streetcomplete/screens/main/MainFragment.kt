@@ -1184,7 +1184,9 @@ class MainFragment :
 
         if (quest is OsmQuest) {
             val element = withContext(Dispatchers.IO) { mapDataWithEditsSource.get(quest.elementType, quest.elementId) } ?: return
-            val osmArgs = AbstractOsmQuestForm.createArguments(element)
+            val osmArgs = AbstractOsmQuestForm.createArguments(element,
+                mapFragment.displayedLocation
+            )
             f.requireArguments().putAll(osmArgs)
 
             showInBottomSheet(f)
