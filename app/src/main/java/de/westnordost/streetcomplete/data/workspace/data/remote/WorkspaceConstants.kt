@@ -20,6 +20,12 @@ enum class Environment(
         "https://tdei-usermanagement-be-dev.azurewebsites.net/api/v1/user-profile",
         "https://osm.workspaces-dev.sidewalks.washington.edu/api/0.6/"
     ),
+    PROD(
+        "https://api.workspaces.sidewalks.washington.edu/api/v1/workspaces",
+        "https://tdei-gateway-prod.azurewebsites.net/api/v1/authenticate",
+        "https://tdei-usermanagement-prod.azurewebsites.net/api/v1/user-profile",
+        "https://osm.workspaces.sidewalks.washington.edu/api/0.6/"
+    ),
 }
 
 class EnvironmentManager(val preferences: Preferences) {

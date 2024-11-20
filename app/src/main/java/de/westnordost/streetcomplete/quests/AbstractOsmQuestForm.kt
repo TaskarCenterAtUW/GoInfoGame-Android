@@ -24,6 +24,7 @@ import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AddressModel
 import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
+import de.westnordost.streetcomplete.data.karta_view.domain.model.ImageUploadResponse
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
@@ -61,7 +62,6 @@ import de.westnordost.streetcomplete.view.confirmIsSurvey
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.append
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -151,10 +151,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == Activity.RESULT_OK) {
+                    showProgressbar()
                     // Handle the image capture result here
                     val bitmap = result.data?.extras?.getParcelable<Bitmap>("data")
                     startKartViewFlow(bitmap, displayedLocation)
                 } else {
+
                     // Handle the error state here
                 }
             }
@@ -193,9 +195,16 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             val sequenceId = createSequence()
             sequenceId?.apply {
                 val isUploaded = uploadImageInSequence(this, bitmap, displayedLocation)
-                if (isUploaded) {
+                if (isUploaded.first) {
+                    //https://storage13.openstreetcam.org/files/photo/2024/11/19/lth/10206921_53966_673c7da2672cf.jpg
+                    //After storage13 add .openstreetcam.org in the url
+                    // FInd where storage13 is in the first
+                    val first = isUploaded.second?.first?.replace("storage13", "storage13.openstreetcam.org")
+                    val url = "https://${first}/lth/${isUploaded.second?.second}"
+                    onImageUrlReceived(url)
                     closeSequence(this)
                 } else {
+                    hideProgressbar()
                     Log.e("KartViewFlow", "Image upload failed")
                 }
             }
@@ -216,13 +225,14 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         } else {
             Log.e("KartViewSequence", "Sequence close failed: ${response.status}")
         }
+        hideProgressbar()
     }
 
     private suspend fun uploadImageInSequence(
         sequenceId: String,
         bitmap: Bitmap?,
         displayedLocation: Location?,
-    ) : Boolean {
+    ) : Pair<Boolean, Pair<String, String>?> {
 
         bitmap?.let {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -249,14 +259,18 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             }
 
             if (response.status == HttpStatusCode.OK) {
+                val uploadResponse = response.body<ImageUploadResponse>()
+                val pair = Pair(uploadResponse.osv.photo.path, uploadResponse.osv.photo.photoName)
+
                 Log.d("UploadImage", "Image uploaded successfully")
-                return true
+                return Pair(true, pair)
             } else {
                 Log.e("UploadImage", "Image upload failed: ${response.status}")
-                return false
+                hideProgressbar()
+                return Pair(false, null)
             }
         }
-        return false
+        return Pair(false, null)
     }
 
     private suspend fun createSequence(): String? {
@@ -272,6 +286,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             Log.d("KartViewStatus", sequence.status.httpMessage)
             return sequence.osv.sequence?.id
         } else {
+            hideProgressbar()
             return null
         }
     }

@@ -127,9 +127,6 @@ abstract class AbstractQuestForm :
         setTitleHintLabel(null)
         setHint(questType.hint?.let { resources.getString(it) })
         setHintImages(questType.hintImages.mapNotNull { requireContext().getDrawable(it) })
-        binding.cameraButton.setOnClickListener {
-            setCameraIntent()
-        }
         binding.okButton.setOnClickListener {
             if (!isFormComplete()) {
                 activity?.toast(R.string.no_changes)
@@ -162,6 +159,16 @@ abstract class AbstractQuestForm :
         _binding = null
     }
     open fun setCameraIntent() {}
+
+    open fun onImageUrlReceived(imageUrl: String) {}
+
+    protected fun showProgressbar() {
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    protected fun hideProgressbar() {
+        binding.progressBar.visibility = View.GONE
+    }
 
     protected fun setTitle(text: CharSequence?) {
         binding.titleLabel.text = text

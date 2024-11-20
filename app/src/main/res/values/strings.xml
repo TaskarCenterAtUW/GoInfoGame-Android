@@ -1783,4 +1783,6 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="title_activity_work_space">WorkSpaceActivity</string>
     <string name="quest_kerb_title">Is there a curb here</string>
     <string name="submit">Submit</string>
+    <string name="upload_a_picture">Upload a picture</string>
+    <string name="image_link">Image link</string>
 </resources>
