@@ -13,7 +13,7 @@ sealed class WorkspaceListState {
     companion object {
         fun loading() = Loading
         fun success(workspaces: List<Workspace>) = Success(workspaces)
-        fun error(errorMessage: String?) = Error(errorMessage)
+        fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }
 }
 
@@ -25,7 +25,7 @@ sealed class WorkspaceLongFormState {
     companion object {
         fun loading() = Loading
         fun success(workspaces: List<AddLongFormResponseItem>) = Success(workspaces)
-        fun error(errorMessage: String?) = Error(errorMessage)
+        fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }
 }
 

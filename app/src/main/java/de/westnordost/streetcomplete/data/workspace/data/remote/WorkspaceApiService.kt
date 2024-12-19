@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.workspace.data.remote
 
+import android.location.Location
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
@@ -26,10 +27,16 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     @Serializable
     class User(val username: String, val password: String)
 
-    suspend fun getWorkspaces(): List<Workspace> {
+    suspend fun getWorkspaces(location: Location): List<Workspace> {
         try {
             val response =
-                httpClient.get("${EnvironmentManager(preferences).currentEnvironment.baseUrl}/mine")
+                httpClient.get("${EnvironmentManager(preferences).currentEnvironment.baseUrl}/mine"){
+                    //Add query params
+                    parameter("lat", location.latitude)
+                    parameter("lon", location.longitude)
+                    parameter("radius", 20000)
+                    parameter("gig_only", true)
+                }
             val responseBody = response.body<List<Workspace>>()
             return responseBody
 

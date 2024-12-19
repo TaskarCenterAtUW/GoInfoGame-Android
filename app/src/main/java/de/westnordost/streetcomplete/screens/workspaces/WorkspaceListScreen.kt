@@ -57,11 +57,20 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
             is WorkspaceListState.Success -> {
                 isLoading = false
                 // Display the list of workspaces
-                WorkspaceList(
-                    onClick,
-                    modifier = modifier,
-                    items = (workspaceListState as WorkspaceListState.Success).workspaces
-                )
+                val workspaces = (workspaceListState as WorkspaceListState.Success).workspaces
+                if (workspaces.isEmpty()) {
+                    Text(
+                        text = "No workspaces available in your area",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }else{
+                    WorkspaceList(
+                        onClick,
+                        modifier = modifier,
+                        items = (workspaceListState as WorkspaceListState.Success).workspaces
+                    )
+                }
             }
 
             is WorkspaceListState.Error -> {
@@ -74,6 +83,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
                 snackBarHostState.showSnackbar(it)
+                snackBarMessage = null
             }
         }
 

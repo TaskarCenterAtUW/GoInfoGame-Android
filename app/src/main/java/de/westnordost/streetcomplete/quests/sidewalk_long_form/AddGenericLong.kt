@@ -30,9 +30,8 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
 
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter("""
-            ${getNodeOrWay(item.elementType!!)} with (
-                ${item.questQuery}
-              )
+                          ${item.questQuery}
+
         """)
 
     override fun applyAnswerTo(
@@ -78,7 +77,5 @@ private fun getNodeOrWay(variable: String): String {
 //          and ext:gig_last_updated older today -0 days
 //     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
 private fun createRoadsFilter(variable: String, elementType: String) = """
-    ${getNodeOrWay(elementType)} with
      $variable
-     and ext:gig_complete !~ yes
 """.toElementFilterExpression()

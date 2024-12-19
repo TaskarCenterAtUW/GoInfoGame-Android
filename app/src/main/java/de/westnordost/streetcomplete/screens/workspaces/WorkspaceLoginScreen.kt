@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.screens.workspaces
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,15 +29,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
+import de.westnordost.streetcomplete.util.location.FineLocationManager
 
 @Composable
 fun LoginScreen(
@@ -75,6 +80,18 @@ fun LoginScreen(
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
+                val fineLocationManager = FineLocationManager(LocalContext.current) { location ->
+                    // Do something with the location
+                    viewModel.fetchWorkspaces(location)
+                }
+                if (ActivityCompat.checkSelfPermission(
+                        LocalContext.current,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    return
+                }
+                fineLocationManager.getCurrentLocation()
                 navToNextPage()
             }
         }

@@ -1,7 +1,9 @@
 package de.westnordost.streetcomplete.screens.workspaces
 
+import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
+    abstract fun fetchWorkspaces(location : Location)
     abstract fun loginToWorkspace(
         username: String,
         password: String,
@@ -49,17 +52,29 @@ class WorkspaceViewModelImpl(
         preferences.workspaceId = workspaceId
     }
 
-    override val showWorkspaces: StateFlow<WorkspaceListState> = flow {
-        workspaceRepository.getWorkspaces()
-            .catch { e -> emit(WorkspaceListState.error(e.message)) } // Handle errors
-            .collect { workspaces ->
-                emit(WorkspaceListState.success(workspaces)) // Emit success for each emission
-            }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = WorkspaceListState.loading()
-    )
+    private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
+    override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
+
+    // override val showWorkspaces: StateFlow<WorkspaceListState> = flow {
+    //     workspaceRepository.getWorkspaces()
+    //         .catch { e -> emit(WorkspaceListState.error(e.message)) } // Handle errors
+    //         .collect { workspaces ->
+    //             emit(WorkspaceListState.success(workspaces)) // Emit success for each emission
+    //         }
+    // }.stateIn(
+    //     scope = viewModelScope,
+    //     started = SharingStarted.WhileSubscribed(5000),
+    //     initialValue = WorkspaceListState.loading()
+    // )
+
+    override fun fetchWorkspaces(location: Location) {
+        viewModelScope.launch {
+            _showWorkspaces.value = WorkspaceListState.Loading
+            workspaceRepository.getWorkspaces(location)
+                .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
+                .collect { workspaces -> _showWorkspaces.value = WorkspaceListState.success(workspaces) }
+        }
+    }
 
     override fun loginToWorkspace(username: String, password: String) {
         viewModelScope.launch {
@@ -71,6 +86,7 @@ class WorkspaceViewModelImpl(
     }
 
     override fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
+        emit(WorkspaceLongFormState.loading())
         workspaceRepository.getLongFormForWorkspace(workspaceId)
             .catch { e -> emit(WorkspaceLongFormState.error(e.message)) }
             .collect { loginResponse -> emit(WorkspaceLongFormState.success(loginResponse)) }

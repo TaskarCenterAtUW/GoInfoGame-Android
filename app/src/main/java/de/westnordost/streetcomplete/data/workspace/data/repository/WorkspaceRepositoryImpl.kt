@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.workspace.data.repository
 
+import android.location.Location
 import de.westnordost.streetcomplete.data.workspace.WorkspaceDao
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceApiService
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
@@ -15,9 +16,9 @@ class WorkspaceRepositoryImpl(
     private val dao: WorkspaceDao,
 ) : WorkspaceRepository {
 
-    override fun getWorkspaces(): Flow<List<Workspace>> = flow {
-        emit(dao.getAll())
-        val workspaces = apiService.getWorkspaces()
+    override fun getWorkspaces(location: Location): Flow<List<Workspace>> = flow {
+        // emit(dao.getAll())
+        val workspaces = apiService.getWorkspaces(location)
         dao.getAll().map { it.id }.let { ids ->
             dao.deleteAll(ids)
         }
