@@ -395,7 +395,6 @@ class MainActivity :
             getParcelableArrayListExtra("LONG_FORM")
         }
 
-        println(result)
         // questTypeRegistry.clearAll()
         val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {

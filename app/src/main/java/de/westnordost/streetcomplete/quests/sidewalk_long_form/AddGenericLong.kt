@@ -28,6 +28,9 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
 
     private val currentTime = System.currentTimeMillis()
 
+    override val name: String
+        get() = "AddGenericLong${item.elementType}"
+
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter("""
                           ${item.questQuery}

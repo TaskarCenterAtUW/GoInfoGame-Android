@@ -25,7 +25,7 @@ open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T
         val byOrdinalMap = HashMap<Int, T>(highestOrdinal + 1)
         for ((ordinal, objectType) in ordinalsAndEntries) {
             val typeName = if (objectType is AddGenericLong){
-                "${objectType.title}"
+                objectType.name
             }else{
                 objectType::class.simpleName!!
             }

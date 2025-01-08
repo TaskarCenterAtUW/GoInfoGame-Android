@@ -277,7 +277,7 @@ abstract class AbstractQuestForm :
         fun createArguments(questKey: QuestKey, questType: QuestType, geometry: ElementGeometry, rotation: Float, tilt: Float) = bundleOf(
             ARG_QUEST_KEY to Json.encodeToString(questKey),
             ARG_GEOMETRY to Json.encodeToString(geometry),
-            ARG_QUESTTYPE to questType.title.toString(),
+            ARG_QUESTTYPE to questType.name,
             ARG_MAP_ROTATION to rotation,
             ARG_MAP_TILT to tilt
         )

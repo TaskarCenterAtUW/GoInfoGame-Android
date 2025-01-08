@@ -57,7 +57,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
             onClickOk()
         }
         binding.cameraIntentTV.setOnClickListener {
-            setCameraIntent()
+            hideQuest()
         }
 
 
