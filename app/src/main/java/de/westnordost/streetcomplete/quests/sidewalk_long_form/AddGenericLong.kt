@@ -80,5 +80,5 @@ private fun getNodeOrWay(variable: String): String {
 //          and ext:gig_last_updated older today -0 days
 //     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
 private fun createRoadsFilter(variable: String, elementType: String) = """
-     $variable
+     $variable and ext:gig_complete !~ yes
 """.toElementFilterExpression()

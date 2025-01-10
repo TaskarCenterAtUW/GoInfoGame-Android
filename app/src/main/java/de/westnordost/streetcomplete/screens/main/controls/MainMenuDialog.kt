@@ -37,8 +37,9 @@ class MainMenuDialog(
             dismiss()
         }
         binding.settingsButton.setOnClickListener {
-            val intent = Intent(context, SettingsActivity::class.java)
-            context.startActivity(intent)
+//            val intent = Intent(context, SettingsActivity::class.java)
+//            context.startActivity(intent)
+            context.startActivity(SettingsActivity.createLaunchQuestSettingsIntent(this.context))
             dismiss()
         }
         binding.aboutButton.setOnClickListener {
