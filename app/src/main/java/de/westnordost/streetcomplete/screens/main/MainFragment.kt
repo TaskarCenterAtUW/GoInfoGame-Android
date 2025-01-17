@@ -251,7 +251,11 @@ class MainFragment :
         binding.locationPointerPin.setOnClickListener { onClickLocationPointer() }
 
         binding.compassView.setOnClickListener { onClickCompassButton() }
-        binding.gpsTrackingButton.setOnClickListener { onClickTrackingButton() }
+        binding.layerChangeButton.setOnClickListener { mapFragment?.showArielView = true }
+        binding.gpsTrackingButton.setOnClickListener {
+            val mapFragment = mapFragment ?: return@setOnClickListener
+            mapFragment.showArielView = true
+        }
         onClickTrackingButton()
         binding.stopTracksButton.setOnClickListener { onClickTracksStop() }
         binding.zoomInButton.setOnClickListener { onClickZoomIn() }

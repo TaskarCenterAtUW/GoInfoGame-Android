@@ -135,6 +135,17 @@
             app:layout_constraintBottom_toBottomOf="@id/gpsTrackingButton"/>
 
         <ImageButton
+            android:id="@+id/layerChangeButton"
+            android:layout_width="@dimen/map_button_size"
+            android:layout_height="@dimen/map_button_size"
+            android:scaleType="center"
+            style="@style/RoundWhiteButton"
+            app:srcCompat="@drawable/ic_layers_24"
+            android:contentDescription="@string/map_btn_zoom_in"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/zoomInButton"/>
+
+        <ImageButton
             android:id="@+id/zoomInButton"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"

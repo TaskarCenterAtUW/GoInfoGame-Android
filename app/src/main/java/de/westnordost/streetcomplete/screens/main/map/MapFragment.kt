@@ -39,6 +39,7 @@ import de.westnordost.streetcomplete.util.ktx.awaitLayout
 import de.westnordost.streetcomplete.util.ktx.openUri
 import de.westnordost.streetcomplete.util.ktx.setMargins
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.distanceTo
 import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
@@ -76,6 +77,17 @@ open class MapFragment :
         "layers.buildings.draw.buildings-style.extrude" to "false",
         "layers.buildings.draw.buildings-outline-style.extrude" to "false"
     )
+
+    var showArielView : Boolean = false
+        set(value) {
+            sceneMapComponent?.isAerialView = sceneMapComponent?.isAerialView != true
+            field = value
+
+            viewLifecycleScope.launch {
+                sceneMapComponent?.loadScene()
+            }
+        }
+
     var show3DBuildings: Boolean = true
         set(value) {
             if (field == value) return
@@ -231,6 +243,66 @@ open class MapFragment :
                 builder
                     .cacheControl(cacheConfig.tangramCacheControl)
                     .header("User-Agent", ApplicationConstants.USER_AGENT + " / " + userAgent)
+            }
+
+            fun extractTileCoordinates(url: String): Map<String, Int>? {
+                // Regular expression to capture x, y, and z values from the URL
+                val regex = Regex("x=(\\d+)&y=(\\d+)&z=(\\d+)")
+                val matchResult = regex.find(url)
+
+                return if (matchResult != null) {
+                    // Extract x, y, and z from the regex groups and return them as a map
+                    mapOf(
+                        "x" to (matchResult.groups[1]?.value?.toInt() ?: 0),
+                        "y" to (matchResult.groups[2]?.value?.toInt() ?: 0),
+                        "z" to (matchResult.groups[3]?.value?.toInt() ?: 0)
+                    )
+                } else {
+                    // Return null if the URL doesn't match the expected pattern
+                    null
+                }
+            }
+
+            private fun tileToQuadKey(x: Int, y: Int, z: Int): String {
+                val quadKey = StringBuilder()
+                for (i in z downTo 1) {
+                    var bit = 0
+                    val mask = 1 shl (i - 1)
+                    if (x and mask != 0) bit += 1
+                    if (y and mask != 0) bit += 2
+                    quadKey.append(bit)
+                }
+                return quadKey.toString()
+            }
+
+            private fun preprocessUrl(url: String, quadKey: String): String {
+                return url.replace("{quadkey}", quadKey)
+            }
+
+            override fun startRequest(url: String, cb: HttpHandler.Callback): Any {
+                Log.d("MapFragmentTangram", "Requesting $url")
+
+                val coordinates : Map<String, Int>? = extractTileCoordinates(url)
+
+                if (coordinates != null){
+                    val x : Int? = coordinates["x"]
+                    val y : Int? = coordinates["y"]
+                    val z : Int? = coordinates["z"]
+
+                    if (x != null && y != null && z != null){
+                        val quadKey = tileToQuadKey(x, y, z)
+                        val newUrl = "https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=14885"
+                        val modifiedUrl = preprocessUrl(newUrl, quadKey)
+                        Log.d("MapFragmentTangram", modifiedUrl)
+                        Log.d("MapFragmentTangram", url)
+                        return super.startRequest(modifiedUrl, cb)
+                    }else{
+                        return super.startRequest(url, cb)
+                    }
+                }else{
+                    return super.startRequest(url, cb)
+
+                }
             }
         }
     }
