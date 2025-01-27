@@ -34,6 +34,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.ImageUploadServerException
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
+import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestType
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
 import de.westnordost.streetcomplete.data.quest.QuestType
@@ -406,6 +407,7 @@ class MainActivity :
             questTypes.add(index to AddGenericLong(item))
             //break
         }
+        questTypes.add(questTypes.size to OsmNoteQuestType)
         questTypeRegistry.addItem(questTypes)
         allEditTypes.registries.clear()
         allEditTypes.registries = mutableListOf(questTypeRegistry)

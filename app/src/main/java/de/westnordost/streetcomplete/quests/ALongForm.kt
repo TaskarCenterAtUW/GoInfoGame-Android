@@ -64,6 +64,10 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
             hideQuest()
         }
 
+        binding.composeNoteTV.setOnClickListener {
+            composeNote()
+        }
+
     }
 
     override fun onImageUrlReceived(imageUrl: String) {

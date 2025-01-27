@@ -1,33 +1,43 @@
 package de.westnordost.streetcomplete.screens.workspaces
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import org.koin.android.ext.android.inject
@@ -62,9 +72,22 @@ class WorkSpaceActivity : ComponentActivity() {
             ) == PackageManager.PERMISSION_GRANTED -> {
                 // Permission is already granted
                 setContent { AppTheme {
+                    val workspaceLoginState by preferences.workspaceLoginState.collectAsState()
                     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                         TopAppBar(
                             title = { Text(text = "Go Info Game") },
+                            actions = {
+                                if (workspaceLoginState) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person, // Replace with your desired icon
+                                        contentDescription = "Star Icon",
+                                        modifier = Modifier.padding(end = 16.dp).clickable {
+                                            val intent = Intent(this@WorkSpaceActivity, UserActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                }
+                            },
                             modifier = Modifier.wrapContentSize(Alignment.Center),
                         )
                     }, contentWindowInsets = WindowInsets.statusBars) { innerPadding ->

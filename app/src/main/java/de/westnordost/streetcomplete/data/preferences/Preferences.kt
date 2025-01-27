@@ -11,6 +11,8 @@ import com.russhwolf.settings.set
 import com.russhwolf.settings.string
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.ktx.putStringOrNull
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class Preferences(private val prefs: ObservableSettings) {
     // application settings
@@ -80,9 +82,17 @@ class Preferences(private val prefs: ObservableSettings) {
     var workspaceLogin : Boolean
         set(value) {
             prefs[WORKSPACE_LOGIN] = value
+            setWorkspaceLoginState(value)
         }
         get() =
             prefs.getBoolean(WORKSPACE_LOGIN, false)
+
+    private val _workspaceLoginState = MutableStateFlow(prefs.getBoolean(WORKSPACE_LOGIN, false))
+    val workspaceLoginState: StateFlow<Boolean> get() = _workspaceLoginState
+
+    private fun setWorkspaceLoginState(value: Boolean) {
+        _workspaceLoginState.value = value
+    }
 
     var workspaceId : Int?
         set(value) {

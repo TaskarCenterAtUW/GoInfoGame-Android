@@ -8,17 +8,38 @@
         android:layout_height="match_parent"
         android:weightSum="1">
 
-    <TextView
-        android:id="@+id/hideTV"
-        android:layout_marginVertical="16dp"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:layout_marginHorizontal="8dp"
-        android:layout_gravity="end"
-        android:textColor="@color/primary"
-        android:text="@string/hide"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/composeNoteTV"
+            android:layout_marginVertical="16dp"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginHorizontal="8dp"
+            android:gravity="end"
+            android:layout_alignParentStart="true"
+            android:textColor="@color/primary"
+            android:text="Compose Note"
+            android:paddingHorizontal="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/hideTV"
+            android:layout_alignParentEnd="true"
+            android:layout_marginVertical="16dp"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_gravity="end"
+            android:textColor="@color/primary"
+            android:text="@string/hide"
+            android:paddingHorizontal="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
