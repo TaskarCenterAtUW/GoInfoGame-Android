@@ -82,7 +82,14 @@ open class MapFragment :
         set(value) {
             sceneMapComponent?.isAerialView = sceneMapComponent?.isAerialView != true
             field = value
+            if (sceneMapComponent?.isAerialView != true){
+                binding.mapTileProviderLink.text = vectorTileProvider.copyrightText
+                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog(vectorTileProvider.copyrightLink) }
+            }else{
+                binding.mapTileProviderLink.text = "© Bing Maps"
+                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://www.bing.com/maps") }
 
+            }
             viewLifecycleScope.launch {
                 sceneMapComponent?.loadScene()
             }
