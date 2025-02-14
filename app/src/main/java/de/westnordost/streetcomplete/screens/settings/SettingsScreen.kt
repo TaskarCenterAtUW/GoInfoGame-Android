@@ -78,14 +78,14 @@ fun SettingsScreen(
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             PreferenceCategory(stringResource(R.string.pref_category_quests)) {
 
-                Preference(
-                    name = stringResource(R.string.action_manage_presets),
-                    onClick = onClickPresetSelection,
-                    description = stringResource(R.string.action_manage_presets_summary)
-                ) {
-                    Text(presetNameOrDefault)
-                    NextScreenIcon()
-                }
+//                Preference(
+//                    name = stringResource(R.string.action_manage_presets),
+//                    onClick = onClickPresetSelection,
+//                    description = stringResource(R.string.action_manage_presets_summary)
+//                ) {
+//                    Text(presetNameOrDefault)
+//                    NextScreenIcon()
+//                }
 
                 Preference(
                     name = stringResource(R.string.pref_title_quests2),
@@ -95,75 +95,75 @@ fun SettingsScreen(
                     }
                 ) { NextScreenIcon() }
 
-                Preference(
-                    name = stringResource(R.string.pref_title_resurvey_intervals),
-                    onClick = { showResurveyIntervalsSelect = true },
-                    description = stringResource(R.string.pref_title_resurvey_intervals_summary)
-                ) {
-                    Text(stringResource(resurveyIntervals.titleResId))
-                }
+//                Preference(
+//                    name = stringResource(R.string.pref_title_resurvey_intervals),
+//                    onClick = { showResurveyIntervalsSelect = true },
+//                    description = stringResource(R.string.pref_title_resurvey_intervals_summary)
+//                ) {
+//                    Text(stringResource(resurveyIntervals.titleResId))
+//                }
 
-                Preference(
-                    name = stringResource(R.string.pref_title_show_notes_not_phrased_as_questions),
-                    onClick = { viewModel.setShowAllNotes(!showAllNotes) },
-                    description = stringResource(
-                        if (showAllNotes) R.string.pref_summaryOn_show_notes_not_phrased_as_questions
-                        else R.string.pref_summaryOff_show_notes_not_phrased_as_questions
-                    )
-                ) {
-                    Switch(
-                        checked = showAllNotes,
-                        onCheckedChange = { viewModel.setShowAllNotes(it) }
-                    )
-                }
+//                Preference(
+//                    name = stringResource(R.string.pref_title_show_notes_not_phrased_as_questions),
+//                    onClick = { viewModel.setShowAllNotes(!showAllNotes) },
+//                    description = stringResource(
+//                        if (showAllNotes) R.string.pref_summaryOn_show_notes_not_phrased_as_questions
+//                        else R.string.pref_summaryOff_show_notes_not_phrased_as_questions
+//                    )
+//                ) {
+//                    Switch(
+//                        checked = showAllNotes,
+//                        onCheckedChange = { viewModel.setShowAllNotes(it) }
+//                    )
+//                }
             }
 
-            PreferenceCategory(stringResource(R.string.pref_category_communication)) {
-                Preference(
-                    name = stringResource(R.string.pref_title_sync2),
-                    onClick = { showAutosyncSelect = true }
-                ) {
-                    Text(stringResource(autosync.titleResId))
-                }
-            }
-
-            PreferenceCategory(stringResource(R.string.pref_category_display)) {
-
-                Preference(
-                    name = stringResource(R.string.pref_title_language_select2),
-                    onClick = { showLanguageSelect = true },
-                ) {
-                    Text(
-                        selectedLanguage?.let { getLanguageDisplayName(it) }
-                            ?: stringResource(R.string.language_default)
-                    )
-                }
-
-                Preference(
-                    name = stringResource(R.string.pref_title_theme_select),
-                    onClick = { showThemeSelect = true },
-                ) {
-                    Text(stringResource(theme.titleResId))
-                }
-
-                Preference(
-                    name = stringResource(R.string.pref_title_keep_screen_on),
-                    onClick = { viewModel.setKeepScreenOn(!keepScreenOn) },
-                ) {
-                    Switch(
-                        checked = keepScreenOn,
-                        onCheckedChange = { viewModel.setKeepScreenOn(it) }
-                    )
-                }
-            }
+//            PreferenceCategory(stringResource(R.string.pref_category_communication)) {
+//                Preference(
+//                    name = stringResource(R.string.pref_title_sync2),
+//                    onClick = { showAutosyncSelect = true }
+//                ) {
+//                    Text(stringResource(autosync.titleResId))
+//                }
+//            }
+//
+//            PreferenceCategory(stringResource(R.string.pref_category_display)) {
+//
+//                Preference(
+//                    name = stringResource(R.string.pref_title_language_select2),
+//                    onClick = { showLanguageSelect = true },
+//                ) {
+//                    Text(
+//                        selectedLanguage?.let { getLanguageDisplayName(it) }
+//                            ?: stringResource(R.string.language_default)
+//                    )
+//                }
+//
+//                Preference(
+//                    name = stringResource(R.string.pref_title_theme_select),
+//                    onClick = { showThemeSelect = true },
+//                ) {
+//                    Text(stringResource(theme.titleResId))
+//                }
+//
+//                Preference(
+//                    name = stringResource(R.string.pref_title_keep_screen_on),
+//                    onClick = { viewModel.setKeepScreenOn(!keepScreenOn) },
+//                ) {
+//                    Switch(
+//                        checked = keepScreenOn,
+//                        onCheckedChange = { viewModel.setKeepScreenOn(it) }
+//                    )
+//                }
+//            }
 
             PreferenceCategory(stringResource(R.string.pref_category_advanced)) {
 
-                Preference(
-                    name = stringResource(R.string.pref_title_delete_cache),
-                    onClick = { showDeleteCacheConfirmation = true },
-                    description = stringResource(R.string.pref_title_delete_cache_summary)
-                )
+//                Preference(
+//                    name = stringResource(R.string.pref_title_delete_cache),
+//                    onClick = { showDeleteCacheConfirmation = true },
+//                    description = stringResource(R.string.pref_title_delete_cache_summary)
+//                )
 
                 Preference(
                     name = stringResource(R.string.pref_title_quests_restore_hidden),

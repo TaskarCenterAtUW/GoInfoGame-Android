@@ -45,7 +45,7 @@ import org.koin.androidx.compose.koinViewModel
         composable(SettingsDestination.QuestSelection) {
             QuestSelectionScreen(
                 viewModel = koinViewModel(),
-                onClickBack = onClickBack
+                onClickBack = { navController.popBackStack() }
             )
         }
         composable(SettingsDestination.ShowQuestForms) {

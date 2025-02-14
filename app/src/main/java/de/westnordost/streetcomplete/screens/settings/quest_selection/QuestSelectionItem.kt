@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.surface.AddRoadSurface
 import de.westnordost.streetcomplete.screens.settings.genericQuestTitle
 
@@ -56,8 +57,14 @@ fun QuestSelectionItem(
             modifier = Modifier.padding(start = 16.dp).weight(0.1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            var title = ""
+            if (item.questType is AddGenericLong){
+                title = item.questType.item.elementType!!
+            }else{
+                title = "Create Note"
+            }
             Text(
-                text = genericQuestTitle(item.questType),
+                text = title,
                 modifier = Modifier.alpha(alpha),
                 style = MaterialTheme.typography.body1,
             )
