@@ -199,7 +199,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     //https://storage13.openstreetcam.org/files/photo/2024/11/19/lth/10206921_53966_673c7da2672cf.jpg
                     //After storage13 add .openstreetcam.org in the url
                     // FInd where storage13 is in the first
-                    val first = isUploaded.second?.first?.replace("storage13", "storage13.openstreetcam.org")
+                    val first = isUploaded.second?.first?.replace(
+                        "storage13",
+                        "storage13.openstreetcam.org"
+                    )
                     val url = "https://${first}/lth/${isUploaded.second?.second}"
                     onImageUrlReceived(url)
                     closeSequence(this)
@@ -213,12 +216,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     private suspend fun closeSequence(sequenceId: String) {
         val token = "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
-        val response = httpClient.post("https://api.openstreetcam.org/1.0/sequence/finished-uploading/") {
-            setBody(MultiPartFormDataContent(formData {
-                append("access_token", token)
-                append("sequenceId", sequenceId)
-            }))
-        }
+        val response =
+            httpClient.post("https://api.openstreetcam.org/1.0/sequence/finished-uploading/") {
+                setBody(MultiPartFormDataContent(formData {
+                    append("access_token", token)
+                    append("sequenceId", sequenceId)
+                }))
+            }
         if (response.status == HttpStatusCode.OK) {
             val sequence = response.body<CreateSequenceResponse>()
             Log.d("KartViewSequence", sequence.status.httpMessage)
@@ -232,7 +236,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         sequenceId: String,
         bitmap: Bitmap?,
         displayedLocation: Location?,
-    ) : Pair<Boolean, Pair<String, String>?> {
+    ): Pair<Boolean, Pair<String, String>?> {
 
         bitmap?.let {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -251,6 +255,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                         "coordinate",
                         "${displayedLocation?.latitude},${displayedLocation?.longitude}"
                     )
+                    append("headers", displayedLocation?.bearing.toString())
+
+//                    if (displayedLocation?.hasBearing() == true){
+//                        append("headers", displayedLocation.bearing?.toInt()?.toString() ?: "0")
+//                    }
                     append("photo", byteArray, Headers.build {
                         append(HttpHeaders.ContentType, "image/jpeg")
                         append(HttpHeaders.ContentDisposition, "filename=\"wework-kartaview.jpg\"")
@@ -440,14 +449,18 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
     }
 
-    protected fun applyAnswer(answer: T) {
+    protected fun applyAnswer(
+        answer: T,
+        extraTagList: MutableList<Pair<String, String>> = mutableListOf()
+    ) {
         viewLifecycleScope.launch {
-            solve(UpdateElementTagsAction(element, createQuestChanges(answer)))
+            solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
         }
     }
 
-    private fun createQuestChanges(answer: T): StringMapChanges {
+    private fun createQuestChanges(answer: T, extraTagList: MutableList<Pair<String, String>> = mutableListOf()): StringMapChanges {
         val changesBuilder = StringMapChangesBuilder(element.tags)
+        extraTagList.forEach { changesBuilder[it.first] = it.second }
         osmElementQuestType.applyAnswerTo(answer, changesBuilder, geometry, element.timestampEdited)
         val changes = changesBuilder.create()
         require(!changes.isEmpty()) {

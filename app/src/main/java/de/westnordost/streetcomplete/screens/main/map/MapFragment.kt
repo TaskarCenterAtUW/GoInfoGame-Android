@@ -87,7 +87,7 @@ open class MapFragment :
                 binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog(vectorTileProvider.copyrightLink) }
             }else{
                 binding.mapTileProviderLink.text = "© Bing Maps"
-                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://www.bing.com/maps") }
+                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://blog.openstreetmap.org/2010/11/30/microsoft-imagery-details/") }
 
             }
             viewLifecycleScope.launch {

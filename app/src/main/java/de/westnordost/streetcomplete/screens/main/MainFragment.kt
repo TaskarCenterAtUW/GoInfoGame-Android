@@ -439,14 +439,14 @@ class MainFragment :
     override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) { }
 
     override fun onLongPress(x: Float, y: Float) {
-        // val point = PointF(x, y)
-        // val position = mapFragment?.getPositionAt(point) ?: return
-        // if (bottomSheetFragment != null || editHistoryFragment != null) return
-        //
-        // binding.contextMenuView.translationX = x
-        // binding.contextMenuView.translationY = y
-        //
-        // showMapContextMenu(position)
+         val point = PointF(x, y)
+         val position = mapFragment?.getPositionAt(point) ?: return
+         if (bottomSheetFragment != null || editHistoryFragment != null) return
+
+         binding.contextMenuView.translationX = x
+         binding.contextMenuView.translationY = y
+
+         showMapContextMenu(position)
     }
 
     /* ---------------------------- LocationAwareMapFragment.Listener --------------------------- */
@@ -920,8 +920,8 @@ class MainFragment :
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_note -> onClickCreateNote(position)
-                R.id.action_create_track -> onClickCreateTrack()
-                R.id.action_open_location -> onClickOpenLocationInOtherApp(position)
+//                R.id.action_create_track -> onClickCreateTrack()
+//                R.id.action_open_location -> onClickOpenLocationInOtherApp(position)
             }
             true
         }
