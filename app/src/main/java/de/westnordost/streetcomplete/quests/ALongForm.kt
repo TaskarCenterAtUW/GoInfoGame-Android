@@ -26,7 +26,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     override val defaultExpanded = false
 
     protected abstract val items: T
-
+    private var imageUrl : String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         adapter =  LongFormAdapter()
@@ -35,14 +35,14 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     override fun onClickOk() {
         val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
         val tagList : MutableList<Pair<String, String>> = mutableListOf()
-        for (item in editedItems){
-            tagList.add(Pair(item.questTag!!, item.userInput!!))
+        if (imageUrl !=null){
+            tagList.add(Pair("ext:kartaview_url", imageUrl!!))
         }
 
         if (editedItems.isEmpty()) {
             Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
         }else{
-            applyAnswer(editedItems as T)
+            applyAnswer(editedItems as T, tagList)
         }
     }
 
@@ -72,6 +72,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     override fun onImageUrlReceived(imageUrl: String) {
         binding.imageUrlTV.visibility = View.VISIBLE
+        this.imageUrl = imageUrl
         binding.imageUrlTV.text = getSpannableText(imageUrl)
     }
 
