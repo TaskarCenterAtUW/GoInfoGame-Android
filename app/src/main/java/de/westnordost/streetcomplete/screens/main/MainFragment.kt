@@ -56,6 +56,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuest
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
+import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
@@ -68,6 +69,7 @@ import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
 import de.westnordost.streetcomplete.overlays.IsShowingElement
 import de.westnordost.streetcomplete.overlays.Overlay
+import de.westnordost.streetcomplete.overlays.overlaysRegistry
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
@@ -179,6 +181,7 @@ class MainFragment :
     private val soundFx: SoundFx by inject()
 
     private lateinit var locationManager: FineLocationManager
+    private val overlayRegistry by inject<OverlayRegistry>()
 
     private val controlsViewModel by viewModel<MainViewModel>()
     private val editHistoryViewModel by viewModel<EditHistoryViewModel>()
@@ -488,6 +491,8 @@ class MainFragment :
             }
         } else if (editHistoryFragment != null) {
             closeEditHistorySidebar()
+        } else if (controlsViewModel.selectedOverlay.value != null) {
+            controlsViewModel.selectOverlay(null)
         }
     }
 
@@ -514,6 +519,7 @@ class MainFragment :
     override fun onEdited(editType: ElementEditType, geometry: ElementGeometry) {
         showQuestSolvedAnimation(editType.icon, geometry.center)
         closeBottomSheet()
+        controlsViewModel.selectOverlay(null)
     }
 
     override fun onComposeNote(editType: ElementEditType, element: Element, geometry: ElementGeometry, leaveNoteContext: String) {
@@ -873,17 +879,18 @@ class MainFragment :
     }
 
     private fun showOverlaysMenu() {
-        val adapter = OverlaySelectionAdapter(controlsViewModel.overlays)
-        val popupWindow = ListPopupWindow(requireContext())
-
-        popupWindow.setAdapter(adapter)
-        popupWindow.setOnItemClickListener { _, _, position, _ ->
-            controlsViewModel.selectOverlay(adapter.getItem(position))
-            popupWindow.dismiss()
-        }
-        popupWindow.anchorView = binding.overlaysButton
-        popupWindow.width = resources.dpToPx(240).toInt()
-        popupWindow.show()
+//        val adapter = OverlaySelectionAdapter(controlsViewModel.overlays)
+//        val popupWindow = ListPopupWindow(requireContext())
+//
+//        popupWindow.setAdapter(adapter)
+//        popupWindow.setOnItemClickListener { _, _, position, _ ->
+//            controlsViewModel.selectOverlay(adapter.getItem(position))
+//            popupWindow.dismiss()
+//        }
+//        popupWindow.anchorView = binding.overlaysButton
+//        popupWindow.width = resources.dpToPx(240).toInt()
+//        popupWindow.show()
+        controlsViewModel.selectOverlay(overlayRegistry[0])
     }
 
     private fun getDownloadArea(): BoundingBox? {
@@ -920,7 +927,7 @@ class MainFragment :
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_note -> onClickCreateNote(position)
-//                R.id.action_create_track -> onClickCreateTrack()
+                R.id.action_create_node -> showOverlaysMenu()
 //                R.id.action_open_location -> onClickOpenLocationInOtherApp(position)
             }
             true

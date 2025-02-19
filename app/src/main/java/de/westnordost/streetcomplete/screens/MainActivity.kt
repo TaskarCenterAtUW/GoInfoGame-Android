@@ -35,6 +35,7 @@ import de.westnordost.streetcomplete.data.osmnotes.ImageUploadServerException
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestType
+import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
 import de.westnordost.streetcomplete.data.quest.QuestType
@@ -83,6 +84,7 @@ class MainActivity :
     private val prefs: Preferences by inject()
 
     private val questTypeRegistry: QuestTypeRegistry by inject()
+    private val overlayRegistry by inject<OverlayRegistry>()
     private val allEditTypes : AllEditTypes by inject()
     private val preferences : Preferences by inject()
 
@@ -409,8 +411,10 @@ class MainActivity :
         }
         questTypes.add(questTypes.size to OsmNoteQuestType)
         questTypeRegistry.addItem(questTypes)
+
         allEditTypes.registries.clear()
-        allEditTypes.registries = mutableListOf(questTypeRegistry)
+        allEditTypes.registries.addAll(listOf(questTypeRegistry))
+        allEditTypes.registries.addAll(listOf(overlayRegistry))
         allEditTypes.updateByName()
         // val new_registry = QuestTypeRegistry(questTypes)
         // component.reloadDependency(new_registry)
