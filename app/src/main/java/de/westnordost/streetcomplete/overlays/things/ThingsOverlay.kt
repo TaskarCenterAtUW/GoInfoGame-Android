@@ -16,17 +16,14 @@ import de.westnordost.streetcomplete.overlays.PolygonStyle
 
 class ThingsOverlay(private val getFeature: (Element) -> Feature?) : Overlay {
 
-    override val title = R.string.overlay_things
+    override val title = R.string.overlay_features
     override val icon = R.drawable.ic_quest_dot
     override val changesetComment = "Survey small map features"
     override val wikiLink = null
     override val achievements = listOf(EditTypeAchievement.CITIZEN)
     override val isCreateNodeEnabled = true
 
-    override val sceneUpdates = listOf(
-        "layers.buildings.draw.buildings-style.extrude" to "false",
-        "layers.buildings.draw.buildings-outline-style.extrude" to "false"
-    )
+    override val sceneUpdates = null
 
     override fun getStyledElements(mapData: MapDataWithGeometry) =
         mapData

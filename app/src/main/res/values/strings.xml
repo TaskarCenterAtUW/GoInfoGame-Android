@@ -62,6 +62,7 @@ The info you enter is directly added to OpenStreetMap in your name, without the 
 
     <string name="map_btn_create_track">Create new track recording</string>
     <string name="map_btn_stop_track">"Stop recording track"</string>
+    <string name="map_btn_create_node">Add new feature</string>
 
 
     <!-- Android notifications -->
@@ -1734,6 +1735,7 @@ Partially means that a wheelchair can enter and use the restroom, but no handrai
     <string name="confirmation_replace_shop_no">"Still same place"</string>
 
     <string name="overlay_things">Things</string>
+    <string name="overlay_features">Features</string>
     <string name="disused">disused</string>
     <string name="unknown_object">Unknown object</string>
 

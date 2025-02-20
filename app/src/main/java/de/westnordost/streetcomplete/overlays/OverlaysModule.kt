@@ -50,13 +50,13 @@ fun overlaysRegistry(
     getFeature: (Element) -> Feature?,
 ) = OverlayRegistry(listOf(
 
-    0 to WayLitOverlay(),
-    6 to SurfaceOverlay(),
-    1 to SidewalkOverlay(),
-    5 to CyclewayOverlay(getCountryInfoByLocation),
-    2 to StreetParkingOverlay(),
-    3 to AddressOverlay(getCountryCodeByLocation),
-    4 to PlacesOverlay(getFeature),
-    8 to ThingsOverlay(getFeature),
-    7 to BuildingsOverlay(),
+//    0 to WayLitOverlay(),
+//    6 to SurfaceOverlay(),
+//    1 to SidewalkOverlay(),
+//    5 to CyclewayOverlay(getCountryInfoByLocation),
+//    2 to StreetParkingOverlay(),
+//    3 to AddressOverlay(getCountryCodeByLocation),
+//    4 to PlacesOverlay(getFeature),
+    0 to ThingsOverlay(getFeature),
+//    7 to BuildingsOverlay(),
 ))
