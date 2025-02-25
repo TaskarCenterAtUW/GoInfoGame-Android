@@ -2,7 +2,9 @@ package de.westnordost.streetcomplete.screens.main.map
 
 import android.graphics.PointF
 import android.graphics.RectF
+import android.widget.Toast
 import androidx.annotation.DrawableRes
+import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
 import de.westnordost.streetcomplete.data.edithistory.EditKey
@@ -19,6 +21,7 @@ import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
+import de.westnordost.streetcomplete.screens.main.map.components.MultiSelectPinMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
@@ -49,6 +52,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private var geometryMarkersMapComponent: GeometryMarkersMapComponent? = null
     private var pinsMapComponent: PinsMapComponent? = null
     private var selectedPinsMapComponent: SelectedPinsMapComponent? = null
+    private var multiSelectPinMapComponent: MultiSelectPinMapComponent? = null
     private var geometryMapComponent: FocusGeometryMapComponent? = null
     private var questPinsManager: QuestPinsManager? = null
     private var editHistoryPinsManager: EditHistoryPinsManager? = null
@@ -56,9 +60,11 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private var styleableOverlayManager: StyleableOverlayManager? = null
     private var downloadedAreaMapComponent: DownloadedAreaMapComponent? = null
     private var downloadedAreaManager: DownloadedAreaManager? = null
+    private val multiSelectPoints : MutableList<LatLon> = mutableListOf()
 
     interface Listener {
         fun onClickedQuest(questKey: QuestKey)
+        fun onClickedForMultiSelect(questKey: QuestKey)
         fun onClickedEdit(editKey: EditKey)
         fun onClickedElement(elementKey: ElementKey)
         fun onClickedMapAt(position: LatLon, clickAreaSizeInMeters: Double)
@@ -115,6 +121,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl, requireContext())
         pinsMapComponent = PinsMapComponent(ctrl)
         selectedPinsMapComponent = SelectedPinsMapComponent(requireContext(), ctrl)
+        multiSelectPinMapComponent = MultiSelectPinMapComponent(requireContext(), ctrl)
         geometryMapComponent = FocusGeometryMapComponent(ctrl)
 
         questPinsManager = QuestPinsManager(
@@ -168,6 +175,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     /* -------------------------------- Picking quest pins -------------------------------------- */
 
     override fun onSingleTapConfirmed(x: Float, y: Float): Boolean {
+        val isMultiSelect = true
         viewLifecycleScope.launch {
             if (pinsMapComponent?.isVisible == true) {
                 when (pinMode) {
@@ -175,7 +183,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                         val props = controller?.pickLabel(x, y)?.properties
                         val questKey = props?.let { questPinsManager?.getQuestKey(it) }
                         if (questKey != null) {
-                            listener?.onClickedQuest(questKey)
+                            if (isMultiSelect){
+                                listener?.onClickedForMultiSelect(questKey)
+                            }else{
+                                listener?.onClickedQuest(questKey)
+                            }
+
                             return@launch
                         }
                     }
@@ -256,6 +269,10 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     fun highlightPins(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
         selectedPinsMapComponent?.set(iconResId, pinPositions)
         mapChanged()
+    }
+
+    fun highlightForMultiSelect(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
+        multiSelectPinMapComponent?.set(iconResId, pinPositions)
     }
 
     fun hideNonHighlightedPins() {

@@ -22,6 +22,8 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.graphics.Insets
 import androidx.core.graphics.minus
 import androidx.core.graphics.toPointF
@@ -33,6 +35,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
+import androidx.lifecycle.lifecycleScope
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
@@ -62,6 +65,7 @@ import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
+import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeController
 import de.westnordost.streetcomplete.databinding.EffectQuestPlopBinding
 import de.westnordost.streetcomplete.databinding.FragmentMainBinding
 import de.westnordost.streetcomplete.osm.level.levelsIntersect
@@ -92,6 +96,7 @@ import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
 import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
+import de.westnordost.streetcomplete.screens.settings.quest_selection.QuestSelectionViewModel
 import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -178,6 +183,7 @@ class MainFragment :
     private val locationAvailabilityReceiver: LocationAvailabilityReceiver by inject()
     private val featureDictionary: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     private val soundFx: SoundFx by inject()
+    private val visibleQuestTypeController: VisibleQuestTypeController by inject()
 
     private lateinit var locationManager: FineLocationManager
     private val overlayRegistry by inject<OverlayRegistry>()
@@ -185,6 +191,7 @@ class MainFragment :
     private val controlsViewModel by viewModel<MainViewModel>()
     private val editHistoryViewModel by viewModel<EditHistoryViewModel>()
     private val profileViewModel by viewModel<ProfileViewModel>()
+    private val questSelectionViewModel by viewModel<QuestSelectionViewModel>()
 
     private val binding by viewBinding(FragmentMainBinding::bind)
 
@@ -195,11 +202,15 @@ class MainFragment :
 
     private var mapFragment: MainMapFragment? = null
 
-    private val bottomSheetFragment: Fragment? get() =
-        childFragmentManagerOrNull?.findFragmentByTag(BOTTOM_SHEET)
+    private val selectedPoints : MutableList<LatLon> = mutableListOf()
 
-    private val editHistoryFragment: EditHistoryFragment? get() =
-        childFragmentManagerOrNull?.findFragmentByTag(EDIT_HISTORY) as? EditHistoryFragment
+    private val bottomSheetFragment: Fragment?
+        get() =
+            childFragmentManagerOrNull?.findFragmentByTag(BOTTOM_SHEET)
+
+    private val editHistoryFragment: EditHistoryFragment?
+        get() =
+            childFragmentManagerOrNull?.findFragmentByTag(EDIT_HISTORY) as? EditHistoryFragment
 
     private var mapOffsetWithOpenBottomSheet: RectF = RectF(0f, 0f, 0f, 0f)
     private val editHistoryController: EditHistoryController by inject()
@@ -212,6 +223,7 @@ class MainFragment :
         fun onClickShowMessage(message: Message)
         fun onShowOverlaysTutorial()
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     /* +++++++++++++++++++++++++++++++++++++++ CALLBACKS ++++++++++++++++++++++++++++++++++++++++ */
@@ -255,9 +267,10 @@ class MainFragment :
         binding.compassView.setOnClickListener { onClickCompassButton() }
         binding.layerChangeButton.setOnClickListener {
             val mapFragment = mapFragment ?: return@setOnClickListener
-            mapFragment.showArielView = true }
+            mapFragment.showArielView = true
+        }
         binding.gpsTrackingButton.setOnClickListener {
-           onClickTrackingButton()
+            onClickTrackingButton()
         }
         onClickTrackingButton()
         binding.stopTracksButton.setOnClickListener { onClickTracksStop() }
@@ -459,14 +472,14 @@ class MainFragment :
     }
 
     override fun onLongPress(x: Float, y: Float) {
-         val point = PointF(x, y+ 320)
-         val position = mapFragment?.getPositionAt(point) ?: return
-         if (bottomSheetFragment != null || editHistoryFragment != null) return
+        val point = PointF(x, y+ 320)
+        val position = mapFragment?.getPositionAt(point) ?: return
+        if (bottomSheetFragment != null || editHistoryFragment != null) return
 
-         binding.contextMenuView.translationX = x
-         binding.contextMenuView.translationY = y
+        binding.contextMenuView.translationX = x
+        binding.contextMenuView.translationY = y
 
-         showMapContextMenu(position)
+        showMapContextMenu(position)
     }
 
     /* ---------------------------- LocationAwareMapFragment.Listener --------------------------- */
@@ -494,6 +507,10 @@ class MainFragment :
         } else {
             viewLifecycleScope.launch { showQuestDetails(questKey) }
         }
+    }
+
+    override fun onClickedForMultiSelect(questKey: QuestKey) {
+        multiSelectQuest(questKey)
     }
 
     override fun onClickedEdit(editKey: EditKey) {
@@ -824,12 +841,12 @@ class MainFragment :
     }
 
     private fun onClickOverlaysButton() {
-        if (!controlsViewModel.hasShownOverlaysTutorial) {
-            showOverlaysTutorial()
+        viewLifecycleOwner.lifecycleScope.launch {
+            questSelectionViewModel.quests.collect { questList ->
+                if (questList.isNotEmpty())
+                    visibleQuestTypeController.setVisibility(questList[0].questType, true)
+            }
         }
-//        else {
-//            showOverlaysMenu(position)
-//        }
     }
 
     private fun onClickCompassButton() {
@@ -1202,6 +1219,21 @@ class MainFragment :
         if (quest != null) {
             showQuestDetails(quest)
         }
+    }
+
+    private fun multiSelectQuest(questKey: QuestKey) {
+        val quest = visibleQuestsSource.get(questKey)
+        if (quest != null) {
+            highlightMultiSelectQuest(quest)
+        }
+    }
+
+    @UiThread
+    private fun highlightMultiSelectQuest(quest: Quest) {
+        val mapFragment = mapFragment ?: return
+        if (!selectedPoints.containsAll(quest.markerLocations))
+                selectedPoints.addAll(quest.markerLocations)
+        mapFragment.highlightForMultiSelect(quest.type.icon, selectedPoints)
     }
 
     @UiThread
