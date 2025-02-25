@@ -243,6 +243,8 @@ dependencies {
     implementation("io.coil-kt:coil:2.7.0")
     implementation("io.ktor:ktor-client-logging:2.0.0")
     implementation("org.slf4j:slf4j-simple:2.0.9")
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
+
 
 }
 

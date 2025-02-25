@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import coil.load
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
@@ -18,10 +19,12 @@ import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemExclusiveChoiceBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
+import de.westnordost.streetcomplete.view.setImage
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
@@ -86,24 +89,40 @@ class LongFormAdapter<T> :
 
             item.questAnswerChoices?.apply {
                 for (questItem in this) {
-                    val chip = Chip(binding.root.context)
-                    // val chip = Chip(ContextThemeWrapper(binding.root.context, R.style.back))
-                    chip.text = questItem?.choiceText
-                    defaultColor = chip.chipBackgroundColor?.defaultColor
-                    chip.isCheckable = true
+//                    val chip = Chip(binding.root.context)
+//                    // val chip = Chip(ContextThemeWrapper(binding.root.context, R.style.back))
+//                    chip.text = questItem?.choiceText
+//                    defaultColor = chip.chipBackgroundColor?.defaultColor
+//                    chip.isCheckable = true
+//
+//                    if (items[position].userInput == questItem?.value) {
+//                        chip.isChecked = true
+//                    } else {
+//                        chip.isChecked = false
+//                    }
+//                    setColor(chip.isChecked, chip)
+//                    chip.setOnCheckedChangeListener { _, isChecked ->
+//                        setColor(isChecked, chip)
+//                        val index =
+//                            givenItems.indexOfFirst { it.questId == item.questId }
+//                        if (isChecked) {
+//                            givenItems[index].userInput = questItem?.value
+//                        }else{
+//                            givenItems[index].userInput = null
+//                        }
+//                        if (item.questId in needRefreshIds) {
+//                            items = givenItems
+//                        }
+//                    }
+//                    binding.chipGroup.addView(chip)
 
-                    if (items[position].userInput == questItem?.value) {
-                        chip.isChecked = true
-                    } else {
-                        chip.isChecked = false
-                    }
-                    setColor(chip.isChecked, chip)
-                    chip.setOnCheckedChangeListener { _, isChecked ->
-                        setColor(isChecked, chip)
+                    binding.chipGroup.addCustomChip(questItem?.choiceText!!,
+                        questItem.imageUrl, items[position].userInput == questItem.value
+                    ){ isChecked ->
                         val index =
                             givenItems.indexOfFirst { it.questId == item.questId }
-                        if (isChecked) {
-                            givenItems[index].userInput = questItem?.value
+                        if (isChecked == true) {
+                            givenItems[index].userInput = questItem.value
                         }else{
                             givenItems[index].userInput = null
                         }
@@ -111,7 +130,6 @@ class LongFormAdapter<T> :
                             items = givenItems
                         }
                     }
-                    binding.chipGroup.addView(chip)
                 }
             }
         }
@@ -204,7 +222,16 @@ class LongFormAdapter<T> :
 
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText(item.userInput)
-
+            if (!item.questImageUrl.isNullOrBlank()) {
+                binding.questImage.visibility = View.VISIBLE
+                binding.questImage.load(item.questImageUrl) {
+                    placeholder(R.drawable.surface_asphalt)
+                    error(R.drawable.surface_dirt)
+                    crossfade(true) // Smooth transition effect
+                }
+            } else {
+                binding.questImage.visibility = View.GONE
+            }
             customTextWatcher.updatePosition(position)
             customTextWatcher.updateInputLayout(binding.input, item.questAnswerValidation?.min)
             binding.input.editText?.addTextChangedListener(customTextWatcher)
