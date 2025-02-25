@@ -290,6 +290,7 @@ Each of you will then see different quests."</string>
     <string name="upload_server_error">"Connection error while uploading answers. Try again later."</string>
 
     <string name="download_error">"Error while downloading data"</string>
+    <string name="download_error_parsing">"Error while parsing the Quest Filter, Please check if it is valid"</string>
     <string name="upload_error">"Error while uploading answers"</string>
 
     <string name="crash_title">"Oh no, GIG crashed last time!"</string>

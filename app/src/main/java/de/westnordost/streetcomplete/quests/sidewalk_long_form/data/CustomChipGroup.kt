@@ -30,7 +30,7 @@ class CustomChipGroup @JvmOverloads constructor(
         chipView.setImage(imageUrl)
         chipView.setChecked(isChecked)
         defaultColor = chipView.getBackgroundColor()
-
+        setColor(isChecked, chipView.getChip())
         // Handle chip selection
         chipView.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {

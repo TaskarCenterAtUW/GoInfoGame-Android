@@ -27,6 +27,7 @@ import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.data.UnsyncedChangesCountSource
 import de.westnordost.streetcomplete.data.download.DownloadProgressSource
+import de.westnordost.streetcomplete.data.elementfilter.ParseException
 import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
@@ -307,6 +308,9 @@ class MainActivity :
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
 //                    userLoginController.logOut()
+                } else if (e is ParseException){
+                    crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
+                        R.string.download_error_parsing, e)
                 } else {
                     crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
                         R.string.download_error, e)
