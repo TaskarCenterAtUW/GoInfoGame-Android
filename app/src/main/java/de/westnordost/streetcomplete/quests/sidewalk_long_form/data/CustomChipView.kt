@@ -56,8 +56,8 @@ class CustomChipView @JvmOverloads constructor(
     fun setImage(url: String?) {
         if (!url.isNullOrEmpty()) {
             imageView.load(url) {
-                placeholder(R.drawable.surface_asphalt)
-                error(R.drawable.surface_dirt)
+                placeholder(R.drawable.placeholder)
+                error(R.drawable.error_placeholder)
                 crossfade(true) // Smooth transition effect
             }
             imageView.isVisible = true

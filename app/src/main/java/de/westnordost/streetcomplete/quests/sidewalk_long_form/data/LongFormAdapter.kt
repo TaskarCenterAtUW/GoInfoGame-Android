@@ -225,8 +225,8 @@ class LongFormAdapter<T> :
             if (!item.questImageUrl.isNullOrBlank()) {
                 binding.questImage.visibility = View.VISIBLE
                 binding.questImage.load(item.questImageUrl) {
-                    placeholder(R.drawable.surface_asphalt)
-                    error(R.drawable.surface_dirt)
+                    placeholder(R.drawable.placeholder)
+                    error(R.drawable.error_placeholder)
                     crossfade(true) // Smooth transition effect
                 }
             } else {
