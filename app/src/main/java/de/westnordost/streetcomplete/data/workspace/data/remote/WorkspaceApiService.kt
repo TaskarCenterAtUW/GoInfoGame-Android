@@ -18,7 +18,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import okhttp3.internal.trimSubstring
 
 class WorkspaceApiService(private val httpClient: HttpClient,
     private val preferences: Preferences) {
@@ -67,12 +69,18 @@ class WorkspaceApiService(private val httpClient: HttpClient,
         try {
             val response =
                 httpClient.get("${EnvironmentManager(preferences).currentEnvironment.baseUrl}/${workspaceId}/quests/long")
+
+            if (response.status == HttpStatusCode.NoContent){
+                throw Exception("Failed. Please configure long form for the workspace $workspaceId")
+            }
             val responseBody = response.body<List<AddLongFormResponseItem>>()
             return responseBody
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
+        } catch (e: SerializationException) {
+            throw Exception("Invalid long form. Please fix the json for workspace $workspaceId")
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.message?.take(100))
         }
     }
 
