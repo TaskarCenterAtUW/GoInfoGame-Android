@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.data.workspace.data.repository
 
 import android.location.Location
+import androidx.collection.emptyIntSet
 import de.westnordost.streetcomplete.data.workspace.WorkspaceDao
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceApiService
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
@@ -36,6 +37,11 @@ class WorkspaceRepositoryImpl(
     override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = flow {
         val loginResponse = apiService.loginToWorkspace(username, password)
         emit(loginResponse)
+    }
+
+    override fun refreshToken(refreshToken: String): Flow<LoginResponse> = flow {
+        val refreshResponse = apiService.refreshToken(refreshToken)
+        emit(refreshResponse)
     }
 
     override suspend fun getUserInfo(userEmail: String): UserInfoResponse =

@@ -11,5 +11,6 @@ interface WorkspaceRepository {
     fun getWorkspaces(location: Location) : Flow<List<Workspace>>
     fun getLongFormForWorkspace(workspaceId : Int) : Flow<List<AddLongFormResponseItem>>
     fun loginToWorkspace(username : String, password : String) : Flow<LoginResponse>
+    fun refreshToken(refreshToken : String) : Flow<LoginResponse>
     suspend fun getUserInfo(userEmail : String) : UserInfoResponse
 }

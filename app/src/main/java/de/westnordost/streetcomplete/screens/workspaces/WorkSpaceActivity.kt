@@ -47,9 +47,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.workspaceModule
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.location.FineLocationManager
+import de.westnordost.streetcomplete.util.logs.Log
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 
@@ -183,11 +185,14 @@ fun AppNavigator(
     preferences: Preferences,
     modifier: Modifier = Modifier,
 ) {
+    val viewModel = koinViewModel<WorkspaceViewModel>()
     val navController = rememberNavController()
     var startDestination = "home"
+//    checkIfRefreshNeeded(preferences, viewModel)
     if (preferences.workspaceLogin) {
         startDestination = "workspace-list"
     }
+
     NavHost(navController = navController, startDestination = startDestination) {
         composable("home") {
             LoginScreen(
@@ -198,7 +203,6 @@ fun AppNavigator(
             )
         }
         composable("workspace-list") {
-            val viewModel = koinViewModel<WorkspaceViewModel>()
             val fineLocationManager = FineLocationManager(LocalContext.current) { location ->
                 // Do something with the location
                 viewModel.fetchWorkspaces(location)
@@ -216,6 +220,27 @@ fun AppNavigator(
                 modifier = modifier.padding(innerPadding)
             )
         }
+    }
+}
+
+fun checkIfRefreshNeeded(preferences: Preferences, viewModel: WorkspaceViewModel) {
+    val currentTimeInSeconds = System.currentTimeMillis() / 1000
+
+    if (currentTimeInSeconds - preferences.workspaceLastLogin >= preferences.workspaceRefreshTokenExpires - 172800) {
+//        preferences.workspaceLogin = false
+        Log.d("WorkspaceActivity", "Logged Out")
+    } else if (currentTimeInSeconds - preferences.workspaceLastLogin >= preferences.workspaceRefreshTokenExpires - 172800){
+//        viewModel.refreshToken()
+        Log.d("WorkspaceActivity", "Refresh token called for refresh token")
+    }
+
+    // Check if token is about to expire in 2 hours, then refresh
+    if (currentTimeInSeconds - preferences.workspaceLastLogin >= preferences.workspaceTokenExpires - 7200 ||
+        currentTimeInSeconds - preferences.workspaceLastLogin >= preferences.workspaceTokenExpires - 7200
+        ) {
+        // Refresh token
+        //viewModel.refreshToken()
+        Log.d("WorkspaceActivity", "Refresh token called for token")
     }
 }
 

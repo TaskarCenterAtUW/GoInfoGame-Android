@@ -87,7 +87,7 @@ class WorkspaceApiService(private val httpClient: HttpClient,
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
         try {
             val response =
-                httpClient.post(EnvironmentManager(preferences).currentEnvironment.loginUrl) {
+                httpClient.post(EnvironmentManager(preferences).currentEnvironment.loginUrl + "/authenticate") {
                     val user = User(username.trim(), password.trim())
                     setBody(user)
                     contentType(ContentType.Application.Json)
@@ -100,6 +100,27 @@ class WorkspaceApiService(private val httpClient: HttpClient,
                 throw Exception("Login failed {${response.bodyAsText()}}")
             }
 
+
+            // if OSM server does not return valid JSON, it is the server's fault, hence
+        } catch (e: Exception) {
+            throw Exception(e.message)
+        }
+    }
+
+    suspend fun refreshToken(refreshToken : String) : LoginResponse {
+        try {
+            val response =
+                httpClient.post(EnvironmentManager(preferences).currentEnvironment.loginUrl + "/refresh-token") {
+                    parameter("refresh_token", refreshToken)
+                    contentType(ContentType.Application.Json)
+                }
+
+            if (response.status == HttpStatusCode.OK){
+                val loginResponse = response.body<LoginResponse>()
+                return loginResponse
+            }else{
+                throw Exception("Refresh token failed {${response.bodyAsText()}}")
+            }
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {

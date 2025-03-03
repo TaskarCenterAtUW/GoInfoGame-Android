@@ -108,12 +108,47 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
 
+    var workspaceRefreshToken : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TOKEN_REFRESH,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TOKEN_REFRESH)
+
+    var workspaceTokenExpires : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_TOKEN_EXPIRES,0)
+
+    var workspaceRefreshTokenExpires : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,0)
+
+    var workspaceLastLogin : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_LAST_LOGIN,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_LAST_LOGIN,0)
+
     var workspaceUserName : String?
         set(value) {
             prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME,value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_NAME)
+
+    var workspaceUserEmail : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_EMAIL,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
 
     var environment : String
         set(value) {
@@ -324,6 +359,11 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
         private const val WORKSPACE_ID = "workspace.id"
         private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"
+        private const val WORKSPACE_TDEI_USER_EMAIL = "workspace.tdei.email"
         private const val ENVIRONMENT = "environment"
+        private const val WORKSPACE_TOKEN_EXPIRES = "workspace.token.expires"
+        private const val WORKSPACE_TOKEN_REFRESH = "workspace.token.refresh"
+        private const val WORKSPACE_REFRESH_TOKEN_EXPIRES = "workspace.refresh.token.expires"
+        private const val WORKSPACE_LAST_LOGIN = "workspace.last.login"
     }
 }
