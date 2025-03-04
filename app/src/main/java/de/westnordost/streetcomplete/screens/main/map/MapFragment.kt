@@ -78,14 +78,18 @@ open class MapFragment :
         "layers.buildings.draw.buildings-outline-style.extrude" to "false"
     )
 
-    var showArielView : Boolean = false
+    var showArielView: Boolean = false
         set(value) {
             sceneMapComponent?.isAerialView = sceneMapComponent?.isAerialView != true
             field = value
-            if (sceneMapComponent?.isAerialView != true){
+            if (sceneMapComponent?.isAerialView != true) {
                 binding.mapTileProviderLink.text = vectorTileProvider.copyrightText
-                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog(vectorTileProvider.copyrightLink) }
-            }else{
+                binding.mapTileProviderLink.setOnClickListener {
+                    showOpenUrlDialog(
+                        vectorTileProvider.copyrightLink
+                    )
+                }
+            } else {
                 binding.mapTileProviderLink.text = "© Bing Maps"
                 binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://blog.openstreetmap.org/2010/11/30/microsoft-imagery-details/") }
 
@@ -117,15 +121,20 @@ open class MapFragment :
     interface Listener {
         /** Called when the map has been completely initialized */
         fun onMapInitialized()
+
         /** Called during camera animation and while the map is being controlled by a user */
         fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float)
+
         /** Called after camera animation or after the map was controlled by a user */
         fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float)
+
         /** Called when the user begins to pan the map */
         fun onPanBegin()
+
         /** Called when the user long-presses the map */
         fun onLongPress(x: Float, y: Float)
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     /* ------------------------------------ Lifecycle ------------------------------------------- */
@@ -229,8 +238,14 @@ open class MapFragment :
                 if (camera == previousCameraPosition) return
                 previousCameraPosition = camera
                 onMapIsChanging(camera.position, camera.rotation, camera.tilt, camera.zoom)
-                listener?.onMapIsChanging(camera.position, camera.rotation, camera.tilt, camera.zoom)
+                listener?.onMapIsChanging(
+                    camera.position,
+                    camera.rotation,
+                    camera.tilt,
+                    camera.zoom
+                )
             }
+
             override fun onMapDidChange() {
                 val camera = cameraPosition ?: return
                 if (camera == previousCameraPosition) return
@@ -245,7 +260,8 @@ open class MapFragment :
         val builder = OkHttpClient.Builder().cache(cacheConfig.cache)
         return object : DefaultHttpHandler(builder) {
             override fun configureRequest(url: HttpUrl, builder: Request.Builder) {
-                val userAgent = "MyAppName/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE}; ${Build.MODEL})"
+                val userAgent =
+                    "MyAppName/${BuildConfig.VERSION_NAME} (Android ${Build.VERSION.RELEASE}; ${Build.MODEL})"
 
                 builder
                     .cacheControl(cacheConfig.tangramCacheControl)
@@ -289,24 +305,25 @@ open class MapFragment :
             override fun startRequest(url: String, cb: HttpHandler.Callback): Any {
                 Log.d("MapFragmentTangram", "Requesting $url")
 
-                val coordinates : Map<String, Int>? = extractTileCoordinates(url)
+                val coordinates: Map<String, Int>? = extractTileCoordinates(url)
 
-                if (coordinates != null){
-                    val x : Int? = coordinates["x"]
-                    val y : Int? = coordinates["y"]
-                    val z : Int? = coordinates["z"]
+                if (coordinates != null) {
+                    val x: Int? = coordinates["x"]
+                    val y: Int? = coordinates["y"]
+                    val z: Int? = coordinates["z"]
 
-                    if (x != null && y != null && z != null){
+                    if (x != null && y != null && z != null) {
                         val quadKey = tileToQuadKey(x, y, z)
-                        val newUrl = "https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=14885"
+                        val newUrl =
+                            "https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=14885"
                         val modifiedUrl = preprocessUrl(newUrl, quadKey)
                         Log.d("MapFragmentTangram", modifiedUrl)
                         Log.d("MapFragmentTangram", url)
                         return super.startRequest(modifiedUrl, cb)
-                    }else{
+                    } else {
                         return super.startRequest(url, cb)
                     }
-                }else{
+                } else {
                     return super.startRequest(url, cb)
 
                 }
@@ -316,15 +333,30 @@ open class MapFragment :
 
     /* ----------------------------- Overridable map callbacks --------------------------------- */
 
-    @CallSuper protected open suspend fun onMapReady() {
+    @CallSuper
+    protected open suspend fun onMapReady() {
         restoreMapState()
     }
 
-    @CallSuper protected open suspend fun onBeforeLoadScene() {}
+    @CallSuper
+    protected open suspend fun onBeforeLoadScene() {
+    }
 
-    protected open fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {}
+    protected open fun onMapIsChanging(
+        position: LatLon,
+        rotation: Float,
+        tilt: Float,
+        zoom: Float
+    ) {
+    }
 
-    protected open fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {}
+    protected open fun onMapDidChange(
+        position: LatLon,
+        rotation: Float,
+        tilt: Float,
+        zoom: Float
+    ) {
+    }
 
     /* ---------------------- Overridable callbacks for map interaction ------------------------ */
 
@@ -332,10 +364,13 @@ open class MapFragment :
         listener?.onPanBegin()
         return false
     }
+
     override fun onPan(startX: Float, startY: Float, endX: Float, endY: Float): Boolean = false
     override fun onPanEnd(): Boolean = false
 
-    override fun onFling(posX: Float, posY: Float, velocityX: Float, velocityY: Float): Boolean = false
+    override fun onFling(posX: Float, posY: Float, velocityX: Float, velocityY: Float): Boolean =
+        false
+
     override fun onCancelFling(): Boolean = false
 
     override fun onScaleBegin(): Boolean = false
