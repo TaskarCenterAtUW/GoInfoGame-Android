@@ -1,9 +1,11 @@
 package de.westnordost.streetcomplete.data.workspace
 
 import de.westnordost.streetcomplete.data.Database
+import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.EXTERNAL_APP_ACCESS
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.ID
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.QUESTS
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.TITLE
+import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.TYPE
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.NAME
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 
@@ -12,8 +14,8 @@ class WorkspaceDao(private val db: Database) {
     fun put(responseItems: List<Workspace>) {
         db.replaceMany(
             NAME,
-            arrayOf(ID, TITLE, QUESTS),
-            responseItems.map { arrayOf(it.id, it.title, it.quests?.joinToString(",")) }
+            arrayOf(ID, TITLE, QUESTS, TYPE, EXTERNAL_APP_ACCESS),
+            responseItems.map { arrayOf(it.id, it.title, it.quests?.joinToString(","),it.type, it.externalAppAccess) }
         )
     }
 
@@ -22,7 +24,7 @@ class WorkspaceDao(private val db: Database) {
             Workspace(
                 it.getInt(ID),
                 it.getStringOrNull(QUESTS)?.split(",")?.map { number -> number.toInt() },
-                it.getString(TITLE))
+                it.getString(TITLE),it.getString(TYPE), it.getInt(EXTERNAL_APP_ACCESS))
         }
 
     fun getAll(): List<Workspace> =
@@ -30,7 +32,7 @@ class WorkspaceDao(private val db: Database) {
             Workspace(
                 it.getInt(ID),
                 it.getStringOrNull(QUESTS)?.split(",")?.map { number -> number.toInt() },
-                it.getString(TITLE))
+                it.getString(TITLE),it.getString(TYPE), it.getInt(EXTERNAL_APP_ACCESS))
         }
 
     fun deleteAll(ids: List<Int>): Int {

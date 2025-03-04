@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +37,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     var isLongFormLoading by remember { mutableStateOf(false) }
-    val snackBarHostState = remember{SnackbarHostState()}
+    val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
@@ -64,11 +63,12 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.align(Alignment.Center)
                     )
-                }else{
+                } else {
                     WorkspaceList(
                         onClick,
                         modifier = modifier,
-                        items = (workspaceListState as WorkspaceListState.Success).workspaces
+                        items = (workspaceListState as WorkspaceListState.Success).workspaces.filter
+                        { it.externalAppAccess == 1 && it.type == "osw" }
                     )
                 }
             }
@@ -101,11 +101,13 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             // Handle loading state
                             isLongFormLoading = true
                         }
+
                         is WorkspaceLongFormState.Success -> {
                             isLongFormLoading = false
                             viewModel.setIsLongForm(true)
                             finishAndLaunchNewActivity(context, longFormState.longFormItems)
                         }
+
                         is WorkspaceLongFormState.Error -> {
                             isLongFormLoading = false
                             // Handle error state
@@ -116,7 +118,10 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                 }
             }
         }
-        SnackbarHost(hostState = snackBarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        SnackbarHost(
+            hostState = snackBarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -175,5 +180,5 @@ private fun WorkSpaceListPreview() {
     WorkspaceList(
         onClick = {},
         modifier = Modifier.fillMaxSize(),
-        items = List(10) { Workspace(it, listOf(), "Workspace $it") })
+        items = List(10) { Workspace(it, listOf(), "Workspace $it","osw", externalAppAccess = 1) })
 }

@@ -29,7 +29,7 @@ import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 18
+    const val DB_VERSION = 19
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -251,6 +251,10 @@ object DatabaseInitializer {
         if (oldVersion <= 17 && newVersion > 17) {
             db.exec("DROP TABLE direction_of_flow;")
             db.deleteQuest("AddSuspectedOneway")
+        }
+
+        if (oldVersion <= 18 && newVersion == 19) {
+            db.exec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
         }
     }
 }

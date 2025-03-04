@@ -6,5 +6,7 @@ import kotlinx.serialization.Serializable
 data class Workspace(
     val id: Int,
     val quests: List<Int>? = null,
-    val title: String
+    val title: String,
+    val type : String,
+    val externalAppAccess: Int = 0
 )
