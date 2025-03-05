@@ -199,6 +199,7 @@ dependencies {
     // HTTP Client
     implementation("io.ktor:ktor-client-core:2.3.11")
     implementation("io.ktor:ktor-client-cio:2.3.11")
+    implementation("io.ktor:ktor-client-auth:2.3.11")
     testImplementation("io.ktor:ktor-client-mock:2.3.11")
 
     // finding in which country we are for country-specific logic

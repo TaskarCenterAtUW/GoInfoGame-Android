@@ -11,7 +11,9 @@ import de.westnordost.streetcomplete.data.osmnotes.NotesApiImpl
 import de.westnordost.streetcomplete.data.osmtracks.TracksApi
 import de.westnordost.streetcomplete.data.osmtracks.TracksApiImpl
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
+import de.westnordost.streetcomplete.screens.workspaces.WorkspaceViewModel
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -30,11 +32,12 @@ val osmApiModule = module {
     factory<TracksApi> { TracksApiImpl(get()) }
     factory { Preloader(get(named("CountryBoundariesLazy")), get(named("FeatureDictionaryLazy"))) }
     factory { UserApi(get()) }
-
+    factory { EnvironmentManager(get()) }
     single<OsmConnection> { GIGOsmConnection(
-        EnvironmentManager(get()).currentEnvironment.osmUrl,
+        get<EnvironmentManager>().currentEnvironment.osmUrl,
         ApplicationConstants.USER_AGENT,
-        get<Preferences>()
+        get<Preferences>(),
+        get<EnvironmentManager>()
     ) }
     single { UnsyncedChangesCountSource(get(), get()) }
 

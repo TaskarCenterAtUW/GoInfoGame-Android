@@ -45,6 +45,7 @@ import de.westnordost.streetcomplete.util.location.FineLocationManager
 @Composable
 fun LoginScreen(
     viewModel: WorkspaceViewModel,
+    environmentManager: EnvironmentManager,
     preferences: Preferences,
     navController: NavHostController,
     modifier: Modifier = Modifier,
@@ -95,7 +96,7 @@ fun LoginScreen(
                 navToNextPage()
             }
         }
-        LoginCard(viewModel, modifier, preferences)
+        LoginCard(viewModel, modifier, preferences, environmentManager)
 
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -117,7 +118,8 @@ fun LoginScreen(
 fun LoginCard(
     viewModel: WorkspaceViewModel,
     modifier: Modifier = Modifier,
-    preferences: Preferences
+    preferences: Preferences,
+    environmentManager: EnvironmentManager
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -162,15 +164,15 @@ fun LoginCard(
             }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
             }
-            EnvironmentDropdownMenu(viewModel = viewModel, preferences)
+            EnvironmentDropdownMenu(viewModel = viewModel, environmentManager)
         }
     }
 }
 
 @Composable
-fun EnvironmentDropdownMenu(viewModel: WorkspaceViewModel, preferences: Preferences) {
+fun EnvironmentDropdownMenu(viewModel: WorkspaceViewModel, environmentManager: EnvironmentManager) {
     var expanded by remember { mutableStateOf(false) }
-    var selectedEnvironment by remember { mutableStateOf(EnvironmentManager(preferences).currentEnvironment) }
+    var selectedEnvironment by remember { mutableStateOf(environmentManager.currentEnvironment) }
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Button(onClick = { expanded = true }) {

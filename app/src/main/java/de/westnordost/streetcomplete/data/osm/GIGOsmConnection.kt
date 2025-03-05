@@ -8,6 +8,9 @@ import de.westnordost.osmapi.common.errors.OsmApiReadResponseException
 import de.westnordost.osmapi.common.errors.OsmConnectionException
 import de.westnordost.osmapi.common.errors.RedirectedException
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
+import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import kotlinx.serialization.json.Json
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -17,7 +20,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 
-class GIGOsmConnection(url: String, agent: String, private val preference: Preferences) : OsmConnection(
+class GIGOsmConnection(
+    url: String,
+    agent: String,
+    private val preference: Preferences,
+    private val environmentManager: EnvironmentManager
+) : OsmConnection(
     url, agent, preference.workspaceToken, 45 * 1000
 ) {
 
@@ -59,7 +67,9 @@ class GIGOsmConnection(url: String, agent: String, private val preference: Prefe
         val httpResponseCode = connection.responseCode
         // actually any response code between 200 and 299 is a "success" but may need additional
         // handling. Since the Osm Api only returns 200 on success curently, this check is fine
-        if (httpResponseCode != HttpURLConnection.HTTP_OK) {
+        if (httpResponseCode != HttpURLConnection.HTTP_OK &&
+            httpResponseCode != HttpURLConnection.HTTP_UNAUTHORIZED
+        ) {
             val responseMessage = connection.responseMessage
             val errorDescription = getErrorDescription(connection.errorStream)
 
@@ -90,14 +100,17 @@ class GIGOsmConnection(url: String, agent: String, private val preference: Prefe
         authenticate: Boolean,
         writer: ApiRequestWriter?,
     ): HttpURLConnection {
-        val connection = openConnection(call)
+        var connection = openConnection(call)
         if (method != null) {
             connection.requestMethod = method
         }
 
         if (method in arrayOf("POST", "PUT", "PATCH")) {
             if (preference.workspaceToken != null) {
-                connection.setRequestProperty("Authorization", "Bearer ${preference.workspaceToken}")
+                connection.setRequestProperty(
+                    "Authorization",
+                    "Bearer ${preference.workspaceToken}"
+                )
             }
         }
 
@@ -110,13 +123,59 @@ class GIGOsmConnection(url: String, agent: String, private val preference: Prefe
             connection.setRequestProperty("charset", CHARSET.lowercase(Locale.UK))
         }
 
-
-
         if (writer != null) {
             sendRequestPayload(connection, writer)
         }
 
+        val responseCode = connection.responseCode
+        if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            synchronized(this) {
+                val newToken = refreshToken() // Refresh token synchronously
+                if (!newToken.isNullOrBlank()) {
+                    preference.workspaceToken = newToken
+                    connection.disconnect() // Close previous connection
+                    connection = openConnection(call) // Open new connection with updated token
+                    connection.setRequestProperty("Authorization", "Bearer $newToken")
+                    return sendRequest(call, method, authenticate, writer) // Retry request
+                } else {
+                    preference.workspaceToken = null // Clear token if refresh fails
+                }
+            }
+        }
+
         return connection
+    }
+
+    private fun refreshToken(): String? {
+        val refreshToken = preference.workspaceRefreshToken ?: return null
+        try {
+            val url = URL(environmentManager.currentEnvironment.loginUrl + "/refresh-token")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+
+            // Send refresh token payload
+
+            val jsonPayload = "\"$refreshToken\"" // Ensure token is passed as a JSON string
+            connection.outputStream.use { it.write(jsonPayload.toByteArray(Charsets.UTF_8)) }
+
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val responseStream = connection.inputStream.bufferedReader().use { it.readText() }
+                val loginResponse = Json.decodeFromString<LoginResponse>(responseStream)
+                preference.workspaceToken = loginResponse.access_token
+                preference.workspaceRefreshToken = loginResponse.refresh_token
+                preference.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
+                preference.workspaceTokenExpires = loginResponse.expires_in * 1000
+                preference.workspaceLastLogin = System.currentTimeMillis()
+                return loginResponse.access_token
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null // Refresh failed
     }
 
     @Throws(IOException::class)

@@ -47,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.location.FineLocationManager
@@ -56,7 +57,7 @@ import org.koin.androidx.compose.koinViewModel
 class WorkSpaceActivity : ComponentActivity() {
 
     private val preferences: Preferences by inject()
-
+    private val environmentManager : EnvironmentManager by inject()
     private val _isLocationEnabled = mutableStateOf(false)
     private val isLocationEnabled: State<Boolean> get() = _isLocationEnabled
 
@@ -163,7 +164,7 @@ class WorkSpaceActivity : ComponentActivity() {
                             //     viewModel = koinViewModel(),
                             //     modifier = Modifier.padding(innerPadding)
                             // )
-                            AppNavigator(innerPadding, preferences)
+                            AppNavigator(innerPadding, preferences, environmentManager)
                         }
                     }
                 }
@@ -181,17 +182,43 @@ class WorkSpaceActivity : ComponentActivity() {
 fun AppNavigator(
     innerPadding: PaddingValues,
     preferences: Preferences,
+    environmentManager: EnvironmentManager,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
     var startDestination = "home"
+    var doTokenRefresh = false
+    var doLogout = false
+
     if (preferences.workspaceLogin) {
+
+//        if (preferences.refreshTokenExpiryTime != 0L &&
+//            preferences.refreshTokenExpiryTime < System.currentTimeMillis()
+//        ) {
+//            preferences.workspaceLogin = false
+//            doLogout = true
+//        } else if (preferences.authTokenExpiryTime != 0L &&
+//            preferences.authTokenExpiryTime < System.currentTimeMillis()
+//        ) {
+//            doTokenRefresh = true
+//        }
+//        //Check if we reached 80 percent of auth token expiry time
+//        else if (preferences.authTokenExpiryTime != 0L &&
+//            preferences.authTokenExpiryTime - System.currentTimeMillis() < 0.8 * (preferences.authTokenExpiryTime)
+//        ) {
+//            doTokenRefresh = true
+//        }
+
+
         startDestination = "workspace-list"
+//        if (doLogout)
+//            startDestination = "home"
     }
     NavHost(navController = navController, startDestination = startDestination) {
         composable("home") {
             LoginScreen(
                 viewModel = koinViewModel(),
+                environmentManager,
                 preferences,
                 navController,
                 modifier = modifier.padding(innerPadding)
@@ -199,6 +226,8 @@ fun AppNavigator(
         }
         composable("workspace-list") {
             val viewModel = koinViewModel<WorkspaceViewModel>()
+            if (doTokenRefresh)
+                viewModel.refreshToken()
             val fineLocationManager = FineLocationManager(LocalContext.current) { location ->
                 // Do something with the location
                 viewModel.fetchWorkspaces(location)

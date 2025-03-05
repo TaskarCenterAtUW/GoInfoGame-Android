@@ -255,6 +255,7 @@ object DatabaseInitializer {
 
         if (oldVersion <= 18 && newVersion == 19) {
             db.exec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
+            db.exec("ALTER TABLE work_spaces ADD COLUMN type varchar(255) DEFAULT ''")
         }
     }
 }

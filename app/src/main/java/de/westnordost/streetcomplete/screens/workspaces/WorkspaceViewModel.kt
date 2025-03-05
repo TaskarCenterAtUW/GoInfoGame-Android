@@ -9,6 +9,8 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,11 +34,12 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setSelectedWorkspace(workspaceId: Int)
     abstract fun getUserInfo(email : String)
     abstract fun setEnvironment(environment: Environment)
+    abstract fun refreshToken()
 }
 
 class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
-    private val preferences: Preferences
+    private val preferences: Preferences,
 ) :
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
@@ -105,6 +108,28 @@ class WorkspaceViewModelImpl(
         }
     }
 
+    override fun refreshToken() {
+        viewModelScope.launch {
+            _loginState.value = WorkspaceLoginState.loading()
+            preferences.workspaceRefreshToken?.let {
+                workspaceRepository.refreshToken(it)
+                    .catch { e -> _loginState.value = WorkspaceLoginState.error(e.message) }
+                    .collect { loginResponse ->
+                        preferences.workspaceToken = loginResponse.access_token
+                        preferences.workspaceRefreshToken = loginResponse.refresh_token
+                        preferences.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
+                        preferences.workspaceTokenExpires = loginResponse.expires_in * 1000
+                        preferences.workspaceLastLogin = System.currentTimeMillis()
+                        preferences.workspaceUserEmail?.apply {
+                            _loginState.value = WorkspaceLoginState.success(loginResponse, this)
+                        }
+                    }
+            } ?: run {
+                _loginState.value = WorkspaceLoginState.error("No refresh token found")
+            }
+        }
+    }
+
     override fun setEnvironment(environment: Environment) {
         EnvironmentManager(preferences).currentEnvironment = environment
     }
@@ -112,6 +137,14 @@ class WorkspaceViewModelImpl(
     override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {
         preferences.workspaceLogin = isLoggedIn
         preferences.workspaceToken = loginResponse.access_token
+        preferences.workspaceRefreshToken = loginResponse.refresh_token
+        preferences.workspaceUserEmail = email
+        preferences.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
+        preferences.workspaceTokenExpires = loginResponse.expires_in * 1000
+        preferences.workspaceLastLogin = System.currentTimeMillis()
+
+        preferences.refreshTokenExpiryTime = preferences.workspaceLastLogin + preferences.workspaceRefreshTokenExpires
+        preferences.authTokenExpiryTime = preferences.workspaceLastLogin + preferences.workspaceTokenExpires
         getUserInfo(email)
     }
 

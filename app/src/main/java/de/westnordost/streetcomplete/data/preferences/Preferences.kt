@@ -122,6 +122,55 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getString(ENVIRONMENT,"STAGE")
 
+    var workspaceRefreshToken : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TOKEN_REFRESH,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TOKEN_REFRESH)
+
+    var workspaceTokenExpires : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_TOKEN_EXPIRES,0)
+
+    var workspaceRefreshTokenExpires : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,0)
+
+    var refreshTokenExpiryTime : Long
+        set(value) {
+            prefs.putLong(REFRESH_TOKEN_EXPIRY_TIME,value)
+        }
+        get() =
+            prefs.getLong(REFRESH_TOKEN_EXPIRY_TIME,0)
+
+    var authTokenExpiryTime : Long
+        set(value) {
+            prefs.putLong(AUTH_TOKEN_EXPIRY_TIME,value)
+        }
+        get() =
+            prefs.getLong(AUTH_TOKEN_EXPIRY_TIME,0)
+
+    var workspaceLastLogin : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_LAST_LOGIN,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_LAST_LOGIN,0)
+
+    var workspaceUserEmail : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_EMAIL,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
+
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
@@ -325,5 +374,13 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val WORKSPACE_ID = "workspace.id"
         private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"
         private const val ENVIRONMENT = "environment"
+        private const val WORKSPACE_TOKEN_EXPIRES = "workspace.token.expires"
+        private const val WORKSPACE_TOKEN_REFRESH = "workspace.token.refresh"
+        private const val WORKSPACE_REFRESH_TOKEN_EXPIRES = "workspace.refresh.token.expires"
+        private const val WORKSPACE_LAST_LOGIN = "workspace.last.login"
+        private const val WORKSPACE_TDEI_USER_EMAIL = "workspace.tdei.email"
+
+        private const val REFRESH_TOKEN_EXPIRY_TIME = "refresh.token.expiry.time"
+        private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
     }
 }

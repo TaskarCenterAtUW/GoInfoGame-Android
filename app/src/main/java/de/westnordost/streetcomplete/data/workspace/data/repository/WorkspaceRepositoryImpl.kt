@@ -40,4 +40,8 @@ class WorkspaceRepositoryImpl(
 
     override suspend fun getUserInfo(userEmail: String): UserInfoResponse =
         apiService.getTDEIUserDetails(userEmail)
+
+    override fun refreshToken(refreshToken: String): Flow<LoginResponse> =
+        flow { emit(apiService.refreshToken(refreshToken)) }
+
 }
