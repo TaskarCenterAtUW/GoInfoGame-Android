@@ -192,27 +192,27 @@ fun AppNavigator(
 
     if (preferences.workspaceLogin) {
 
-//        if (preferences.refreshTokenExpiryTime != 0L &&
-//            preferences.refreshTokenExpiryTime < System.currentTimeMillis()
-//        ) {
-//            preferences.workspaceLogin = false
-//            doLogout = true
-//        } else if (preferences.authTokenExpiryTime != 0L &&
-//            preferences.authTokenExpiryTime < System.currentTimeMillis()
-//        ) {
-//            doTokenRefresh = true
-//        }
-//        //Check if we reached 80 percent of auth token expiry time
-//        else if (preferences.authTokenExpiryTime != 0L &&
-//            preferences.authTokenExpiryTime - System.currentTimeMillis() < 0.8 * (preferences.authTokenExpiryTime)
-//        ) {
-//            doTokenRefresh = true
-//        }
+        if (preferences.refreshTokenExpiryTime != 0L &&
+            preferences.refreshTokenExpiryTime < System.currentTimeMillis()
+        ) {
+            preferences.workspaceLogin = false
+            doLogout = true
+        } else if (preferences.authTokenExpiryTime != 0L &&
+            preferences.authTokenExpiryTime < System.currentTimeMillis()
+        ) {
+            doTokenRefresh = true
+        }
+        //Check if we reached 80 percent of auth token expiry time
+        else if (preferences.authTokenExpiryTime != 0L &&
+            preferences.authTokenExpiryTime - System.currentTimeMillis() < 0.2 * (preferences.workspaceTokenExpires)
+        ) {
+            doTokenRefresh = true
+        }
 
 
         startDestination = "workspace-list"
-//        if (doLogout)
-//            startDestination = "home"
+        if (doLogout)
+            startDestination = "home"
     }
     NavHost(navController = navController, startDestination = startDestination) {
         composable("home") {
