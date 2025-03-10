@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.overlays
 
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 
 /** An overlay is displayed on top of the normal map but behind quest pins and visualizes how

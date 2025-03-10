@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.overlays.things
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement
@@ -24,6 +25,8 @@ class ThingsOverlay(private val getFeature: (Element) -> Feature?) : Overlay {
     override val isCreateNodeEnabled = true
 
     override val sceneUpdates = null
+
+    public var position : LatLon? = null
 
     override fun getStyledElements(mapData: MapDataWithGeometry) =
         mapData

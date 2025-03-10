@@ -20,7 +20,6 @@ import androidx.annotation.AnyThread
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.ListPopupWindow
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.graphics.Insets
 import androidx.core.graphics.minus
@@ -69,7 +68,7 @@ import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
 import de.westnordost.streetcomplete.overlays.IsShowingElement
 import de.westnordost.streetcomplete.overlays.Overlay
-import de.westnordost.streetcomplete.overlays.overlaysRegistry
+import de.westnordost.streetcomplete.overlays.things.ThingsOverlay
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
@@ -92,7 +91,6 @@ import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
 import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
-import de.westnordost.streetcomplete.screens.main.overlays.OverlaySelectionAdapter
 import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -329,6 +327,19 @@ class MainFragment :
             binding.createButton.isGone = !isCreateNodeEnabled
             binding.crosshairView.isGone = !isCreateNodeEnabled
 
+            if (overlay!=null) {
+                mapFragment?.updateCameraPosition {
+                    val offsetPos =
+                        (overlay as ThingsOverlay).position?.let {
+                            mapFragment!!.getPositionThatCentersPosition(
+                                it,
+                                RectF()
+                            )
+                        }
+                    this.position = offsetPos
+                }
+            }
+
             val f = bottomSheetFragment
             if (f is IsShowingElement) {
                 closeBottomSheet()
@@ -442,7 +453,7 @@ class MainFragment :
     override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) { }
 
     override fun onLongPress(x: Float, y: Float) {
-         val point = PointF(x, y)
+         val point = PointF(x, y+ 320)
          val position = mapFragment?.getPositionAt(point) ?: return
          if (bottomSheetFragment != null || editHistoryFragment != null) return
 
@@ -809,9 +820,10 @@ class MainFragment :
     private fun onClickOverlaysButton() {
         if (!controlsViewModel.hasShownOverlaysTutorial) {
             showOverlaysTutorial()
-        } else {
-            showOverlaysMenu()
         }
+//        else {
+//            showOverlaysMenu(position)
+//        }
     }
 
     private fun onClickCompassButton() {
@@ -878,7 +890,7 @@ class MainFragment :
         listener?.onShowOverlaysTutorial()
     }
 
-    private fun showOverlaysMenu() {
+    private fun showOverlaysMenu(position: LatLon) {
 //        val adapter = OverlaySelectionAdapter(controlsViewModel.overlays)
 //        val popupWindow = ListPopupWindow(requireContext())
 //
@@ -890,7 +902,9 @@ class MainFragment :
 //        popupWindow.anchorView = binding.overlaysButton
 //        popupWindow.width = resources.dpToPx(240).toInt()
 //        popupWindow.show()
-        controlsViewModel.selectOverlay(overlayRegistry[0])
+        val overlay = overlayRegistry[Random.nextInt(overlayRegistry.size)]
+        (overlay as ThingsOverlay).position = position
+        controlsViewModel.selectOverlay(overlay)
     }
 
     private fun getDownloadArea(): BoundingBox? {
@@ -927,12 +941,16 @@ class MainFragment :
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_note -> onClickCreateNote(position)
-                R.id.action_create_node -> showOverlaysMenu()
+                R.id.action_create_node -> showOverlaysMenu(position)
 //                R.id.action_open_location -> onClickOpenLocationInOtherApp(position)
             }
             true
         }
         popupMenu.show()
+//        mapFragment?.updateCameraPosition {
+//            val offsetPos = mapFragment!!.getPositionThatCentersPosition(position, RectF())
+//            this.position = offsetPos
+//        }
     }
 
     private fun onClickOpenLocationInOtherApp(pos: LatLon) {
