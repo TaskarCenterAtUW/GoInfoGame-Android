@@ -40,7 +40,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.math.PI
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
@@ -56,7 +55,11 @@ import kotlin.math.pow
  *      <li>Use LatLon instead of LngLat</li>
  *  </ul>
  */
-class KtMapController(private val c: MapController, contentResolver: ContentResolver) :
+class KtMapController(
+    private val c: MapController,
+    contentResolver: ContentResolver,
+    val mapView: MapView
+) :
     DefaultLifecycleObserver {
 
     private val cameraManager = CameraManager(c, contentResolver)
@@ -401,7 +404,7 @@ suspend fun MapView.initMap(
 ): KtMapController? = suspendCancellableCoroutine { cont ->
     getMapAsync({ mapController ->
         cont.resume(mapController?.let {
-            KtMapController(it, context.contentResolver)
+            KtMapController(it, context.contentResolver, this)
         })
     }, glViewHolderFactory, httpHandler)
 }

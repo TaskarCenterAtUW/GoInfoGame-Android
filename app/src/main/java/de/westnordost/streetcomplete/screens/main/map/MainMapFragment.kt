@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.screens.main.map
 
 import android.graphics.PointF
 import android.graphics.RectF
-import android.os.Build
 import androidx.annotation.DrawableRes
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
@@ -14,12 +13,9 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestKey
-import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
@@ -127,7 +123,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
             questTypeOrderSource,
             questTypeRegistry,
             resources,
-            visibleQuestsSource
+            visibleQuestsSource, ctrl.mapView
         )
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
@@ -332,6 +328,10 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     override fun shouldCenterCurrentPosition(): Boolean =
         // don't center position while displaying a quest
         super.shouldCenterCurrentPosition() && geometryMapComponent?.isZoomedToContainGeometry != true
+
+    fun mapChanged() {
+        questPinsManager?.updateAccessibilityOverlays()
+    }
 
     companion object {
         // see streetcomplete.yaml for the definitions of the below layers

@@ -11,6 +11,8 @@ class PinsMapComponent(private val ctrl: KtMapController) {
 
     private val pinsLayer: MapData = ctrl.addDataLayer(PINS_LAYER)
 
+    private val pins = mutableSetOf<Pin>()
+
     /** Shows/hides the pins */
     var isVisible: Boolean
         get() = pinsLayer.visible
@@ -21,11 +23,18 @@ class PinsMapComponent(private val ctrl: KtMapController) {
 
     /** Show given pins. Previously shown pins are replaced with these.  */
     fun set(pins: Collection<Pin>) {
+        this.pins.clear()
+        this.pins.addAll(pins)
         pinsLayer.setFeatures(pins.map { it.tangramPoint })
+    }
+
+    fun getPins(): Collection<Pin> {
+        return pins
     }
 
     /** Clear pins */
     fun clear() {
+        pins.clear()
         pinsLayer.clear()
     }
 
@@ -41,6 +50,14 @@ data class Pin(
     val properties: Collection<Pair<String, String>> = emptyList(),
     val importance: Int = 0
 ) {
+
+    override fun equals(other: Any?): Boolean {
+        return this.position == (other as Pin).position
+    }
+
+    override fun toString(): String {
+        return "Pin(position=$position, iconName='$iconName')"
+    }
     val tangramPoint by lazy {
         // avoid creation of intermediate HashMaps.
         val tangramProperties = listOf(

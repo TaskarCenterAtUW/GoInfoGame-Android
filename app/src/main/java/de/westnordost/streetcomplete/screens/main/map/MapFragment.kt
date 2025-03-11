@@ -201,6 +201,7 @@ open class MapFragment :
     /* ------------------------------------------- Map  ----------------------------------------- */
 
     private suspend fun initMap() {
+        binding.map.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         val ctrl = binding.map.initMap(createHttpHandler())
         controller = ctrl
         if (ctrl == null) return
@@ -232,7 +233,9 @@ open class MapFragment :
         ctrl.setScaleResponder(this)
         ctrl.setShoveResponder(this)
         ctrl.setMapChangingListener(object : MapChangingListener {
-            override fun onMapWillChange() {}
+            override fun onMapWillChange() {
+
+            }
             override fun onMapIsChanging() {
                 val camera = cameraPosition ?: return
                 if (camera == previousCameraPosition) return
@@ -252,6 +255,7 @@ open class MapFragment :
                 previousCameraPosition = camera
                 onMapDidChange(camera.position, camera.rotation, camera.tilt, camera.zoom)
                 listener?.onMapDidChange(camera.position, camera.rotation, camera.tilt, camera.zoom)
+
             }
         })
     }

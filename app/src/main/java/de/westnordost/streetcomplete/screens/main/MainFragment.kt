@@ -12,6 +12,7 @@ import android.location.Location
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
@@ -439,6 +440,8 @@ class MainFragment :
         val f = bottomSheetFragment
         if (f is IsMapOrientationAware) f.onMapOrientation(rotation, tilt)
         if (f is IsMapPositionAware) f.onMapMoved(position)
+        mapFragment?.mapChanged()
+
     }
 
     override fun onPanBegin() {
@@ -447,10 +450,13 @@ class MainFragment :
          */
         if (mapFragment?.displayedLocation != null) {
             setIsFollowingPosition(false)
+            mapFragment?.mapChanged()
         }
     }
 
-    override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) { }
+    override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {
+        mapFragment?.mapChanged()
+    }
 
     override fun onLongPress(x: Float, y: Float) {
          val point = PointF(x, y+ 320)
@@ -1211,7 +1217,7 @@ class MainFragment :
         val tilt = camera?.tilt ?: 0f
         val args = AbstractQuestForm.createArguments(quest.key, quest.type, quest.geometry, rotation, tilt)
         f.requireArguments().putAll(args)
-
+        f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
         if (quest is OsmQuest) {
             val element = withContext(Dispatchers.IO) { mapDataWithEditsSource.get(quest.elementType, quest.elementId) } ?: return
             val osmArgs = AbstractOsmQuestForm.createArguments(element,
