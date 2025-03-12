@@ -129,14 +129,14 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_TOKEN_REFRESH)
 
-    var workspaceTokenExpires : Long
+    var accessTokenExpiryInterval : Long
         set(value) {
             prefs.putLong(WORKSPACE_TOKEN_EXPIRES,value)
         }
         get() =
             prefs.getLong(WORKSPACE_TOKEN_EXPIRES,0)
 
-    var workspaceRefreshTokenExpires : Long
+    var refreshTokenExpiryInterval : Long
         set(value) {
             prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,value)
         }
@@ -150,7 +150,7 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getLong(REFRESH_TOKEN_EXPIRY_TIME,0)
 
-    var authTokenExpiryTime : Long
+    var accessTokenExpiryTime : Long
         set(value) {
             prefs.putLong(AUTH_TOKEN_EXPIRY_TIME,value)
         }

@@ -3,14 +3,11 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -117,9 +114,13 @@ class WorkspaceViewModelImpl(
                     .collect { loginResponse ->
                         preferences.workspaceToken = loginResponse.access_token
                         preferences.workspaceRefreshToken = loginResponse.refresh_token
-                        preferences.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
-                        preferences.workspaceTokenExpires = loginResponse.expires_in * 1000
+                        preferences.refreshTokenExpiryInterval = loginResponse.refresh_expires_in * 1000
+                        preferences.accessTokenExpiryInterval = loginResponse.expires_in * 1000
                         preferences.workspaceLastLogin = System.currentTimeMillis()
+
+                        preferences.refreshTokenExpiryTime = preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
+                        preferences.accessTokenExpiryTime = preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
+
                         preferences.workspaceUserEmail?.apply {
                             _loginState.value = WorkspaceLoginState.success(loginResponse, this)
                         }
@@ -139,12 +140,12 @@ class WorkspaceViewModelImpl(
         preferences.workspaceToken = loginResponse.access_token
         preferences.workspaceRefreshToken = loginResponse.refresh_token
         preferences.workspaceUserEmail = email
-        preferences.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
-        preferences.workspaceTokenExpires = loginResponse.expires_in * 1000
+        preferences.refreshTokenExpiryInterval = loginResponse.refresh_expires_in * 1000
+        preferences.accessTokenExpiryInterval = loginResponse.expires_in * 1000
         preferences.workspaceLastLogin = System.currentTimeMillis()
 
-        preferences.refreshTokenExpiryTime = preferences.workspaceLastLogin + preferences.workspaceRefreshTokenExpires
-        preferences.authTokenExpiryTime = preferences.workspaceLastLogin + preferences.workspaceTokenExpires
+        preferences.refreshTokenExpiryTime = preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
+        preferences.accessTokenExpiryTime = preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
         getUserInfo(email)
     }
 

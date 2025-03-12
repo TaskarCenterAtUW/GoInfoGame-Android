@@ -22,17 +22,21 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -57,16 +61,21 @@ import org.koin.androidx.compose.koinViewModel
 class WorkSpaceActivity : ComponentActivity() {
 
     private val preferences: Preferences by inject()
-    private val environmentManager : EnvironmentManager by inject()
+    private val environmentManager: EnvironmentManager by inject()
     private val _isLocationEnabled = mutableStateOf(false)
     private val isLocationEnabled: State<Boolean> get() = _isLocationEnabled
+
+    companion object {
+        const val SHOW_LOGGED_OUT_ALERT = "showLogoutAlert"
+    }
 
     private val requestLocationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
             // Permission is granted, proceed with location access
-            checkLocationPermission()
+            val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
+            checkLocationPermission(showAlert)
         }
     }
 
@@ -77,7 +86,9 @@ class WorkSpaceActivity : ComponentActivity() {
         isLocationEnabled()
 
         // Check if location is enabled
-        setContent()
+
+        val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
+        setContent(showAlert)
     }
 
     override fun onResume() {
@@ -85,9 +96,9 @@ class WorkSpaceActivity : ComponentActivity() {
         isLocationEnabled()
     }
 
-    private fun setContent() {
+    private fun setContent(showAlert: Boolean) {
         if (isLocationEnabled.value) {
-            checkLocationPermission()
+            checkLocationPermission(showAlert)
         } else {
             setContent {
                 AppTheme {
@@ -110,12 +121,28 @@ class WorkSpaceActivity : ComponentActivity() {
                                 Text("Enable location")
                             }
                         }
-                        Button(onClick = { setContent() }) {
+                        Button(onClick = { setContent(showAlert) }) {
                             Text("Refresh")
                         }
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    fun MyAlertDialog(showDialog: Boolean, onDismiss: () -> Unit) {
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text(text = "Session Expired") },
+                text = { Text("Please login again.") },
+                confirmButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
+                }
+            )
         }
     }
 
@@ -127,7 +154,7 @@ class WorkSpaceActivity : ComponentActivity() {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
-    private fun checkLocationPermission() {
+    private fun checkLocationPermission(showAlert: Boolean) {
         when {
             ContextCompat.checkSelfPermission(
                 this,
@@ -139,7 +166,15 @@ class WorkSpaceActivity : ComponentActivity() {
                         val workspaceLoginState by preferences.workspaceLoginState.collectAsState()
                         Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                             TopAppBar(
-                                title = { Text(text = "Go Info Game") },
+                                title = {
+                                    //Milliseconds to local date
+//                                    val accessToken = Date(preferences.accessTokenExpiryTime)
+//                                    val refreshToken = Date(preferences.refreshTokenExpiryTime)
+////                                    Text(text = accessToken.toString(), style = MaterialTheme.typography.titleLarge)
+//                                    Text(text = refreshToken.toString(), style = MaterialTheme.typography.titleLarge)
+
+                                    Text(text = "Go Info Game")
+                                },
                                 actions = {
                                     if (workspaceLoginState) {
                                         Icon(
@@ -164,6 +199,11 @@ class WorkSpaceActivity : ComponentActivity() {
                             //     viewModel = koinViewModel(),
                             //     modifier = Modifier.padding(innerPadding)
                             // )
+                            var showDialog by remember { mutableStateOf(showAlert) }
+
+                            MyAlertDialog(
+                                showDialog = showDialog,
+                                onDismiss = { showDialog = false })
                             AppNavigator(innerPadding, preferences, environmentManager)
                         }
                     }
@@ -197,14 +237,14 @@ fun AppNavigator(
         ) {
             preferences.workspaceLogin = false
             doLogout = true
-        } else if (preferences.authTokenExpiryTime != 0L &&
-            preferences.authTokenExpiryTime < System.currentTimeMillis()
+        } else if (preferences.accessTokenExpiryTime != 0L &&
+            preferences.accessTokenExpiryTime < System.currentTimeMillis()
         ) {
             doTokenRefresh = true
         }
         //Check if we reached 80 percent of auth token expiry time
-        else if (preferences.authTokenExpiryTime != 0L &&
-            preferences.authTokenExpiryTime - System.currentTimeMillis() < 0.2 * (preferences.workspaceTokenExpires)
+        else if (preferences.accessTokenExpiryTime != 0L &&
+            preferences.accessTokenExpiryTime - System.currentTimeMillis() < 0.2 * (preferences.accessTokenExpiryInterval)
         ) {
             doTokenRefresh = true
         }

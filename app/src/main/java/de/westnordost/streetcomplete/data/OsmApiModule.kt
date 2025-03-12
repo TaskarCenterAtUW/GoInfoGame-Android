@@ -34,6 +34,7 @@ val osmApiModule = module {
     factory { UserApi(get()) }
     factory { EnvironmentManager(get()) }
     single<OsmConnection> { GIGOsmConnection(
+        get(),
         get<EnvironmentManager>().currentEnvironment.osmUrl,
         ApplicationConstants.USER_AGENT,
         get<Preferences>(),

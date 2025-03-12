@@ -1,10 +1,13 @@
 package de.westnordost.streetcomplete
 
+import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Resources
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity.Companion.SHOW_LOGGED_OUT_ALERT
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
@@ -18,16 +21,13 @@ import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.encodedPath
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -72,7 +72,19 @@ val appModule = module {
                         val httpClient = get<HttpClient>() // Inject HttpClient for making requests
                         val environmentManager = get<EnvironmentManager>()
 
-                        val newAccessToken = refreshJwtToken(httpClient, preferences, environmentManager)
+                        val newAccessToken =
+                            refreshJwtToken(httpClient, preferences, environmentManager)
+
+                        if (newAccessToken == null) {
+                            preferences.workspaceLogin = false
+                            //Launch workspaceActivity
+                            val intent = Intent(androidContext(), WorkSpaceActivity::class.java)
+                            intent.flags =
+                                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            intent.putExtra(SHOW_LOGGED_OUT_ALERT, true)
+                            androidContext().startActivity(intent)
+                        }
+
                         newAccessToken?.let {
                             preferences.workspaceToken = it  // Save new access token
                             BearerTokens(it, preferences.workspaceRefreshToken!!)
@@ -117,8 +129,8 @@ suspend fun refreshJwtToken(
 
             preferences.workspaceToken = jsonResponse.access_token
             preferences.workspaceRefreshToken = jsonResponse.refresh_token
-            preferences.workspaceRefreshTokenExpires = jsonResponse.refresh_expires_in * 1000
-            preferences.workspaceTokenExpires = jsonResponse.expires_in * 1000
+            preferences.refreshTokenExpiryInterval = jsonResponse.refresh_expires_in * 1000
+            preferences.accessTokenExpiryInterval = jsonResponse.expires_in * 1000
             preferences.workspaceLastLogin = System.currentTimeMillis()
 
             jsonResponse.access_token

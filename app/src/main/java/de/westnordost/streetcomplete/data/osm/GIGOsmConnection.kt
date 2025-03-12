@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.data.osm
 
+import android.content.Context
+import android.content.Intent
 import de.westnordost.osmapi.ApiRequestWriter
 import de.westnordost.osmapi.ApiResponseReader
 import de.westnordost.osmapi.OsmApiErrorFactory
@@ -10,6 +12,8 @@ import de.westnordost.osmapi.common.errors.RedirectedException
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity.Companion.SHOW_LOGGED_OUT_ALERT
 import kotlinx.serialization.json.Json
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
@@ -21,6 +25,7 @@ import java.net.URL
 import java.util.Locale
 
 class GIGOsmConnection(
+    private val context: Context,
     url: String,
     agent: String,
     private val preference: Preferences,
@@ -139,6 +144,12 @@ class GIGOsmConnection(
                     return sendRequest(call, method, authenticate, writer) // Retry request
                 } else {
                     preference.workspaceToken = null // Clear token if refresh fails
+                    preference.workspaceLogin = false
+                    //Launch workspaceActivity
+                    val intent = Intent(context, WorkSpaceActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    intent.putExtra(SHOW_LOGGED_OUT_ALERT, true)
+                    context.startActivity(intent)
                 }
             }
         }
@@ -167,8 +178,8 @@ class GIGOsmConnection(
                 val loginResponse = Json.decodeFromString<LoginResponse>(responseStream)
                 preference.workspaceToken = loginResponse.access_token
                 preference.workspaceRefreshToken = loginResponse.refresh_token
-                preference.workspaceRefreshTokenExpires = loginResponse.refresh_expires_in * 1000
-                preference.workspaceTokenExpires = loginResponse.expires_in * 1000
+                preference.refreshTokenExpiryInterval = loginResponse.refresh_expires_in * 1000
+                preference.accessTokenExpiryInterval = loginResponse.expires_in * 1000
                 preference.workspaceLastLogin = System.currentTimeMillis()
                 return loginResponse.access_token
             }

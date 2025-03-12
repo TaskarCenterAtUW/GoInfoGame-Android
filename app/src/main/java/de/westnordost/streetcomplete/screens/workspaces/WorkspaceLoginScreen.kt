@@ -41,6 +41,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.util.location.FineLocationManager
+import java.util.Date
 
 @Composable
 fun LoginScreen(
