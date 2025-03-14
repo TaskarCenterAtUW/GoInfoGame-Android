@@ -100,11 +100,13 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                         is WorkspaceLongFormState.Loading -> {
                             // Handle loading state
                             isLongFormLoading = true
+                            snackBarMessage = null
                         }
 
                         is WorkspaceLongFormState.Success -> {
                             isLongFormLoading = false
                             viewModel.setIsLongForm(true)
+                            snackBarMessage = null
                             finishAndLaunchNewActivity(context, longFormState.longFormItems)
                         }
 

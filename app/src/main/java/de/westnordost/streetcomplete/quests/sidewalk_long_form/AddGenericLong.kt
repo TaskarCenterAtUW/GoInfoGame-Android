@@ -26,8 +26,6 @@ class AddGenericLong(val item: AddLongFormResponseItem): OsmElementQuestType<Lis
     }
     override val achievements = listOf(PEDESTRIAN)
 
-    private val currentTime = System.currentTimeMillis()
-
     override val name: String
         get() = "AddGenericLong${item.elementType}"
 

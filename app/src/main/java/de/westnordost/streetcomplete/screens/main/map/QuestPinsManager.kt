@@ -237,12 +237,18 @@ class QuestPinsManager(
         val pins = pinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
-        parentView.children.filterIsInstance<AccessibilityOverlayView>().forEach { overlay ->
-            val pin = pins.find { it.position == overlay.position } ?: return@forEach
-            val screenPos = ctrl.latLonToScreenPosition(pin.position) ?: return@forEach
-            overlay.screenPosition = screenPos
-            overlay.x = screenPos.x - 50
-            overlay.y = screenPos.y - 50
+        val pinsSnapshot = pins.toList() // Copy to avoid concurrent modification
+
+        parentView.post {
+            parentView.children.toList()
+                .filterIsInstance<AccessibilityOverlayView>()
+                .forEach { overlay ->
+                    val pin = pinsSnapshot.find { it.position == overlay.position } ?: return@forEach
+                    val screenPos = ctrl.latLonToScreenPosition(pin.position) ?: return@forEach
+                    overlay.screenPosition = screenPos
+                    overlay.x = screenPos.x - 50
+                    overlay.y = screenPos.y - 50
+                }
         }
     }
 
