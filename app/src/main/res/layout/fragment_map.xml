@@ -26,6 +26,7 @@
             android:textSize="12sp"
             android:shadowColor="@color/background"
             android:shadowRadius="6"
+            android:minHeight="48dp"
             android:text="@string/map_attribution_osm"
             android:layout_alignParentLeft="true"
             tools:ignore="RtlHardcoded" />
@@ -38,6 +39,7 @@
             android:textSize="12sp"
             android:shadowColor="@color/background"
             android:shadowRadius="6"
+            android:minHeight="48dp"
             tools:text="© JawgMaps"
             android:paddingLeft="8dp"
             android:layout_toRightOf="@id/openstreetmapLink"

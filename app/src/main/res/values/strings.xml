@@ -1789,4 +1789,8 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="upload_a_picture">Upload a picture</string>
     <string name="image_link">Image link</string>
     <string name="hide">Hide</string>
+    <string name="compose_note">Compose Note</string>
+    <string name="compass_icon">compass_icon</string>
+    <string name="change_map_layer">Change map layer</string>
+    <string name="add_new_feature">Add new feature</string>
 </resources>
