@@ -120,6 +120,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         questPinsManager = QuestPinsManager(
             ctrl,
             pinsMapComponent!!,
+            selectedPinsMapComponent!!,
             questTypeOrderSource,
             questTypeRegistry,
             resources,
@@ -254,10 +255,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     fun highlightPins(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
         selectedPinsMapComponent?.set(iconResId, pinPositions)
+        mapChanged()
     }
 
     fun hideNonHighlightedPins() {
         pinsMapComponent?.isVisible = false
+        mapChanged()
     }
 
     fun hideOverlay() {
@@ -279,6 +282,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     fun clearSelectedPins() {
         selectedPinsMapComponent?.clear()
+        mapChanged()
     }
 
     /* ----------------------------  Markers for current highlighting --------------------------- */

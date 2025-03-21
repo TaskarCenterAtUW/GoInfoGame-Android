@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.screens.main.map.tangram.toLngLat
 class SelectedPinsMapComponent(private val ctx: Context, private val ctrl: KtMapController) {
 
     private val selectedPinsLayer: MapData = ctrl.addDataLayer(SELECTED_PINS_LAYER)
+    private val pins = mutableSetOf<LatLon>()
 
     /** Show selected pins with the given icon at the given positions. "Selected pins" are not
      *  related to pins, they are just visuals that are displayed on top of the normal pins and look
@@ -24,11 +25,17 @@ class SelectedPinsMapComponent(private val ctx: Context, private val ctrl: KtMap
                 "kind" to ctx.resources.getResourceEntryName(iconResId)
             ))
         }
+        pins.addAll(pinPositions)
         selectedPinsLayer.setFeatures(points)
+    }
+
+    fun getPins(): Collection<LatLon> {
+        return pins
     }
 
     /** Clear the display of any selected pins */
     fun clear() {
+        pins.clear()
         selectedPinsLayer.clear()
     }
 

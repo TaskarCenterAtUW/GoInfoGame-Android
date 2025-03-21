@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.children
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -24,6 +25,7 @@ import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
+import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.tangram.KtMapController
 import de.westnordost.streetcomplete.util.math.contains
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +46,7 @@ import kotlin.math.abs
 class QuestPinsManager(
     private val ctrl: KtMapController,
     private val pinsMapComponent: PinsMapComponent,
+    private val selectedPinsMapComponent: SelectedPinsMapComponent,
     private val questTypeOrderSource: QuestTypeOrderSource,
     private val questTypeRegistry: QuestTypeRegistry,
     private val resources: Resources,
@@ -209,7 +212,10 @@ class QuestPinsManager(
                     simulatePinClick(pos.x, pos.y)
                 }.apply {
                     description = pin.toString() // Description for TalkBack
-                    layoutParams = ViewGroup.LayoutParams(100, 100) // Small overlay area
+                    val widthInDp = 48 // Width of the overlay in dp
+                    // convert dp to pixel
+                    val widthInPx = (widthInDp * resources.displayMetrics.density).toInt()
+                    layoutParams = ViewGroup.LayoutParams(widthInPx, widthInPx) // Small overlay area
                     x = screenPos.x - 50 // Adjust to center
                     y = screenPos.y - 50
                 }
@@ -235,6 +241,8 @@ class QuestPinsManager(
 
     fun updateAccessibilityOverlays() {
         val pins = pinsMapComponent.getPins()
+
+        val selectedPins = selectedPinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
         val pinsSnapshot = pins.toList() // Copy to avoid concurrent modification
@@ -248,6 +256,7 @@ class QuestPinsManager(
                     overlay.screenPosition = screenPos
                     overlay.x = screenPos.x - 50
                     overlay.y = screenPos.y - 50
+                    overlay.visibility = if (pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) View.VISIBLE else View.GONE
                 }
         }
     }
