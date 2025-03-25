@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 
 abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     final override val contentLayoutResId = R.layout.quest_long_form_list
@@ -105,7 +105,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = itemCopy as List<Quest>
+        adapter.items = itemCopy as List<LongFormQuest>
     }
 }
 
