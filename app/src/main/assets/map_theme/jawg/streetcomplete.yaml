@@ -180,7 +180,7 @@ layers:
             filter: { $zoom: { min: 16 } }
             draw:
                 pin-icons:
-                    interactive: true
+                    interactive: function() { if (feature.enabled == "true") return true; return false }
                     priority: function() { return 1.0 - feature.importance / 100000.0 }
                     order: function() { return 100000 + feature.importance }
                     repeat_group: pin
@@ -188,6 +188,7 @@ layers:
                     sprite: function() { return feature.kind }
                     sprite_default: quest
                     offset: [-8px, -33px]
+                    color : function() { if (feature.enabled == "true") return [1, 1, 1, 1]; return [1, 1, 1, 0.6] }
         dots_no_collide:
             filter: { $zoom: { min: 16 } }
             draw:
