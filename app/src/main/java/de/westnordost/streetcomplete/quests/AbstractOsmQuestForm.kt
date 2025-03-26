@@ -75,6 +75,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.get
 import org.koin.core.qualifier.named
 import java.io.ByteArrayOutputStream
 import java.util.Locale
@@ -102,7 +103,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     // passed in parameters
     private val osmElementQuestType: OsmElementQuestType<T> get() = questType as OsmElementQuestType<T>
     protected lateinit var element: Element private set
-
+    protected var multiSelectElements : List<Element> = emptyList()
     private val englishResources: Resources
         get() {
             val conf = Configuration(resources.configuration)
@@ -146,7 +147,15 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         super.onCreate(savedInstanceState)
 
         val args = requireArguments()
-        element = Json.decodeFromString(args.getString(ARG_ELEMENT)!!)
+        multiSelectElements = Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
+        val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
+            Json.decodeFromString(it)
+        }
+        if (getElement !=null){
+            element = getElement
+        }else{
+            element = multiSelectElements.first()
+        }
         val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -454,7 +463,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         extraTagList: MutableList<Pair<String, String>> = mutableListOf()
     ) {
         viewLifecycleScope.launch {
-            solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+            if (multiSelectElements.isNotEmpty()){
+                for (element in multiSelectElements){
+                    solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+                }
+            }else{
+                solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+            }
         }
     }
 
@@ -557,9 +572,16 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     companion object {
         private const val ARG_ELEMENT = "element"
         private const val ARG_DISPLAYED_LOCATION = "displayedLocation"
+        private const val ARG_MULTI_SELECT_ELEMENTS = "multiSelectElements"
 
         fun createArguments(element: Element, displayedLocation: Location?) = bundleOf(
             ARG_ELEMENT to Json.encodeToString(element),
+            ARG_DISPLAYED_LOCATION to displayedLocation
+        )
+
+        fun createArgumentsForMultiSelect(elements: List<Element>, displayedLocation: Location?) = bundleOf(
+            ARG_MULTI_SELECT_ELEMENTS to Json.encodeToString(elements),
+            ARG_ELEMENT to null,
             ARG_DISPLAYED_LOCATION to displayedLocation
         )
     }

@@ -202,7 +202,7 @@ class MainFragment :
     private var mapFragment: MainMapFragment? = null
 
     private val multiSelectPoints: MutableList<LatLon> = mutableListOf()
-
+    private val multiSelectQuests : MutableList<Quest> = mutableListOf()
     private val bottomSheetFragment: Fragment?
         get() =
             childFragmentManagerOrNull?.findFragmentByTag(BOTTOM_SHEET)
@@ -519,11 +519,15 @@ class MainFragment :
             val f = MultiSelectOptionsFragment().apply {
                 onYesClick = {
                     // Handle Yes button click
+                    viewLifecycleScope.launch {
+                        showMultiSelectQuestDetails(questKey)
+                    }
                 }
                 onNoClick = {
                     closeBottomSheet()
                     mapFragment?.pinMode = MainMapFragment.PinMode.QUESTS
                     multiSelectPoints.clear()
+                    multiSelectQuests.clear()
                 }
             }
             showInBottomSheet(f)
@@ -570,6 +574,9 @@ class MainFragment :
     override fun onEdited(editType: ElementEditType, geometry: ElementGeometry) {
         showQuestSolvedAnimation(editType.icon, geometry.center)
         closeBottomSheet()
+        mapFragment?.pinMode = MainMapFragment.PinMode.QUESTS
+        multiSelectPoints.clear()
+        multiSelectQuests.clear()
         controlsViewModel.selectOverlay(null)
     }
 
@@ -1163,6 +1170,7 @@ class MainFragment :
             )
         }
         clearHighlighting()
+        clearMultiSelectedQuests()
         unfreezeMap()
         mapFragment?.endFocus()
         sheetBackPressedCallback.isEnabled = false
@@ -1210,6 +1218,12 @@ class MainFragment :
     private fun clearHighlighting() {
         mapFragment?.clearHighlighting()
         mapFragment?.show3DBuildings = true
+    }
+
+    private fun clearMultiSelectedQuests(){
+        mapFragment?.pinMode = MainMapFragment.PinMode.QUESTS
+        multiSelectPoints.clear()
+        multiSelectQuests.clear()
     }
 
     //endregion
@@ -1297,9 +1311,63 @@ class MainFragment :
     @UiThread
     private fun highlightMultiSelectQuest(quest: Quest) {
         val mapFragment = mapFragment ?: return
-        if (!multiSelectPoints.containsAll(quest.markerLocations))
+        if (!multiSelectPoints.containsAll(quest.markerLocations)){
             multiSelectPoints.addAll(quest.markerLocations)
+            multiSelectQuests.add(quest)
+        }else{
+            multiSelectPoints.removeAll(quest.markerLocations)
+            multiSelectQuests.remove(quest)
+        }
         mapFragment.highlightForMultiSelect(quest.type.icon, multiSelectPoints)
+    }
+
+    private suspend fun showMultiSelectQuestDetails(questKey: QuestKey) {
+        val quest = visibleQuestsSource.get(questKey)
+        if (quest != null) {
+            showMultiSelectQuestDetails(quest)
+        }
+    }
+
+    private suspend fun showMultiSelectQuestDetails(quest: Quest) {
+        val mapFragment = mapFragment ?: return
+        if (isQuestDetailsCurrentlyDisplayedFor(quest.key)) return
+
+        val f = quest.type.createMultiSelectLongForm(multiSelectQuests)
+        if (f.arguments == null) f.arguments = bundleOf()
+
+        val camera = mapFragment.cameraPosition
+        val rotation = camera?.rotation ?: 0f
+        val tilt = camera?.tilt ?: 0f
+        val args =
+            AbstractQuestForm.createArguments(quest.key, quest.type, quest.geometry, rotation, tilt)
+        f.requireArguments().putAll(args)
+        f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        val elements = mutableListOf<Element>()
+        for (msQuest in multiSelectQuests){
+            if (msQuest is OsmQuest) {
+                val element = withContext(Dispatchers.IO) {
+                    mapDataWithEditsSource.get(
+                        msQuest.elementType,
+                        msQuest.elementId
+                    )
+                } ?: return
+                elements.add(element)
+            }
+        }
+
+        val osmArgs = AbstractOsmQuestForm.createArgumentsForMultiSelect(
+            elements,
+            mapFragment.displayedLocation
+        )
+        f.requireArguments().putAll(osmArgs)
+
+        showInBottomSheet(f)
+
+//        mapFragment.startFocus(quest.geometry, mapOffsetWithOpenBottomSheet)
+//        mapFragment.highlightGeometry(quest.geometry)
+//        mapFragment.highlightPins(quest.type.icon, quest.markerLocations)
+//        mapFragment.hideNonHighlightedPins()
+//        mapFragment.hideOverlay()
     }
 
     @UiThread

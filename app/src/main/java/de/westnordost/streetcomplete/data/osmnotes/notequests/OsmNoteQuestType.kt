@@ -1,8 +1,10 @@
 package de.westnordost.streetcomplete.data.osmnotes.notequests
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement
+import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 
 object OsmNoteQuestType : QuestType {
@@ -12,4 +14,6 @@ object OsmNoteQuestType : QuestType {
     override val achievements = emptyList<EditTypeAchievement>()
 
     override fun createForm() = NoteDiscussionForm()
+
+    override fun createMultiSelectLongForm(selectedQuests: List<Quest>) = NoteDiscussionForm()
 }

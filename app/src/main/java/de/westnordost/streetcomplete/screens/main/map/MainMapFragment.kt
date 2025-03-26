@@ -228,6 +228,8 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                         val questKey = props?.let { questPinsManager?.getQuestKey(it) }
                         if (questKey != null) {
                             listener?.onClickedForMultiSelect(questKey)
+                        }else{
+                            onClickedMap(x,y)
                         }
 
                         return@launch

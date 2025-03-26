@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
@@ -67,6 +68,8 @@ class AddGenericLong(val item: AddLongFormResponseItem) :
         createRoadsFilter(item.questQuery!!, item.elementType!!).matches(element)
 
     override fun createForm() = AddGenericLongForm(item.quests)
+
+    override fun createMultiSelectLongForm(selectedQuests : List<Quest>) = AddGenericLongForm(item.quests, selectedQuests)
 }
 
 private fun getNodeOrWay(variable: String): String {
