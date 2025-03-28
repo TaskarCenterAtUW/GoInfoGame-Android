@@ -76,13 +76,15 @@ import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
-import de.westnordost.streetcomplete.quests.MultiSelectOptionsFragment
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectOptionsFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapPositionAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MoveNodeFragment
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectViewModel
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.SplitWayFragment
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.MainMenuDialog
@@ -132,6 +134,7 @@ import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.qualifier.named
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -188,6 +191,7 @@ class MainFragment :
     private val overlayRegistry by inject<OverlayRegistry>()
 
     private val controlsViewModel by viewModel<MainViewModel>()
+    private val multiSelectViewModel by viewModel<MultiSelectViewModel>()
     private val editHistoryViewModel by viewModel<EditHistoryViewModel>()
     private val profileViewModel by viewModel<ProfileViewModel>()
     private val questSelectionViewModel by viewModel<QuestSelectionViewModel>()
@@ -202,7 +206,7 @@ class MainFragment :
     private var mapFragment: MainMapFragment? = null
 
     private val multiSelectPoints: MutableList<LatLon> = mutableListOf()
-    private val multiSelectQuests : MutableList<Quest> = mutableListOf()
+    private val multiSelectQuests: MutableList<Quest> = mutableListOf()
     private val bottomSheetFragment: Fragment?
         get() =
             childFragmentManagerOrNull?.findFragmentByTag(BOTTOM_SHEET)
@@ -517,6 +521,7 @@ class MainFragment :
         if (quest != null) {
             onClickedForMultiSelect(questKey)
             val f = MultiSelectOptionsFragment().apply {
+
                 onYesClick = {
                     // Handle Yes button click
                     viewLifecycleScope.launch {
@@ -531,6 +536,26 @@ class MainFragment :
                 }
             }
             showInBottomSheet(f)
+        }
+    }
+
+    private fun getFragmentTitle(quest: Quest?): String? {
+        return if (quest is OsmQuest) {
+
+            var titleTemp = ""
+            titleTemp = if (quest.type is AddGenericLong) {
+                quest.type.item.elementType.toString()
+            } else {
+                ""
+            }
+            activity?.resources?.getString(R.string.quest_multi_select_quest)?.let {
+                String.format(
+                    it,
+                    titleTemp.uppercase(Locale.getDefault()), multiSelectQuests.size, titleTemp
+                )
+            }
+        } else {
+            ""
         }
     }
 
@@ -1220,7 +1245,7 @@ class MainFragment :
         mapFragment?.show3DBuildings = true
     }
 
-    private fun clearMultiSelectedQuests(){
+    private fun clearMultiSelectedQuests() {
         mapFragment?.pinMode = MainMapFragment.PinMode.QUESTS
         multiSelectPoints.clear()
         multiSelectQuests.clear()
@@ -1311,13 +1336,18 @@ class MainFragment :
     @UiThread
     private fun highlightMultiSelectQuest(quest: Quest) {
         val mapFragment = mapFragment ?: return
-        if (!multiSelectPoints.containsAll(quest.markerLocations)){
+        if (!multiSelectPoints.containsAll(quest.markerLocations)) {
             multiSelectPoints.addAll(quest.markerLocations)
             multiSelectQuests.add(quest)
-        }else{
+        } else {
             multiSelectPoints.removeAll(quest.markerLocations)
             multiSelectQuests.remove(quest)
         }
+        multiSelectViewModel.dynamicText.observe(viewLifecycleOwner) { newText ->
+            newText
+        }
+        multiSelectViewModel.dynamicText.postValue(getFragmentTitle(quest))
+
         mapFragment.highlightForMultiSelect(quest.type.icon, multiSelectPoints)
     }
 
@@ -1343,7 +1373,7 @@ class MainFragment :
         f.requireArguments().putAll(args)
         f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
         val elements = mutableListOf<Element>()
-        for (msQuest in multiSelectQuests){
+        for (msQuest in multiSelectQuests) {
             if (msQuest is OsmQuest) {
                 val element = withContext(Dispatchers.IO) {
                     mapDataWithEditsSource.get(

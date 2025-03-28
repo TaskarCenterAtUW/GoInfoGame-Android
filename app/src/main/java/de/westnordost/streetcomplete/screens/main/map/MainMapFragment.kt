@@ -306,6 +306,17 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     fun highlightForMultiSelect(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
         multiSelectPinMapComponent?.set(iconResId, pinPositions)
+        if (pinPositions.isEmpty()){
+            questPinsManager?.multiSelectQuestType = null
+            questPinsManager?.onNewScreenPosition(forceUpdate = true)
+        }else if (pinPositions.size == 1){
+            questPinsManager?.multiSelectQuestType = iconResId.let {
+                resources.getResourceEntryName(
+                    it
+                )
+            }
+            questPinsManager?.onNewScreenPosition(forceUpdate = true)
+        }
     }
 
     fun hideNonHighlightedPins() {
