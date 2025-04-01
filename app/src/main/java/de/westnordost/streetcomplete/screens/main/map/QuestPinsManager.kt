@@ -247,7 +247,7 @@ class QuestPinsManager(
         val selectedPins = selectedPinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
-        val pinsSnapshot = pins.toList() // Copy to avoid concurrent modification
+        val pinsSnapshot = synchronized(pins) { pins.toList() } // Copy to avoid concurrent modification
 
         parentView.post {
             parentView.children.toList()
