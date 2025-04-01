@@ -3,7 +3,10 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 import android.content.Context
 import android.content.res.ColorStateList
 import android.util.AttributeSet
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.flexbox.JustifyContent
@@ -21,6 +24,8 @@ class CustomChipGroup @JvmOverloads constructor(
     init {
         flexWrap = FlexWrap.WRAP
         justifyContent = JustifyContent.FLEX_START
+        isFocusable = true
+        isFocusableInTouchMode = true
     }
 
     // Add a custom chip
@@ -32,7 +37,8 @@ class CustomChipGroup @JvmOverloads constructor(
         defaultColor = chipView.getBackgroundColor()
         setColor(isChecked, chipView.getChip())
         // Handle chip selection
-        chipView.setOnCheckedChangeListener { _, isChecked ->
+        chipView.setOnCheckedChangeListener { view, isChecked ->
+            hideKeyboard(view)
             if (isChecked) {
                 uncheckOthers(chipView)
             }
@@ -40,7 +46,15 @@ class CustomChipGroup @JvmOverloads constructor(
             setColor(isChecked, chipView.getChip())
         }
 
+        chipView.setOnFocusChangeListener { v, hasFocus ->
+        }
+
         addView(chipView)
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun setColor(isChecked: Boolean, chip: Chip) {

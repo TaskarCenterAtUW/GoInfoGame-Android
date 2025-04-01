@@ -1,12 +1,15 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -212,6 +215,18 @@ class LongFormAdapter<T> :
         private val customTextWatcher: CustomTextWatcher,
     ) :
         ViewHolder(binding.root) {
+
+        init {
+            binding.root.setOnClickListener {
+                hideKeyboard(it)
+            }
+        }
+
+        private fun hideKeyboard(view: View) {
+            val imm = binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+
         fun bind(item: LongFormQuest, position: Int) {
 
             if (item.visible) binding.container.visibility =
