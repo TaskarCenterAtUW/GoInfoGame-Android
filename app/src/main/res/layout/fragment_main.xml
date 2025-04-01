@@ -93,7 +93,7 @@
             android:layout_height="@dimen/map_button_size"
             android:background="@drawable/round_white_button"
             android:elevation="4dp"
-            android:visibility="gone"
+            android:visibility="visible"
             app:srcCompat="@drawable/ic_overlay_black_24dp"
             android:contentDescription="@string/action_overlays"
             android:scaleType="centerInside"

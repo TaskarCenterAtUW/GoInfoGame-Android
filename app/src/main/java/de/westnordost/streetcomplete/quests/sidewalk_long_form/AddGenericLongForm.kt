@@ -1,16 +1,23 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form
 
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.quests.ALongForm
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 
-class AddGenericLongForm(val quests: List<Quest?>) : ALongForm<List<Quest?>>() {
-    override val items: List<Quest?>
+class AddGenericLongForm(
+    val quests: List<LongFormQuest?>,
+    private val multiSelectedQuests: List<Quest> = emptyList()
+) : ALongForm<List<LongFormQuest?>>() {
+    override val items: List<LongFormQuest?>
         get() = quests.let {
-            val copy = mutableListOf<Quest?>()
+            val copy = mutableListOf<LongFormQuest?>()
             for (quest in it) {
                 quest?.userInput = null
                 copy.add(quest)
             }
             return copy
         }
+
+    override val multiselectItems: List<Quest>
+        get() = multiSelectedQuests
 }

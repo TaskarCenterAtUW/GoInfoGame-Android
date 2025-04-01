@@ -6,9 +6,11 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.quest.AllCountries
 import de.westnordost.streetcomplete.data.quest.Countries
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
+import de.westnordost.streetcomplete.quests.AbstractQuestForm
 
 /** Quest type where each quest refers to one OSM element.
  *
@@ -103,4 +105,8 @@ interface OsmElementQuestType<T> : QuestType, ElementEditType {
     fun applyAnswerTo(answer: T, tags: Tags, geometry: ElementGeometry, timestampEdited: Long)
 
     override fun createForm(): AbstractOsmQuestForm<T>
+
+    override fun createMultiSelectLongForm(selectedQuests : List<Quest>): AbstractOsmQuestForm<T> {
+        return createForm()
+    }
 }

@@ -19,6 +19,7 @@ import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.screens.main.map.components.DownloadedAreaMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.FocusGeometryMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.GeometryMarkersMapComponent
+import de.westnordost.streetcomplete.screens.main.map.components.MultiSelectPinMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
@@ -44,11 +45,12 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private val mapDataSource: MapDataWithEditsSource by inject()
     private val selectedOverlaySource: SelectedOverlaySource by inject()
     private val downloadedTilesSource: DownloadedTilesSource by inject()
-    private val preferences : Preferences by inject()
+    private val preferences: Preferences by inject()
 
     private var geometryMarkersMapComponent: GeometryMarkersMapComponent? = null
     private var pinsMapComponent: PinsMapComponent? = null
     private var selectedPinsMapComponent: SelectedPinsMapComponent? = null
+    private var multiSelectPinMapComponent: MultiSelectPinMapComponent? = null
     private var geometryMapComponent: FocusGeometryMapComponent? = null
     private var questPinsManager: QuestPinsManager? = null
     private var editHistoryPinsManager: EditHistoryPinsManager? = null
@@ -59,6 +61,8 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     interface Listener {
         fun onClickedQuest(questKey: QuestKey)
+        fun onLongPressedForMultiSelect(questKey: QuestKey)
+        fun onClickedForMultiSelect(questKey: QuestKey)
         fun onClickedEdit(editKey: EditKey)
         fun onClickedElement(elementKey: ElementKey)
         fun onClickedMapAt(position: LatLon, clickAreaSizeInMeters: Double)
@@ -66,7 +70,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
-    enum class PinMode { NONE, QUESTS, EDITS }
+    enum class PinMode { NONE, QUESTS, EDITS, MULTISELECT }
 
     var pinMode: PinMode = PinMode.QUESTS
         set(value) {
@@ -115,6 +119,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         geometryMarkersMapComponent = GeometryMarkersMapComponent(resources, ctrl, requireContext())
         pinsMapComponent = PinsMapComponent(ctrl)
         selectedPinsMapComponent = SelectedPinsMapComponent(requireContext(), ctrl)
+        multiSelectPinMapComponent = MultiSelectPinMapComponent(requireContext(), ctrl)
         geometryMapComponent = FocusGeometryMapComponent(ctrl)
 
         questPinsManager = QuestPinsManager(
@@ -167,6 +172,35 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     /* -------------------------------- Picking quest pins -------------------------------------- */
 
+    override fun onLongPress(x: Float, y: Float) {
+        viewLifecycleScope.launch {
+            if (pinsMapComponent?.isVisible == true) {
+                when (pinMode) {
+                    PinMode.QUESTS -> {
+                        val props = controller?.pickLabel(x, y)?.properties
+                        val questKey = props?.let { questPinsManager?.getQuestKey(it) }
+                        if (questKey != null) {
+                            pinMode = PinMode.MULTISELECT
+                            val quest = visibleQuestsSource.get(questKey)
+                            questPinsManager?.multiSelectQuestType = quest?.type?.icon?.let {
+                                resources.getResourceEntryName(
+                                    it
+                                )
+                            }
+                            questPinsManager?.onNewScreenPosition(forceUpdate = true)
+                            listener?.onLongPressedForMultiSelect(questKey)
+                            return@launch
+                        } else {
+                            super.onLongPress(x, y)
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
     override fun onSingleTapConfirmed(x: Float, y: Float): Boolean {
         viewLifecycleScope.launch {
             if (pinsMapComponent?.isVisible == true) {
@@ -187,6 +221,18 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
                             listener?.onClickedEdit(editKey)
                             return@launch
                         }
+                    }
+
+                    PinMode.MULTISELECT -> {
+                        val props = controller?.pickLabel(x, y)?.properties
+                        val questKey = props?.let { questPinsManager?.getQuestKey(it) }
+                        if (questKey != null) {
+                            listener?.onClickedForMultiSelect(questKey)
+                        }else{
+                            onClickedMap(x,y)
+                        }
+
+                        return@launch
                     }
 
                     PinMode.NONE -> {}
@@ -258,6 +304,21 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
         mapChanged()
     }
 
+    fun highlightForMultiSelect(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
+        multiSelectPinMapComponent?.set(iconResId, pinPositions)
+        if (pinPositions.isEmpty()){
+            questPinsManager?.multiSelectQuestType = null
+            questPinsManager?.onNewScreenPosition(forceUpdate = true)
+        }else if (pinPositions.size == 1){
+            questPinsManager?.multiSelectQuestType = iconResId.let {
+                resources.getResourceEntryName(
+                    it
+                )
+            }
+            questPinsManager?.onNewScreenPosition(forceUpdate = true)
+        }
+    }
+
     fun hideNonHighlightedPins() {
         pinsMapComponent?.isVisible = false
         mapChanged()
@@ -282,6 +343,14 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
     fun clearSelectedPins() {
         selectedPinsMapComponent?.clear()
+        mapChanged()
+    }
+
+    private fun clearMultiSelectPins() {
+
+        multiSelectPinMapComponent?.clear()
+        questPinsManager?.multiSelectQuestType = null
+        questPinsManager?.onNewScreenPosition(forceUpdate = true)
         mapChanged()
     }
 
@@ -313,11 +382,16 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
             PinMode.QUESTS -> {
                 editHistoryPinsManager?.isVisible = false
                 questPinsManager?.isVisible = true
+                clearMultiSelectPins()
             }
 
             PinMode.EDITS -> {
                 questPinsManager?.isVisible = false
                 editHistoryPinsManager?.isVisible = true
+                clearSelectedPins()
+            }
+
+            PinMode.MULTISELECT -> {
             }
 
             else -> {

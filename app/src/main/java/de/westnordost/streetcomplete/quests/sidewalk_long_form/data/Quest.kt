@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 @Parcelize
 @Serializable
-data class Quest(
+data class LongFormQuest(
     @SerialName("quest_answer_choices")
     val questAnswerChoices: List<QuestAnswerChoice?>? = null,
     @SerialName("quest_answer_dependency")

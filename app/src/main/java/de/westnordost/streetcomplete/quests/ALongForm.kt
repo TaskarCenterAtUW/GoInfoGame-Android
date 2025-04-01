@@ -12,9 +12,10 @@ import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Quest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 
 abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     final override val contentLayoutResId = R.layout.quest_long_form_list
@@ -26,6 +27,8 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     override val defaultExpanded = false
 
     protected abstract val items: T
+    protected abstract val multiselectItems : List<Quest>
+
     private var imageUrl : String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,9 +108,6 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = itemCopy as List<Quest>
+        adapter.items = itemCopy as List<LongFormQuest>
     }
 }
-
-data class LongFormItem<T>(val options: T, val title: String?, val description: String?, val questId : Int?,
-    var visible : Boolean = true, var userInput : String? = null)

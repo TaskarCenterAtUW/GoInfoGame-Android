@@ -48,7 +48,8 @@ data class Pin(
     val position: LatLon,
     val iconName: String,
     val properties: Collection<Pair<String, String>> = emptyList(),
-    val importance: Int = 0
+    val importance: Int = 0,
+    var enabled : Boolean = true
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -58,12 +59,15 @@ data class Pin(
     override fun toString(): String {
         return "Pin(position=$position, iconName='$iconName')"
     }
+
+
     val tangramPoint by lazy {
         // avoid creation of intermediate HashMaps.
         val tangramProperties = listOf(
             "type" to "point",
             "kind" to iconName,
-            "importance" to importance.toString()
+            "importance" to importance.toString(),
+            "enabled" to enabled.toString()
         )
         val props = HashMap<String, String>(properties.size + tangramProperties.size, 1f)
         props.putAll(tangramProperties)

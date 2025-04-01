@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.screens.main
 
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectViewModel
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModelImpl
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
@@ -15,6 +16,8 @@ val mainModule = module {
     viewModel<MainViewModel> { MainViewModelImpl(
         get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
     ) }
+
+    viewModel<MultiSelectViewModel>{ MultiSelectViewModel() }
 
     viewModel<EditHistoryViewModel> { EditHistoryViewModelImpl(get(), get(), get(named("FeatureDictionaryLazy"))) }
 }

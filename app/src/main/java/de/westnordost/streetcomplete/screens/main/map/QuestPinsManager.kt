@@ -66,6 +66,7 @@ class QuestPinsManager(
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
     private var updateJob: Job? = null
+    var multiSelectQuestType : String? = null
 
     /** Switch visibility of quest pins layer */
     var isVisible: Boolean = false
@@ -149,7 +150,7 @@ class QuestPinsManager(
     fun getQuestKey(properties: Map<String, String>): QuestKey? =
         properties.toQuestKey()
 
-    fun onNewScreenPosition() {
+    fun onNewScreenPosition(forceUpdate : Boolean = false) {
         if (!isStarted || !isVisible) return
         val zoom = ctrl.cameraPosition.zoom
         // require zoom >= 14, which is the lowest zoom level where quests are shown
@@ -158,7 +159,7 @@ class QuestPinsManager(
         val tilesRect = displayedArea.enclosingTilesRect(TILES_ZOOM)
         // area too big -> skip (performance)
         if (tilesRect.size > 16) return
-        if (lastDisplayedRect?.contains(tilesRect) != true) {
+        if (lastDisplayedRect?.contains(tilesRect) != true || forceUpdate) {
             lastDisplayedRect = tilesRect
             onNewTilesRect(tilesRect)
         }
@@ -220,7 +221,8 @@ class QuestPinsManager(
                     y = screenPos.y - 50
                 }
 
-                (mapView.parent as? ViewGroup)?.addView(overlayView)
+                if (pin.enabled)
+                    (mapView.parent as? ViewGroup)?.addView(overlayView)
             }
         }
 
@@ -245,18 +247,20 @@ class QuestPinsManager(
         val selectedPins = selectedPinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
-        val pinsSnapshot = pins.toList() // Copy to avoid concurrent modification
+        val pinsSnapshot = synchronized(pins) { pins.toList() } // Copy to avoid concurrent modification
 
         parentView.post {
             parentView.children.toList()
                 .filterIsInstance<AccessibilityOverlayView>()
                 .forEach { overlay ->
                     val pin = pinsSnapshot.find { it.position == overlay.position } ?: return@forEach
+                    val isEnabled = pin.enabled
                     val screenPos = ctrl.latLonToScreenPosition(pin.position) ?: return@forEach
                     overlay.screenPosition = screenPos
                     overlay.x = screenPos.x - 50
                     overlay.y = screenPos.y - 50
-                    overlay.visibility = if (pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) View.VISIBLE else View.GONE
+//                    overlay.visibility = if (pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) View.VISIBLE else View.GONE
+                    overlay.visibility = if ((pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) && isEnabled) View.VISIBLE else View.GONE
                 }
         }
     }
@@ -297,7 +301,8 @@ class QuestPinsManager(
         val iconName = resources.getResourceEntryName(quest.type.icon)
         val props = quest.key.toProperties()
         val importance = getQuestImportance(quest)
-        return quest.markerLocations.map { Pin(it, iconName, props, importance) }
+        val isEnabled = multiSelectQuestType?.let { iconName == it } ?: true
+        return quest.markerLocations.map { Pin(it, iconName, props, importance, isEnabled) }
     }
 
     /** returns values from 0 to 100000, the higher the number, the more important */
