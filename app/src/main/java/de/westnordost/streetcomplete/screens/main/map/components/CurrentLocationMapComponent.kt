@@ -63,7 +63,7 @@ class CurrentLocationMapComponent(ctx: Context, private val ctrl: KtMapControlle
         }
 
     init {
-        val dotImg = ctx.resources.getBitmapDrawable(if (isApril1st()) R.drawable.location_nyan else R.drawable.location_dot, ctx)
+        val dotImg = ctx.resources.getBitmapDrawable(R.drawable.location_dot, ctx)
         val dotSize = PointF(
             ctx.resources.pxToDp(dotImg.bitmap.width),
             ctx.resources.pxToDp(dotImg.bitmap.height)

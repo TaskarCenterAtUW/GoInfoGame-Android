@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsSource
@@ -267,6 +268,7 @@ private object QuestOne : QuestType {
     override val wikiLink: String? = null
     override fun createForm(): AbstractQuestForm = mock()
     override val achievements = editTypeAchievements(listOf("thisAchievement", "mixedAchievement"))
+    override fun createMultiSelectLongForm(selectedQuests: List<Quest>): AbstractQuestForm = mock()
 }
 
 private object QuestTwo : QuestType {
@@ -275,6 +277,7 @@ private object QuestTwo : QuestType {
     override val wikiLink: String? = null
     override fun createForm(): AbstractQuestForm = mock()
     override val achievements = editTypeAchievements(listOf("otherAchievement", "mixedAchievement"))
+    override fun createMultiSelectLongForm(selectedQuests: List<Quest>): AbstractQuestForm = mock()
 }
 
 private object OverlayOne : Overlay {
