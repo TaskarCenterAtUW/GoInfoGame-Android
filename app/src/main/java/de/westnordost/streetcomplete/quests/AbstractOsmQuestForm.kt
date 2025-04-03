@@ -2,10 +2,17 @@ package de.westnordost.streetcomplete.quests
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.hardware.GeomagneticField
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.provider.MediaStore
@@ -17,6 +24,7 @@ import android.widget.PopupMenu
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
@@ -81,7 +89,7 @@ import java.io.ByteArrayOutputStream
 import java.util.Locale
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
-abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails {
+abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails, SensorEventListener {
 
     // dependencies
     private val elementEditsController: ElementEditsController by inject()
@@ -116,6 +124,16 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     open val otherAnswers = listOf<IAnswerItem>()
     open val buttonPanelAnswers = listOf<IAnswerItem>()
 
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var magnetometer: Sensor? = null
+
+    private val gravity = FloatArray(3)
+    private val geomagnetic = FloatArray(3)
+    private var hasGravity = false
+    private var hasMagnet = false
+    var azimuth: Float = 0.0f  // Compass direction
+
     interface Listener {
         /** The GPS position at which the user is displayed at */
         val displayedMapLocation: Location?
@@ -146,6 +164,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        sensorManager = requireContext().getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+
         val args = requireArguments()
         multiSelectElements = Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
         val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
@@ -171,6 +193,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             }
     }
 
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+        magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -183,6 +211,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     override fun onStart() {
         super.onStart()
         updateButtonPanel()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
     }
 
     protected fun updateButtonPanel() {
@@ -241,6 +274,47 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         hideProgressbar()
     }
 
+    override fun onSensorChanged(event: SensorEvent?) {
+        event ?: return
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                System.arraycopy(event.values, 0, gravity, 0, event.values.size)
+                hasGravity = true
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                System.arraycopy(event.values, 0, geomagnetic, 0, event.values.size)
+                hasMagnet = true
+            }
+        }
+
+        if (hasGravity && hasMagnet) {
+            val rotationMatrix = FloatArray(9)
+            val remappedMatrix = FloatArray(9)
+            val orientation = FloatArray(3)
+
+            if (SensorManager.getRotationMatrix(rotationMatrix, null, gravity, geomagnetic)) {
+                // Adjust based on device's natural orientation
+                SensorManager.remapCoordinateSystem(
+                    rotationMatrix,
+                    SensorManager.AXIS_X, SensorManager.AXIS_Z,
+                    remappedMatrix
+                )
+
+                SensorManager.getOrientation(remappedMatrix, orientation)
+                azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+
+                // Convert negative values to positive (0 - 360)
+                if (azimuth < 0) azimuth += 360
+
+                println("Compass Heading: $azimuth°")
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+
+    }
+
     private suspend fun uploadImageInSequence(
         sequenceId: String,
         bitmap: Bitmap?,
@@ -264,11 +338,24 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                         "coordinate",
                         "${displayedLocation?.latitude},${displayedLocation?.longitude}"
                     )
-                    append("headers", displayedLocation?.bearing.toString())
+                    var finalBearing = 0.0f
+                    if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
+                        finalBearing = displayedLocation.bearing
+                    }else{
+                        displayedLocation?.apply {
+                            val geomagneticField = GeomagneticField(
+                                this.latitude.toFloat(),
+                                this.longitude.toFloat(),
+                                this.altitude.toFloat(),
+                                System.currentTimeMillis()
+                            )
 
-//                    if (displayedLocation?.hasBearing() == true){
-//                        append("headers", displayedLocation.bearing?.toInt()?.toString() ?: "0")
-//                    }
+                            var trueNorthBearing = azimuth + geomagneticField.declination
+                            if (trueNorthBearing >= 360) trueNorthBearing -= 360
+                            finalBearing = trueNorthBearing
+                        }
+                    }
+                    append("headers", finalBearing.toInt().toString())
                     append("photo", byteArray, Headers.build {
                         append(HttpHeaders.ContentType, "image/jpeg")
                         append(HttpHeaders.ContentDisposition, "filename=\"wework-kartaview.jpg\"")
