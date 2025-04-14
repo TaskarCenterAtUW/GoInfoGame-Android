@@ -11,10 +11,13 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManag
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -71,10 +74,13 @@ class WorkspaceViewModelImpl(
     //     initialValue = WorkspaceListState.loading()
     // )
 
+    @OptIn(FlowPreview::class)
     override fun fetchWorkspaces(location: Location) {
         viewModelScope.launch {
             _showWorkspaces.value = WorkspaceListState.Loading
             workspaceRepository.getWorkspaces(location)
+                .debounce(300)
+                .distinctUntilChanged()
                 .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
                 .collect { workspaces ->
                     _showWorkspaces.value = WorkspaceListState.success(workspaces)

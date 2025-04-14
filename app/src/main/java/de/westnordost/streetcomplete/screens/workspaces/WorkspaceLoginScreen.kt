@@ -96,6 +96,11 @@ fun LoginScreen(
                 fineLocationManager.getCurrentLocation()
                 navToNextPage()
             }
+
+            else -> {
+                isLoading = false
+                snackBarMessage = null
+            }
         }
         LoginCard(viewModel, modifier, preferences, environmentManager)
 

@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -72,6 +71,12 @@ class LongFormAdapter<T> :
 
             itemCopy[itemCopy.indexOf(quest)].visible =
                 filteredQuest[0].userInput in requiredUserInput
+        }
+
+        itemCopy.forEach {
+            if (!it.visible) {
+                it.selectedIndex = null
+            }
         }
         return itemCopy
     }
@@ -260,17 +265,27 @@ class LongFormAdapter<T> :
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
             val imageSelectAdapter = ImageSelectAdapter<LongFormQuest>(1)
-            binding.list.layoutManager = GridLayoutManager(binding.root.context, 4)
+            binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
+            imageSelectAdapter.selectedIndices = item.selectedIndex?.let { listOf(it) } ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    handleClick(item.questId!!, item.questAnswerChoices?.get(index)?.value!!)
+                    handleClick(
+                        item.questId!!,
+                        item.questAnswerChoices?.get(index)?.value!!,
+                        item.questAnswerChoices,
+                        index
+                    )
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
+                    val mainIndex =
+                        givenItems.indexOfFirst { it.questId == item.questId }
+                    givenItems[mainIndex].selectedIndex = null
+                    givenItems[mainIndex].userInput = null
                 }
             })
 
@@ -281,10 +296,19 @@ class LongFormAdapter<T> :
 
         }
 
-        fun handleClick(questId: Int, userInput: String) {
+        fun handleClick(
+            questId: Int,
+            userInput: String,
+            questAnswerChoices: List<QuestAnswerChoice?>,
+            imageIndex: Int
+        ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
             givenItems[index].userInput = userInput
+            givenItems[index].selectedIndex = imageIndex
+            if (questId in needRefreshIds) {
+                items = givenItems
+            }
         }
     }
 
@@ -337,7 +361,7 @@ class LongFormAdapter<T> :
 
         return when (quest.questType) {
             "ExclusiveChoice" -> {
-                ViewType.EXCLUSIVE_CHOICE.value
+                ViewType.IMAGE.value
             }
 
             "Numeric" -> {

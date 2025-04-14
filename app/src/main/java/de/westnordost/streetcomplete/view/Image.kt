@@ -12,7 +12,7 @@ import de.westnordost.streetcomplete.R
 sealed interface Image
 data class ResImage(@DrawableRes val resId: Int) : Image
 data class DrawableImage(val drawable: Drawable) : Image
-data class ImageUrl(val url : String = "https://picsum.photos/200/200") : Image
+data class ImageUrl(val url : String = "https://picsum.photos/320/480") : Image
 
 fun ImageView.setImage(image: Image?) {
     when (image) {

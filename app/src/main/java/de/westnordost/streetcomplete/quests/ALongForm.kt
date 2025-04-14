@@ -45,7 +45,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         if (editedItems.isEmpty()) {
             Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
         }else{
-            applyAnswer(editedItems as T, tagList)
+            //applyAnswer(editedItems as T, tagList)
         }
     }
 
@@ -108,6 +108,10 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = itemCopy as List<LongFormQuest>
+        adapter.items = (itemCopy as List<LongFormQuest>).apply {
+            this.forEach {
+                it.selectedIndex = null
+            }
+        }
     }
 }
