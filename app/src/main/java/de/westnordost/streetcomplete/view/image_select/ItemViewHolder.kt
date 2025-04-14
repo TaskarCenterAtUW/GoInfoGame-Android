@@ -1,10 +1,14 @@
 package de.westnordost.streetcomplete.view.image_select
 
+import android.app.Dialog
+import android.graphics.Color
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.RecyclerView
+import com.github.chrisbanes.photoview.PhotoView
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.view.setImage
 import de.westnordost.streetcomplete.view.setText
@@ -44,5 +48,22 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         textView?.setText(item.title)
         descriptionView?.setText(item.description)
         descriptionView?.isGone = item.description == null
+        imageView?.setOnLongClickListener {
+            val dialog = Dialog(it.context)
+            dialog.setContentView(R.layout.dialog_full_image)
+
+            dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+            dialog.window?.setDimAmount(0.7f) // controls dim background
+
+            val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+            fullImageView.setImageDrawable(imageView.drawable)
+
+            fullImageView.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+            true
+        }
     }
 }

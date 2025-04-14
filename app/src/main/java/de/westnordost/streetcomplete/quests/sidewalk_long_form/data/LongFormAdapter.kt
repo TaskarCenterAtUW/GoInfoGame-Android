@@ -1,7 +1,10 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
+import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -13,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import coil.load
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
@@ -24,6 +28,7 @@ import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
+import androidx.core.graphics.drawable.toDrawable
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
@@ -248,6 +253,25 @@ class LongFormAdapter<T> :
                     error(R.drawable.error_placeholder)
                     crossfade(true) // Smooth transition effect
                 }
+
+                binding.questImage.setOnLongClickListener {
+                    val dialog = Dialog(it.context)
+                    dialog.setContentView(R.layout.dialog_full_image)
+
+                    dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                    dialog.window?.setDimAmount(0.7f) // controls dim background
+
+                    val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+                    fullImageView.setImageDrawable(binding.questImage.drawable)
+
+                    fullImageView.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
+                    dialog.show()
+                    true
+                }
+
             } else {
                 binding.questImage.visibility = View.GONE
             }

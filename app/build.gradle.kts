@@ -245,7 +245,7 @@ dependencies {
     implementation("io.ktor:ktor-client-logging:2.0.0")
     implementation("org.slf4j:slf4j-simple:2.0.9")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
-
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 
 }
 
