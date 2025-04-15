@@ -315,7 +315,7 @@ class LongFormAdapter<T> :
 
 
             imageSelectAdapter.items = item.questAnswerChoices?.map {
-                Item2(item, ImageUrl(), CharSequenceText(it?.choiceText!!), CharSequenceText(""))
+                Item2(item, ImageUrl(it?.imageUrl), CharSequenceText(it?.choiceText!!), CharSequenceText(""))
             }!!
 
         }

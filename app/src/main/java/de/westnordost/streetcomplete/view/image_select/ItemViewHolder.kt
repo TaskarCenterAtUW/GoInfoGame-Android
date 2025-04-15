@@ -48,7 +48,7 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         textView?.setText(item.title)
         descriptionView?.setText(item.description)
         descriptionView?.isGone = item.description == null
-        imageView?.setOnLongClickListener {
+        itemView.setOnLongClickListener {
             val dialog = Dialog(it.context)
             dialog.setContentView(R.layout.dialog_full_image)
 
@@ -56,14 +56,14 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             dialog.window?.setDimAmount(0.7f) // controls dim background
 
             val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
-            fullImageView.setImageDrawable(imageView.drawable)
+            fullImageView.setImageDrawable(imageView?.drawable)
 
             fullImageView.setOnClickListener {
                 dialog.dismiss()
             }
 
             dialog.show()
-            true
+            false
         }
     }
 }
