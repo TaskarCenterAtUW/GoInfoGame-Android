@@ -5,14 +5,19 @@ import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -33,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavHostController
@@ -41,7 +47,6 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.util.location.FineLocationManager
-import java.util.Date
 
 @Composable
 fun LoginScreen(
@@ -139,7 +144,7 @@ fun LoginCard(
 
             Text(text = "Welcome!", style = MaterialTheme.typography.titleLarge)
             Text(
-                text = "Please Login to your account!",
+                text = "Please login to your account!",
                 style = MaterialTheme.typography.bodyMedium
             )
             TextField(
@@ -170,23 +175,44 @@ fun LoginCard(
             }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
             }
-            EnvironmentDropdownMenu(viewModel = viewModel, environmentManager)
+            EnvironmentDropdownMenu(viewModel = viewModel, environmentManager, modifier)
         }
     }
 }
 
 @Composable
-fun EnvironmentDropdownMenu(viewModel: WorkspaceViewModel, environmentManager: EnvironmentManager) {
+fun EnvironmentDropdownMenu(
+    viewModel: WorkspaceViewModel,
+    environmentManager: EnvironmentManager,
+    modifier: Modifier
+) {
     var expanded by remember { mutableStateOf(false) }
     var selectedEnvironment by remember { mutableStateOf(environmentManager.currentEnvironment) }
 
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Button(onClick = { expanded = true }) {
-            Text(text = "Select Environment: ${selectedEnvironment.name}")
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+        Row {
+            Text(
+                text = "Select Environment :",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            Button(
+                onClick = { expanded = true },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            ) {
+                Text(text = selectedEnvironment.name)
+                Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown Icon")
+            }
         }
+
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            offset = DpOffset(x = 300.dp, y = 0.dp)
         ) {
             Environment.entries.forEach { environment ->
                 DropdownMenuItem(text = { Text(environment.name) }, onClick = {

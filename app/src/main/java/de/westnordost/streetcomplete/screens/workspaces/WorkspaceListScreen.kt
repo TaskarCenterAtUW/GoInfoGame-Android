@@ -5,11 +5,16 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -64,12 +69,22 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    WorkspaceList(
-                        onClick,
-                        modifier = modifier,
-                        items = (workspaceListState as WorkspaceListState.Success).workspaces.filter
-                        { it.externalAppAccess == 1 && it.type == "osw" }
-                    )
+                    Column {
+                        Text(
+                            text = "Please select a workspace to continue",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = modifier.padding(8.dp)
+                        )
+                        WorkspaceList(
+                            onClick,
+                            modifier = Modifier,
+                            items = (workspaceListState as WorkspaceListState.Success).workspaces.filter
+                            { it.externalAppAccess == 1 && it.type == "osw" },
+                            viewModel
+                        )
+                    }
+
                 }
             }
 
@@ -140,16 +155,38 @@ fun finishAndLaunchNewActivity(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun WorkspaceList(
     onClick: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
     items: List<Workspace> = emptyList(),
+    viewModel: WorkspaceViewModel? = null,
 ) {
-    LazyColumn(modifier = modifier) {
-        itemsIndexed(items) { index, workspace ->
-            WorkSpaceListItem(workspace = workspace, workspace.id, Modifier, onClick)
+    val refreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = refreshing,
+        onRefresh = {
+            viewModel?.refreshWorkspaces()
         }
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(pullRefreshState) // 👈 use the modifier here
+    ) {
+        LazyColumn(modifier = modifier) {
+            itemsIndexed(items) { index, workspace ->
+                WorkSpaceListItem(workspace = workspace, workspace.id, Modifier, onClick)
+            }
+        }
+
+        PullRefreshIndicator(
+            refreshing = refreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
 
@@ -182,5 +219,6 @@ private fun WorkSpaceListPreview() {
     WorkspaceList(
         onClick = {},
         modifier = Modifier.fillMaxSize(),
-        items = List(10) { Workspace(it, listOf(), "Workspace $it","osw", externalAppAccess = 1) })
+        items = List(10) { Workspace(it, listOf(), "Workspace $it", "osw", externalAppAccess = 1) }
+    )
 }

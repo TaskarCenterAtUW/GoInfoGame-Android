@@ -293,7 +293,10 @@ fun AppNavigator(
 fun GreetingPreview() {
     AppTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            WorkspaceList(onClick = { }, modifier = Modifier.padding(innerPadding))
+            WorkspaceList(
+                onClick = { },
+                modifier = Modifier.padding(innerPadding)
+            )
         }
     }
 }

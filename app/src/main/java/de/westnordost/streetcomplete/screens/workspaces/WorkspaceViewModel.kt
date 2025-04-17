@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
     abstract fun fetchWorkspaces(location: Location)
+    abstract fun refreshWorkspaces()
     abstract fun loginToWorkspace(
         username: String,
         password: String,
@@ -58,7 +59,7 @@ class WorkspaceViewModelImpl(
         _selectedWorkspace.value = workspaceId
         preferences.workspaceId = workspaceId
     }
-
+    private var userLocation : Location? = null
     private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
     override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
 
@@ -76,15 +77,25 @@ class WorkspaceViewModelImpl(
 
     @OptIn(FlowPreview::class)
     override fun fetchWorkspaces(location: Location) {
-        viewModelScope.launch {
-            _showWorkspaces.value = WorkspaceListState.Loading
-            workspaceRepository.getWorkspaces(location)
-                .debounce(300)
-                .distinctUntilChanged()
-                .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
-                .collect { workspaces ->
-                    _showWorkspaces.value = WorkspaceListState.success(workspaces)
-                }
+        userLocation = location
+        userLocation?.apply {
+            refreshWorkspaces()
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    override fun refreshWorkspaces() {
+        userLocation?.apply {
+            viewModelScope.launch {
+                _showWorkspaces.value = WorkspaceListState.Loading
+                workspaceRepository.getWorkspaces(this@apply)
+                    .debounce(300)
+                    .distinctUntilChanged()
+                    .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
+                    .collect { workspaces ->
+                        _showWorkspaces.value = WorkspaceListState.success(workspaces)
+                    }
+            }
         }
     }
 
