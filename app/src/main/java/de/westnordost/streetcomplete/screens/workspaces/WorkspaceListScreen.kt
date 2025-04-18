@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,7 +98,12 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it)
+                snackBarHostState.showSnackbar(it, actionLabel = "Refresh").let {
+                    if (it == SnackbarResult.ActionPerformed) {
+                        // Retry the action that caused the error
+                        viewModel.refreshWorkspaces()
+                    }
+                }
                 snackBarMessage = null
             }
         }

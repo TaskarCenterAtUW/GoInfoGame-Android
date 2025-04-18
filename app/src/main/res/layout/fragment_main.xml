@@ -142,6 +142,7 @@
             android:layout_height="@dimen/map_button_size"
             android:scaleType="center"
             style="@style/RoundWhiteButton"
+            android:visibility="gone"
             app:srcCompat="@drawable/ic_layers_24"
             android:contentDescription="@string/change_map_layer"
             app:layout_constraintRight_toRightOf="parent"

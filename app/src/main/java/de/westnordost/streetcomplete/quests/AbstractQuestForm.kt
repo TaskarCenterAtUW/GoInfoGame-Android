@@ -123,7 +123,7 @@ abstract class AbstractQuestForm :
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setTitle(resources.getString(questType.title))
+        //setTitle(resources.getString(questType.title))
         setTitleHintLabel(null)
         setHint(questType.hint?.let { resources.getString(it) })
         setHintImages(questType.hintImages.mapNotNull { requireContext().getDrawable(it) })
