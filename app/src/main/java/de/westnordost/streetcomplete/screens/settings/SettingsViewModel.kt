@@ -42,6 +42,7 @@ abstract class SettingsViewModel : ViewModel() {
     abstract fun unhideQuests()
 
     abstract fun deleteCache()
+    abstract fun deleteMapQuests()
 
     abstract fun setResurveyIntervals(value: ResurveyIntervals)
     abstract fun setShowAllNotes(value: Boolean)
@@ -133,6 +134,10 @@ class SettingsViewModelImpl(
 
     override fun deleteCache() {
         cleaner.cleanAll()
+    }
+
+    override fun deleteMapQuests() {
+        cleaner.cleanMapData()
     }
 
     override fun setResurveyIntervals(value: ResurveyIntervals) { prefs.resurveyIntervals = value }

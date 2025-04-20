@@ -37,9 +37,10 @@ import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 
 @Composable
-fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
+fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, settingsViewModel: SettingsViewModel, modifier: Modifier = Modifier) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     var isLongFormLoading by remember { mutableStateOf(false) }
@@ -128,6 +129,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             isLongFormLoading = false
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
+                            settingsViewModel.deleteMapQuests()
                             finishAndLaunchNewActivity(context, longFormState.longFormItems)
                         }
 

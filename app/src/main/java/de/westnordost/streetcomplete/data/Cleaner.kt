@@ -28,6 +28,10 @@ class Cleaner(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + CoroutineName("Cleaner") + Dispatchers.IO)
 
+    fun cleanMapData() = scope.launch {
+        mapDataController.clear()
+    }
+
     fun cleanOld() = scope.launch {
         val time = nowAsEpochMilliseconds()
 

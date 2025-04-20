@@ -282,6 +282,7 @@ fun AppNavigator(
             fineLocationManager.getCurrentLocation()
             WorkSpaceListScreen(
                 viewModel = koinViewModel(),
+                settingsViewModel = koinViewModel(),
                 modifier = modifier.padding(innerPadding)
             )
         }
