@@ -306,7 +306,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 // Convert negative values to positive (0 - 360)
                 if (azimuth < 0) azimuth += 360
 
-                println("Compass Heading: $azimuth°")
             }
         }
     }

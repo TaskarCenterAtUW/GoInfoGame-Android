@@ -5,6 +5,7 @@ import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import coil.load
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.util.logs.Log
 
 /* Same idea here as the Icon class introduced in min API level 23. If the min API level is
    Build.VERSION_CODES_M, usage of this class can be replaced with Icon */
@@ -19,8 +20,8 @@ fun ImageView.setImage(image: Image?) {
         is ResImage -> setImageResource(image.resId)
         is DrawableImage -> setImageDrawable(image.drawable)
         is ImageUrl -> this.load(image.url){
-            placeholder(R.drawable.surface_asphalt)
-            error(R.drawable.surface_asphalt)
+            placeholder(R.drawable.blank_big)
+            error(R.drawable.blank_big)
         }
         null -> setImageDrawable(null)
     }
