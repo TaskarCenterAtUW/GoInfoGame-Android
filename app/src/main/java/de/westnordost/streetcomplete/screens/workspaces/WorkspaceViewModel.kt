@@ -136,7 +136,7 @@ class WorkspaceViewModelImpl(
             }
             return WorkspaceLongFormState.success(longFormResponse)
         } catch (parseException: ParseException) {
-            return WorkspaceLongFormState.error("Invalid quest filter " + parseException.message)
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }
     }
 

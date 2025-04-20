@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.quests
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -8,9 +10,13 @@ import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
+import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
@@ -45,9 +51,31 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         if (editedItems.isEmpty()) {
             Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
         }else{
-            //applyAnswer(editedItems as T, tagList)
+            applyAnswer(editedItems as T, tagList)
         }
     }
+
+    @SuppressLint("ClickableViewAccessibility")
+    fun setupRecyclerViewTouchListener(recyclerView: RecyclerView, editTextId: Int) {
+        recyclerView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_MOVE) {
+                val currentFocus = recyclerView.findFocus() // Use RecyclerView's context to find focus
+
+                if (currentFocus?.id == editTextId) {
+                    hideKeyboardFrom(recyclerView.context, currentFocus)
+                    currentFocus.clearFocus()
+                }
+            }
+            false
+        }
+    }
+
+
+    private fun hideKeyboardFrom(context: Context, view: View) {
+        val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -56,6 +84,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
+        setupRecyclerViewTouchListener(binding.recyclerView,R.id.editText)
         binding.submitButton.setOnClickListener {
             onClickOk()
         }

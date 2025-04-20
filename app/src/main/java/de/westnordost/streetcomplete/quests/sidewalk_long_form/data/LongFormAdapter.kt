@@ -243,14 +243,15 @@ class LongFormAdapter<T> :
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
-
+            binding.input.editText?.clearFocus()
+            binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText(item.userInput)
             if (!item.questImageUrl.isNullOrBlank()) {
                 binding.questImage.visibility = View.VISIBLE
                 binding.questImage.load(item.questImageUrl) {
-                    placeholder(R.drawable.placeholder)
-                    error(R.drawable.error_placeholder)
+                    placeholder(R.drawable.blank_big)
+                    error(R.drawable.blank_big)
                     crossfade(true) // Smooth transition effect
                 }
 
