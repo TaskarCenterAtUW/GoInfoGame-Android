@@ -30,6 +30,7 @@ class Cleaner(
 
     fun cleanMapData() = scope.launch {
         mapDataController.clear()
+        downloadedTilesController.clear()
     }
 
     fun cleanOld() = scope.launch {

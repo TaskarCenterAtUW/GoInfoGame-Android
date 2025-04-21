@@ -84,7 +84,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
-
+        setupRecyclerViewTouchListener(binding.recyclerView,R.id.editText)
         binding.submitButton.setOnClickListener {
             onClickOk()
         }

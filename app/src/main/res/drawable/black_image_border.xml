@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Transparent background -->
+    <solid android:color="@android:color/transparent" />
+
+    <!-- Border -->
+    <stroke
+        android:width="2dp"
+        android:color="@color/traffic_black" /> <!-- Change to any color you want -->
+</shape>
