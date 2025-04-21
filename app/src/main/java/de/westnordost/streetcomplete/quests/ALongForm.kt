@@ -14,7 +14,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.core.content.getSystemService
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.westnordost.streetcomplete.R
@@ -35,17 +34,18 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     protected abstract val items: T
     protected abstract val multiselectItems : List<Quest>
 
-    private var imageUrl : String? = null
+    private var imageUrls : MutableList<String> = mutableListOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        adapter =  LongFormAdapter()
+        adapter =  LongFormAdapter {setCameraIntent()}
     }
 
     override fun onClickOk() {
         val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
         val tagList : MutableList<Pair<String, String>> = mutableListOf()
-        if (imageUrl !=null){
-            tagList.add(Pair("ext:kartaview_url", imageUrl!!))
+        if (imageUrls.isNotEmpty()){
+            val urls = imageUrls.joinToString(",")
+            tagList.add(Pair("ext:kartaview_url", urls))
         }
 
         if (editedItems.isEmpty()) {
@@ -62,7 +62,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
                 val currentFocus = recyclerView.findFocus() // Use RecyclerView's context to find focus
 
                 if (currentFocus?.id == editTextId) {
-                    hideKeyboardFrom(recyclerView.context, currentFocus)
+                    hideKeyboardFrom(recyclerView.context, currentFocus) //recyclerView.context
                     currentFocus.clearFocus()
                 }
             }
@@ -84,7 +84,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
-        setupRecyclerViewTouchListener(binding.recyclerView,R.id.editText)
+
         binding.submitButton.setOnClickListener {
             onClickOk()
         }
@@ -103,9 +103,9 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onImageUrlReceived(imageUrl: String) {
-        binding.imageUrlTV.visibility = View.VISIBLE
-        this.imageUrl = imageUrl
-        binding.imageUrlTV.text = getSpannableText(imageUrl)
+//        binding.imageUrlTV.visibility = View.VISIBLE
+        this.imageUrls.add(imageUrl)
+//        binding.imageUrlTV.text = getSpannableText(imageUrl)
     }
 
     private fun getSpannableText(imageUrl: String): SpannableString {

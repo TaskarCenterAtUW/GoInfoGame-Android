@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.quests
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
 import android.content.res.Configuration
@@ -21,13 +20,14 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AddressModel
@@ -83,13 +83,13 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
-import org.koin.androidx.compose.get
 import org.koin.core.qualifier.named
 import java.io.ByteArrayOutputStream
 import java.util.Locale
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
-abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails, SensorEventListener {
+abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails,
+    SensorEventListener {
 
     // dependencies
     private val elementEditsController: ElementEditsController by inject()
@@ -111,7 +111,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     // passed in parameters
     private val osmElementQuestType: OsmElementQuestType<T> get() = questType as OsmElementQuestType<T>
     protected lateinit var element: Element private set
-    protected var multiSelectElements : List<Element> = emptyList()
+    protected var multiSelectElements: List<Element> = emptyList()
     private val englishResources: Resources
         get() {
             val conf = Configuration(resources.configuration)
@@ -169,13 +169,14 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
         val args = requireArguments()
-        multiSelectElements = Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
+        multiSelectElements =
+            Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
         val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
             Json.decodeFromString(it)
         }
-        if (getElement !=null){
+        if (getElement != null) {
             element = getElement
-        }else{
+        } else {
             element = multiSelectElements.first()
         }
         val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
@@ -195,8 +196,20 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     override fun onResume() {
         super.onResume()
-        accelerometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
-        magnetometer?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+        accelerometer?.let {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_UI
+            )
+        }
+        magnetometer?.let {
+            sensorManager.registerListener(
+                this,
+                it,
+                SensorManager.SENSOR_DELAY_UI
+            )
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -281,6 +294,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 System.arraycopy(event.values, 0, gravity, 0, event.values.size)
                 hasGravity = true
             }
+
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 System.arraycopy(event.values, 0, geomagnetic, 0, event.values.size)
                 hasMagnet = true
@@ -340,7 +354,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     var finalBearing = 0.0f
                     if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
                         finalBearing = displayedLocation.bearing
-                    }else{
+                    } else {
                         displayedLocation?.apply {
                             val geomagneticField = GeomagneticField(
                                 this.latitude.toFloat(),
@@ -365,7 +379,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             if (response.status == HttpStatusCode.OK) {
                 val uploadResponse = response.body<ImageUploadResponse>()
                 val pair = Pair(uploadResponse.osv.photo.path, uploadResponse.osv.photo.photoName)
-
+                showSnackBar(
+                    "Image Uploaded Successfully",
+                    view,
+                    requireActivity() as ComponentActivity
+                )
                 Log.d("UploadImage", "Image uploaded successfully")
                 return Pair(true, pair)
             } else {
@@ -375,6 +393,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             }
         }
         return Pair(false, null)
+    }
+
+    private fun showSnackBar(message: String, view: View?, componentActivity: ComponentActivity) {
+        if (view != null) {
+            Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     private suspend fun createSequence(): String? {
@@ -549,17 +573,25 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         extraTagList: MutableList<Pair<String, String>> = mutableListOf()
     ) {
         viewLifecycleScope.launch {
-            if (multiSelectElements.isNotEmpty()){
-                for (element in multiSelectElements){
-                    solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+            if (multiSelectElements.isNotEmpty()) {
+                for (element in multiSelectElements) {
+                    solve(
+                        UpdateElementTagsAction(
+                            element,
+                            createQuestChanges(answer, extraTagList)
+                        )
+                    )
                 }
-            }else{
+            } else {
                 solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
             }
         }
     }
 
-    private fun createQuestChanges(answer: T, extraTagList: MutableList<Pair<String, String>> = mutableListOf()): StringMapChanges {
+    private fun createQuestChanges(
+        answer: T,
+        extraTagList: MutableList<Pair<String, String>> = mutableListOf()
+    ): StringMapChanges {
         val changesBuilder = StringMapChangesBuilder(element.tags)
         extraTagList.forEach { changesBuilder[it.first] = it.second }
         osmElementQuestType.applyAnswerTo(answer, changesBuilder, geometry, element.timestampEdited)
@@ -665,10 +697,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             ARG_DISPLAYED_LOCATION to displayedLocation
         )
 
-        fun createArgumentsForMultiSelect(elements: List<Element>, displayedLocation: Location?) = bundleOf(
-            ARG_MULTI_SELECT_ELEMENTS to Json.encodeToString(elements),
-            ARG_ELEMENT to null,
-            ARG_DISPLAYED_LOCATION to displayedLocation
-        )
+        fun createArgumentsForMultiSelect(elements: List<Element>, displayedLocation: Location?) =
+            bundleOf(
+                ARG_MULTI_SELECT_ELEMENTS to Json.encodeToString(elements),
+                ARG_ELEMENT to null,
+                ARG_DISPLAYED_LOCATION to displayedLocation
+            )
     }
 }

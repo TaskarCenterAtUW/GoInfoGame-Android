@@ -4,7 +4,6 @@ import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -30,7 +29,7 @@ import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
 import androidx.core.graphics.drawable.toDrawable
 
-class LongFormAdapter<T> :
+class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     RecyclerView.Adapter<ViewHolder>() {
     var givenItems = emptyList<LongFormQuest>()
     var needRefreshIds = listOf<Int?>()
@@ -293,6 +292,9 @@ class LongFormAdapter<T> :
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
+            binding.choiceFollowUp.setOnClickListener {
+                cameraIntent()
+            }
             imageSelectAdapter.selectedIndices = item.selectedIndex?.let { listOf(it) } ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
@@ -301,8 +303,14 @@ class LongFormAdapter<T> :
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
                         item.questAnswerChoices,
-                        index
+                        index, binding
                     )
+                    if (!item.questAnswerChoices.get(index)?.choiceFollowUp.isNullOrBlank()){
+                        binding.choiceFollowUp.visibility = View.VISIBLE
+                        binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
+                    }else{
+                        binding.choiceFollowUp.visibility = View.GONE
+                    }
                 }
 
                 override fun onIndexDeselected(index: Int) {
@@ -325,7 +333,8 @@ class LongFormAdapter<T> :
             questId: Int,
             userInput: String,
             questAnswerChoices: List<QuestAnswerChoice?>,
-            imageIndex: Int
+            imageIndex: Int,
+            binding: CellLongFormItemImageGridBinding
         ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
