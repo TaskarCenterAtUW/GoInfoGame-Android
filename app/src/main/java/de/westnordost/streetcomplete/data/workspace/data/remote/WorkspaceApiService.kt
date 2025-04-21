@@ -22,6 +22,7 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import java.nio.channels.UnresolvedAddressException
 
 class WorkspaceApiService(
     private val httpClient: HttpClient,
@@ -47,6 +48,8 @@ class WorkspaceApiService(
             return responseBody
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
+        } catch (e : UnresolvedAddressException){
+            throw Exception("Please check your internet connection")
         } catch (e: Exception) {
             throw Exception(e.message)
         }
@@ -82,7 +85,7 @@ class WorkspaceApiService(
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: SerializationException) {
-            throw Exception("Invalid long form. Please fix the json for workspace $workspaceId")
+            throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")
         } catch (e: Exception) {
             throw Exception(e.message?.take(100))
         }

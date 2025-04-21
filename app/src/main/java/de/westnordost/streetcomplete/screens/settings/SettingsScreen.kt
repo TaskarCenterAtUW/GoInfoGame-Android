@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
@@ -68,7 +67,8 @@ fun SettingsScreen(
     var showAutosyncSelect by remember { mutableStateOf(false) }
     var showResurveyIntervalsSelect by remember { mutableStateOf(false) }
 
-    val presetNameOrDefault = selectedPresetName ?: stringResource(R.string.quest_presets_default_name)
+    val presetNameOrDefault =
+        selectedPresetName ?: stringResource(R.string.quest_presets_default_name)
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -168,17 +168,18 @@ fun SettingsScreen(
                 Preference(
                     name = stringResource(R.string.pref_title_quests_restore_hidden),
                     onClick = { showRestoreHiddenQuestsConfirmation = true },
-                    description = stringResource(R.string.pref_title_quests_restore_hidden_summary, hiddenQuestCount)
+                    description = stringResource(
+                        R.string.pref_title_quests_restore_hidden_summary,
+                        hiddenQuestCount
+                    )
                 )
             }
 
-            if (BuildConfig.DEBUG) {
-                PreferenceCategory("Debug") {
-                    Preference(
-                        name = "Show Quest Forms",
-                        onClick = onClickShowQuestForms
-                    ) { NextScreenIcon() }
-                }
+            PreferenceCategory("Application Info") {
+                Preference(
+                    name = "Application version",
+                    onClick = {}
+                ) { Text(BuildConfig.VERSION_NAME) }
             }
         }
     }
@@ -189,11 +190,13 @@ fun SettingsScreen(
             onConfirmed = { viewModel.deleteCache() },
             text = {
                 val locale = Locale.getDefault()
-                Text(stringResource(
-                    R.string.delete_cache_dialog_message,
-                    (1.0 * REFRESH_DATA_AFTER / (24 * 60 * 60 * 1000)).format(locale, 1),
-                    (1.0 * DELETE_OLD_DATA_AFTER / (24 * 60 * 60 * 1000)).format(locale, 1)
-                ))
+                Text(
+                    stringResource(
+                        R.string.delete_cache_dialog_message,
+                        (1.0 * REFRESH_DATA_AFTER / (24 * 60 * 60 * 1000)).format(locale, 1),
+                        (1.0 * DELETE_OLD_DATA_AFTER / (24 * 60 * 60 * 1000)).format(locale, 1)
+                    )
+                )
             },
             confirmButtonText = stringResource(R.string.delete_confirmation)
         )
@@ -270,23 +273,26 @@ fun SettingsScreen(
     }
 }
 
-private val Autosync.titleResId: Int get() = when (this) {
-    Autosync.ON -> R.string.autosync_on
-    Autosync.WIFI -> R.string.autosync_only_on_wifi
-    Autosync.OFF -> R.string.autosync_off
-}
+private val Autosync.titleResId: Int
+    get() = when (this) {
+        Autosync.ON -> R.string.autosync_on
+        Autosync.WIFI -> R.string.autosync_only_on_wifi
+        Autosync.OFF -> R.string.autosync_off
+    }
 
-private val ResurveyIntervals.titleResId: Int get() = when (this) {
-    ResurveyIntervals.LESS_OFTEN -> R.string.resurvey_intervals_less_often
-    ResurveyIntervals.DEFAULT -> R.string.resurvey_intervals_default
-    ResurveyIntervals.MORE_OFTEN -> R.string.resurvey_intervals_more_often
-}
+private val ResurveyIntervals.titleResId: Int
+    get() = when (this) {
+        ResurveyIntervals.LESS_OFTEN -> R.string.resurvey_intervals_less_often
+        ResurveyIntervals.DEFAULT -> R.string.resurvey_intervals_default
+        ResurveyIntervals.MORE_OFTEN -> R.string.resurvey_intervals_more_often
+    }
 
-private val Theme.titleResId: Int get() = when (this) {
-    Theme.LIGHT -> R.string.theme_light
-    Theme.DARK -> R.string.theme_dark
-    Theme.SYSTEM -> R.string.theme_system_default
-}
+private val Theme.titleResId: Int
+    get() = when (this) {
+        Theme.LIGHT -> R.string.theme_light
+        Theme.DARK -> R.string.theme_dark
+        Theme.SYSTEM -> R.string.theme_system_default
+    }
 
 private fun getLanguageDisplayName(languageTag: String): String? {
     if (languageTag.isEmpty()) return null

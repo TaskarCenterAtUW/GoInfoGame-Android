@@ -241,7 +241,7 @@ open class LocationAwareMapFragment : MapFragment() {
         displayedLocation = location
         recentLocationStore.add(location)
         locationMapComponent?.location = location
-        addTrackLocation(location)
+//        addTrackLocation(location)
         compass.setLocation(location)
         centerCurrentPositionIfFollowing()
         listener?.onDisplayedLocationDidChange()

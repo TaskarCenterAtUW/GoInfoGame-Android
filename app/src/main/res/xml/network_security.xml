@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config>
+        <trust-anchors>
+            <!-- Trust your custom cert -->
+            <certificates src="@raw/wsdot_gov" />
+            <!-- Also trust system certs -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

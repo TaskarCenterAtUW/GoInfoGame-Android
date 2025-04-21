@@ -11,10 +11,13 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManag
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
     abstract fun fetchWorkspaces(location: Location)
+    abstract fun refreshWorkspaces()
     abstract fun loginToWorkspace(
         username: String,
         password: String,
@@ -55,7 +59,7 @@ class WorkspaceViewModelImpl(
         _selectedWorkspace.value = workspaceId
         preferences.workspaceId = workspaceId
     }
-
+    private var userLocation : Location? = null
     private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
     override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
 
@@ -71,14 +75,27 @@ class WorkspaceViewModelImpl(
     //     initialValue = WorkspaceListState.loading()
     // )
 
+    @OptIn(FlowPreview::class)
     override fun fetchWorkspaces(location: Location) {
-        viewModelScope.launch {
-            _showWorkspaces.value = WorkspaceListState.Loading
-            workspaceRepository.getWorkspaces(location)
-                .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
-                .collect { workspaces ->
-                    _showWorkspaces.value = WorkspaceListState.success(workspaces)
-                }
+        userLocation = location
+        userLocation?.apply {
+            refreshWorkspaces()
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    override fun refreshWorkspaces() {
+        userLocation?.apply {
+            viewModelScope.launch {
+                _showWorkspaces.value = WorkspaceListState.Loading
+                workspaceRepository.getWorkspaces(this@apply)
+                    .debounce(300)
+                    .distinctUntilChanged()
+                    .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
+                    .collect { workspaces ->
+                        _showWorkspaces.value = WorkspaceListState.success(workspaces)
+                    }
+            }
         }
     }
 
@@ -119,7 +136,7 @@ class WorkspaceViewModelImpl(
             }
             return WorkspaceLongFormState.success(longFormResponse)
         } catch (parseException: ParseException) {
-            return WorkspaceLongFormState.error("Invalid quest filter " + parseException.message)
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }
     }
 

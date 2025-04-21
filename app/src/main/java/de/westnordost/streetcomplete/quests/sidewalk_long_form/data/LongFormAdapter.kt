@@ -1,7 +1,10 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
+import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -9,11 +12,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import coil.load
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
@@ -25,6 +28,7 @@ import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
+import androidx.core.graphics.drawable.toDrawable
 
 class LongFormAdapter<T> :
     RecyclerView.Adapter<ViewHolder>() {
@@ -72,6 +76,12 @@ class LongFormAdapter<T> :
 
             itemCopy[itemCopy.indexOf(quest)].visible =
                 filteredQuest[0].userInput in requiredUserInput
+        }
+
+        itemCopy.forEach {
+            if (!it.visible) {
+                it.selectedIndex = null
+            }
         }
         return itemCopy
     }
@@ -233,16 +243,36 @@ class LongFormAdapter<T> :
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
-
+            binding.input.editText?.clearFocus()
+            binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText(item.userInput)
             if (!item.questImageUrl.isNullOrBlank()) {
                 binding.questImage.visibility = View.VISIBLE
                 binding.questImage.load(item.questImageUrl) {
-                    placeholder(R.drawable.placeholder)
-                    error(R.drawable.error_placeholder)
+                    placeholder(R.drawable.blank_big)
+                    error(R.drawable.blank_big)
                     crossfade(true) // Smooth transition effect
                 }
+
+                binding.questImage.setOnLongClickListener {
+                    val dialog = Dialog(it.context)
+                    dialog.setContentView(R.layout.dialog_full_image)
+
+                    dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                    dialog.window?.setDimAmount(0.7f) // controls dim background
+
+                    val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+                    fullImageView.setImageDrawable(binding.questImage.drawable)
+
+                    fullImageView.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
+                    dialog.show()
+                    true
+                }
+
             } else {
                 binding.questImage.visibility = View.GONE
             }
@@ -260,31 +290,50 @@ class LongFormAdapter<T> :
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
             val imageSelectAdapter = ImageSelectAdapter<LongFormQuest>(1)
-            binding.list.layoutManager = GridLayoutManager(binding.root.context, 4)
+            binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
+            imageSelectAdapter.selectedIndices = item.selectedIndex?.let { listOf(it) } ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    handleClick(item.questId!!, item.questAnswerChoices?.get(index)?.value!!)
+                    handleClick(
+                        item.questId!!,
+                        item.questAnswerChoices?.get(index)?.value!!,
+                        item.questAnswerChoices,
+                        index
+                    )
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
+                    val mainIndex =
+                        givenItems.indexOfFirst { it.questId == item.questId }
+                    givenItems[mainIndex].selectedIndex = null
+                    givenItems[mainIndex].userInput = null
                 }
             })
 
 
             imageSelectAdapter.items = item.questAnswerChoices?.map {
-                Item2(item, ImageUrl(), CharSequenceText(it?.choiceText!!), CharSequenceText(""))
+                Item2(item, ImageUrl(it?.imageUrl), CharSequenceText(it?.choiceText!!), CharSequenceText(""))
             }!!
 
         }
 
-        fun handleClick(questId: Int, userInput: String) {
+        fun handleClick(
+            questId: Int,
+            userInput: String,
+            questAnswerChoices: List<QuestAnswerChoice?>,
+            imageIndex: Int
+        ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
             givenItems[index].userInput = userInput
+            givenItems[index].selectedIndex = imageIndex
+            if (questId in needRefreshIds) {
+                items = givenItems
+            }
         }
     }
 
@@ -337,7 +386,7 @@ class LongFormAdapter<T> :
 
         return when (quest.questType) {
             "ExclusiveChoice" -> {
-                ViewType.EXCLUSIVE_CHOICE.value
+                ViewType.IMAGE.value
             }
 
             "Numeric" -> {

@@ -28,5 +28,6 @@ data class LongFormQuest(
     @SerialName("quest_type")
     val questType: String? = null,
     var visible :Boolean = true,
-    var userInput : String? = null
+    var userInput : String? = null,
+    var selectedIndex : Int? = null,
 ) : Parcelable

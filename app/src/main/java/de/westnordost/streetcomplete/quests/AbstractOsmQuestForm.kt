@@ -202,7 +202,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
+        //setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
         viewLifecycleOwner.lifecycleScope.launch {
             getAddress()
         }
@@ -306,7 +306,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 // Convert negative values to positive (0 - 360)
                 if (azimuth < 0) azimuth += 360
 
-                println("Compass Heading: $azimuth°")
             }
         }
     }

@@ -284,7 +284,9 @@ class MainFragment :
         binding.undoButton.setOnClickListener { onClickUndoButton() }
         binding.messagesButton.setOnClickListener { onClickMessagesButton() }
         binding.starsCounterView.setOnClickListener { onClickAnswersCounterView() }
-        binding.overlaysButton.setOnClickListener { onClickOverlaysButton() }
+        binding.overlaysButton.setOnClickListener {
+            val mapFragment = mapFragment ?: return@setOnClickListener
+            mapFragment.showArielView = true }
         binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
         updateOffsetWithOpenBottomSheet()
@@ -1469,7 +1471,7 @@ class MainFragment :
                 val geometry = mapData?.getGeometry(e.type, e.id) ?: continue
                 val icon = getPinIcon(featureDictionary.value, e)
                 val title = getTitle(e.tags)
-                putMarkerForCurrentHighlighting(geometry, icon, title)
+//                putMarkerForCurrentHighlighting(geometry, icon, title)
             }
         }
     }
