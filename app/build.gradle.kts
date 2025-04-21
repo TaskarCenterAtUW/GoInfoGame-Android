@@ -25,7 +25,7 @@ android {
         }
     }
 
-    compileSdk = 34
+    compileSdk = 35
     testOptions {
         unitTests {
             isReturnDefaultValues = true
@@ -36,8 +36,8 @@ android {
         applicationId = "com.tcatuw.goinfo"
         minSdk = 21
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.0.11"
+        versionCode = 13
+        versionName = "1.0.12"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
