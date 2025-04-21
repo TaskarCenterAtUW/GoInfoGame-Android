@@ -2,15 +2,11 @@ package de.westnordost.streetcomplete.quests
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.hardware.GeomagneticField
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
@@ -19,11 +15,13 @@ import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.PopupMenu
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
@@ -60,6 +58,7 @@ import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
 import de.westnordost.streetcomplete.osm.replacePlace
 import de.westnordost.streetcomplete.quests.shop_type.ShopGoneDialog
+import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.getNameAndLocationLabel
 import de.westnordost.streetcomplete.util.ktx.geometryType
 import de.westnordost.streetcomplete.util.ktx.isSplittable
@@ -86,10 +85,10 @@ import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
 import java.io.ByteArrayOutputStream
 import java.util.Locale
+import kotlin.math.PI
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
-abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails,
-    SensorEventListener {
+abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails {
 
     // dependencies
     private val elementEditsController: ElementEditsController by inject()
@@ -124,15 +123,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     open val otherAnswers = listOf<IAnswerItem>()
     open val buttonPanelAnswers = listOf<IAnswerItem>()
 
-    private lateinit var sensorManager: SensorManager
-    private var accelerometer: Sensor? = null
-    private var magnetometer: Sensor? = null
-
-    private val gravity = FloatArray(3)
-    private val geomagnetic = FloatArray(3)
-    private var hasGravity = false
-    private var hasMagnet = false
-    var azimuth: Float = 0.0f  // Compass direction
+    private lateinit var compass: Compass
+    private var compassBearing : Double = 0.0
 
     interface Listener {
         /** The GPS position at which the user is displayed at */
@@ -164,9 +156,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        sensorManager = requireContext().getSystemService(SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        compass = Compass(
+            context?.getSystemService<SensorManager>()!!,
+            context?.getSystemService<WindowManager>()!!.defaultDisplay,
+            this::onCompassRotationChanged
+        )
+        lifecycle.addObserver(compass)
 
         val args = requireArguments()
         multiSelectElements =
@@ -194,22 +189,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             }
     }
 
-    override fun onResume() {
-        super.onResume()
-        accelerometer?.let {
-            sensorManager.registerListener(
-                this,
-                it,
-                SensorManager.SENSOR_DELAY_UI
-            )
-        }
-        magnetometer?.let {
-            sensorManager.registerListener(
-                this,
-                it,
-                SensorManager.SENSOR_DELAY_UI
-            )
-        }
+    private fun onCompassRotationChanged(rot: Float, tilt: Float) {
+        compassBearing = rot * 180 / PI
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -228,7 +209,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
     }
 
     protected fun updateButtonPanel() {
@@ -287,52 +267,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         hideProgressbar()
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
-        event ?: return
-        when (event.sensor.type) {
-            Sensor.TYPE_ACCELEROMETER -> {
-                System.arraycopy(event.values, 0, gravity, 0, event.values.size)
-                hasGravity = true
-            }
-
-            Sensor.TYPE_MAGNETIC_FIELD -> {
-                System.arraycopy(event.values, 0, geomagnetic, 0, event.values.size)
-                hasMagnet = true
-            }
-        }
-
-        if (hasGravity && hasMagnet) {
-            val rotationMatrix = FloatArray(9)
-            val remappedMatrix = FloatArray(9)
-            val orientation = FloatArray(3)
-
-            if (SensorManager.getRotationMatrix(rotationMatrix, null, gravity, geomagnetic)) {
-                // Adjust based on device's natural orientation
-                SensorManager.remapCoordinateSystem(
-                    rotationMatrix,
-                    SensorManager.AXIS_X, SensorManager.AXIS_Z,
-                    remappedMatrix
-                )
-
-                SensorManager.getOrientation(remappedMatrix, orientation)
-                azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
-
-                // Convert negative values to positive (0 - 360)
-                if (azimuth < 0) azimuth += 360
-
-            }
-        }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-
-    }
-
     private suspend fun uploadImageInSequence(
         sequenceId: String,
         bitmap: Bitmap?,
-        displayedLocation: Location?,
+        location: Location?,
     ): Pair<Boolean, Pair<String, String>?> {
+
+        val displayedLocation = recentLocationStore.get().first()
 
         bitmap?.let {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -355,18 +296,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
                         finalBearing = displayedLocation.bearing
                     } else {
-                        displayedLocation?.apply {
-                            val geomagneticField = GeomagneticField(
-                                this.latitude.toFloat(),
-                                this.longitude.toFloat(),
-                                this.altitude.toFloat(),
-                                System.currentTimeMillis()
-                            )
-
-                            var trueNorthBearing = azimuth + geomagneticField.declination
-                            if (trueNorthBearing >= 360) trueNorthBearing -= 360
-                            finalBearing = trueNorthBearing
-                        }
+                        finalBearing = compassBearing.toFloat()
                     }
                     append("headers", finalBearing.toInt().toString())
                     append("photo", byteArray, Headers.build {
