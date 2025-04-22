@@ -109,7 +109,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     // passed in parameters
     private val osmElementQuestType: OsmElementQuestType<T> get() = questType as OsmElementQuestType<T>
     protected lateinit var element: Element private set
-    protected var multiSelectElements: List<Element> = emptyList()
     private val englishResources: Resources
         get() {
             val conf = Configuration(resources.configuration)
@@ -123,13 +122,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     open val buttonPanelAnswers = listOf<IAnswerItem>()
 
     private lateinit var compass: Compass
-    private var compassBearing : Double = 0.0
+    private var compassBearing: Double = 0.0
 
     interface Listener {
         /** The GPS position at which the user is displayed at */
         val displayedMapLocation: Location?
 
-        val mutableMultiSelectQuests : MutableList<Quest>
+        val mutableMultiSelectQuests: MutableList<Quest>
 
         /** Called when the user successfully answered the quest */
         fun onEdited(editType: ElementEditType, geometry: ElementGeometry)
@@ -167,15 +166,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         lifecycle.addObserver(compass)
 
         val args = requireArguments()
-        multiSelectElements =
-            Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
+
         val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
             Json.decodeFromString(it)
         }
         if (getElement != null) {
             element = getElement
-        } else {
-            element = multiSelectElements.first()
         }
         val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
         cameraLauncher =
@@ -198,9 +194,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if (osmElementQuestType is AddGenericLong){
+        if (osmElementQuestType is AddGenericLong) {
             setTitle((osmElementQuestType as AddGenericLong).item.elementType)
-        }else{
+        } else {
             setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
         }
 
@@ -497,7 +493,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             )
                         }
                     } else {
-                        solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+                        solve(
+                            UpdateElementTagsAction(
+                                element,
+                                createQuestChanges(answer, extraTagList)
+                            )
+                        )
                     }
                 }
             }
@@ -533,12 +534,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         viewLifecycleScope.launch {
             listener?.mutableMultiSelectQuests?.let { quests ->
                 ArrayList(quests).let {
-                    if (it.isNotEmpty()){
+                    if (it.isNotEmpty()) {
                         for (element in it) {
                             hideOsmQuestController.hide(element.key as OsmQuestKey)
                             listener?.onQuestHidden(element.key as OsmQuestKey)
                         }
-                    }else{
+                    } else {
                         withContext(Dispatchers.IO) { hideOsmQuestController.hide(questKey as OsmQuestKey) }
                         listener?.onQuestHidden(questKey as OsmQuestKey)
                     }
@@ -624,12 +625,5 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             ARG_ELEMENT to Json.encodeToString(element),
             ARG_DISPLAYED_LOCATION to displayedLocation
         )
-
-        fun createArgumentsForMultiSelect(elements: List<Element>, displayedLocation: Location?) =
-            bundleOf(
-                ARG_MULTI_SELECT_ELEMENTS to Json.encodeToString(elements),
-                ARG_ELEMENT to null,
-                ARG_DISPLAYED_LOCATION to displayedLocation
-            )
     }
 }

@@ -67,6 +67,10 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             dialog.window?.setDimAmount(0.7f) // controls dim background
 
             val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+            val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+            closeButton.setOnClickListener {
+                dialog.dismiss()
+            }
             fullImageView.setImageDrawable(imageView?.drawable)
             fullImageView.contentDescription = textView?.text
             fullImageView.setOnClickListener {

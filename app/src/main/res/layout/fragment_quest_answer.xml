@@ -77,7 +77,7 @@
                         app:tint="@color/activated_tint"
                         android:visibility="visible"
                         android:focusable="true"
-                        android:contentDescription="@string/close_button"
+                        android:contentDescription="@string/hide"
                         android:padding="16dp"/>
 
                     <ImageView

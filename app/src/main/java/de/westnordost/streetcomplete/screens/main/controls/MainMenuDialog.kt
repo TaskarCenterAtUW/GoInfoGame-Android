@@ -22,7 +22,7 @@ class MainMenuDialog(
 ) : AlertDialog(context) {
     init {
         val binding = DialogMainMenuBinding.inflate(LayoutInflater.from(context))
-
+        binding.closeButton.setOnClickListener { dismiss() }
         binding.profileButton.setOnClickListener {
             val intent = Intent(context, UserActivity::class.java)
             context.startActivity(intent)

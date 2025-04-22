@@ -14,6 +14,4 @@ object OsmNoteQuestType : QuestType {
     override val achievements = emptyList<EditTypeAchievement>()
 
     override fun createForm() = NoteDiscussionForm()
-
-    override fun createMultiSelectLongForm(selectedQuests: List<Quest>) = NoteDiscussionForm()
 }

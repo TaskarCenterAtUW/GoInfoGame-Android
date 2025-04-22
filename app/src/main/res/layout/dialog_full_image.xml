@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@android:color/transparent"
     android:padding="16dp">
 
+    <!-- Full-screen image in a container -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:layout_gravity="center"
         android:background="@drawable/bg_image_popup"
+        android:orientation="vertical"
         android:padding="8dp">
 
         <ImageView
@@ -18,4 +20,18 @@
             android:layout_height="400dp"
             android:scaleType="fitCenter" />
     </LinearLayout>
+
+    <!-- Close button on top right corner -->
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:focusable="true"
+        android:contentDescription="@string/close_image"
+        android:padding="8dp"
+        android:src="@drawable/ic_close_24dp" />
+
 </FrameLayout>
