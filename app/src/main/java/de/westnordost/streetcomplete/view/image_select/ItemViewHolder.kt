@@ -7,6 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.compose.ui.res.colorResource
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
@@ -64,11 +66,22 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             dialog.window?.setDimAmount(0.7f) // controls dim background
 
-            val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+            val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
             fullImageView.setImageDrawable(imageView?.drawable)
-
+            fullImageView.contentDescription = textView?.text
             fullImageView.setOnClickListener {
                 dialog.dismiss()
+            }
+
+            ViewCompat.replaceAccessibilityAction(
+                fullImageView,
+                AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                    AccessibilityNodeInfoCompat.ACTION_CLICK,
+                    "close"
+                ), "close"
+            ) { _, _ ->
+                fullImageView.performClick()
+                true
             }
 
             dialog.show()
