@@ -624,6 +624,10 @@ class MainFragment :
         )
     }
 
+    override fun onCloseDialog() {
+        closeBottomSheet()
+    }
+
     override fun onSplitWay(
         editType: ElementEditType,
         way: Way,

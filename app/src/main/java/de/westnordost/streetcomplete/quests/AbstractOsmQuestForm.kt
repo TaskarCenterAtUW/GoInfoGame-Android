@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.hardware.GeomagneticField
 import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
@@ -24,11 +23,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.AddressModel
 import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
 import de.westnordost.streetcomplete.data.karta_view.domain.model.ImageUploadResponse
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
@@ -58,6 +55,7 @@ import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
 import de.westnordost.streetcomplete.osm.replacePlace
 import de.westnordost.streetcomplete.quests.shop_type.ShopGoneDialog
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.getNameAndLocationLabel
 import de.westnordost.streetcomplete.util.ktx.geometryType
@@ -70,7 +68,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
@@ -141,6 +138,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             leaveNoteContext: String,
         )
 
+        fun onCloseDialog()
+
         /** Called when the user chose to split the way */
         fun onSplitWay(editType: ElementEditType, way: Way, geometry: ElementPolylinesGeometry)
 
@@ -195,11 +194,14 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        //setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
-        viewLifecycleOwner.lifecycleScope.launch {
-            getAddress()
+        if (osmElementQuestType is AddGenericLong){
+            setTitle((osmElementQuestType as AddGenericLong).item.elementType)
+        }else{
+            setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
         }
+
+        setHideQuestOnClick { hideQuest() }
+        setCloseQuestOnClick(listener)
     }
 
     override fun onStart() {
@@ -346,44 +348,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         } else {
             hideProgressbar()
             return null
-        }
-    }
-
-    private suspend fun getAddress() {
-        val response =
-            httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
-        if (response.status == HttpStatusCode.OK) {
-            val address = response.body<AddressModel>()
-            Log.d("Address", address.toString())
-            var extraText = ""
-            val location = listener?.displayedMapLocation
-            if (location != null) {
-                val pointLocation = Location("Quest").apply {
-                    latitude = geometry.center.latitude
-                    longitude = geometry.center.longitude
-                }
-                val distance =
-                    String.format(Locale.getDefault(), "%.2f", location.distanceTo(pointLocation))
-                val bearing = location.bearingTo(pointLocation)
-                setTitleHintLabel(
-                    getNameAndLocationLabel(element, resources, featureDictionary)
-                        .toString() + " is near " + address.address?.road + " and towards ${
-                        getCardinalDirection(
-                            bearing
-                        )
-                    } at " + distance + " metres"
-                )
-            } else {
-                setTitleHintLabel(
-                    getNameAndLocationLabel(
-                        element,
-                        resources,
-                        featureDictionary
-                    ).toString() + " " + address.address?.road
-                )
-            }
-        } else {
-            setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary))
         }
     }
 

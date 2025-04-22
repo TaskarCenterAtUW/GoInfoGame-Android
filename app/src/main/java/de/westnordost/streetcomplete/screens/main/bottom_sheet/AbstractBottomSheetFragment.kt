@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AnimationUtils
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
@@ -72,6 +73,15 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
             cornerRadius, margin, topMargin, margin, margin
         )
 
+        bottomSheetTitle?.apply {
+            isFocusable = true
+            isFocusableInTouchMode = true
+            requestFocus()
+
+            post {
+                sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED)
+            }
+        }
         bottomSheetContent?.outlineProvider = RoundRectOutlineProvider(
             cornerRadius, margin, margin, margin, margin
         )
@@ -136,6 +146,18 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
                     .setNegativeButton(R.string.short_no_answer_on_button, null)
                     .show()
             }
+        }
+    }
+
+    fun onClickHide(onConfirmed: () -> Unit) {
+        activity?.let {
+            AlertDialog.Builder(it)
+                .setMessage(R.string.confirmation_hide_quest)
+                .setPositiveButton(R.string.confirmation_hide_quest_yes) { _, _ ->
+                    onConfirmed()
+                }
+                .setNegativeButton(R.string.short_no_answer_on_button, null)
+                .show()
         }
     }
 

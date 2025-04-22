@@ -131,6 +131,9 @@ The info you enter is directly added to OpenStreetMap in your name, without the 
     <string name="no_changes">"You did not give an answer"</string>
 
     <string name="info">"More information"</string>
+    <string name="close_button">Close bottom sheet</string>
+    <string name="confirmation_hide_quest">"Are you sure you want to hide this quest?"</string>
+    <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="confirmation_discard_title">"Discard input?"</string>
     <string name="confirmation_discard_positive">"Discard"</string>
     <string name="short_no_answer_on_button">No</string>

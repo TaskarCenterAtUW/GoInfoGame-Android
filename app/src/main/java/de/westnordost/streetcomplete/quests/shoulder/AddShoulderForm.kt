@@ -16,10 +16,10 @@ class AddShoulderForm : AStreetSideSelectForm<Boolean, ShoulderSides>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // we have actually two hints, so we concatenate them here...
-        setHint(
-            resources.getString(R.string.quest_shoulder_explanation2) + "\n" +
-            resources.getString(R.string.quest_street_side_puzzle_tutorial)
-        )
+//        setHint(
+//            resources.getString(R.string.quest_shoulder_explanation2) + "\n" +
+//            resources.getString(R.string.quest_street_side_puzzle_tutorial)
+//        )
     }
 
     override fun onClickSide(isRight: Boolean) {

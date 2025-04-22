@@ -109,6 +109,10 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
         popQuestForm()
     }
 
+    override fun onCloseDialog() {
+        popQuestForm()
+    }
+
     override fun onMoveNode(editType: ElementEditType, node: Node) {
         message("Moving node")
         popQuestForm()

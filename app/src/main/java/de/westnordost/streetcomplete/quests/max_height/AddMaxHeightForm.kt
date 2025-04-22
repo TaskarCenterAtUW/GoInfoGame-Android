@@ -27,9 +27,9 @@ class AddMaxHeightForm : AbstractOsmQuestForm<MaxHeightAnswer>() {
         super.onViewCreated(view, savedInstanceState)
 
         if (element.type == ElementType.WAY) {
-            setHint(getString(R.string.quest_maxheight_split_way_hint,
-                getString(R.string.quest_generic_answer_differs_along_the_way)
-            ))
+//            setHint(getString(R.string.quest_maxheight_split_way_hint,
+//                getString(R.string.quest_generic_answer_differs_along_the_way)
+//            ))
         }
 
         lengthInput = LengthInputViewController(
