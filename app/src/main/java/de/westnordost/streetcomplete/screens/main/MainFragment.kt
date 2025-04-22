@@ -1101,9 +1101,9 @@ class MainFragment :
         showInBottomSheet(CreateNoteFragment.create(hasGpxAttached))
 
         mapFragment.show3DBuildings = false
-        val offsetPos =
-            mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
-        mapFragment.updateCameraPosition { position = offsetPos }
+//        val offsetPos =
+//            mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
+        mapFragment.updateCameraPosition { position = pos }
     }
 
     private fun onClickCreateTrack() {
@@ -1397,7 +1397,7 @@ class MainFragment :
             )
             f.requireArguments().putAll(osmArgs)
             showInBottomSheet(f)
-        }else{
+        } else {
             showInBottomSheet(f)
         }
     }
