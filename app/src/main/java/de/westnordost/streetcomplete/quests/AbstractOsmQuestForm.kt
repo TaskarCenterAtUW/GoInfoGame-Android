@@ -46,11 +46,13 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.HideOsmQuestController
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenController
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
 import de.westnordost.streetcomplete.osm.replacePlace
@@ -126,6 +128,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     interface Listener {
         /** The GPS position at which the user is displayed at */
         val displayedMapLocation: Location?
+
+        val mutableMultiSelectQuests : MutableList<Quest>
 
         /** Called when the user successfully answered the quest */
         fun onEdited(editType: ElementEditType, geometry: ElementGeometry)
@@ -467,17 +471,35 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         extraTagList: MutableList<Pair<String, String>> = mutableListOf()
     ) {
         viewLifecycleScope.launch {
-            if (multiSelectElements.isNotEmpty()) {
-                for (element in multiSelectElements) {
-                    solve(
-                        UpdateElementTagsAction(
-                            element,
-                            createQuestChanges(answer, extraTagList)
-                        )
-                    )
+            listener?.mutableMultiSelectQuests?.let { quests ->
+                ArrayList(quests).let {
+                    if (it.isNotEmpty()) {
+
+                        val elements = mutableListOf<Element>()
+                        for (msQuest in it) {
+                            if (msQuest is OsmQuest) {
+                                val element = withContext(Dispatchers.IO) {
+                                    mapDataWithEditsSource.get(
+                                        msQuest.elementType,
+                                        msQuest.elementId
+                                    )
+                                } ?: return@launch
+                                elements.add(element)
+                            }
+                        }
+
+                        for (element in elements) {
+                            solve(
+                                UpdateElementTagsAction(
+                                    element,
+                                    createQuestChanges(answer, extraTagList)
+                                )
+                            )
+                        }
+                    } else {
+                        solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
+                    }
                 }
-            } else {
-                solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
             }
         }
     }
@@ -509,8 +531,20 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     protected fun hideQuest() {
         viewLifecycleScope.launch {
-            withContext(Dispatchers.IO) { hideOsmQuestController.hide(questKey as OsmQuestKey) }
-            listener?.onQuestHidden(questKey as OsmQuestKey)
+            listener?.mutableMultiSelectQuests?.let { quests ->
+                ArrayList(quests).let {
+                    if (it.isNotEmpty()){
+                        for (element in it) {
+                            hideOsmQuestController.hide(element.key as OsmQuestKey)
+                            listener?.onQuestHidden(element.key as OsmQuestKey)
+                        }
+                    }else{
+                        withContext(Dispatchers.IO) { hideOsmQuestController.hide(questKey as OsmQuestKey) }
+                        listener?.onQuestHidden(questKey as OsmQuestKey)
+                    }
+                }
+            }
+
         }
     }
 

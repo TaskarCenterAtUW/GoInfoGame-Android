@@ -206,6 +206,7 @@ class MainFragment :
     private var mapFragment: MainMapFragment? = null
 
     private val multiSelectPoints: MutableList<LatLon> = mutableListOf()
+
     private val multiSelectQuests: MutableList<Quest> = mutableListOf()
     private val bottomSheetFragment: Fragment?
         get() =
@@ -244,6 +245,9 @@ class MainFragment :
     }
 
     //region Lifecycle - Android Lifecycle Callbacks
+
+    override val mutableMultiSelectQuests: MutableList<Quest>
+        get() = multiSelectQuests
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
