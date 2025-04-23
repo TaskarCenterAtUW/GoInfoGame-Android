@@ -152,7 +152,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
 
         binding.markerCreateLayout.markerLayoutContainer.visibility = View.INVISIBLE
 
-        val fullText = "$text\n\nvia ${ApplicationConstants.USER_AGENT}"
+        val fullText = text
         viewLifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 val recordedTrack =
