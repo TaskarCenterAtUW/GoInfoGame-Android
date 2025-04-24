@@ -21,6 +21,7 @@ import androidx.core.text.parseAsHtml
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import de.westnordost.osmapi.common.errors.OsmApiException
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.AuthorizationException
@@ -86,28 +87,35 @@ class MainActivity :
 
     private val questTypeRegistry: QuestTypeRegistry by inject()
     private val overlayRegistry by inject<OverlayRegistry>()
-    private val allEditTypes : AllEditTypes by inject()
-    private val preferences : Preferences by inject()
+    private val allEditTypes: AllEditTypes by inject()
+    private val preferences: Preferences by inject()
 
     private var mainFragment: MainFragment? = null
     private val profileViewModel by viewModel<ProfileViewModel>()
 
-    private val requestLocationPermissionResultReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!intent.getBooleanExtra(LocationRequestFragment.GRANTED, false)) {
-                toast(R.string.no_gps_no_quests, Toast.LENGTH_LONG)
+    private val requestLocationPermissionResultReceiver: BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (!intent.getBooleanExtra(LocationRequestFragment.GRANTED, false)) {
+                    toast(R.string.no_gps_no_quests, Toast.LENGTH_LONG)
+                }
             }
         }
-    }
 
     private val elementEditsListener = object : ElementEditsSource.Listener {
-        override fun onAddedEdit(edit: ElementEdit) { lifecycleScope.launch { ensureLoggedIn() } }
+        override fun onAddedEdit(edit: ElementEdit) {
+            lifecycleScope.launch { ensureLoggedIn() }
+        }
+
         override fun onSyncedEdit(edit: ElementEdit) {}
         override fun onDeletedEdits(edits: List<ElementEdit>) {}
     }
 
     private val noteEditsListener = object : NoteEditsSource.Listener {
-        override fun onAddedEdit(edit: NoteEdit) { lifecycleScope.launch { ensureLoggedIn() } }
+        override fun onAddedEdit(edit: NoteEdit) {
+            lifecycleScope.launch { ensureLoggedIn() }
+        }
+
         override fun onSyncedEdit(edit: NoteEdit) {}
         override fun onDeletedEdits(edits: List<NoteEdit>) {}
     }
@@ -153,7 +161,8 @@ class MainActivity :
         val data = intent.data ?: return
         val config = urlConfigController.parse(data.toString()) ?: return
 
-        val alreadyExists = config.presetName == null || questPresetsSource.getByName(config.presetName) != null
+        val alreadyExists =
+            config.presetName == null || questPresetsSource.getByName(config.presetName) != null
         val name = config.presetName ?: getString(R.string.quest_presets_default_name)
 
         val htmlName = "<i>" + Html.escapeHtml(name) + "</i>"
@@ -287,9 +296,17 @@ class MainActivity :
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
                     RequestLoginDialog(this@MainActivity, profileViewModel).show()
+                } else if (e is OsmApiException) {
+                    Toast.makeText(this@MainActivity, "Error while submitting data : ${e.errorTitle}", Toast.LENGTH_SHORT).show()
+                    crashReportExceptionHandler.askUserToSendErrorReport(
+                        this@MainActivity,
+                        R.string.upload_error, e
+                    )
                 } else {
-                    crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
-                        R.string.upload_error, e)
+                    crashReportExceptionHandler.askUserToSendErrorReport(
+                        this@MainActivity,
+                        R.string.upload_error, e
+                    )
                 }
             }
         }
@@ -308,12 +325,16 @@ class MainActivity :
                 } else if (e is AuthorizationException) {
                     // delete secret in case it failed while already having a token -> token is invalid
 //                    userLoginController.logOut()
-                } else if (e is ParseException){
-                    crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
-                        R.string.download_error_parsing, e)
+                } else if (e is ParseException) {
+                    crashReportExceptionHandler.askUserToSendErrorReport(
+                        this@MainActivity,
+                        R.string.download_error_parsing, e
+                    )
                 } else {
-                    crashReportExceptionHandler.askUserToSendErrorReport(this@MainActivity,
-                        R.string.download_error, e)
+                    crashReportExceptionHandler.askUserToSendErrorReport(
+                        this@MainActivity,
+                        R.string.download_error, e
+                    )
                 }
             }
         }
@@ -325,8 +346,9 @@ class MainActivity :
         messagesContainerFragment?.showMessage(message)
     }
 
-    private val messagesContainerFragment get() =
-        supportFragmentManager.findFragmentById(R.id.messages_container_fragment) as? MessagesContainerFragment
+    private val messagesContainerFragment
+        get() =
+            supportFragmentManager.findFragmentById(R.id.messages_container_fragment) as? MessagesContainerFragment
 
     /* --------------------------------- MainFragment.Listener ---------------------------------- */
 
@@ -394,16 +416,18 @@ class MainActivity :
     private fun doLongForm() {
         // val processSampleJson = ProcessSampleJson()
         // val result = processSampleJson.processSampleJson()
-        val result: List<AddLongFormResponseItem>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent?.
-            getParcelableArrayListExtra("LONG_FORM", AddLongFormResponseItem::class.java)
-        } else {
-            intent?.
-            getParcelableArrayListExtra("LONG_FORM")
-        }
+        val result: List<AddLongFormResponseItem>? =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableArrayListExtra(
+                    "LONG_FORM",
+                    AddLongFormResponseItem::class.java
+                )
+            } else {
+                intent?.getParcelableArrayListExtra("LONG_FORM")
+            }
 
         // questTypeRegistry.clearAll()
-        val questTypes :MutableList<Pair<Int, QuestType>> = mutableListOf()
+        val questTypes: MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {
             // val jsonObject = item.jsonObject
             // Log.d("LongForm", jsonObject["element_type"].toString())
