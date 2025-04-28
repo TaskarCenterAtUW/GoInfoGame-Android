@@ -1,83 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:weightSum="1">
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <TextView
-            android:id="@+id/composeNoteTV"
-            android:layout_marginVertical="16dp"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:minHeight="48dp"
-            android:layout_marginHorizontal="8dp"
-            android:gravity="end"
-            android:layout_alignParentStart="true"
-            android:textColor="@color/primary"
-            android:text="@string/compose_note"
-            android:visibility="gone"
-            android:paddingHorizontal="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/hideTV"
-            android:layout_alignParentEnd="true"
-            android:layout_marginVertical="16dp"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:minHeight="48dp"
-            android:layout_marginHorizontal="8dp"
-            android:layout_gravity="end"
-            android:textColor="@color/primary"
-            android:text="@string/hide"
-            android:paddingHorizontal="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:ignore="RelativeOverlap" />
-    </RelativeLayout>
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:weightSum="1">
 
 
     <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-    <TextView
-            android:id="@+id/cameraIntentTV"
-            android:layout_marginVertical="16dp"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:layout_marginHorizontal="8dp"
-            android:textColor="@color/primary"
-            android:text="@string/upload_a_picture"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-    <TextView
-            android:id="@+id/imageUrlTV"
-            android:layout_marginVertical="16dp"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:layout_marginHorizontal="8dp"
-            android:text="@string/image_link"
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <com.google.android.material.button.MaterialButton
-            android:id="@+id/submitButton"
-            app:cornerRadius="16dp"
-            android:text="@string/submit"
-            android:layout_marginHorizontal="32dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        android:id="@+id/submitButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="32dp"
+        android:text="@string/submit"
+        app:cornerRadius="16dp" />
 
 </LinearLayout>

@@ -29,6 +29,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.databinding.ActivitySettingsBinding
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
@@ -47,6 +48,8 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
 
     private val listeners = mutableListOf<SettingsListener>()
 
+    override val mutableMultiSelectQuests: MutableList<Quest>
+        get() = mutableListOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -106,6 +109,10 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
 
     override fun onSplitWay(editType: ElementEditType, way: Way, geometry: ElementPolylinesGeometry) {
         message("Splitting way")
+        popQuestForm()
+    }
+
+    override fun onCloseDialog() {
         popQuestForm()
     }
 

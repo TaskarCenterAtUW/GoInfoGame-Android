@@ -40,10 +40,10 @@ class AddAddressStreetForm : AbstractOsmQuestForm<StreetOrPlaceName>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setTitleHintLabel(getNameAndLocationLabel(
-            element, resources, featureDictionary,
-            showHouseNumber = true
-        ))
+//        setTitleHintLabel(getNameAndLocationLabel(
+//            element, resources, featureDictionary,
+//            showHouseNumber = true
+//        ))
 
         streetOrPlaceCtrl = StreetOrPlaceNameViewController(
             select = binding.streetOrPlaceSelect,

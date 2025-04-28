@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.hardware.GeomagneticField
 import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
@@ -24,11 +23,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.AddressModel
 import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
 import de.westnordost.streetcomplete.data.karta_view.domain.model.ImageUploadResponse
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
@@ -49,15 +46,18 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.HideOsmQuestController
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenController
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
 import de.westnordost.streetcomplete.osm.replacePlace
 import de.westnordost.streetcomplete.quests.shop_type.ShopGoneDialog
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.getNameAndLocationLabel
 import de.westnordost.streetcomplete.util.ktx.geometryType
@@ -70,7 +70,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
-import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
@@ -110,7 +109,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     // passed in parameters
     private val osmElementQuestType: OsmElementQuestType<T> get() = questType as OsmElementQuestType<T>
     protected lateinit var element: Element private set
-    protected var multiSelectElements: List<Element> = emptyList()
     private val englishResources: Resources
         get() {
             val conf = Configuration(resources.configuration)
@@ -124,11 +122,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     open val buttonPanelAnswers = listOf<IAnswerItem>()
 
     private lateinit var compass: Compass
-    private var compassBearing : Double = 0.0
+    private var compassBearing: Double = 0.0
 
     interface Listener {
         /** The GPS position at which the user is displayed at */
         val displayedMapLocation: Location?
+
+        val mutableMultiSelectQuests: MutableList<Quest>
 
         /** Called when the user successfully answered the quest */
         fun onEdited(editType: ElementEditType, geometry: ElementGeometry)
@@ -140,6 +140,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             geometry: ElementGeometry,
             leaveNoteContext: String,
         )
+
+        fun onCloseDialog()
 
         /** Called when the user chose to split the way */
         fun onSplitWay(editType: ElementEditType, way: Way, geometry: ElementPolylinesGeometry)
@@ -164,15 +166,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         lifecycle.addObserver(compass)
 
         val args = requireArguments()
-        multiSelectElements =
-            Json.decodeFromString(args.getString(ARG_MULTI_SELECT_ELEMENTS) ?: "[]")
+
         val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
             Json.decodeFromString(it)
         }
         if (getElement != null) {
             element = getElement
-        } else {
-            element = multiSelectElements.first()
         }
         val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
         cameraLauncher =
@@ -195,11 +194,14 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        //setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
-        viewLifecycleOwner.lifecycleScope.launch {
-            getAddress()
+        if (osmElementQuestType is AddGenericLong) {
+            setTitle((osmElementQuestType as AddGenericLong).item.elementType)
+        } else {
+            setTitle(resources.getHtmlQuestTitle(osmElementQuestType, element.tags))
         }
+
+        setHideQuestOnClick { hideQuest() }
+        setCloseQuestOnClick(listener)
     }
 
     override fun onStart() {
@@ -349,44 +351,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
     }
 
-    private suspend fun getAddress() {
-        val response =
-            httpClient.get("https://nominatim.openstreetmap.org/reverse?lat=${geometry.center.latitude}&lon=${geometry.center.longitude}&format=json")
-        if (response.status == HttpStatusCode.OK) {
-            val address = response.body<AddressModel>()
-            Log.d("Address", address.toString())
-            var extraText = ""
-            val location = listener?.displayedMapLocation
-            if (location != null) {
-                val pointLocation = Location("Quest").apply {
-                    latitude = geometry.center.latitude
-                    longitude = geometry.center.longitude
-                }
-                val distance =
-                    String.format(Locale.getDefault(), "%.2f", location.distanceTo(pointLocation))
-                val bearing = location.bearingTo(pointLocation)
-                setTitleHintLabel(
-                    getNameAndLocationLabel(element, resources, featureDictionary)
-                        .toString() + " is near " + address.address?.road + " and towards ${
-                        getCardinalDirection(
-                            bearing
-                        )
-                    } at " + distance + " metres"
-                )
-            } else {
-                setTitleHintLabel(
-                    getNameAndLocationLabel(
-                        element,
-                        resources,
-                        featureDictionary
-                    ).toString() + " " + address.address?.road
-                )
-            }
-        } else {
-            setTitleHintLabel(getNameAndLocationLabel(element, resources, featureDictionary))
-        }
-    }
-
     private fun getCardinalDirection(bearing: Float): String {
         val normalizedBearing = (bearing % 360 + 360) % 360 // Normalize to 0..360 range
         return when (normalizedBearing) {
@@ -503,17 +467,40 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         extraTagList: MutableList<Pair<String, String>> = mutableListOf()
     ) {
         viewLifecycleScope.launch {
-            if (multiSelectElements.isNotEmpty()) {
-                for (element in multiSelectElements) {
-                    solve(
-                        UpdateElementTagsAction(
-                            element,
-                            createQuestChanges(answer, extraTagList)
+            listener?.mutableMultiSelectQuests?.let { quests ->
+                ArrayList(quests).let {
+                    if (it.isNotEmpty()) {
+
+                        val elements = mutableListOf<Element>()
+                        for (msQuest in it) {
+                            if (msQuest is OsmQuest) {
+                                val element = withContext(Dispatchers.IO) {
+                                    mapDataWithEditsSource.get(
+                                        msQuest.elementType,
+                                        msQuest.elementId
+                                    )
+                                } ?: return@launch
+                                elements.add(element)
+                            }
+                        }
+
+                        for (element in elements) {
+                            solve(
+                                UpdateElementTagsAction(
+                                    element,
+                                    createQuestChanges(answer, extraTagList)
+                                )
+                            )
+                        }
+                    } else {
+                        solve(
+                            UpdateElementTagsAction(
+                                element,
+                                createQuestChanges(answer, extraTagList)
+                            )
                         )
-                    )
+                    }
                 }
-            } else {
-                solve(UpdateElementTagsAction(element, createQuestChanges(answer, extraTagList)))
             }
         }
     }
@@ -545,8 +532,20 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     protected fun hideQuest() {
         viewLifecycleScope.launch {
-            withContext(Dispatchers.IO) { hideOsmQuestController.hide(questKey as OsmQuestKey) }
-            listener?.onQuestHidden(questKey as OsmQuestKey)
+            listener?.mutableMultiSelectQuests?.let { quests ->
+                ArrayList(quests).let {
+                    if (it.isNotEmpty()) {
+                        for (element in it) {
+                            hideOsmQuestController.hide(element.key as OsmQuestKey)
+                            listener?.onQuestHidden(element.key as OsmQuestKey)
+                        }
+                    } else {
+                        withContext(Dispatchers.IO) { hideOsmQuestController.hide(questKey as OsmQuestKey) }
+                        listener?.onQuestHidden(questKey as OsmQuestKey)
+                    }
+                }
+            }
+
         }
     }
 
@@ -626,12 +625,5 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             ARG_ELEMENT to Json.encodeToString(element),
             ARG_DISPLAYED_LOCATION to displayedLocation
         )
-
-        fun createArgumentsForMultiSelect(elements: List<Element>, displayedLocation: Location?) =
-            bundleOf(
-                ARG_MULTI_SELECT_ELEMENTS to Json.encodeToString(elements),
-                ARG_ELEMENT to null,
-                ARG_DISPLAYED_LOCATION to displayedLocation
-            )
     }
 }

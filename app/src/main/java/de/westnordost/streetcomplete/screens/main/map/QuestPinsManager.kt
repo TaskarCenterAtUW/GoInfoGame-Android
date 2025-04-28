@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.map
 
+import android.content.Context
 import android.content.res.Resources
 import android.graphics.RectF
 import android.os.Handler
@@ -8,6 +9,7 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityManager
 import androidx.core.view.children
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -54,6 +56,8 @@ class QuestPinsManager(
     private val mapView: MapView,
 ) : DefaultLifecycleObserver {
 
+    private val overlayPositions: MutableList<Pair<Float, Float>> = mutableListOf()
+
     // draw order in which the quest types should be rendered on the map
     private val questTypeOrders: MutableMap<QuestType, Int> = mutableMapOf()
 
@@ -66,7 +70,7 @@ class QuestPinsManager(
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
     private var updateJob: Job? = null
-    var multiSelectQuestType : String? = null
+    var multiSelectQuestType: String? = null
 
     /** Switch visibility of quest pins layer */
     var isVisible: Boolean = false
@@ -150,7 +154,7 @@ class QuestPinsManager(
     fun getQuestKey(properties: Map<String, String>): QuestKey? =
         properties.toQuestKey()
 
-    fun onNewScreenPosition(forceUpdate : Boolean = false) {
+    fun onNewScreenPosition(forceUpdate: Boolean = false) {
         if (!isStarted || !isVisible) return
         val zoom = ctrl.cameraPosition.zoom
         // require zoom >= 14, which is the lowest zoom level where quests are shown
@@ -197,32 +201,46 @@ class QuestPinsManager(
         }
     }
 
-    private fun addAccessiblePins(pins: List<Pin>) {
+    private fun isTalkBackEnabled(context: Context): Boolean {
+        val accessibilityManager =
+            context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        return accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled
+    }
 
+    private fun addAccessiblePins(pins: List<Pin>) {
+        if (!isTalkBackEnabled(mapView.context)) {
+            return
+        }
         Handler(Looper.getMainLooper()).post {
             // Remove old overlays
             (mapView.parent as? ViewGroup)?.let { parent ->
-                parent.children.filterIsInstance<AccessibilityOverlayView>()
-                    .forEach { parent.removeView(it) }
+                val overlays = parent.children.filterIsInstance<AccessibilityOverlayView>().toList()
+                overlays.forEach {
+                    parent.removeView(it)
+                }
             }
 
             // Add new overlays
             pins.forEach { pin ->
                 val screenPos = ctrl.latLonToScreenPosition(pin.position)
-                val overlayView = AccessibilityOverlayView(mapView.context, pin.position, screenPos) { _, pos ->
-                    simulatePinClick(pos.x, pos.y)
-                }.apply {
-                    description = pin.toString() // Description for TalkBack
-                    val widthInDp = 48 // Width of the overlay in dp
-                    // convert dp to pixel
-                    val widthInPx = (widthInDp * resources.displayMetrics.density).toInt()
-                    layoutParams = ViewGroup.LayoutParams(widthInPx, widthInPx) // Small overlay area
-                    x = screenPos.x - 50 // Adjust to center
-                    y = screenPos.y - 50
-                }
+                val overlayView =
+                    AccessibilityOverlayView(mapView.context, pin.position, screenPos) { _, pos ->
+                        simulatePinClick(pos.x, pos.y)
+                    }.apply {
+                        description = pin.toString() // Description for TalkBack
+                        val widthInDp = 48 // Width of the overlay in dp
+                        // convert dp to pixel
+                        val widthInPx = (widthInDp * resources.displayMetrics.density).toInt()
+                        layoutParams =
+                            ViewGroup.LayoutParams(widthInPx, widthInPx) // Small overlay area
+                        x = screenPos.x - 50 // Adjust to center
+                        y = screenPos.y - 50
+                    }
 
-                if (pin.enabled)
+                if (pin.enabled) {
                     (mapView.parent as? ViewGroup)?.addView(overlayView)
+                    overlayPositions.add(Pair(overlayView.x, overlayView.y))
+                }
             }
         }
 
@@ -247,20 +265,22 @@ class QuestPinsManager(
         val selectedPins = selectedPinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
-        val pinsSnapshot = synchronized(pins) { pins.toList() } // Copy to avoid concurrent modification
+        val pinsSnapshot =
+            synchronized(pins) { pins.toList() } // Copy to avoid concurrent modification
 
         parentView.post {
             parentView.children.toList()
                 .filterIsInstance<AccessibilityOverlayView>()
                 .forEach { overlay ->
-                    val pin = pinsSnapshot.find { it.position == overlay.position } ?: return@forEach
+                    val pin =
+                        pinsSnapshot.find { it.position == overlay.position } ?: return@forEach
                     val isEnabled = pin.enabled
                     val screenPos = ctrl.latLonToScreenPosition(pin.position) ?: return@forEach
                     overlay.screenPosition = screenPos
                     overlay.x = screenPos.x - 50
                     overlay.y = screenPos.y - 50
-//                    overlay.visibility = if (pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) View.VISIBLE else View.GONE
-                    overlay.visibility = if ((pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) && isEnabled) View.VISIBLE else View.GONE
+                    overlay.visibility =
+                        if ((pinsMapComponent.isVisible || selectedPins.contains(overlay.position)) && isEnabled) View.VISIBLE else View.GONE
                 }
         }
     }

@@ -12,7 +12,7 @@ class AddTrafficSignalsVibrationForm : AbstractOsmQuestForm<Boolean>() {
         super.onViewCreated(view, savedInstanceState)
 
         val illustrationResId = getVibratingButtonIllustrationResId(countryInfo.countryCode)
-        setHintImages(listOfNotNull(requireContext().getDrawable(illustrationResId)))
+//        setHintImages(listOfNotNull(requireContext().getDrawable(illustrationResId)))
     }
 
     override val buttonPanelAnswers = listOf(

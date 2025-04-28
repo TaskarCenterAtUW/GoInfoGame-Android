@@ -7,6 +7,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.compose.ui.res.colorResource
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
@@ -50,10 +52,10 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         textView?.setText(item.title)
         if (item.image == null || (item.image is ImageUrl && ((item.image as ImageUrl).url.isNullOrEmpty()))) {
             textView?.setTextColor(textView.context.resources.getColor(R.color.text))
-            textView?.setShadowLayer(0f, 0f, 0f, textView.context.resources.getColor(android.R.color.transparent))
+            textView?.setShadowLayer(20f, 0f, 0f, textView.context.resources.getColor(android.R.color.transparent))
         }else{
             textView?.setTextColor(textView.context.resources.getColor(R.color.button_white))
-            textView?.setShadowLayer(0f, 0f, 0f, textView.context.resources.getColor(android.R.color.black))
+            textView?.setShadowLayer(20f, 0f, 0f, textView.context.resources.getColor(android.R.color.black))
         }
         descriptionView?.setText(item.description)
         descriptionView?.isGone = item.description == null
@@ -64,11 +66,26 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
             dialog.window?.setDimAmount(0.7f) // controls dim background
 
-            val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+            val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+            val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+            closeButton.setOnClickListener {
+                dialog.dismiss()
+            }
             fullImageView.setImageDrawable(imageView?.drawable)
-
+            fullImageView.contentDescription = textView?.text
             fullImageView.setOnClickListener {
                 dialog.dismiss()
+            }
+
+            ViewCompat.replaceAccessibilityAction(
+                fullImageView,
+                AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                    AccessibilityNodeInfoCompat.ACTION_CLICK,
+                    "close"
+                ), "close"
+            ) { _, _ ->
+                fullImageView.performClick()
+                true
             }
 
             dialog.show()

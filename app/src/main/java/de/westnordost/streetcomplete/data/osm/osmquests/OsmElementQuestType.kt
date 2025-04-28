@@ -105,8 +105,4 @@ interface OsmElementQuestType<T> : QuestType, ElementEditType {
     fun applyAnswerTo(answer: T, tags: Tags, geometry: ElementGeometry, timestampEdited: Long)
 
     override fun createForm(): AbstractOsmQuestForm<T>
-
-    override fun createMultiSelectLongForm(selectedQuests : List<Quest>): AbstractOsmQuestForm<T> {
-        return createForm()
-    }
 }

@@ -69,7 +69,6 @@ class AddGenericLong(val item: AddLongFormResponseItem) :
 
     override fun createForm() = AddGenericLongForm(item.quests)
 
-    override fun createMultiSelectLongForm(selectedQuests : List<Quest>) = AddGenericLongForm(item.quests, selectedQuests)
 }
 
 private fun getNodeOrWay(variable: String): String {

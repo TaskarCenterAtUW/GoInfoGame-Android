@@ -76,7 +76,6 @@ import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
-import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectOptionsFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
@@ -84,6 +83,7 @@ import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottom
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapPositionAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MoveNodeFragment
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectOptionsFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectViewModel
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.SplitWayFragment
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
@@ -206,6 +206,7 @@ class MainFragment :
     private var mapFragment: MainMapFragment? = null
 
     private val multiSelectPoints: MutableList<LatLon> = mutableListOf()
+
     private val multiSelectQuests: MutableList<Quest> = mutableListOf()
     private val bottomSheetFragment: Fragment?
         get() =
@@ -244,6 +245,9 @@ class MainFragment :
     }
 
     //region Lifecycle - Android Lifecycle Callbacks
+
+    override val mutableMultiSelectQuests: MutableList<Quest>
+        get() = multiSelectQuests
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -286,7 +290,8 @@ class MainFragment :
         binding.starsCounterView.setOnClickListener { onClickAnswersCounterView() }
         binding.overlaysButton.setOnClickListener {
             val mapFragment = mapFragment ?: return@setOnClickListener
-            mapFragment.showArielView = true }
+            mapFragment.showArielView = true
+        }
         binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
         updateOffsetWithOpenBottomSheet()
@@ -622,6 +627,10 @@ class MainFragment :
             ),
             false
         )
+    }
+
+    override fun onCloseDialog() {
+        closeBottomSheet()
     }
 
     override fun onSplitWay(
@@ -1092,9 +1101,9 @@ class MainFragment :
         showInBottomSheet(CreateNoteFragment.create(hasGpxAttached))
 
         mapFragment.show3DBuildings = false
-        val offsetPos =
-            mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
-        mapFragment.updateCameraPosition { position = offsetPos }
+//        val offsetPos =
+//            mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
+        mapFragment.updateCameraPosition { position = pos }
     }
 
     private fun onClickCreateTrack() {
@@ -1364,7 +1373,7 @@ class MainFragment :
         val mapFragment = mapFragment ?: return
         if (isQuestDetailsCurrentlyDisplayedFor(quest.key)) return
 
-        val f = quest.type.createMultiSelectLongForm(multiSelectQuests)
+        val f = quest.type.createForm()
         if (f.arguments == null) f.arguments = bundleOf()
 
         val camera = mapFragment.cameraPosition
@@ -1374,32 +1383,23 @@ class MainFragment :
             AbstractQuestForm.createArguments(quest.key, quest.type, quest.geometry, rotation, tilt)
         f.requireArguments().putAll(args)
         f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
-        val elements = mutableListOf<Element>()
-        for (msQuest in multiSelectQuests) {
-            if (msQuest is OsmQuest) {
-                val element = withContext(Dispatchers.IO) {
-                    mapDataWithEditsSource.get(
-                        msQuest.elementType,
-                        msQuest.elementId
-                    )
-                } ?: return
-                elements.add(element)
-            }
+
+        if (quest is OsmQuest) {
+            val element = withContext(Dispatchers.IO) {
+                mapDataWithEditsSource.get(
+                    quest.elementType,
+                    quest.elementId
+                )
+            } ?: return
+            val osmArgs = AbstractOsmQuestForm.createArguments(
+                element,
+                mapFragment.displayedLocation
+            )
+            f.requireArguments().putAll(osmArgs)
+            showInBottomSheet(f)
+        } else {
+            showInBottomSheet(f)
         }
-
-        val osmArgs = AbstractOsmQuestForm.createArgumentsForMultiSelect(
-            elements,
-            mapFragment.displayedLocation
-        )
-        f.requireArguments().putAll(osmArgs)
-
-        showInBottomSheet(f)
-
-//        mapFragment.startFocus(quest.geometry, mapOffsetWithOpenBottomSheet)
-//        mapFragment.highlightGeometry(quest.geometry)
-//        mapFragment.highlightPins(quest.type.icon, quest.markerLocations)
-//        mapFragment.hideNonHighlightedPins()
-//        mapFragment.hideOverlay()
     }
 
     @UiThread

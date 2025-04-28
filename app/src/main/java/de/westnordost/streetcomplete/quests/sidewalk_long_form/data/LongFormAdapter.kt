@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -261,7 +262,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
                     dialog.window?.setDimAmount(0.7f) // controls dim background
 
-                    val fullImageView = dialog.findViewById<PhotoView>(R.id.fullImage)
+                    val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+                    val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    closeButton.setOnClickListener {
+                        dialog.dismiss()
+                    }
                     fullImageView.setImageDrawable(binding.questImage.drawable)
 
                     fullImageView.setOnClickListener {

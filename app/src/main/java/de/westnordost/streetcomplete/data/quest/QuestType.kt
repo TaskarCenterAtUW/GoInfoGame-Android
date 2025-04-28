@@ -29,8 +29,6 @@ interface QuestType : EditType {
     /** returns the fragment in which the user can add the data */
     fun createForm(): AbstractQuestForm
 
-    fun createMultiSelectLongForm(selectedQuests : List<Quest>): AbstractQuestForm
-
     /** The quest type can clean it's metadata that is older than the given timestamp here, if any  */
     fun deleteMetadataOlderThan(timestamp: Long) {}
 }

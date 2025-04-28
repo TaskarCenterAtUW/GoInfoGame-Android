@@ -63,59 +63,34 @@
                             android:id="@+id/titleLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:visibility="gone"
+                            android:visibility="visible"
                             android:textAppearance="@style/TextAppearance.TitleLarge"/>
-
-                        <TextView
-                            android:id="@+id/titleHintLabel"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.TitleLarge"
-                            android:visibility="gone"/>
 
                     </LinearLayout>
 
                     <ImageView
-                        android:id="@+id/infoButton"
+                        android:id="@+id/hide_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat = "@drawable/ic_info_outline_24dp"
+                        app:srcCompat = "@drawable/baseline_visibility_off_24"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
                         app:tint="@color/activated_tint"
                         android:visibility="visible"
-                        android:contentDescription="@string/info"
-                        android:padding="12dp"/>
+                        android:focusable="true"
+                        android:contentDescription="@string/hide"
+                        android:padding="16dp"/>
 
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/infoArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:showDividers="middle"
-                    android:divider="@drawable/space_8dp">
-
-                    <TextView
-                        android:id="@+id/infoText"
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:id="@+id/close_button"
+                        android:focusable="true"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Body"/>
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <LinearLayout
-                            android:id="@+id/infoPictures"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:showDividers="middle"
-                            android:divider="@drawable/space_8dp" />
-
-                    </HorizontalScrollView>
+                        app:srcCompat = "@drawable/ic_close_24dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        app:tint="@color/activated_tint"
+                        android:visibility="visible"
+                        android:contentDescription="@string/close_button"
+                        android:padding="16dp"/>
 
                 </LinearLayout>
 

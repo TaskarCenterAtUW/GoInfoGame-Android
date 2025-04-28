@@ -17,7 +17,6 @@ import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
@@ -27,30 +26,33 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     private val binding by contentViewBinding(QuestLongFormListBinding::bind)
     protected lateinit var adapter: LongFormAdapter<T>
 
-    var answerMap : MutableMap<Int, Pair<String, String>> = mutableMapOf()
+    var answerMap: MutableMap<Int, Pair<String, String>> = mutableMapOf()
 
     override val defaultExpanded = false
 
     protected abstract val items: T
-    protected abstract val multiselectItems : List<Quest>
 
-    private var imageUrls : MutableList<String> = mutableListOf()
+    private var imageUrls: MutableList<String> = mutableListOf()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        adapter =  LongFormAdapter {setCameraIntent()}
+        adapter = LongFormAdapter { setCameraIntent() }
     }
 
     override fun onClickOk() {
-        val editedItems = adapter.givenItems.filter { it.visible  && it.userInput !=null}
-        val tagList : MutableList<Pair<String, String>> = mutableListOf()
-        if (imageUrls.isNotEmpty()){
+        val editedItems = adapter.givenItems.filter { it.visible && it.userInput != null }
+        val tagList: MutableList<Pair<String, String>> = mutableListOf()
+        if (imageUrls.isNotEmpty()) {
             val urls = imageUrls.joinToString(",")
             tagList.add(Pair("ext:kartaview_url", urls))
         }
 
         if (editedItems.isEmpty()) {
-            Toast.makeText(context, "No changes to submit. Please answer at least one question.", Toast.LENGTH_SHORT).show()
-        }else{
+            Toast.makeText(
+                context,
+                "No changes to submit. Please answer at least one question.",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
             applyAnswer(editedItems as T, tagList)
         }
     }
@@ -59,7 +61,8 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     fun setupRecyclerViewTouchListener(recyclerView: RecyclerView, editTextId: Int) {
         recyclerView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_MOVE) {
-                val currentFocus = recyclerView.findFocus() // Use RecyclerView's context to find focus
+                val currentFocus =
+                    recyclerView.findFocus() // Use RecyclerView's context to find focus
 
                 if (currentFocus?.id == editTextId) {
                     hideKeyboardFrom(recyclerView.context, currentFocus) //recyclerView.context
@@ -84,55 +87,14 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
-        setupRecyclerViewTouchListener(binding.recyclerView,R.id.editText)
+        setupRecyclerViewTouchListener(binding.recyclerView, R.id.editText)
         binding.submitButton.setOnClickListener {
             onClickOk()
         }
-        binding.cameraIntentTV.setOnClickListener {
-            setCameraIntent()
-            //hide
-        }
-        binding.hideTV.setOnClickListener {
-            hideQuest()
-        }
-
-        binding.composeNoteTV.setOnClickListener {
-            composeNote()
-        }
-
     }
 
     override fun onImageUrlReceived(imageUrl: String) {
-//        binding.imageUrlTV.visibility = View.VISIBLE
         this.imageUrls.add(imageUrl)
-//        binding.imageUrlTV.text = getSpannableText(imageUrl)
-    }
-
-    private fun getSpannableText(imageUrl: String): SpannableString {
-        val text = "Image path : Click here"
-        val spannableString = SpannableString(text)
-        // Find start and end index of "Click here"
-        val startIndex = text.indexOf("Click here")
-        val endIndex = startIndex + "Click here".length
-        // Make "Click here" clickable
-        val clickableSpan = object : ClickableSpan() {
-            override fun onClick(widget: View) {
-                // Intent to open a link in browser
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(imageUrl))
-                startActivity(intent)
-            }
-        }
-        spannableString.setSpan(clickableSpan, startIndex,endIndex , Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-        // Color "and this part is colored"
-        // Get color from resources
-        val color = resources.getColor(R.color.primary)
-        val colorSpan = ForegroundColorSpan(color)
-        spannableString.setSpan(colorSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-        // Enable clicking on the TextView
-        binding.imageUrlTV.movementMethod = LinkMovementMethod.getInstance()
-        return spannableString
     }
 
     private fun setVisibilityOfItems() {
