@@ -1,23 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <de.westnordost.streetcomplete.view.SlidingRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_alignParentLeft="true"
     android:background="@color/background"
     android:elevation="@dimen/speech_bubble_elevation"
     tools:ignore="RtlHardcoded">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/editHistoryList"
-        android:layout_width="80dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:paddingBottom="22dp"
-        android:clipToPadding="false"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:reverseLayout="true"
-        android:orientation="vertical"
-        tools:listitem="@layout/row_edit_item" />
+        android:orientation="vertical">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/editHistoryList"
+            android:layout_width="80dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:orientation="vertical"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:reverseLayout="true"
+            tools:listitem="@layout/row_edit_item" />
+
+        <ImageButton
+            android:id="@+id/close"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="22dp"
+            android:contentDescription="@string/close_button"
+            android:src="@drawable/ic_close_24dp" />
+
+    </LinearLayout>
 </de.westnordost.streetcomplete.view.SlidingRelativeLayout>
