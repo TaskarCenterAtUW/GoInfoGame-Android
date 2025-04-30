@@ -433,6 +433,9 @@ abstract class AbstractOverlayForm :
 
     private fun getDefaultMarkerPosition(): LatLon? {
         val point = getDefaultMarkerScreenPosition() ?: return null
+        val view = view ?: return null
+        val y = (view.height / 2f) - (binding.createMarkerIconView.height/2f)
+        point.y = y
         return listener?.getMapPositionAt(point)
     }
 

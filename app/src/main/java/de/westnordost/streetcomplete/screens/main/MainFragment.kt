@@ -330,8 +330,8 @@ class MainFragment :
             binding.starsCounterView.setUploadedCount(count, count > 0)
         }
         observe(controlsViewModel.selectedOverlay) { overlay ->
-            val iconRes = overlay?.icon ?: R.drawable.ic_overlay_black_24dp
-            binding.overlaysButton.setImageResource(iconRes)
+//            val iconRes = overlay?.icon ?: R.drawable.ic_overlay_black_24dp
+//            binding.overlaysButton.setImageResource(iconRes)
         }
         observe(controlsViewModel.isTeamMode) { isTeamMode ->
             if (isTeamMode) {
@@ -481,8 +481,13 @@ class MainFragment :
         mapFragment?.mapChanged()
     }
 
+    private fun createOffsetPoint(x: Float, y: Float, context: Context): PointF {
+        val offset = context.resources.getDimensionPixelSize(R.dimen.marker_offset)
+        return PointF(x, y + offset)
+    }
+
     override fun onLongPress(x: Float, y: Float) {
-        val point = PointF(x, y + 320)
+        val point = createOffsetPoint(x,y,requireContext())
         val position = mapFragment?.getPositionAt(point) ?: return
         if (bottomSheetFragment != null || editHistoryFragment != null) return
 

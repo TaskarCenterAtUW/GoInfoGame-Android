@@ -63,5 +63,6 @@
     <!-- text size for input fields that cover the whole form but have a longer input or secondary
          inputs -->
     <dimen name="large_input">28sp</dimen>
+    <dimen name="marker_offset">120dp</dimen>
 
 </resources>
