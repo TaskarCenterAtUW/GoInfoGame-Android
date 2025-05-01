@@ -164,7 +164,6 @@ fun SettingsScreen(
 //                    onClick = { showDeleteCacheConfirmation = true },
 //                    description = stringResource(R.string.pref_title_delete_cache_summary)
 //                )
-
                 Preference(
                     name = stringResource(R.string.pref_title_quests_restore_hidden),
                     onClick = { showRestoreHiddenQuestsConfirmation = true },
@@ -173,6 +172,15 @@ fun SettingsScreen(
                         hiddenQuestCount
                     )
                 )
+            }
+
+            if (BuildConfig.DEBUG) {
+                PreferenceCategory("Debug") {
+                    Preference(
+                        name = "Show Quest Forms",
+                        onClick = onClickShowQuestForms
+                    ) { NextScreenIcon() }
+                }
             }
 
             PreferenceCategory("Application Info") {

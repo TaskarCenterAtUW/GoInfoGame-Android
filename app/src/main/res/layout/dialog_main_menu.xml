@@ -91,6 +91,15 @@
             app:drawableStartCompat="@drawable/ic_search_24dp" />
 
         <TextView
+            android:id="@+id/workspaceButton"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="@string/switch_workspace"
+            android:textAppearance="@android:style/TextAppearance.Theme.Dialog" />
+
+        <TextView
             android:id="@+id/enableTeamModeButton"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="match_parent"
