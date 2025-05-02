@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.main.edithistory
 
 import android.os.Bundle
 import android.view.View
+import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
@@ -27,6 +28,13 @@ class EditHistoryFragment : Fragment(R.layout.fragment_edit_history_list) {
         val initialPaddingBottom = binding.editHistoryList.paddingBottom
         binding.editHistoryList.respectSystemInsets {
             updatePadding(left = it.left, top = it.top, bottom = it.bottom + initialPaddingBottom)
+        }
+
+        binding.close.apply {
+            sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            setOnClickListener {
+                activity?.onBackPressedDispatcher?.onBackPressed()
+            }
         }
 
         val adapter = EditHistoryAdapter(this::onClick)
