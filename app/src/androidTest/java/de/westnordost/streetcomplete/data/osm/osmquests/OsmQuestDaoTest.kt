@@ -23,9 +23,9 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
     @Test fun addGet() {
         val q = entry(ElementType.NODE, 123L, "a")
         val key = q.key
-        assertNull(dao.get(key))
+        assertNull(dao.get(key, preferences.workspaceId))
         dao.put(q)
-        assertEquals(q, dao.get(key))
+        assertEquals(q, dao.get(key, preferences.workspaceId))
     }
 
     @Test fun delete() {
@@ -33,7 +33,7 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         assertFalse(dao.delete(q.key))
         dao.put(q)
         assertTrue(dao.delete(q.key))
-        assertNull(dao.get(q.key))
+        assertNull(dao.get(q.key, preferences.workspaceId))
     }
 
     @Test fun deleteAll() {
@@ -43,16 +43,16 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         dao.putAll(listOf(q1, q2, q3))
         dao.deleteAll(listOf(q1.key, q2.key))
 
-        assertNull(dao.get(q1.key))
-        assertNull(dao.get(q2.key))
-        assertEquals(q3, dao.get(q3.key))
+        assertNull(dao.get(q1.key, preferences.workspaceId))
+        assertNull(dao.get(q2.key, preferences.workspaceId))
+        assertEquals(q3, dao.get(q3.key, preferences.workspaceId))
     }
 
     @Test fun clear() {
         val q1 = entry(questTypeName = "a")
         dao.put(q1)
         dao.clear()
-        assertNull(dao.get(q1.key))
+        assertNull(dao.get(q1.key, preferences.workspaceId))
     }
 
     @Test fun getAllForElements() {

@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuest
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestSource
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.visiblequests.TeamModeQuestFilter
 import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeSource
 import de.westnordost.streetcomplete.util.Listeners
@@ -18,7 +19,8 @@ class VisibleQuestsSource(
     private val osmNoteQuestSource: OsmNoteQuestSource,
     private val visibleQuestTypeSource: VisibleQuestTypeSource,
     private val teamModeQuestFilter: TeamModeQuestFilter,
-    private val selectedOverlaySource: SelectedOverlaySource
+    private val selectedOverlaySource: SelectedOverlaySource,
+    private val preferences: Preferences
 ) {
     interface Listener {
         /** Called when given quests in the given group have been added/removed */
@@ -73,13 +75,24 @@ class VisibleQuestsSource(
         }
     }
 
-    private val cache = SpatialCache(
-        SPATIAL_CACHE_TILE_ZOOM,
-        SPATIAL_CACHE_TILES,
-        SPATIAL_CACHE_INITIAL_CAPACITY,
-        { getAllVisibleFromDatabase(it) },
-        Quest::key, Quest::position
-    )
+    private val workSpaceCache: MutableMap<Int, SpatialCache<QuestKey, Quest>> = mutableMapOf()
+
+    private fun getOrCreateCache(workspaceId: Int): SpatialCache<QuestKey, Quest> {
+        return workSpaceCache.getOrPut(workspaceId) {
+            SpatialCache(
+                SPATIAL_CACHE_TILE_ZOOM,
+                SPATIAL_CACHE_TILES,
+                SPATIAL_CACHE_INITIAL_CAPACITY,
+                { tile -> getAllVisibleFromDatabase(tile) },  // workspace-aware loading
+                Quest::key,
+                Quest::position
+            )
+        }
+    }
+
+    private val cache
+        get() = getOrCreateCache(preferences.workspaceId!!)
+
     init {
         osmQuestSource.addListener(osmQuestSourceListener)
         osmNoteQuestSource.addListener(osmNoteQuestSourceListener)

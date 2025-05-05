@@ -7,12 +7,14 @@ object EditTypeStatisticsTables {
     object Columns {
         const val ELEMENT_EDIT_TYPE = "quest_type"
         const val SUCCEEDED = "succeeded"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     fun create(name: String) = """
         CREATE TABLE $name (
-            ${Columns.ELEMENT_EDIT_TYPE} varchar(255) PRIMARY KEY,
-            ${Columns.SUCCEEDED} int NOT NULL
+            ${Columns.ELEMENT_EDIT_TYPE} varchar(255),
+            ${Columns.SUCCEEDED} int NOT NULL,
+            ${Columns.WORKSPACE_ID} int NOT NULL
         );
     """
 }

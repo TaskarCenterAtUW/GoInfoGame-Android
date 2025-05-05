@@ -129,7 +129,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, settingsViewModel: Settin
                             isLongFormLoading = false
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
-                            settingsViewModel.deleteMapQuests()
+//                            settingsViewModel.deleteMapQuests()
                             finishAndLaunchNewActivity(context, longFormState.longFormItems)
                         }
 

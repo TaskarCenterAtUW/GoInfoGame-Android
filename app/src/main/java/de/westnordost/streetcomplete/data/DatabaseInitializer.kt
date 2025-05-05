@@ -29,7 +29,7 @@ import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 19
+    const val DB_VERSION = 20
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -256,6 +256,13 @@ object DatabaseInitializer {
         if (oldVersion <= 18 && newVersion == 19) {
             db.exec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
             db.exec("ALTER TABLE work_spaces ADD COLUMN type varchar(255) DEFAULT ''")
+        }
+
+        if (oldVersion<= 19 && newVersion == 20){
+            db.exec("ALTER TABLE osm_element_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE quest_statistics ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE quest_statistics_current_week ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
     }
 }

@@ -13,7 +13,7 @@ val elementEditsModule = module {
     factory { ChangesetAutoCloser(get()) }
     factory { ElementEditUploader(get(), get(), get()) }
 
-    factory { ElementEditsDao(get(), get()) }
+    factory { ElementEditsDao(get(), get(), get()) }
     factory { ElementIdProviderDao(get()) }
     factory { OpenChangesetsDao(get()) }
     factory { EditElementsDao(get()) }
