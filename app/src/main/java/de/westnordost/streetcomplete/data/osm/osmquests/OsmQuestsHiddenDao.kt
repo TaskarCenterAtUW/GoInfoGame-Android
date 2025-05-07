@@ -7,12 +7,15 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Col
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.ELEMENT_TYPE
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.QUEST_TYPE
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.TIMESTAMP
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.NAME
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 
 /** Persists which osm quests should be hidden (because the user selected so) */
-class OsmQuestsHiddenDao(private val db: Database) {
+class OsmQuestsHiddenDao(private val db: Database,
+                         private val preferences: Preferences) {
 
     fun add(osmQuestKey: OsmQuestKey) {
         db.insert(NAME, osmQuestKey.toPairs())
@@ -23,7 +26,7 @@ class OsmQuestsHiddenDao(private val db: Database) {
 
     fun getTimestamp(osmQuestKey: OsmQuestKey): Long? =
         db.queryOne(NAME,
-            where = "$QUEST_TYPE = ? AND $ELEMENT_ID = ? AND $ELEMENT_TYPE = ?",
+            where = "$QUEST_TYPE = ? AND $ELEMENT_ID = ? AND $ELEMENT_TYPE = ? AND $WORKSPACE_ID = ${preferences.workspaceId}",
             args = arrayOf(
                 osmQuestKey.questTypeName,
                 osmQuestKey.elementId,
@@ -33,7 +36,7 @@ class OsmQuestsHiddenDao(private val db: Database) {
 
     fun delete(osmQuestKey: OsmQuestKey): Boolean =
         db.delete(NAME,
-            where = "$QUEST_TYPE = ? AND $ELEMENT_ID = ? AND $ELEMENT_TYPE = ?",
+            where = "$QUEST_TYPE = ? AND $ELEMENT_ID = ? AND $ELEMENT_TYPE = ? AND $WORKSPACE_ID = ${preferences.workspaceId}",
             args = arrayOf(
                 osmQuestKey.questTypeName,
                 osmQuestKey.elementId,
@@ -42,24 +45,25 @@ class OsmQuestsHiddenDao(private val db: Database) {
         ) == 1
 
     fun getNewerThan(timestamp: Long): List<OsmQuestKeyWithTimestamp> =
-        db.query(NAME, where = "$TIMESTAMP > $timestamp") { it.toHiddenOsmQuest() }
+        db.query(NAME, where = "$WORKSPACE_ID = ${preferences.workspaceId} AND $TIMESTAMP > $timestamp") { it.toHiddenOsmQuest() }
 
     fun getAllIds(): List<OsmQuestKey> =
-        db.query(NAME) { it.toOsmQuestKey() }
+        db.query(NAME, where = "$WORKSPACE_ID = ${preferences.workspaceId}") { it.toOsmQuestKey() }
 
     fun deleteAll(): Int =
-        db.delete(NAME)
+        db.delete(NAME, where = "$WORKSPACE_ID = ${preferences.workspaceId}")
 
     fun countAll(): Long =
-        db.queryOne(NAME, columns = arrayOf("COUNT(*)")) { it.getLong("COUNT(*)") } ?: 0L
-}
+        db.queryOne(NAME, where = "$WORKSPACE_ID = ${preferences.workspaceId}", columns = arrayOf("COUNT(*)")) { it.getLong("COUNT(*)") } ?: 0L
 
-private fun OsmQuestKey.toPairs() = listOf(
-    ELEMENT_TYPE to elementType.name,
-    ELEMENT_ID to elementId,
-    QUEST_TYPE to questTypeName,
-    TIMESTAMP to nowAsEpochMilliseconds()
-)
+    private fun OsmQuestKey.toPairs() = listOf(
+        ELEMENT_TYPE to elementType.name,
+        ELEMENT_ID to elementId,
+        QUEST_TYPE to questTypeName,
+        TIMESTAMP to nowAsEpochMilliseconds(),
+        WORKSPACE_ID to preferences.workspaceId
+    )
+}
 
 private fun CursorPosition.toOsmQuestKey() = OsmQuestKey(
     ElementType.valueOf(getString(ELEMENT_TYPE)),
