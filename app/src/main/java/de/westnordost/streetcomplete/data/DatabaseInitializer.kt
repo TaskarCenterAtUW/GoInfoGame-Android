@@ -264,6 +264,7 @@ object DatabaseInitializer {
             db.exec("ALTER TABLE quest_statistics_current_week ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.exec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.exec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE osm_edit_elements ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
     }
 }

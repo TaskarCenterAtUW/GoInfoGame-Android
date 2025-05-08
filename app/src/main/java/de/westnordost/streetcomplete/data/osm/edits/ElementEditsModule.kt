@@ -16,7 +16,7 @@ val elementEditsModule = module {
     factory { ElementEditsDao(get(), get(), get()) }
     factory { ElementIdProviderDao(get()) }
     factory { OpenChangesetsDao(get()) }
-    factory { EditElementsDao(get()) }
+    factory { EditElementsDao(get(), get()) }
 
     single { OpenChangesetsManager(get(), get(), get(), get()) }
 

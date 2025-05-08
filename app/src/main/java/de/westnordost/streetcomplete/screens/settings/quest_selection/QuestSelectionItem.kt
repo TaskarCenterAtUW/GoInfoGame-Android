@@ -58,10 +58,10 @@ fun QuestSelectionItem(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             var title = ""
-            if (item.questType is AddGenericLong){
-                title = item.questType.item.elementType!!
+            title = if (item.questType is AddGenericLong){
+                item.questType.item.elementType!!
             }else{
-                title = "Create Note"
+                "Create Note"
             }
             Text(
                 text = title,
