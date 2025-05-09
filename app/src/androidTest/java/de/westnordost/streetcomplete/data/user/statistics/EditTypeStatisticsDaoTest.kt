@@ -1,15 +1,22 @@
 package de.westnordost.streetcomplete.data.user.statistics
 
 import de.westnordost.streetcomplete.data.ApplicationDbTestCase
+import de.westnordost.streetcomplete.data.osm.testutils.mock
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EditTypeStatisticsDaoTest : ApplicationDbTestCase() {
     private lateinit var daoType: EditTypeStatisticsDao
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun createDao() {
-        daoType = EditTypeStatisticsDao(database, EditTypeStatisticsTables.NAME)
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
+        daoType = EditTypeStatisticsDao(database, EditTypeStatisticsTables.NAME, preferences)
     }
 
     @Test fun getZero() {

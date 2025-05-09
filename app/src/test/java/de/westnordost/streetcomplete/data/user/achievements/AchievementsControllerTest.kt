@@ -268,7 +268,6 @@ private object QuestOne : QuestType {
     override val wikiLink: String? = null
     override fun createForm(): AbstractQuestForm = mock()
     override val achievements = editTypeAchievements(listOf("thisAchievement", "mixedAchievement"))
-    override fun createMultiSelectLongForm(selectedQuests: List<Quest>): AbstractQuestForm = mock()
 }
 
 private object QuestTwo : QuestType {
@@ -277,7 +276,6 @@ private object QuestTwo : QuestType {
     override val wikiLink: String? = null
     override fun createForm(): AbstractQuestForm = mock()
     override val achievements = editTypeAchievements(listOf("otherAchievement", "mixedAchievement"))
-    override fun createMultiSelectLongForm(selectedQuests: List<Quest>): AbstractQuestForm = mock()
 }
 
 private object OverlayOne : Overlay {

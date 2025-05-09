@@ -3,16 +3,24 @@ package de.westnordost.streetcomplete.data.osm.edits
 import de.westnordost.streetcomplete.data.ApplicationDbTestCase
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.testutils.mock
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
-import kotlin.test.*
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class EditElementsDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: EditElementsDao
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun createDao() {
-        dao = EditElementsDao(database)
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
+        dao = EditElementsDao(database, preferences)
     }
 
     @Test fun get_delete_empty() {

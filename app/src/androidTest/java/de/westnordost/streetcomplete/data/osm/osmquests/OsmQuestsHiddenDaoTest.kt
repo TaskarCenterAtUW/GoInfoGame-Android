@@ -2,11 +2,14 @@ package de.westnordost.streetcomplete.data.osm.osmquests
 
 import de.westnordost.streetcomplete.data.ApplicationDbTestCase
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.testutils.mock
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,22 +18,30 @@ import kotlin.test.assertTrue
 
 class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: OsmQuestsHiddenDao
+    private lateinit var preferences: Preferences
 
-    @BeforeTest fun createDao() {
-        dao = OsmQuestsHiddenDao(database)
+    @BeforeTest
+    fun createDao() {
+        val workspaceId = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
+        dao = OsmQuestsHiddenDao(database, preferences)
     }
 
-    @Test fun getButNothingIsThere() {
+    @Test
+    fun getButNothingIsThere() {
         assertFalse(dao.contains(OsmQuestKey(ElementType.NODE, 0L, "bla")))
     }
 
-    @Test fun addAndGet() {
+    @Test
+    fun addAndGet() {
         val key = OsmQuestKey(ElementType.NODE, 123L, "bla")
         dao.add(key)
         assertTrue(dao.contains(key))
     }
 
-    @Test fun addGetDelete() {
+    @Test
+    fun addGetDelete() {
         val key = OsmQuestKey(ElementType.NODE, 123L, "bla")
         assertFalse(dao.delete(key))
         dao.add(key)
@@ -38,7 +49,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
         assertFalse(dao.contains(key))
     }
 
-    @Test fun getNewerThan() = runBlocking {
+    @Test
+    fun getNewerThan() = runBlocking {
         val keys = listOf(
             OsmQuestKey(ElementType.NODE, 123L, "bla"),
             OsmQuestKey(ElementType.NODE, 124L, "bla")
@@ -51,7 +63,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
         assertEquals(keys[1], result.osmQuestKey)
     }
 
-    @Test fun getAllIds() {
+    @Test
+    fun getAllIds() {
         val keys = listOf(
             OsmQuestKey(ElementType.NODE, 123L, "bla"),
             OsmQuestKey(ElementType.NODE, 124L, "bla")
@@ -60,7 +73,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
         assertTrue(dao.getAllIds().containsExactlyInAnyOrder(keys))
     }
 
-    @Test fun deleteAll() {
+    @Test
+    fun deleteAll() {
         assertEquals(0, dao.deleteAll())
         val keys = listOf(
             OsmQuestKey(ElementType.NODE, 123L, "bla"),
@@ -72,7 +86,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
         assertFalse(dao.contains(keys[1]))
     }
 
-    @Test fun countAll() {
+    @Test
+    fun countAll() {
         assertEquals(0, dao.countAll())
         dao.add(OsmQuestKey(ElementType.NODE, 123L, "bla"))
         assertEquals(1, dao.countAll())

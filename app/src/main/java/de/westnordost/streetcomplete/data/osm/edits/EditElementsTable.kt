@@ -15,6 +15,7 @@ object EditElementsTable {
             ${Columns.EDIT_ID} INTEGER NOT NULL,
             ${Columns.ELEMENT_TYPE} varchar(255) NOT NULL,
             ${Columns.ELEMENT_ID} text NOT NULL,
+            ${Columns.WORKSPACE_ID} text NOT NULL,
             CONSTRAINT same_osm_quest PRIMARY KEY (
                 ${Columns.EDIT_ID},
                 ${Columns.ELEMENT_TYPE},

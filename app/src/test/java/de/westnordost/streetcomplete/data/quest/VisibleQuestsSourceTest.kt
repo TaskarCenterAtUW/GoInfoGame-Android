@@ -9,6 +9,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuest
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestSource
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.visiblequests.TeamModeQuestFilter
 import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeSource
 import de.westnordost.streetcomplete.overlays.Overlay
@@ -21,6 +22,7 @@ import de.westnordost.streetcomplete.testutils.osmNoteQuest
 import de.westnordost.streetcomplete.testutils.osmQuest
 import de.westnordost.streetcomplete.testutils.osmQuestKey
 import de.westnordost.streetcomplete.testutils.pGeom
+import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import kotlin.test.BeforeTest
@@ -49,8 +51,12 @@ class VisibleQuestsSourceTest {
     private val bbox = bbox(0.0, 0.0, 1.0, 1.0)
     private val questTypes = listOf(TestQuestTypeA(), TestQuestTypeB(), TestQuestTypeC())
     private val questTypeNames = questTypes.map { it.name }
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun setUp() {
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
         osmNoteQuestSource = mock()
         osmQuestSource = mock()
         visibleQuestTypeSource = mock()
@@ -82,7 +88,7 @@ class VisibleQuestsSourceTest {
             Unit
         }
 
-        source = VisibleQuestsSource(questTypeRegistry, osmQuestSource, osmNoteQuestSource, visibleQuestTypeSource, teamModeQuestFilter, selectedOverlaySource)
+        source = VisibleQuestsSource(questTypeRegistry, osmQuestSource, osmNoteQuestSource, visibleQuestTypeSource, teamModeQuestFilter, selectedOverlaySource, preferences)
 
         listener = mock()
         source.addListener(listener)

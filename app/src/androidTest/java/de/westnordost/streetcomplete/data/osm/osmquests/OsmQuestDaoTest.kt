@@ -5,7 +5,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.testutils.mock
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,17 +18,21 @@ import kotlin.test.assertTrue
 
 class OsmQuestDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: OsmQuestDao
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun createDao() {
-        dao = OsmQuestDao(database)
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
+        dao = OsmQuestDao(database, preferences)
     }
 
     @Test fun addGet() {
         val q = entry(ElementType.NODE, 123L, "a")
         val key = q.key
-        assertNull(dao.get(key, preferences.workspaceId))
+        assertNull(dao.get(key))
         dao.put(q)
-        assertEquals(q, dao.get(key, preferences.workspaceId))
+        assertEquals(q, dao.get(key))
     }
 
     @Test fun delete() {
@@ -33,7 +40,7 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         assertFalse(dao.delete(q.key))
         dao.put(q)
         assertTrue(dao.delete(q.key))
-        assertNull(dao.get(q.key, preferences.workspaceId))
+        assertNull(dao.get(q.key))
     }
 
     @Test fun deleteAll() {
@@ -43,16 +50,16 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         dao.putAll(listOf(q1, q2, q3))
         dao.deleteAll(listOf(q1.key, q2.key))
 
-        assertNull(dao.get(q1.key, preferences.workspaceId))
-        assertNull(dao.get(q2.key, preferences.workspaceId))
-        assertEquals(q3, dao.get(q3.key, preferences.workspaceId))
+        assertNull(dao.get(q1.key))
+        assertNull(dao.get(q2.key))
+        assertEquals(q3, dao.get(q3.key))
     }
 
     @Test fun clear() {
         val q1 = entry(questTypeName = "a")
         dao.put(q1)
         dao.clear()
-        assertNull(dao.get(q1.key, preferences.workspaceId))
+        assertNull(dao.get(q1.key))
     }
 
     @Test fun getAllForElements() {
@@ -102,7 +109,7 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         elementId: Long = 0L,
         questTypeName: String = "a",
         pos: LatLon = p(0.0, 0.0)
-    ) = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, pos)
+    ) = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, pos, preferences.workspaceId!!)
 
     private fun p(x: Double, y: Double): LatLon = LatLon(y, x)
 }

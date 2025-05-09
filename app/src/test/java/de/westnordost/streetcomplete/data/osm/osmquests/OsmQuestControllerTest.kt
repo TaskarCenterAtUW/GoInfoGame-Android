@@ -90,7 +90,7 @@ class OsmQuestControllerTest {
         val entry = questEntry(NODE, 1, "ApplicableQuestType")
         val g = pGeom()
 
-        on(db.get(osmQuestKey(NODE, 1, "ApplicableQuestType"), preferences.workspaceId)).thenReturn(entry)
+        on(db.get(osmQuestKey(NODE, 1, "ApplicableQuestType"))).thenReturn(entry)
         on(mapDataSource.getGeometry(NODE, 1)).thenReturn(g)
 
         val expectedQuest = OsmQuest(ApplicableQuestType, NODE, 1, g)
@@ -194,7 +194,7 @@ class OsmQuestControllerTest {
         on(hiddenDB.delete(quest.key)).thenReturn(true)
         on(hiddenDB.getTimestamp(eq(quest.key))).thenReturn(555)
         on(mapDataSource.getGeometry(quest.elementType, quest.elementId)).thenReturn(pGeom())
-        on(db.get(quest.key, preferences.workspaceId)).thenReturn(quest)
+        on(db.get(quest.key)).thenReturn(quest)
 
         assertTrue(ctrl.unhide(quest.key))
 
@@ -363,8 +363,9 @@ private fun questEntry(
     elementType: ElementType = NODE,
     elementId: Long = 1,
     questTypeName: String = "ApplicableQuestType",
-    position: LatLon = p()
-): OsmQuestDaoEntry = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, position)
+    position: LatLon = p(),
+    workspaceId: Int = 0
+): OsmQuestDaoEntry = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, position, workspaceId)
 
 private object ApplicableQuestType : TestQuestTypeA() {
     override fun isApplicableTo(element: Element) = true
