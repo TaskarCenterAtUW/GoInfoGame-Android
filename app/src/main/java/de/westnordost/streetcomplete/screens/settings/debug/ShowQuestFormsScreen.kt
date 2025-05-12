@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.settings.genericQuestTitle
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.CenteredLargeTitleHint
@@ -134,8 +135,14 @@ private fun QuestList(
                         contentDescription = item.name,
                         modifier = Modifier.size(32.dp),
                     )
+
+                    val title = if (item is AddGenericLong){
+                        item.item.elementType!!
+                    }else{
+                        "Create Note"
+                    }
                     Text(
-                        text = genericQuestTitle(item),
+                        text = title,
                         style = MaterialTheme.typography.body1
                     )
                 }

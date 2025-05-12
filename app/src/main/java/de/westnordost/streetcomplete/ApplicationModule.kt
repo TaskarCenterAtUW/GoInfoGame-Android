@@ -72,6 +72,8 @@ val appModule = module {
                         val httpClient = get<HttpClient>() // Inject HttpClient for making requests
                         val environmentManager = get<EnvironmentManager>()
 
+                        if (!preferences.workspaceLogin)
+                            return@refreshTokens null
                         val newAccessToken =
                             refreshJwtToken(httpClient, preferences, environmentManager)
 
@@ -113,6 +115,10 @@ suspend fun refreshJwtToken(
         val tempClient = HttpClient {
             install(ContentNegotiation) {
                 json(Json { ignoreUnknownKeys = true })
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.ALL
             }
         }
 

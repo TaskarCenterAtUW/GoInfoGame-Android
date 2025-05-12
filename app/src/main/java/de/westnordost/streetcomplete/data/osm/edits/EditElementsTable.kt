@@ -7,6 +7,7 @@ object EditElementsTable {
         const val EDIT_ID = "edit_id"
         const val ELEMENT_TYPE = "element_type"
         const val ELEMENT_ID = "element_id"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     const val CREATE = """
@@ -14,10 +15,12 @@ object EditElementsTable {
             ${Columns.EDIT_ID} INTEGER NOT NULL,
             ${Columns.ELEMENT_TYPE} varchar(255) NOT NULL,
             ${Columns.ELEMENT_ID} text NOT NULL,
+            ${Columns.WORKSPACE_ID} text NOT NULL,
             CONSTRAINT same_osm_quest PRIMARY KEY (
                 ${Columns.EDIT_ID},
                 ${Columns.ELEMENT_TYPE},
-                ${Columns.ELEMENT_ID}
+                ${Columns.ELEMENT_ID},
+                ${Columns.WORKSPACE_ID}
             )
         );
     """
@@ -25,7 +28,8 @@ object EditElementsTable {
     const val INDEX_CREATE = """
         CREATE INDEX osm_edit_elements_index ON $NAME (
             ${Columns.ELEMENT_TYPE},
-            ${Columns.ELEMENT_ID}
+            ${Columns.ELEMENT_ID},
+            ${Columns.WORKSPACE_ID}
         );
     """
 }

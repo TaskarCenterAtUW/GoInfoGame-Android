@@ -14,6 +14,7 @@ object ElementEditsTable {
         const val IS_SYNCED = "synced"
         const val ACTION = "action"
         const val IS_NEAR_USER_LOCATION = "is_near"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     const val CREATE = """
@@ -27,7 +28,8 @@ object ElementEditsTable {
             ${Columns.CREATED_TIMESTAMP} int NOT NULL,
             ${Columns.IS_SYNCED} int NOT NULL,
             ${Columns.ACTION} text,
-            ${Columns.IS_NEAR_USER_LOCATION} int NOT NULL
+            ${Columns.IS_NEAR_USER_LOCATION} int NOT NULL,
+            ${Columns.WORKSPACE_ID} int NOT NULL
         );
     """
 }

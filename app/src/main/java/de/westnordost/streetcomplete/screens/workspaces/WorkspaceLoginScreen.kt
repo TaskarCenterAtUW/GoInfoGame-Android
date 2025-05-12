@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,8 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.DpOffset
@@ -135,6 +140,8 @@ fun LoginCard(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    var selectedEnvironment = remember { mutableStateOf(environmentManager.currentEnvironment) }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -150,24 +157,30 @@ fun LoginCard(
             TextField(
                 value = email, onValueChange = { newText -> email = newText },
                 label = {
-                    Text(text = stringResource(id = R.string.email))
+                    Text(text = stringResource(id = R.string.email, selectedEnvironment.value.name.lowercase()))
                 },
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Next
                 ),
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = 16.dp).semantics {
+                    contentType = ContentType.EmailAddress
+                    contentDescription = "Email for ${selectedEnvironment.value.name.lowercase()}"
+                }
             )
             TextField(
                 value = password,
                 onValueChange = { newText -> password = newText },
                 label = {
-                    Text(text = stringResource(id = R.string.password))
+                    Text(text = stringResource(id = R.string.password, selectedEnvironment.value.name.lowercase()))
                 },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.padding(vertical = 16.dp),
+                modifier = Modifier.padding(vertical = 16.dp).semantics {
+                    contentType = ContentType.Password
+                    contentDescription = "Password for ${selectedEnvironment.value.name.lowercase()}"
+                },
             )
 
             Button(onClick = {
@@ -175,7 +188,7 @@ fun LoginCard(
             }, modifier = Modifier.padding(vertical = 24.dp)) {
                 Text(text = "Sign In")
             }
-            EnvironmentDropdownMenu(viewModel = viewModel, environmentManager, modifier)
+            EnvironmentDropdownMenu(viewModel = viewModel, selectedEnvironment, modifier)
         }
     }
 }
@@ -183,11 +196,10 @@ fun LoginCard(
 @Composable
 fun EnvironmentDropdownMenu(
     viewModel: WorkspaceViewModel,
-    environmentManager: EnvironmentManager,
+    selectedEnvironment: MutableState<Environment>,
     modifier: Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selectedEnvironment by remember { mutableStateOf(environmentManager.currentEnvironment) }
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Row {
@@ -204,7 +216,7 @@ fun EnvironmentDropdownMenu(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurfaceVariant)
 
             ) {
-                Text(text = selectedEnvironment.name)
+                Text(text = selectedEnvironment.value.name)
                 Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown Icon")
             }
         }
@@ -216,7 +228,7 @@ fun EnvironmentDropdownMenu(
         ) {
             Environment.entries.forEach { environment ->
                 DropdownMenuItem(text = { Text(environment.name) }, onClick = {
-                    selectedEnvironment = environment
+                    selectedEnvironment.value = environment
                     expanded = false
                     viewModel.setEnvironment(environment)
                 })

@@ -5,7 +5,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.testutils.mock
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.ktx.containsExactlyInAnyOrder
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,9 +18,13 @@ import kotlin.test.assertTrue
 
 class OsmQuestDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: OsmQuestDao
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun createDao() {
-        dao = OsmQuestDao(database)
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
+        dao = OsmQuestDao(database, preferences)
     }
 
     @Test fun addGet() {
@@ -102,7 +109,7 @@ class OsmQuestDaoTest : ApplicationDbTestCase() {
         elementId: Long = 0L,
         questTypeName: String = "a",
         pos: LatLon = p(0.0, 0.0)
-    ) = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, pos)
+    ) = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, pos, preferences.workspaceId!!)
 
     private fun p(x: Double, y: Double): LatLon = LatLon(y, x)
 }

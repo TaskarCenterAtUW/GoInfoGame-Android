@@ -47,6 +47,8 @@ data class OsmQuest(
         // fall through to a single marker in the middle
         listOf(position)
     }
+
+    override var workspaceId : Int = 0
 }
 
 const val MAXIMUM_MARKER_DISTANCE = 400

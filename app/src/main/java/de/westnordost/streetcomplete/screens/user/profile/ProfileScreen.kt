@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
 import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
 import de.westnordost.streetcomplete.ui.theme.headlineLarge
@@ -54,7 +55,7 @@ import java.util.Locale
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel) {
+fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewModel) {
     val userName by viewModel.userName.collectAsState()
     val userAvatarFile by viewModel.userAvatarFile.collectAsState()
 
@@ -126,6 +127,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
 //                Text(stringResource(R.string.osm_profile).uppercase())
 //            }
             OutlinedButton(onClick = { viewModel.logOutUser()
+                settingsViewModel.deleteCache()
             finishAndLaunchNewActivity(context)
             }) {
                 Text(stringResource(R.string.user_logout).uppercase())

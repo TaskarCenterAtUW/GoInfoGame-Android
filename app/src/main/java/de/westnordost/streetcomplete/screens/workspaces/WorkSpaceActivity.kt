@@ -82,7 +82,6 @@ class WorkSpaceActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -286,7 +285,6 @@ fun AppNavigator(
             fineLocationManager.getCurrentLocation()
             WorkSpaceListScreen(
                 viewModel = koinViewModel(),
-                settingsViewModel = koinViewModel(),
                 modifier = modifier.padding(innerPadding)
             )
         }

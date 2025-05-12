@@ -8,6 +8,7 @@ object OsmQuestsHiddenTable {
         const val ELEMENT_ID = "element_id"
         const val ELEMENT_TYPE = "element_type"
         const val TIMESTAMP = "timestamp"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     const val CREATE = """
@@ -16,10 +17,12 @@ object OsmQuestsHiddenTable {
             ${Columns.ELEMENT_ID} int NOT NULL,
             ${Columns.ELEMENT_TYPE} varchar(255) NOT NULL,
             ${Columns.TIMESTAMP} int NOT NULL,
+            ${Columns.WORKSPACE_ID} int NOT NULL,
             CONSTRAINT same_osm_quest PRIMARY KEY (
                 ${Columns.QUEST_TYPE},
                 ${Columns.ELEMENT_ID},
-                ${Columns.ELEMENT_TYPE}
+                ${Columns.ELEMENT_TYPE},
+                ${Columns.WORKSPACE_ID}
             )
         );
     """

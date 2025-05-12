@@ -25,11 +25,14 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.TestQuestType
 import de.westnordost.streetcomplete.data.osm.osmquests.TestQuestType2
+import de.westnordost.streetcomplete.data.osm.testutils.mock
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement
 import de.westnordost.streetcomplete.overlays.Overlay
 import de.westnordost.streetcomplete.overlays.Style
+import org.mockito.Mockito
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,11 +43,15 @@ import kotlin.test.assertTrue
 
 class ElementEditsDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: ElementEditsDao
+    private lateinit var preferences: Preferences
 
     @BeforeTest fun createDao() {
+        val workspaceId  = 301
+        preferences = mock()
+        Mockito.`when`(preferences.workspaceId).thenReturn(workspaceId)
         val list = listOf(1 to TEST_QUEST_TYPE, 2 to TEST_QUEST_TYPE2)
         val list2 = listOf(1 to TestOverlay)
-        dao = ElementEditsDao(database, AllEditTypes(mutableListOf(QuestTypeRegistry(list), OverlayRegistry(list2))))
+        dao = ElementEditsDao(database, AllEditTypes(mutableListOf(QuestTypeRegistry(list), OverlayRegistry(list2))), preferences)
     }
 
     @Test fun addGet_UpdateElementTagsEdit() {
