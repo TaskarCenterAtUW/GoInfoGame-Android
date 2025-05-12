@@ -22,7 +22,8 @@ class AddGenericLong(val item: AddLongFormResponseItem) :
     override val icon = when (item.elementType) {
         "Sidewalks" -> R.drawable.ic_quest_sidewalk
         "Crossings" -> R.drawable.ic_quest_pedestrian_crossing
-        else -> R.drawable.ic_quest_kerb_type
+        "Kerb" -> R.drawable.ic_quest_kerb_type
+        else -> R.drawable.ic_quest_notes
     }
     override val achievements = listOf(PEDESTRIAN)
 

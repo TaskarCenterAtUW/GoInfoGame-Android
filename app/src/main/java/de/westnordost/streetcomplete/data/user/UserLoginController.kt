@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.data.user
 
 import de.westnordost.osmapi.OsmConnection
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.util.Listeners
 
 class UserLoginController(

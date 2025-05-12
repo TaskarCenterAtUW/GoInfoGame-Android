@@ -40,7 +40,7 @@ import de.westnordost.streetcomplete.screens.MainActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 
 @Composable
-fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, settingsViewModel: SettingsViewModel, modifier: Modifier = Modifier) {
+fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     var isLongFormLoading by remember { mutableStateOf(false) }

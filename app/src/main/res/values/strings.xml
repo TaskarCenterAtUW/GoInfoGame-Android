@@ -1786,8 +1786,8 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="lane_narrowing_traffic_calming_none">No narrowed lane here</string>
 
     <!--    Adding for GIG-->
-    <string name="email">Email</string>
-    <string name="password">Password</string>
+    <string name="email">Email for %1$s</string>
+    <string name="password">Password for %1$s</string>
     <string name="title_activity_work_space">WorkSpaceActivity</string>
     <string name="quest_kerb_title">Is there a curb here</string>
     <string name="submit">Submit</string>
