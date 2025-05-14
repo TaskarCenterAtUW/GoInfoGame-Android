@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -11,12 +12,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import coil.load
-import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
@@ -28,7 +32,6 @@ import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
-import androidx.core.graphics.drawable.toDrawable
 
 class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     RecyclerView.Adapter<ViewHolder>() {
@@ -233,7 +236,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         }
 
         private fun hideKeyboard(view: View) {
-            val imm = binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            val imm =
+                binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(view.windowToken, 0)
         }
 
@@ -300,7 +304,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
-            imageSelectAdapter.selectedIndices = item.selectedIndex?.let { listOf(it) } ?: emptyList()
+            imageSelectAdapter.selectedIndices =
+                item.selectedIndex?.let { listOf(it) } ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
@@ -310,10 +315,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                         item.questAnswerChoices,
                         index, binding
                     )
-                    if (!item.questAnswerChoices.get(index)?.choiceFollowUp.isNullOrBlank()){
+                    if (!item.questAnswerChoices.get(index)?.choiceFollowUp.isNullOrBlank()) {
                         binding.choiceFollowUp.visibility = View.VISIBLE
                         binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
-                    }else{
+                    } else {
                         binding.choiceFollowUp.visibility = View.GONE
                     }
                 }
@@ -325,11 +330,60 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     givenItems[mainIndex].selectedIndex = null
                     givenItems[mainIndex].userInput = null
                 }
+
+                override fun onLongPress(index: Int, drawable: Drawable?) {
+
+                    val mainIndex =
+                        givenItems.indexOfFirst { it.questId == item.questId }
+
+                    val dialog = Dialog(binding.root.context)
+                    dialog.setContentView(R.layout.dialog_full_image)
+
+                    dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                    dialog.window?.setDimAmount(0.7f) // controls dim background
+
+                    val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+                    val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    val title = dialog.findViewById<TextView>(R.id.title)
+                    val description = dialog.findViewById<TextView>(R.id.description)
+                    val choice_name = dialog.findViewById<TextView>(R.id.choice_name)
+
+                    title.text = givenItems[mainIndex].questTitle
+                    description.text = givenItems[mainIndex].questDescription
+                    choice_name.text = item.questAnswerChoices?.get(index)?.choiceText
+
+                    closeButton.setOnClickListener {
+                        dialog.dismiss()
+                    }
+                    fullImageView.setImageDrawable(drawable)
+                    fullImageView.contentDescription = item.questAnswerChoices?.get(index)?.value
+                    fullImageView.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
+                    ViewCompat.replaceAccessibilityAction(
+                        fullImageView,
+                        AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                            AccessibilityNodeInfoCompat.ACTION_CLICK,
+                            "close"
+                        ), "close"
+                    ) { _, _ ->
+                        fullImageView.performClick()
+                        true
+                    }
+
+                    dialog.show()
+                }
             })
 
 
             imageSelectAdapter.items = item.questAnswerChoices?.map {
-                Item2(item, ImageUrl(it?.imageUrl), CharSequenceText(it?.choiceText!!), CharSequenceText(""))
+                Item2(
+                    item,
+                    ImageUrl(it?.imageUrl),
+                    CharSequenceText(it?.choiceText!!),
+                    CharSequenceText("")
+                )
             }!!
 
         }

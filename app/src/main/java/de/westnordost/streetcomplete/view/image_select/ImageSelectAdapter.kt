@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.view.image_select
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +18,8 @@ class ImageSelectAdapter<T>(private val maxSelectableIndices: Int = -1) :
         }
 
     private val _selectedIndices = mutableSetOf<Int>()
-    var selectedIndices get() = _selectedIndices.toList()
+    var selectedIndices
+        get() = _selectedIndices.toList()
         set(value) {
             _selectedIndices.clear()
             _selectedIndices.addAll(value)
@@ -31,6 +33,9 @@ class ImageSelectAdapter<T>(private val maxSelectableIndices: Int = -1) :
     interface OnItemSelectionListener {
         fun onIndexSelected(index: Int)
         fun onIndexDeselected(index: Int)
+        fun onLongPress(index: Int, drawable: Drawable?) {
+
+        }
     }
 
     fun indexOf(item: T): Int = items.indexOfFirst { it.value == item }
@@ -45,7 +50,13 @@ class ImageSelectAdapter<T>(private val maxSelectableIndices: Int = -1) :
         val view = LayoutInflater.from(parent.context).inflate(cellLayoutId, parent, false)
         val holder = ItemViewHolder(view)
         holder.onClickListener = ::toggle
+        holder.onLongClickListener = ::longPress
         return holder
+    }
+
+    private fun longPress(index: Int, drawable: Drawable?) {
+        checkIndexRange(index)
+        listeners.forEach { it.onLongPress(index, drawable) }
     }
 
     fun isSelected(index: Int) = _selectedIndices.contains(index)
