@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
-    android:padding="16dp">
+    android:background="@android:color/transparent">
 
     <!-- Full-screen image in a container -->
     <LinearLayout
@@ -12,13 +12,37 @@
         android:layout_gravity="center"
         android:background="@drawable/bg_image_popup"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:paddingVertical="36dp">
+
+        <TextView
+            android:id="@+id/title"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/description"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" />
 
         <ImageView
             android:id="@+id/fullImage"
             android:layout_width="300dp"
             android:layout_height="400dp"
             android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/choice_name"
+            android:textStyle="bold"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp" />
     </LinearLayout>
 
     <!-- Close button on top right corner -->
@@ -29,8 +53,8 @@
         android:layout_gravity="end|top"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:focusable="true"
         android:contentDescription="@string/close_image"
+        android:focusable="true"
         android:padding="8dp"
         android:src="@drawable/ic_close_24dp" />
 

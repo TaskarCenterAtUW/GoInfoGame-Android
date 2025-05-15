@@ -1799,4 +1799,5 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="change_map_layer">Change map layer</string>
     <string name="add_new_feature">Add new feature</string>
     <string name="quest_multi_select_quest">Select %1$s : %2$d %3$s selected</string>
+    <string name="quest_choice_image">quest choice image</string>
 </resources>

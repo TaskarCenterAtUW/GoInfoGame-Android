@@ -28,7 +28,7 @@
         android:background="@drawable/image_select_cell"
         />
 
-    <TextView
+    <de.westnordost.streetcomplete.view.image_select.OutlinedTextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
