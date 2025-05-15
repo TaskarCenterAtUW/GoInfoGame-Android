@@ -171,6 +171,12 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
 
+    var isBiometricEnabled : Boolean
+        set(value) {
+            prefs.putBoolean(BIOMETRIC_ENABLED, value)
+        }
+        get() = prefs.getBoolean(BIOMETRIC_ENABLED, true)
+
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
@@ -382,5 +388,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
         private const val REFRESH_TOKEN_EXPIRY_TIME = "refresh.token.expiry.time"
         private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
+
+        private const val BIOMETRIC_ENABLED = "biometric.enabled"
     }
 }

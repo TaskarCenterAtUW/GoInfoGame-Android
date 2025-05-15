@@ -1,7 +1,11 @@
 package de.westnordost.streetcomplete.screens.workspaces
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,44 +39,59 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.contentType
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
+import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
+import de.westnordost.streetcomplete.util.creds_manager.EnvCredentials
+import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
 import de.westnordost.streetcomplete.util.location.FineLocationManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
+@SuppressLint("MissingPermission")
 @Composable
 fun LoginScreen(
     viewModel: WorkspaceViewModel,
     environmentManager: EnvironmentManager,
     preferences: Preferences,
     navController: NavHostController,
+    activity: AppCompatActivity,
     modifier: Modifier = Modifier,
 ) {
-
-    val navToNextPage = {
-        navController.navigate("workspace-list")
-    }
     val loginState by viewModel.loginState.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
+    val selectedEnvironment = remember { mutableStateOf(environmentManager.currentEnvironment) }
 
+    val email = remember { mutableStateOf("") }
+    val password = remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val navToNextPage = {
+        val fineLocationManager = FineLocationManager(context) { location ->
+            // Do something with the location
+            viewModel.fetchWorkspaces(location)
+        }
+        fineLocationManager.getCurrentLocation()
+        navController.navigate("workspace-list")
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         when (loginState) {
             is WorkspaceLoginState.Init -> {
@@ -92,27 +114,33 @@ fun LoginScreen(
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
-                val fineLocationManager = FineLocationManager(LocalContext.current) { location ->
-                    // Do something with the location
-                    viewModel.fetchWorkspaces(location)
-                }
-                if (ActivityCompat.checkSelfPermission(
-                        LocalContext.current,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    return
-                }
-                fineLocationManager.getCurrentLocation()
-                navToNextPage()
-            }
 
-            else -> {
-                isLoading = false
-                snackBarMessage = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val creds = SecureCredentialStorage.getCredential(
+                        context,
+                        selectedEnvironment.value.name
+                    )
+                    if (creds != null) {
+                        if (creds.username == email.value && creds.password == password.value) {
+                            navToNextPage()
+                        } else {
+                            ShowSaveCredsDialog(
+                                email.value, password.value,
+                                selectedEnvironment.value.name, activity, navToNextPage
+                            )
+                        }
+                    } else {
+                        ShowSaveCredsDialog(
+                            email.value, password.value,
+                            selectedEnvironment.value.name, activity, navToNextPage
+                        )
+                    }
+                } else {
+                    navToNextPage()
+                }
             }
         }
-        LoginCard(viewModel, modifier, preferences, environmentManager)
+        LoginCard(viewModel, email, password, selectedEnvironment, activity,preferences, modifier)
 
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -130,63 +158,164 @@ fun LoginScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.M)
+@Composable
+fun ShowSaveCredsDialog(
+    username: String, password: String, environment: String,
+    activity: AppCompatActivity,
+    navToNextPage: () -> Unit
+) {
+    // Example Compose dialog to save credentials
+    val openDialog = remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    if (openDialog.value) {
+        AlertDialog(
+            onDismissRequest = { openDialog.value = false },
+            title = { Text("Save Credentials?") },
+            text = { Text("Would you like to save your credentials securely on this device?") },
+            confirmButton = {
+                Button(onClick = {
+                    coroutineScope.launch {
+                        val authenticated = authenticateWithBiometrics(
+                            context,
+                            activity = activity
+                        )
+                        if (!authenticated){
+                            Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT)
+                                .show()
+                        } else {
+                            val credsMap = SecureCredentialStorage.loadCredentials(context)
+                            credsMap[environment] = EnvCredentials(username, password)
+                            SecureCredentialStorage.saveCredentials(
+                                context,
+                                credsMap
+                            )
+                            navToNextPage()
+                        }
+                    }
+                    openDialog.value = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { openDialog.value = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
 @Composable
 fun LoginCard(
     viewModel: WorkspaceViewModel,
-    modifier: Modifier = Modifier,
+    email: MutableState<String>,
+    password: MutableState<String>,
+    selectedEnvironment: MutableState<Environment>,
+    activity: AppCompatActivity,
     preferences: Preferences,
-    environmentManager: EnvironmentManager
+    modifier: Modifier = Modifier,
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    var selectedEnvironment = remember { mutableStateOf(environmentManager.currentEnvironment) }
-
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier.padding(24.dp)
         ) {
-
+            val context = LocalContext.current
             Text(text = "Welcome!", style = MaterialTheme.typography.titleLarge)
             Text(
                 text = "Please login to your account!",
                 style = MaterialTheme.typography.bodyMedium
             )
             TextField(
-                value = email, onValueChange = { newText -> email = newText },
+                value = email.value, onValueChange = { newText -> email.value = newText },
                 label = {
-                    Text(text = stringResource(id = R.string.email, selectedEnvironment.value.name.lowercase()))
+                    Text(
+                        text = stringResource(
+                            id = R.string.email,
+                            selectedEnvironment.value.name.lowercase()
+                        )
+                    )
                 },
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Next
                 ),
-                modifier = Modifier.padding(vertical = 16.dp).semantics {
-                    contentType = ContentType.EmailAddress
-                    contentDescription = "Email for ${selectedEnvironment.value.name.lowercase()}"
-                }
+                modifier = Modifier
+                    .padding(vertical = 16.dp)
             )
             TextField(
-                value = password,
-                onValueChange = { newText -> password = newText },
+                value = password.value,
+                onValueChange = { newText -> password.value = newText },
                 label = {
-                    Text(text = stringResource(id = R.string.password, selectedEnvironment.value.name.lowercase()))
+                    Text(
+                        text = stringResource(
+                            id = R.string.password,
+                            selectedEnvironment.value.name.lowercase()
+                        )
+                    )
                 },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     imeAction = ImeAction.Done
                 ),
-                modifier = Modifier.padding(vertical = 16.dp).semantics {
-                    contentType = ContentType.Password
-                    contentDescription = "Password for ${selectedEnvironment.value.name.lowercase()}"
-                },
+                modifier = Modifier
+                    .padding(vertical = 16.dp)
             )
 
             Button(onClick = {
-                viewModel.loginToWorkspace(email, password)
+                if (email.value.isEmpty() || password.value.isEmpty()) {
+                    Toast.makeText(
+                        context,
+                        "Please enter email and password",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@Button
+                }
+                viewModel.loginToWorkspace(email.value, password.value)
             }, modifier = Modifier.padding(vertical = 24.dp)) {
-                Text(text = "Sign In")
+                Text(text = "Sign In", style = MaterialTheme.typography.titleMedium)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Arrow Icon",
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                val coroutineScope = rememberCoroutineScope()
+                val creds = SecureCredentialStorage.getCredential(
+                    LocalContext.current,
+                    selectedEnvironment.value.name
+                )
+                if (creds != null) {
+                    Button(onClick = {
+                        coroutineScope.launch {
+                            val authenticated = authenticateWithBiometrics(
+                                context,
+                                activity = activity
+                            )
+                            if (!authenticated){
+                                Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT)
+                                    .show()
+                            } else {
+                                email.value = creds.username
+                                password.value = creds.password
+                                viewModel.loginToWorkspace(email.value, password.value)
+                            }
+                        }
+
+                    }, modifier = Modifier.padding(vertical = 24.dp)) {
+                        Icon(
+                            painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
+                            contentDescription = "Fingerprint Icon",
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
+                        Text(text = "Sign In with Device Authentication", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
             }
             EnvironmentDropdownMenu(viewModel = viewModel, selectedEnvironment, modifier)
         }
@@ -217,7 +346,10 @@ fun EnvironmentDropdownMenu(
 
             ) {
                 Text(text = selectedEnvironment.value.name)
-                Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Dropdown Icon")
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Dropdown Icon"
+                )
             }
         }
 
@@ -236,4 +368,29 @@ fun EnvironmentDropdownMenu(
         }
     }
 }
+
+@OptIn(ExperimentalCoroutinesApi::class)
+suspend fun authenticateWithBiometrics(
+    context: Context,
+    activity: FragmentActivity
+): Boolean = suspendCancellableCoroutine { continuation ->
+    val biometricHelper = BiometricHelper(
+        context = context,
+        activity = activity,
+        onSuccess = {
+            if (continuation.isActive) {
+                continuation.resume(true) {}
+            }
+        },
+        onFailure = {
+            if (continuation.isActive) {
+                continuation.resume(false) {}
+            }
+            Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT).show()
+        }
+    )
+
+    biometricHelper.authenticate()
+}
+
 

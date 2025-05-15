@@ -24,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,15 +38,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
+import de.westnordost.streetcomplete.ui.theme.titleLarge
+import de.westnordost.streetcomplete.ui.theme.titleSmall
 import java.util.Locale
+import kotlin.reflect.KFunction1
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewModel) {
+fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    settingsViewModel: SettingsViewModel,
+    preferences: Preferences,
+    onBiometricEnabledChanged: (Boolean) -> Unit
+) {
     val userName by viewModel.userName.collectAsState()
     val userAvatarFile by viewModel.userAvatarFile.collectAsState()
 
@@ -60,6 +71,8 @@ fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewMo
 
     val daysActive by viewModel.daysActive.collectAsState()
     val datesActive by viewModel.datesActive.collectAsState()
+
+    val biometricEnabled = remember { mutableStateOf(preferences.isBiometricEnabled) }
 
     Column(
         modifier = Modifier
@@ -123,6 +136,20 @@ fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewMo
                 Text(stringResource(R.string.user_logout).uppercase())
             }
         }
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp)
+        ) {
+            Text(text = "Enable biometric authentication")
+            Switch(biometricEnabled.value, { enabled ->
+                biometricEnabled.value = enabled
+                onBiometricEnabledChanged(enabled)
+            })
+        }
+
+
 
         Divider()
 

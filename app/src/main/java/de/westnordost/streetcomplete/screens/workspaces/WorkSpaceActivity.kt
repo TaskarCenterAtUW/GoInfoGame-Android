@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -59,7 +60,7 @@ import de.westnordost.streetcomplete.util.location.FineLocationManager
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 
-class WorkSpaceActivity : ComponentActivity() {
+class WorkSpaceActivity : AppCompatActivity() {
 
     private val preferences: Preferences by inject()
     private val environmentManager: EnvironmentManager by inject()
@@ -205,7 +206,7 @@ class WorkSpaceActivity : ComponentActivity() {
                             MyAlertDialog(
                                 showDialog = showDialog,
                                 onDismiss = { showDialog = false })
-                            AppNavigator(innerPadding, preferences, environmentManager)
+                            AppNavigator(innerPadding, preferences, environmentManager, this)
                         }
                     }
                 }
@@ -224,6 +225,7 @@ fun AppNavigator(
     innerPadding: PaddingValues,
     preferences: Preferences,
     environmentManager: EnvironmentManager,
+    activity: AppCompatActivity,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -262,6 +264,7 @@ fun AppNavigator(
                 environmentManager,
                 preferences,
                 navController,
+                activity,
                 modifier = modifier.padding(innerPadding)
             )
         }
