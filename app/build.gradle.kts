@@ -51,6 +51,7 @@ android {
             // don't use proguard-android-optimize.txt, it is too aggressive, it is more trouble than it is worth
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             testProguardFile("test-proguard-rules.pro")
+            buildConfigField("String", "AZURE_SUBSCRIPTION_KEY", "\"6wbzwfhewBRYD9m9sQ1ZIZXCMYISpv4bvIgdH8uWIdKKzBzN3umfJQQJ99BEAC8vTInXtnAjAAAgAZMP4U23\"")
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")

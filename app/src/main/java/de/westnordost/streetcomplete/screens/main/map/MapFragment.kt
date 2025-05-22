@@ -290,25 +290,7 @@ open class MapFragment :
                 }
             }
 
-            private fun tileToQuadKey(x: Int, y: Int, z: Int): String {
-                val quadKey = StringBuilder()
-                for (i in z downTo 1) {
-                    var bit = 0
-                    val mask = 1 shl (i - 1)
-                    if (x and mask != 0) bit += 1
-                    if (y and mask != 0) bit += 2
-                    quadKey.append(bit)
-                }
-                return quadKey.toString()
-            }
-
-            private fun preprocessUrl(url: String, quadKey: String): String {
-                return url.replace("{quadkey}", quadKey)
-            }
-
             override fun startRequest(url: String, cb: HttpHandler.Callback): Any {
-                Log.d("MapFragmentTangram", "Requesting $url")
-
                 val coordinates: Map<String, Int>? = extractTileCoordinates(url)
 
                 if (coordinates != null) {
@@ -317,13 +299,8 @@ open class MapFragment :
                     val z: Int? = coordinates["z"]
 
                     if (x != null && y != null && z != null) {
-                        val quadKey = tileToQuadKey(x, y, z)
-                        val newUrl =
-                            "https://ecn.t1.tiles.virtualearth.net/tiles/a{quadkey}.jpeg?g=14885"
-                        val modifiedUrl = preprocessUrl(newUrl, quadKey)
-                        Log.d("MapFragmentTangram", modifiedUrl)
-                        Log.d("MapFragmentTangram", url)
-                        return super.startRequest(modifiedUrl, cb)
+                        val azureMapsUrl = getAzureMapsUrl(z, x, y)
+                        return super.startRequest(azureMapsUrl, cb)
                     } else {
                         return super.startRequest(url, cb)
                     }
@@ -331,6 +308,13 @@ open class MapFragment :
                     return super.startRequest(url, cb)
 
                 }
+            }
+
+            private fun getAzureMapsUrl(z: Int?, x: Int?, y: Int?): String {
+                val azureMapsUrl =
+                    "https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.imagery&zoom=$z&x=$x&y=$y&" +
+                        "subscription-key=${BuildConfig.AZURE_SUBSCRIPTION_KEY}"
+                return azureMapsUrl
             }
         }
     }
