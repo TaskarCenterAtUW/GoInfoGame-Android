@@ -16,9 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -184,7 +182,7 @@ class WorkSpaceActivity : ComponentActivity() {
                                             contentDescription = "Star Icon",
                                             modifier = Modifier
                                                 .padding(16.dp)
-                                                .size(36.dp,36.dp)
+                                                .size(36.dp, 36.dp)
                                                 .clickable {
                                                     val intent = Intent(
                                                         this@WorkSpaceActivity,

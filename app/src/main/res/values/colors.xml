@@ -78,4 +78,5 @@
     <!-- for fading out images -->
     <color name="fade_out">#fff</color>
     <color name="fade_out_transparent">#00FFFFFF</color>
+    <color name="popup_background_color">#FFFFFF</color>
 </resources>
