@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.ChipDefaults
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FilterChip
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,14 +21,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import com.google.android.material.chip.Chip
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.logs.LogLevel
 import de.westnordost.streetcomplete.ui.theme.AppTheme
-import de.westnordost.streetcomplete.ui.theme.logDebug
-import de.westnordost.streetcomplete.ui.theme.logError
-import de.westnordost.streetcomplete.ui.theme.logInfo
-import de.westnordost.streetcomplete.ui.theme.logVerbose
-import de.westnordost.streetcomplete.ui.theme.logWarning
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -45,7 +39,7 @@ fun LogLevelFilterChips(
     ) {
         Text(
             text = stringResource(R.string.label_log_level),
-            style = MaterialTheme.typography.caption
+            style = MaterialTheme.typography.labelMedium
         )
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -67,7 +61,6 @@ fun LogLevelFilterChips(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LogLevelFilterChip(
     logLevel: LogLevel,
@@ -80,24 +73,19 @@ fun LogLevelFilterChip(
         selected = selected,
         onClick = onClick,
         modifier = modifier,
-        colors = ChipDefaults.filterChipColors(
-            contentColor = logLevel.color,
-            selectedContentColor = MaterialTheme.colors.surface,
-            selectedLeadingIconColor = MaterialTheme.colors.surface,
-            selectedBackgroundColor = logLevel.color,
-        ),
+        label = {
+            Text(logLevel.name)
+        },
         leadingIcon = { Icon(painterResource(icon), null) },
-    ) {
-        Text(logLevel.name)
-    }
+    )
 }
 
 val LogLevel.color: Color @Composable get() = when (this) {
-    LogLevel.VERBOSE -> MaterialTheme.colors.logVerbose
-    LogLevel.DEBUG -> MaterialTheme.colors.logDebug
-    LogLevel.INFO -> MaterialTheme.colors.logInfo
-    LogLevel.WARNING -> MaterialTheme.colors.logWarning
-    LogLevel.ERROR -> MaterialTheme.colors.logError
+    LogLevel.VERBOSE -> MaterialTheme.colorScheme.tertiary
+    LogLevel.DEBUG -> MaterialTheme.colorScheme.tertiary
+    LogLevel.INFO -> MaterialTheme.colorScheme.tertiary
+    LogLevel.WARNING -> MaterialTheme.colorScheme.tertiary
+    LogLevel.ERROR -> MaterialTheme.colorScheme.error
 }
 
 @PreviewLightDark

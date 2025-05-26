@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.Divider
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,10 +31,11 @@ import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.dialogs.TextInputDialog
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 
 /** Shows a screen in which the user can select which preset of quest selections he wants to use. */
-@Composable fun QuestPresetsScreen(
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuestPresetsScreen(
     viewModel: QuestPresetsViewModel,
     onClickBack: () -> Unit,
 ) {
@@ -48,7 +50,9 @@ import de.westnordost.streetcomplete.ui.theme.titleMedium
             QuestPresetsList(viewModel)
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_add_24dp),

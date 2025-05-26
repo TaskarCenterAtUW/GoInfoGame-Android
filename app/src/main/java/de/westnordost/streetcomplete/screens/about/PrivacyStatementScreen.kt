@@ -7,10 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +25,7 @@ import de.westnordost.streetcomplete.util.html.tryParseHtml
 import de.westnordost.streetcomplete.util.ktx.openUri
 
 /** Shows the privacy statement */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrivacyStatementScreen(
     vectorTileProvider: VectorTileProvider,
@@ -47,7 +49,7 @@ fun PrivacyStatementScreen(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
-                style = MaterialTheme.typography.body2,
+                style = MaterialTheme.typography.bodyMedium,
                 onClickLink = { context.openUri(it) }
             )
         }

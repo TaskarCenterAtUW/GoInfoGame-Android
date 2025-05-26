@@ -1,8 +1,8 @@
 package de.westnordost.streetcomplete.ui.util
 
 import android.annotation.SuppressLint
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -120,7 +120,7 @@ private fun AnnotatedString.Builder.append(element: HtmlElementNode) {
         "span" ->
             SpanStyle()
         "a" -> {
-            val linkColor = MaterialTheme.colors.secondary
+            val linkColor = MaterialTheme.colorScheme.secondary
             SpanStyle(textDecoration = TextDecoration.Underline, color = linkColor)
         }
         else -> null

@@ -12,12 +12,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,6 +43,7 @@ import de.westnordost.streetcomplete.util.ktx.now
 import kotlinx.datetime.LocalDateTime
 
 /** Shows the app logs */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsScreen(
     viewModel: LogsViewModel,
@@ -114,11 +116,11 @@ private fun FiltersCounter(count: Int, modifier: Modifier = Modifier) {
         modifier = modifier
             .size(16.dp)
             .background(
-                color = MaterialTheme.colors.secondaryVariant,
+                color = MaterialTheme.colorScheme.secondary,
                 shape = CircleShape
             ),
         textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.caption
+        style = MaterialTheme.typography.labelMedium
     )
 }
 

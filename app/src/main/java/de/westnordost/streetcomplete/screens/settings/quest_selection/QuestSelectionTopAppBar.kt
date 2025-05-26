@@ -4,16 +4,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.primarySurface
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +33,7 @@ import de.westnordost.streetcomplete.ui.common.SearchIcon
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 
 /** Top bar and search field for the quest selection screen */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable fun QuestSelectionTopAppBar(
     currentPresetName: String,
     onClickBack: () -> Unit,
@@ -51,8 +52,7 @@ import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colors.primarySurface,
-        elevation = AppBarDefaults.TopAppBarElevation,
+        color = MaterialTheme.colorScheme.surface,
     ) {
         Column {
             TopAppBar(
@@ -65,7 +65,6 @@ import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
                         onClickSearch = { setShowSearch(!showSearch) }
                     )
                 },
-                elevation = 0.dp
             )
             ExpandableSearchField(
                 expanded = showSearch,
@@ -74,11 +73,7 @@ import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
                 onSearchChange = onSearchChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = TextFieldDefaults.textFieldColors(
-                    textColor = MaterialTheme.colors.onSurface,
-                    backgroundColor = MaterialTheme.colors.surface
-                )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
     }
@@ -96,7 +91,7 @@ private fun QuestSelectionTitle(currentPresetName: String) {
             text = stringResource(R.string.pref_subtitle_quests_preset_name, currentPresetName),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -118,18 +113,20 @@ private fun QuestSelectionTopBarActions(
             expanded = showActionsDropdown,
             onDismissRequest = { showActionsDropdown = false },
         ) {
-            DropdownMenuItem(onClick = {
+            DropdownMenuItem(
+                text = {
+                    Text(stringResource(R.string.action_reset))
+                },
+                onClick = {
                 showResetDialog = true
                 showActionsDropdown = false
-            }) {
-                Text(stringResource(R.string.action_reset))
-            }
-            DropdownMenuItem(onClick = {
+            })
+            DropdownMenuItem(text = {
+                Text(stringResource(R.string.action_deselect_all))
+            }, onClick = {
                 showDeselectAllDialog = true
                 showActionsDropdown = false
-            }) {
-                Text(stringResource(R.string.action_deselect_all))
-            }
+            })
         }
     }
 

@@ -3,8 +3,8 @@ package de.westnordost.streetcomplete.screens.user.profile
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.ui.ktx.pxToDp
 import de.westnordost.streetcomplete.ui.theme.GrassGreen
-import de.westnordost.streetcomplete.ui.theme.surfaceContainer
 import de.westnordost.streetcomplete.util.ktx.systemTimeNow
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -39,8 +38,8 @@ fun DatesActiveTable(
     datesActiveRange: Int,
     modifier: Modifier = Modifier,
     boxColor: Color = GrassGreen,
-    emptyBoxColor: Color = MaterialTheme.colors.surfaceContainer,
-    textColor: Color = contentColorFor(MaterialTheme.colors.surface),
+    emptyBoxColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    textColor: Color = contentColorFor(MaterialTheme.colorScheme.surface),
     cellPadding: Dp = 2.dp,
     cellCornerRadius: Dp = 6.dp,
 ) {
@@ -55,7 +54,7 @@ fun DatesActiveTable(
 
         val textMeasurer = rememberTextMeasurer(12)
 
-        val textStyle = MaterialTheme.typography.body2
+        val textStyle = MaterialTheme.typography.bodyMedium
         val symbols = DateFormatSymbols.getInstance()
         val weekdays = Array(7) { symbols.shortWeekdays[1 + (it + 1) % 7] }
         val months = symbols.shortMonths

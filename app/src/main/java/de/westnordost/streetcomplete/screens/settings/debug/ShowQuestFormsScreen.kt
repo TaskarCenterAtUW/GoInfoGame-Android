@@ -11,15 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.Divider
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.primarySurface
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
@@ -72,6 +71,7 @@ fun ShowQuestFormsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShowQuestFormsTopAppBar(
     onClickBack: () -> Unit,
@@ -88,15 +88,13 @@ private fun ShowQuestFormsTopAppBar(
 
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colors.primarySurface,
-        elevation = AppBarDefaults.TopAppBarElevation,
+        color = MaterialTheme.colorScheme.primary,
     ) {
         Column {
             TopAppBar(
                 title = { Text("Show Quest Forms") },
                 navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
-                actions = { IconButton(onClick = { setShowSearch(!showSearch) }) { SearchIcon() } },
-                elevation = 0.dp
+                actions = { IconButton(onClick = { setShowSearch(!showSearch) }) { SearchIcon() } }
             )
             ExpandableSearchField(
                 expanded = showSearch,
@@ -105,11 +103,7 @@ private fun ShowQuestFormsTopAppBar(
                 onSearchChange = onSearchChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = TextFieldDefaults.textFieldColors(
-                    textColor = MaterialTheme.colors.onSurface,
-                    backgroundColor = MaterialTheme.colors.surface
-                )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
     }
@@ -143,7 +137,7 @@ private fun QuestList(
                     }
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.body1
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             }

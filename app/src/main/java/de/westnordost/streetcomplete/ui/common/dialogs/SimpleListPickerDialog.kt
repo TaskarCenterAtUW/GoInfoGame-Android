@@ -9,15 +9,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.Divider
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -53,7 +51,7 @@ fun <T> SimpleListPickerDialog(
     getItemName: (@Composable (T) -> String) = { it.toString() },
     width: Dp? = null,
     shape: Shape = MaterialTheme.shapes.medium,
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     properties: DialogProperties = DialogProperties()
 ) {
@@ -83,8 +81,7 @@ fun <T> SimpleListPickerDialog(
             Column(Modifier.padding(vertical = 24.dp)) {
                 if (title != null) {
                     CompositionLocalProvider(
-                        LocalContentAlpha provides ContentAlpha.high,
-                        LocalTextStyle provides MaterialTheme.typography.subtitle1
+                        LocalTextStyle provides MaterialTheme.typography.bodySmall
                     ) {
                         Column(Modifier.padding(start = 24.dp, bottom = 16.dp, end = 24.dp)) {
                             title()
@@ -93,8 +90,7 @@ fun <T> SimpleListPickerDialog(
                 }
                 if (state.canScrollBackward) Divider()
                 CompositionLocalProvider(
-                    LocalContentAlpha provides ContentAlpha.high,
-                    LocalTextStyle provides MaterialTheme.typography.body1
+                    LocalTextStyle provides MaterialTheme.typography.bodyLarge
                 ) {
                     LazyColumn(state = state) {
                         items(items) { item ->
@@ -107,7 +103,7 @@ fun <T> SimpleListPickerDialog(
                             ) {
                                 Text(
                                     text = getItemName(item),
-                                    style = MaterialTheme.typography.body1,
+                                    style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.weight(1f),
                                 )
                                 RadioButton(

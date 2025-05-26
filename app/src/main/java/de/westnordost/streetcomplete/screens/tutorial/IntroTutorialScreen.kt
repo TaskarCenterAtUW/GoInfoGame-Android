@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -32,8 +32,6 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
 import de.westnordost.streetcomplete.ui.common.Pin
-import de.westnordost.streetcomplete.ui.theme.headlineLarge
-import de.westnordost.streetcomplete.ui.theme.titleLarge
 import kotlinx.coroutines.launch
 
 /** Shows a short tutorial for first-time users */
@@ -201,12 +199,12 @@ private fun IntroTutorialStep0Text() {
 private fun IntroTutorialStep1Text() {
     Text(
         text = stringResource(R.string.tutorial_intro),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center
     )
     Text(
         text = stringResource(R.string.no_location_permission_warning),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
         modifier = Modifier.padding(top = 24.dp)
     )
@@ -216,7 +214,7 @@ private fun IntroTutorialStep1Text() {
 private fun IntroTutorialStep2Text() {
     Text(
         text = stringResource(R.string.tutorial_solving_quests),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
     )
 }
@@ -225,7 +223,7 @@ private fun IntroTutorialStep2Text() {
 private fun IntroTutorialStep3Text() {
     Text(
         text = stringResource(R.string.tutorial_stay_safe),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
     )
     Text(

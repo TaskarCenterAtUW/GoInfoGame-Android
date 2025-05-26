@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -21,15 +21,13 @@ import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.user.achievements.Link
 import de.westnordost.streetcomplete.data.user.achievements.LinkCategory
-import de.westnordost.streetcomplete.ui.theme.titleLarge
-import de.westnordost.streetcomplete.ui.theme.titleSmall
 
 @Composable
 fun LinkCategoryItem(category: LinkCategory, modifier: Modifier = Modifier) {
     Column {
         Spacer(modifier = modifier.padding(top = 8.dp))
         Text(stringResource(category.title), style = MaterialTheme.typography.titleLarge)
-        Text(stringResource(category.description), style = MaterialTheme.typography.body1)
+        Text(stringResource(category.description), style = MaterialTheme.typography.bodyLarge)
     }
 }
 
@@ -66,7 +64,7 @@ fun LinkItem(link: Link, onClickLink: (url: String) -> Unit, modifier: Modifier 
         Column {
             Text(link.title, style = MaterialTheme.typography.titleSmall)
             if (link.description != null) {
-                Text(stringResource(link.description), style = MaterialTheme.typography.body2)
+                Text(stringResource(link.description), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

@@ -9,14 +9,12 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -26,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.ui.theme.titleSmall
 
 @Composable
 fun PreferenceCategory(
@@ -40,11 +37,11 @@ fun PreferenceCategory(
             Text(
                 text = title,
                 modifier = modifier.padding(top = 12.dp, start = 16.dp, end = 8.dp, bottom = 8.dp),
-                color = MaterialTheme.colors.secondary,
+                color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
         }
-        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body1) {
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyLarge) {
             Column {
                 content()
             }
@@ -83,7 +80,6 @@ fun Preference(
             if (value != null) {
                 CompositionLocalProvider(
                     LocalTextStyle provides LocalTextStyle.current.copy(textAlign = TextAlign.End),
-                    LocalContentAlpha provides ContentAlpha.medium
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(
@@ -98,8 +94,7 @@ fun Preference(
         }
         if (description != null) {
             CompositionLocalProvider(
-                LocalTextStyle provides MaterialTheme.typography.body2,
-                LocalContentAlpha provides ContentAlpha.medium
+                LocalTextStyle provides MaterialTheme.typography.bodyMedium,
             ) {
                 Text(
                     text = description,

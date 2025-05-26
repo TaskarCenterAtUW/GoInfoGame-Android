@@ -25,10 +25,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -90,7 +89,7 @@ fun TutorialScreen(
                     .background(
                         Brush.verticalGradient(
                             .0f to Color.Transparent,
-                            .5f to MaterialTheme.colors.surface
+                            .5f to MaterialTheme.colorScheme.surface
                         )
                     )
                     .padding(bottom = 16.dp)
@@ -215,13 +214,13 @@ private fun PagerIndicator(
     modifier: Modifier = Modifier
 ) {
     val alpha by animateFloatAsState(
-        if (isCurrentPage) ContentAlpha.high else ContentAlpha.disabled
+        if (isCurrentPage) 1.0f else 0.7f
     )
     Box(
         modifier
             .padding(4.dp)
             .alpha(alpha)
-            .background(color = MaterialTheme.colors.onSurface, shape = CircleShape)
+            .background(color = MaterialTheme.colorScheme.onSurface, shape = CircleShape)
             .size(12.dp)
             .clickable { onClick() }
     )
