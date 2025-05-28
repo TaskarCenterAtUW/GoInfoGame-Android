@@ -855,13 +855,15 @@ class MainFragment :
     //region Buttons - Functionality for the buttons in the main view
 
     fun onClickMainMenu() {
-        MainMenuDialog(
-            requireContext(),
-            if (controlsViewModel.isTeamMode.value) controlsViewModel.indexInTeam else null,
-            this::onClickDownload,
-            controlsViewModel::enableTeamMode,
-            controlsViewModel::disableTeamMode
-        ).show()
+        if (!activity?.isFinishing!! && !activity?.isDestroyed!!) {
+            MainMenuDialog(
+                requireContext(),
+                if (controlsViewModel.isTeamMode.value) controlsViewModel.indexInTeam else null,
+                this::onClickDownload,
+                controlsViewModel::enableTeamMode,
+                controlsViewModel::disableTeamMode
+            ).show()
+        }
     }
 
     private fun onClickDownload() {

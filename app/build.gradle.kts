@@ -247,6 +247,9 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:2.0.9")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha07")
+
 }
 
 /** Localizations that should be pulled from POEditor */
