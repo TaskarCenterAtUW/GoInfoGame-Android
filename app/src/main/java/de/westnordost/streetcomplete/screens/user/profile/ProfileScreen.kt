@@ -16,10 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,10 +43,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
-import de.westnordost.streetcomplete.ui.theme.titleLarge
-import de.westnordost.streetcomplete.ui.theme.titleSmall
 import java.util.Locale
-import kotlin.reflect.KFunction1
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
 @OptIn(ExperimentalLayoutApi::class)
@@ -140,7 +138,9 @@ fun ProfileScreen(
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 16.dp)
         ) {
             Text(text = "Enable biometric authentication")
             Switch(biometricEnabled.value, { enabled ->
@@ -151,7 +151,7 @@ fun ProfileScreen(
 
 
 
-        Divider()
+        HorizontalDivider()
 
         // Statistics
 
