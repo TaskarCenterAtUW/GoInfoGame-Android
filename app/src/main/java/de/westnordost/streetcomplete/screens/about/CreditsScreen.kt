@@ -10,11 +10,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.IconButton
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -29,11 +30,11 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.BulletSpan
 import de.westnordost.streetcomplete.ui.common.HtmlText
-import de.westnordost.streetcomplete.ui.theme.titleLarge
 import de.westnordost.streetcomplete.util.ktx.openUri
 import java.util.Locale
 
 /** Shows the credits of this app */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditsScreen(
     viewModel: CreditsViewModel,
@@ -148,7 +149,7 @@ private fun CreditsSection(
             text = title,
             style = MaterialTheme.typography.titleLarge
         )
-        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.body2) {
+        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 content()
             }

@@ -8,5 +8,5 @@
     <!-- Border -->
     <stroke
         android:width="2dp"
-        android:color="@color/traffic_black" /> <!-- Change to any color you want -->
+        android:color="@color/text" /> <!-- Change to any color you want -->
 </shape>

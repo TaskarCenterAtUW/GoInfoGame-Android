@@ -437,7 +437,7 @@ class MainActivity :
             questTypes.add(index to AddGenericLong(item))
             //break
         }
-        questTypes.add(questTypes.size to OsmNoteQuestType)
+//        questTypes.add(questTypes.size to OsmNoteQuestType)
         questTypeRegistry.addItem(questTypes)
 
         allEditTypes.registries.clear()

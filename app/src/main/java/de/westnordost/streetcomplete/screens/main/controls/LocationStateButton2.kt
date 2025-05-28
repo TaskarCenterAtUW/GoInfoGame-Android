@@ -2,8 +2,8 @@ package de.westnordost.streetcomplete.screens.main.controls
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,7 +47,7 @@ fun LocationStateButton(
         Icon(
             painter = painterResource(iconResource),
             contentDescription = stringResource(R.string.map_btn_gps_tracking),
-            tint = if (isFollowing) MaterialTheme.colors.secondary else Color.Black
+            tint = if (isFollowing) MaterialTheme.colorScheme.secondary else Color.Black
         )
     }
 }

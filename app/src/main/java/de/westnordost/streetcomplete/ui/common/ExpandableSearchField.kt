@@ -2,10 +2,10 @@ package de.westnordost.streetcomplete.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.IconButton
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldColors
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -21,8 +21,7 @@ fun ExpandableSearchField(
     onDismiss: () -> Unit,
     search: TextFieldValue,
     onSearchChange: (TextFieldValue) -> Unit,
-    modifier: Modifier = Modifier,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
+    modifier: Modifier = Modifier
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -40,7 +39,6 @@ fun ExpandableSearchField(
                 else onSearchChange(TextFieldValue())
             }) { ClearIcon() } },
             singleLine = true,
-            colors = colors
         )
     }
 }

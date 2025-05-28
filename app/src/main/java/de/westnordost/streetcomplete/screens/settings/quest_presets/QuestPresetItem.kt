@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +56,7 @@ fun QuestPresetItem(
     ) {
         Text(
             text = name,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .weight(0.1f)
@@ -142,32 +142,32 @@ private fun QuestPresetDropdownMenu(
         modifier = modifier
     ) {
         if (!isDefaultPreset) {
-            DropdownMenuItem(onClick = { onDismissRequest(); onRename() }) {
+            DropdownMenuItem(onClick = { onDismissRequest(); onRename() }, text = {
                 TextWithIcon(
                     text = stringResource(R.string.quest_presets_rename),
                     painter = painterResource(R.drawable.ic_edit_24dp)
                 )
-            }
+            })
         }
-        DropdownMenuItem(onClick = { onDismissRequest(); onDuplicate() }) {
+        DropdownMenuItem(onClick = { onDismissRequest(); onDuplicate() }, text = {
             TextWithIcon(
                 text = stringResource(R.string.quest_presets_duplicate),
                 painter = painterResource(R.drawable.ic_content_copy_24dp)
             )
-        }
-        DropdownMenuItem(onClick = { onDismissRequest(); onShare() }) {
+        })
+        DropdownMenuItem(onClick = { onDismissRequest(); onShare() }, text = {
             TextWithIcon(
                 text = stringResource(R.string.quest_presets_share),
                 painter = painterResource(R.drawable.ic_share_24dp)
             )
-        }
+        })
         if (!isDefaultPreset) {
-            DropdownMenuItem(onClick = { onDismissRequest(); onDelete() }) {
+            DropdownMenuItem(onClick = { onDismissRequest(); onDelete() }, text = {
                 TextWithIcon(
                     text = stringResource(R.string.quest_presets_delete),
                     painter = painterResource(R.drawable.ic_delete_24dp)
                 )
-            }
+            })
         }
     }
 }

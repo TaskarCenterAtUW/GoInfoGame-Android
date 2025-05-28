@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,6 @@ import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.quests.seating.AddSeating
 import de.westnordost.streetcomplete.quests.tactile_paving.AddTactilePavingBusStop
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 
 /** List of quest types to individually enable or disable or reorder them */
 @Composable
@@ -43,7 +42,7 @@ fun QuestSelectionList(
         //      single place that could have a scrollbar
         LazyColumn {
             itemsIndexed(items, key = { _, it -> it.questType.name+ Math.random() }) { index, item ->
-                Column(Modifier.background(MaterialTheme.colors.surface)) {
+                Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
                     if (index > 0) Divider()
                     QuestSelectionItem(
                         item = item,

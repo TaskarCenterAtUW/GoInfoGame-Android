@@ -6,25 +6,21 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,19 +33,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
-import de.westnordost.streetcomplete.screens.MainActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
-import de.westnordost.streetcomplete.ui.theme.headlineLarge
-import de.westnordost.streetcomplete.ui.theme.titleLarge
-import de.westnordost.streetcomplete.ui.theme.titleSmall
-import de.westnordost.streetcomplete.util.ktx.openUri
 import java.util.Locale
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
@@ -106,7 +95,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewMo
                             R.string.unsynced_quests_description,
                             unsyncedChangesCount
                         ),
-                        style = MaterialTheme.typography.body2
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -126,9 +115,10 @@ fun ProfileScreen(viewModel: ProfileViewModel, settingsViewModel: SettingsViewMo
 //                Spacer(Modifier.width(8.dp))
 //                Text(stringResource(R.string.osm_profile).uppercase())
 //            }
-            OutlinedButton(onClick = { viewModel.logOutUser()
+            OutlinedButton(onClick = {
+                viewModel.logOutUser()
                 settingsViewModel.deleteCache()
-            finishAndLaunchNewActivity(context)
+                finishAndLaunchNewActivity(context)
             }) {
                 Text(stringResource(R.string.user_logout).uppercase())
             }

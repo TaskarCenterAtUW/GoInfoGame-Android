@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -38,8 +38,6 @@ import de.westnordost.streetcomplete.data.user.achievements.Achievement
 import de.westnordost.streetcomplete.data.user.achievements.achievements
 import de.westnordost.streetcomplete.screens.user.links.LazyLinksColumn
 import de.westnordost.streetcomplete.ui.theme.AppTheme
-import de.westnordost.streetcomplete.ui.theme.headlineSmall
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 import de.westnordost.streetcomplete.ui.util.backgroundWithPadding
 import de.westnordost.streetcomplete.util.ktx.openUri
 
@@ -98,13 +96,13 @@ private fun ContentWithIconPortraitOrLandscape(
 
         val dialogModifier = modifier
             .backgroundWithPadding(
-                color = MaterialTheme.colors.surface,
+                color = MaterialTheme.colorScheme.surface,
                 padding = backgroundPadding,
                 shape = MaterialTheme.shapes.medium
             )
             .padding(24.dp)
 
-        val contentColor = contentColorFor(MaterialTheme.colors.surface)
+        val contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             if (isLandscape) {
                 Row(
@@ -150,7 +148,7 @@ private fun AchievementDetails(
             Text(
                 text = stringResource(description, arg),
                 modifier = Modifier.padding(bottom = 16.dp),
-                style = MaterialTheme.typography.body2
+                style = MaterialTheme.typography.bodyMedium
             )
         }
         val unlockedLinks = achievement.unlockedLinks[level].orEmpty()

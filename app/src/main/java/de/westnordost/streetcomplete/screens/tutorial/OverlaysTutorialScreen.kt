@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.screens.main.controls.MapButton
 import de.westnordost.streetcomplete.screens.user.achievements.AnimatedTadaShine
-import de.westnordost.streetcomplete.ui.theme.headlineLarge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -228,7 +227,7 @@ private fun OverlaysTutorialStepIntroText() {
     )
     Text(
         text = stringResource(R.string.overlays_tutorial_intro),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier.padding(top = 24.dp),
         textAlign = TextAlign.Center,
     )
@@ -238,7 +237,7 @@ private fun OverlaysTutorialStepIntroText() {
 private fun OverlaysTutorialStepDisplayText() {
     Text(
         text = stringResource(R.string.overlays_tutorial_display),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
     )
 }
@@ -247,7 +246,7 @@ private fun OverlaysTutorialStepDisplayText() {
 private fun OverlaysTutorialStepEditText() {
     Text(
         text = stringResource(R.string.overlays_tutorial_edit),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
     )
 }

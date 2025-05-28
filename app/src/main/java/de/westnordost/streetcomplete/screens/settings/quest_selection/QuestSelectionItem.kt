@@ -11,10 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Checkbox
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +41,7 @@ fun QuestSelectionItem(
     displayCountry: String,
     modifier: Modifier = Modifier
 ) {
-    val alpha = if (!item.selected) ContentAlpha.disabled else ContentAlpha.high
+    val alpha = if (!item.selected) 0.5f else 1f
 
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
@@ -66,7 +65,7 @@ fun QuestSelectionItem(
             Text(
                 text = title,
                 modifier = Modifier.alpha(alpha),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (!item.enabledInCurrentCountry) {
                 DisabledHint(stringResource(R.string.questList_disabled_in_country, displayCountry))
@@ -92,8 +91,8 @@ fun QuestSelectionItem(
 private fun DisabledHint(text: String) {
     Text(
         text = text,
-        modifier = Modifier.alpha(ContentAlpha.medium),
-        style = MaterialTheme.typography.body2,
+        modifier = Modifier.alpha(0.7f),
+        style = MaterialTheme.typography.bodyMedium,
         fontStyle = FontStyle.Italic,
     )
 }

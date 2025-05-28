@@ -22,6 +22,15 @@ fun ImageView.setImage(image: Image?) {
         is ImageUrl -> this.load(image.url){
             placeholder(R.drawable.blank_big)
             error(R.drawable.blank_big)
+            listener(
+                onError = { _, throwable ->
+                    Log.w("ImageView", "Failed to load image from URL: ${image.url}", throwable.throwable)
+                    setImageResource(R.drawable.blank_big)
+                },
+                onSuccess = { _, _ ->
+                    Log.w("ImageView", "Success to load image from URL: ${image.url}")
+                }
+            )
         }
         null -> setImageDrawable(null)
     }

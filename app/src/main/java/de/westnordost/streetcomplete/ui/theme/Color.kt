@@ -1,10 +1,7 @@
 package de.westnordost.streetcomplete.ui.theme
 
-import androidx.compose.material.Colors
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 /* Colors as they could be found on (illustrations of) traffic signs. */
@@ -38,40 +35,16 @@ val GrassGreen = Color(0xff80b158)
 val GrassGray = Color(0xff888888)
 val LeafGreen = Color(0xff006a00)
 
-val LightColors = lightColors(
+val LightColors = lightColorScheme(
     primary = Color(0xff4141ba),
-    primaryVariant = Color(0xff3939a3),
     secondary = Color(0xffD14000),
-    secondaryVariant = Color(0xffF44336),
     onPrimary = Color.White,
     onSecondary = Color.White
 )
 
-val DarkColors = darkColors(
+val DarkColors = darkColorScheme(
     primary = Color(0xff4141ba),
-    primaryVariant = Color(0xff3939a3),
     secondary = Color(0xffff6600),
-    secondaryVariant = Color(0xffF44336),
     onPrimary = Color.White,
     onSecondary = Color.White
 )
-
-val Colors.surfaceContainer @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xffdddddd) else Color(0xff222222)
-
-// use lighter tones (200) for increased contrast with dark background
-
-val Colors.logVerbose @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xff666666) else Color(0xff999999)
-
-val Colors.logDebug @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xff2196f3) else Color(0xff90caf9)
-
-val Colors.logInfo @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xff4caf50) else Color(0xffa5d6a7)
-
-val Colors.logWarning @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xffff9800) else Color(0xffffcc80)
-
-val Colors.logError @ReadOnlyComposable @Composable get() =
-    if (isLight) Color(0xfff44336) else Color(0xffef9a9a)

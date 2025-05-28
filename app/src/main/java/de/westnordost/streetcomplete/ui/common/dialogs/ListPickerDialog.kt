@@ -7,15 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.Divider
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +47,7 @@ fun <T> ListPickerDialog(
     width: Dp? = null,
     height: Dp? = null,
     shape: Shape = MaterialTheme.shapes.medium,
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     properties: DialogProperties = DialogProperties()
 ) {
@@ -67,8 +65,7 @@ fun <T> ListPickerDialog(
         title = title,
         content = {
             CompositionLocalProvider(
-                LocalContentAlpha provides ContentAlpha.high,
-                LocalTextStyle provides MaterialTheme.typography.body1
+                LocalTextStyle provides MaterialTheme.typography.bodyLarge
             ) {
                 if (state.canScrollBackward) Divider()
                 LazyColumn(state = state) {
@@ -82,7 +79,7 @@ fun <T> ListPickerDialog(
                         ) {
                             Text(
                                 text = getItemName(item),
-                                style = MaterialTheme.typography.body1,
+                                style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.weight(1f),
                             )
                             RadioButton(
