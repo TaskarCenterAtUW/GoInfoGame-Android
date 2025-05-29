@@ -29,7 +29,7 @@ enum class Environment(
 }
 
 class EnvironmentManager(val preferences: Preferences) {
-    var currentEnvironment: Environment = Environment.STAGE
+    var currentEnvironment: Environment = Environment.PROD
         get() {
             val name = preferences.environment
             return Environment.valueOf(name)
