@@ -57,6 +57,7 @@ import de.westnordost.streetcomplete.screens.measure.arModule
 import de.westnordost.streetcomplete.screens.settings.settingsModule
 import de.westnordost.streetcomplete.screens.user.userScreenModule
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getSelectedLocales
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.AndroidLogger
@@ -140,7 +141,7 @@ class StreetCompleteApplication : Application() {
                 workspaceModule
             )
         }
-
+        FirebaseAnalyticsHelper.init(this)
         setLoggerInstances()
 
         // Force logout users who are logged in with OAuth 1.0a, they need to re-authenticate with OAuth 2

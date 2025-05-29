@@ -10,6 +10,7 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -146,6 +147,10 @@ class WorkspaceViewModelImpl(
             response.let {
                 preferences.workspaceUserName =
                     "${response.username} \n ${response.firstName} ${response.lastName}"
+                preferences.workspaceUserId = response.id
+                preferences.workspaceUserId?.let {
+                    FirebaseAnalyticsHelper.setUserId(it)
+                }
             }
         }
     }

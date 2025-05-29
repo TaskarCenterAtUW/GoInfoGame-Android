@@ -8,6 +8,7 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("plugin.compose") version "2.0.0"
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -251,6 +252,8 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha07")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }
 
 /** Localizations that should be pulled from POEditor */

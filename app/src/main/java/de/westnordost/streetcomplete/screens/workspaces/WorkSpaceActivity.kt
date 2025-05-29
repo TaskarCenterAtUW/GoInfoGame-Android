@@ -56,6 +56,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.AppTheme
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
@@ -235,6 +236,9 @@ fun AppNavigator(
 
     if (preferences.workspaceLogin) {
 
+        preferences.workspaceUserId?.let {
+            FirebaseAnalyticsHelper.setUserId(it)
+        }
         if (preferences.refreshTokenExpiryTime != 0L &&
             preferences.refreshTokenExpiryTime < System.currentTimeMillis()
         ) {
