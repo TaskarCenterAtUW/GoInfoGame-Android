@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,7 +42,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -140,7 +138,7 @@ fun LoginScreen(
                 }
             }
         }
-        LoginCard(viewModel, email, password, selectedEnvironment, activity,preferences, modifier)
+        LoginCard(viewModel, email, password, selectedEnvironment, activity, preferences, modifier)
 
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -181,7 +179,7 @@ fun ShowSaveCredsDialog(
                             context,
                             activity = activity
                         )
-                        if (!authenticated){
+                        if (!authenticated) {
                             Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT)
                                 .show()
                         } else {
@@ -200,7 +198,10 @@ fun ShowSaveCredsDialog(
                 }
             },
             dismissButton = {
-                Button(onClick = { openDialog.value = false }) {
+                Button(onClick = {
+                    openDialog.value = false
+                    navToNextPage()
+                }) {
                     Text("Cancel")
                 }
             }
@@ -297,8 +298,12 @@ fun LoginCard(
                                 context,
                                 activity = activity
                             )
-                            if (!authenticated){
-                                Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT)
+                            if (!authenticated) {
+                                Toast.makeText(
+                                    context,
+                                    "Failed to authenticate",
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             } else {
                                 email.value = creds.username
@@ -313,7 +318,10 @@ fun LoginCard(
                             contentDescription = "Fingerprint Icon",
                             modifier = Modifier.padding(end = 16.dp)
                         )
-                        Text(text = "Sign In with Device Authentication", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = "Sign In with Device Authentication",
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             }
