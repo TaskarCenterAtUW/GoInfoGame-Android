@@ -10,6 +10,7 @@ import com.russhwolf.settings.nullableString
 import com.russhwolf.settings.set
 import com.russhwolf.settings.string
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.util.ktx.putStringOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -120,7 +121,7 @@ class Preferences(private val prefs: ObservableSettings) {
             prefs.putStringOrNull(ENVIRONMENT,value)
         }
         get() =
-            prefs.getString(ENVIRONMENT,"STAGE")
+            prefs.getString(ENVIRONMENT,Environment.PROD.name)
 
     var workspaceRefreshToken : String?
         set(value) {

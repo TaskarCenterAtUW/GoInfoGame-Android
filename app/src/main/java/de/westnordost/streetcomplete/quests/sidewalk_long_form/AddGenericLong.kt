@@ -19,10 +19,10 @@ class AddGenericLong(val item: AddLongFormResponseItem) :
     OsmElementQuestType<List<LongFormQuest?>> {
     override val changesetComment = "Changes to ${item.elementType}"
     override val wikiLink = "Key:${item.elementType?.lowercase()}"
-    override val icon = when (item.elementType) {
-        "Sidewalks" -> R.drawable.ic_quest_sidewalk
-        "Crossings" -> R.drawable.ic_quest_pedestrian_crossing
-        "Kerb" -> R.drawable.ic_quest_kerb_type
+    override val icon = when (item.elementType?.lowercase()) {
+        "sidewalks" -> R.drawable.ic_quest_sidewalk
+        "crossings" -> R.drawable.ic_quest_pedestrian_crossing
+        "kerb" -> R.drawable.ic_quest_kerb_type
         else -> R.drawable.ic_quest_notes
     }
     override val achievements = listOf(PEDESTRIAN)
@@ -56,9 +56,9 @@ class AddGenericLong(val item: AddLongFormResponseItem) :
         tags["ext:gig_last_updated"] = currentDate
     }
 
-    override fun getTitle(tags: Map<String, String>) = when (item.elementType) {
-        "Sidewalks" -> R.string.quest_sidewalk_title
-        "Crossings" -> R.string.quest_crossing_title2
+    override fun getTitle(tags: Map<String, String>) = when (item.elementType?.lowercase()) {
+        "sidewalks" -> R.string.quest_sidewalk_title
+        "crossings" -> R.string.quest_crossing_title2
         else -> R.string.quest_kerb_title
     }
 

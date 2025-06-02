@@ -14,6 +14,7 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManag
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity.Companion.SHOW_LOGGED_OUT_ALERT
+import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.serialization.json.Json
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
@@ -40,7 +41,13 @@ class GIGOsmConnection(
     ): T? {
         var connection: HttpURLConnection? = null
         try {
+            // Log the time taken for the request
+            val startTime = System.currentTimeMillis()
             connection = sendRequest(call, method, authenticate, writer)
+            val endTime = System.currentTimeMillis()
+            val duration = endTime - startTime
+            // Log the request duration
+            Log.d("GIGOsmConnection", "Request to $call took $duration ms")
             handleResponseCode(connection)
 
             return if (reader != null) handleResponse(connection, reader)

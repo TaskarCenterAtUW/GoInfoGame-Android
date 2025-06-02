@@ -171,6 +171,7 @@ dependencies {
     // Jetpack Compose Previews
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
