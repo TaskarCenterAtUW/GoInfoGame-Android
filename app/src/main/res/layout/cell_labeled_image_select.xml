@@ -1,47 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:padding="2dp"
-                android:background="?android:attr/selectableItemBackground"
-    >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:padding="2dp">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
+        android:adjustViewBounds="true"
         android:background="@drawable/black_image_border"
-        android:scaleType="fitXY"
-        tools:src="@drawable/surface_asphalt"
-        android:adjustViewBounds="true"/>
+        android:scaleType="centerCrop"
+        tools:src="@drawable/surface_asphalt" />
 
     <View
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_alignBottom="@+id/imageView"
-        android:layout_alignEnd="@+id/imageView"
         android:layout_alignStart="@+id/imageView"
         android:layout_alignTop="@+id/imageView"
-        android:background="@drawable/image_select_cell"
-        />
+        android:layout_alignEnd="@+id/imageView"
+        android:layout_alignBottom="@+id/imageView"
+        android:background="@drawable/image_select_cell" />
 
     <de.westnordost.streetcomplete.view.image_select.OutlinedTextView
         android:id="@+id/textView"
+        style="@style/ImageSelectLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignStart="@+id/imageView"
         android:layout_alignEnd="@+id/imageView"
         android:layout_alignBottom="@+id/imageView"
         android:layout_centerHorizontal="true"
-        android:maxLines="5"
         android:ellipsize="end"
-        style="@style/ImageSelectLabel"
-        tools:text="@string/quest_surface_value_asphalt"
+        android:maxLines="5"
         android:padding="8dp"
-        />
+        tools:text="@string/quest_surface_value_asphalt" />
 
 
 </RelativeLayout>
