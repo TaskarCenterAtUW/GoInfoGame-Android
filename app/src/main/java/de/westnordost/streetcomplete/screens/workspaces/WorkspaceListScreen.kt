@@ -20,7 +20,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,9 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.MainActivity
-import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 
 @Composable
 fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
@@ -152,14 +150,15 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 
 fun finishAndLaunchNewActivity(
     context: Context,
-    addLongFormResponseItems: List<AddLongFormResponseItem>,
+    addLongFormResponseItems: List<Elements>,
 ) {
     val activity = context as? Activity
     activity?.let {
-        val intent = Intent(it, MainActivity::class.java)
-        intent.putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
+        val intent = Intent(it, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+            putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
+        }
         it.startActivity(intent)
-        it.finish()
     }
 }
 

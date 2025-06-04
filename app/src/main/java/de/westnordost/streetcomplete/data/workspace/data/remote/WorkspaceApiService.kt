@@ -5,7 +5,8 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -22,6 +23,10 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import java.nio.channels.UnresolvedAddressException
 
 class WorkspaceApiService(
@@ -48,7 +53,7 @@ class WorkspaceApiService(
             return responseBody
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
-        } catch (e : UnresolvedAddressException){
+        } catch (e: UnresolvedAddressException) {
             throw Exception("Please check your internet connection")
         } catch (e: Exception) {
             throw Exception(e.message)
@@ -72,7 +77,7 @@ class WorkspaceApiService(
         }
     }
 
-    suspend fun getLongFormForWorkspace(workspaceId: Int): List<AddLongFormResponseItem> {
+    suspend fun getLongFormForWorkspace(workspaceId: Int): List<Elements> {
         try {
             val response =
                 httpClient.get("${environmentManager.currentEnvironment.baseUrl}/${workspaceId}/quests/long")
@@ -80,9 +85,27 @@ class WorkspaceApiService(
             if (response.status == HttpStatusCode.NoContent) {
                 throw Exception("Failed. Please configure long form for the workspace $workspaceId")
             }
-            val responseBody = response.body<List<AddLongFormResponseItem>>()
-            return responseBody
+            val text = response.bodyAsText()
+            val jsonElement = Json.decodeFromString<JsonElement>(text)
 
+            val json = Json {
+                ignoreUnknownKeys = true
+            }
+            return when {
+
+                jsonElement is JsonObject && "version" in jsonElement -> {
+                    val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
+                    wrapper.elements
+                }
+
+                jsonElement is JsonArray -> {
+                    json.decodeFromJsonElement(jsonElement)
+                }
+
+                else -> {
+                    throw SerializationException("Unexpected JSON structure for long form")
+                }
+            }
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: SerializationException) {
             throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")

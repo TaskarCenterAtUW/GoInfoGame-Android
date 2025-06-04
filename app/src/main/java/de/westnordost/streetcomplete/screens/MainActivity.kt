@@ -36,7 +36,6 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.ImageUploadServerException
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
-import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestType
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
@@ -48,7 +47,7 @@ import de.westnordost.streetcomplete.data.urlconfig.UrlConfigController
 import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.data.visiblequests.QuestPresetsSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.MainFragment
 import de.westnordost.streetcomplete.screens.main.messages.MessagesContainerFragment
 import de.westnordost.streetcomplete.screens.tutorial.OverlaysTutorialFragment
@@ -416,11 +415,11 @@ class MainActivity :
     private fun doLongForm() {
         // val processSampleJson = ProcessSampleJson()
         // val result = processSampleJson.processSampleJson()
-        val result: List<AddLongFormResponseItem>? =
+        val result: List<Elements>? =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent?.getParcelableArrayListExtra(
                     "LONG_FORM",
-                    AddLongFormResponseItem::class.java
+                    Elements::class.java
                 )
             } else {
                 intent?.getParcelableArrayListExtra("LONG_FORM")

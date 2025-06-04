@@ -10,7 +10,7 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.AddLongFormResponseItem
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -129,7 +129,7 @@ class WorkspaceViewModelImpl(
         initialValue = WorkspaceLongFormState.loading()
     )
 
-    private fun emitLongFormResponse(longFormResponse: List<AddLongFormResponseItem>): WorkspaceLongFormState {
+    private fun emitLongFormResponse(longFormResponse: List<Elements>): WorkspaceLongFormState {
         try {
             for (item in longFormResponse) {
                 item.questQuery?.toElementFilterExpression()
