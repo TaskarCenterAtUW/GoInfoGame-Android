@@ -80,6 +80,13 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getBoolean(WORKSPACE_SHOW_LONG_FORM, false)
 
+    var workspaceUserId : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_USER_ID, value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_USER_ID)
+
     var workspaceLogin : Boolean
         set(value) {
             prefs[WORKSPACE_LOGIN] = value
@@ -389,7 +396,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
         private const val REFRESH_TOKEN_EXPIRY_TIME = "refresh.token.expiry.time"
         private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
-
+        private const val WORKSPACE_USER_ID = "workspace.user.id"
         private const val BIOMETRIC_ENABLED = "biometric.enabled"
     }
 }

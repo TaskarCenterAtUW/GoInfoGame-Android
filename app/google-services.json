@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "370130474707",
+    "project_id": "goinfogame",
+    "storage_bucket": "goinfogame.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370130474707:android:e6d008697d8905a8fba626",
+        "android_client_info": {
+          "package_name": "com.tcatuw.goinfo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeBf3fU2SqVkoycUE-AHounPlkmoWqlCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370130474707:android:e9080c877cb052c9fba626",
+        "android_client_info": {
+          "package_name": "com.tcatuw.goinfo.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeBf3fU2SqVkoycUE-AHounPlkmoWqlCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

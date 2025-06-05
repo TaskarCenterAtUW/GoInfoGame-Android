@@ -12,6 +12,7 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import org.koin.core.component.KoinComponent
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -69,6 +70,8 @@ class AddGenericLong(val item: Elements) :
         val date = java.time.LocalDate.now(ZoneId.of("UTC"))
         val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         tags["ext:gig_last_updated"] = currentDate
+
+        item.elementType?.let { FirebaseAnalyticsHelper.logQuestAnswered(it) }
     }
 
     override fun getTitle(tags: Map<String, String>) = when (item.elementType?.lowercase()) {

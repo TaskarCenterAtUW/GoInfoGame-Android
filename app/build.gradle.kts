@@ -8,6 +8,8 @@ plugins {
     kotlin("plugin.serialization")
     kotlin("plugin.compose") version "2.0.0"
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -250,6 +252,12 @@ dependencies {
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha07")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
+    debugImplementation("com.google.firebase:firebase-appdistribution:16.0.0-beta15")
 
 }
 
