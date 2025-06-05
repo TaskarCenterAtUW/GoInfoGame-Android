@@ -10,8 +10,8 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
-import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -60,7 +60,8 @@ class WorkspaceViewModelImpl(
         _selectedWorkspace.value = workspaceId
         preferences.workspaceId = workspaceId
     }
-    private var userLocation : Location? = null
+
+    private var userLocation: Location? = null
     private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
     override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
 
@@ -114,10 +115,14 @@ class WorkspaceViewModelImpl(
     override fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
         emit(WorkspaceLongFormState.loading())
         workspaceRepository.getLongFormForWorkspace(workspaceId)
-            .catch { e -> emit(WorkspaceLongFormState.error(e.message))
-                _selectedWorkspace.value = null}
-            .collect { longFormResponse -> emit(emitLongFormResponse(longFormResponse))
-                _selectedWorkspace.value = null}
+            .catch { e ->
+                emit(WorkspaceLongFormState.error(e.message))
+                _selectedWorkspace.value = null
+            }
+            .collect { longFormResponse ->
+                emit(emitLongFormResponse(longFormResponse))
+                _selectedWorkspace.value = null
+            }
 //            .collect { longFormResponse -> if (isValidLongForm(longFormResponse)) {
 //                emit(WorkspaceLongFormState.success(longFormResponse))
 //            } else {
@@ -143,15 +148,16 @@ class WorkspaceViewModelImpl(
 
     override fun getUserInfo(email: String) {
         viewModelScope.launch {
-            val response = workspaceRepository.getUserInfo(email)
-            response.let {
-                preferences.workspaceUserName =
-                    "${response.username} \n ${response.firstName} ${response.lastName}"
-                preferences.workspaceUserId = response.id
-                preferences.workspaceUserId?.let {
-                    FirebaseAnalyticsHelper.setUserId(it)
+            workspaceRepository.getUserInfo(email)
+                .catch { }
+                .collect { response ->
+                    preferences.workspaceUserName =
+                        "${response.username} \n ${response.firstName} ${response.lastName}"
+                    preferences.workspaceUserId = response.id
+                    preferences.workspaceUserId?.let {
+                        FirebaseAnalyticsHelper.setUserId(it)
+                    }
                 }
-            }
         }
     }
 

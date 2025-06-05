@@ -254,6 +254,9 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
+    debugImplementation("com.google.firebase:firebase-appdistribution:16.0.0-beta15")
+
 }
 
 /** Localizations that should be pulled from POEditor */
