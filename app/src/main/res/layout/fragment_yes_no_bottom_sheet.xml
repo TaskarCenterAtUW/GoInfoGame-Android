@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:layout_alignParentBottom="true"
     android:layout_gravity="bottom"
-    android:background="@color/button_white"
+    android:background="@color/popup_background_color"
     android:orientation="vertical"
     android:padding="16dp">
 
