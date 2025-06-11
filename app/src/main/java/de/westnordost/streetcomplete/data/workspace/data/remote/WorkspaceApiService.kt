@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoRespons
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
+import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -18,6 +19,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
@@ -40,19 +42,24 @@ class WorkspaceApiService(
     class User(val username: String, val password: String)
 
     suspend fun getWorkspaces(location: Location): List<Workspace> {
+        val url = "${environmentManager.currentEnvironment.baseUrl}/mine"
+
         try {
-            val response =
-                httpClient.get("${environmentManager.currentEnvironment.baseUrl}/mine") {
-                    //Add query params
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                get(url) {
                     parameter("lat", location.latitude)
                     parameter("lon", location.longitude)
                     parameter("radius", 20000)
                     parameter("gig_only", true)
                 }
+            }
+
             val responseBody = response.body<List<Workspace>>()
             return responseBody
-
-            // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: UnresolvedAddressException) {
             throw Exception("Please check your internet connection")
         } catch (e: Exception) {
@@ -61,26 +68,35 @@ class WorkspaceApiService(
     }
 
     suspend fun getTDEIUserDetails(emailId: String): UserInfoResponse {
-        try {
-            val response =
-                httpClient.get(environmentManager.currentEnvironment.tdeiUrl) {
-                    parameter("user_name", emailId)
-//                    headers {
-//                        append("Authorization", "Bearer ${preferences.workspaceToken}")
-//                    }
-                }
-            return response.body<UserInfoResponse>()
+        val url = environmentManager.currentEnvironment.tdeiUrl
 
-            // if OSM server does not return valid JSON, it is the server's fault, hence
+        try {
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                get(url) {
+                    parameter("user_name", emailId)
+                }
+            }
+            return response.body<UserInfoResponse>()
         } catch (e: Exception) {
             throw Exception(e.message)
         }
     }
 
     suspend fun getLongFormForWorkspace(workspaceId: Int): List<Elements> {
+        val url = "${environmentManager.currentEnvironment.baseUrl}/${workspaceId}/quests/long"
+
         try {
-            val response =
-                httpClient.get("${environmentManager.currentEnvironment.baseUrl}/${workspaceId}/quests/long")
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                get(url)
+            }
 
             if (response.status == HttpStatusCode.NoContent) {
                 throw Exception("Failed. Please configure long form for the workspace $workspaceId")
@@ -115,13 +131,19 @@ class WorkspaceApiService(
     }
 
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
+        val url = environmentManager.currentEnvironment.loginUrl + "/authenticate"
         try {
-            val response =
-                httpClient.post(environmentManager.currentEnvironment.loginUrl + "/authenticate") {
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                post(url) {
                     val user = User(username.trim(), password.trim())
                     setBody(user)
                     contentType(ContentType.Application.Json)
                 }
+            }
 
             if (response.status == HttpStatusCode.OK) {
                 val loginResponse = response.body<LoginResponse>()
@@ -148,13 +170,19 @@ class WorkspaceApiService(
     }
 
     suspend fun refreshToken(refreshToken: String): LoginResponse {
+        val url = environmentManager.currentEnvironment.loginUrl + "/refresh-token"
         try {
-            val response =
-                httpClient.post(environmentManager.currentEnvironment.loginUrl + "/refresh-token") {
+
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                post(url) {
                     setBody(refreshToken)
                     contentType(ContentType.Application.Json)
                 }
-
+            }
             if (response.status == HttpStatusCode.OK) {
                 val loginResponse = response.body<LoginResponse>()
                 return loginResponse

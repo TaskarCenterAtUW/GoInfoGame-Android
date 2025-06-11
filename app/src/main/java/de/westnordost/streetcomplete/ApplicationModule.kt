@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity.Compan
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
+import de.westnordost.streetcomplete.util.logs.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -95,7 +96,11 @@ val appModule = module {
                 }
             }
             install(Logging) {
-                logger = Logger.DEFAULT
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        Log.d("KtorClient", message) // Avoid System.err
+                    }
+                }
                 level = LogLevel.ALL
             }
             defaultRequest {
