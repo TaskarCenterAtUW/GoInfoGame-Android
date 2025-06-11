@@ -5,13 +5,14 @@ import com.mapzen.tangram.geometry.Point
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.screens.main.map.tangram.KtMapController
 import de.westnordost.streetcomplete.screens.main.map.tangram.toLngLat
+import java.util.Collections
 
 /** Takes care of displaying pins on the map, e.g. quest pins or pins for recent edits */
 class PinsMapComponent(private val ctrl: KtMapController) {
 
     private val pinsLayer: MapData = ctrl.addDataLayer(PINS_LAYER)
 
-    private val pins = mutableSetOf<Pin>()
+    private val pins = Collections.synchronizedSet(mutableSetOf<Pin>())
 
     /** Shows/hides the pins */
     var isVisible: Boolean
@@ -23,18 +24,24 @@ class PinsMapComponent(private val ctrl: KtMapController) {
 
     /** Show given pins. Previously shown pins are replaced with these.  */
     fun set(pins: Collection<Pin>) {
-        this.pins.clear()
-        this.pins.addAll(pins)
+        synchronized(this.pins) {
+            this.pins.clear()
+            this.pins.addAll(pins)
+        }
         pinsLayer.setFeatures(pins.map { it.tangramPoint })
     }
 
     fun getPins(): Collection<Pin> {
-        return pins
+        return synchronized(pins) {
+            pins.toList()
+        }
     }
 
     /** Clear pins */
     fun clear() {
-        pins.clear()
+        synchronized(pins) {
+            pins.clear()
+        }
         pinsLayer.clear()
     }
 

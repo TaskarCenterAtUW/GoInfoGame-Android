@@ -90,7 +90,7 @@ open class MapFragment :
                     )
                 }
             } else {
-                binding.mapTileProviderLink.text = "© Bing Maps"
+                binding.mapTileProviderLink.text = "© Azure Maps"
                 binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://blog.openstreetmap.org/2010/11/30/microsoft-imagery-details/") }
 
             }

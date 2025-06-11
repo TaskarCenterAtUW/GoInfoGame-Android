@@ -260,13 +260,10 @@ class QuestPinsManager(
     }
 
     fun updateAccessibilityOverlays() {
-        val pins = pinsMapComponent.getPins()
-
         val selectedPins = selectedPinsMapComponent.getPins()
         val parentView = mapView.parent as? ViewGroup ?: return
 
-        val pinsSnapshot =
-            synchronized(pins) { pins.toList() } // Copy to avoid concurrent modification
+        val pinsSnapshot = pinsMapComponent.getPins()
 
         parentView.post {
             parentView.children.toList()
