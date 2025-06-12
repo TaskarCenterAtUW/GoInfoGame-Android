@@ -39,7 +39,6 @@ import de.westnordost.streetcomplete.util.ktx.awaitLayout
 import de.westnordost.streetcomplete.util.ktx.openUri
 import de.westnordost.streetcomplete.util.ktx.setMargins
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
-import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.distanceTo
 import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
@@ -299,8 +298,8 @@ open class MapFragment :
                     val z: Int? = coordinates["z"]
 
                     if (x != null && y != null && z != null) {
-                        val azureMapsUrl = getAzureMapsUrl(z, x, y)
-                        return super.startRequest(azureMapsUrl, cb)
+                        val mapsUrl = getMapsUrl(z, x, y)
+                        return super.startRequest(mapsUrl, cb)
                     } else {
                         return super.startRequest(url, cb)
                     }
@@ -310,11 +309,10 @@ open class MapFragment :
                 }
             }
 
-            private fun getAzureMapsUrl(z: Int?, x: Int?, y: Int?): String {
-                val azureMapsUrl =
-                    "https://atlas.microsoft.com/map/tile?api-version=2024-04-01&tilesetId=microsoft.imagery&zoom=$z&x=$x&y=$y&" +
-                        "subscription-key=${BuildConfig.AZURE_SUBSCRIPTION_KEY}"
-                return azureMapsUrl
+            private fun getMapsUrl(z: Int?, x: Int?, y: Int?): String {
+                val mapsUrl =
+                    "https://waprovisoimg.centralindia.cloudapp.azure.com/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/$z/$y/$x.png"
+                return mapsUrl
             }
         }
     }

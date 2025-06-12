@@ -1,0 +1,70 @@
+{
+  "imageryLayers": [
+    {
+      "name": "NAIP 2023 Aerial Imagery",
+      "geographicLocation": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -124.848974,
+              24.396308
+            ],
+            [
+              -66.93457,
+              24.396308
+            ],
+            [
+              -66.93457,
+              49.384358
+            ],
+            [
+              -124.848974,
+              49.384358
+            ],
+            [
+              -124.848974,
+              24.396308
+            ]
+          ]
+        ]
+      },
+      "serverUrl": "https://naip.imagery.server.example.com/tiles/{z}/{x}/{y}.jpg",
+      "serverType": "XYZ",
+      "attribution": "Imagery courtesy USDA Farm Service Agency (2023)"
+    },
+    {
+      "name": "Hexagon 15cm Aerial Imagery",
+      "geographicLocation": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -180,
+              11.2489285
+            ],
+            [
+              90.0010715,
+              11.2489285
+            ],
+            [
+              90.0010715,
+              67.5010715
+            ],
+            [
+              -180,
+              67.5010715
+            ],
+            [
+              -180,
+              11.2489285
+            ]
+          ]
+        ]
+      },
+      "serverUrl": "https://wa-imagery.sidewalks.washington.edu/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/{z}/{y}/{x}.png",
+      "serverType": "tms",
+      "attribution": "Imagery courtesy Gig Aerial Imagery (2023)"
+    }
+  ]
+}
