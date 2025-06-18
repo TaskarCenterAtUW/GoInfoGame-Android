@@ -1801,6 +1801,9 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="quest_multi_select_quest">Select %1$s : %2$d %3$s selected</string>
     <string name="quest_choice_image">quest choice image</string>
     <string name="image">Image</string>
+    <string name="failed_to_load_imagery_list">Failed to load imagery list</string>
+    <string name="default_imagery">Default Imagery</string>
+    <string name="selected">Selected: %1$s</string>
     <string name="save_credentials">Save Credentials?</string>
     <string name="save_credentials_message">Would you like to securely save your credentials on this device? Your information will be protected using your device\'s security features.</string>
 </resources>

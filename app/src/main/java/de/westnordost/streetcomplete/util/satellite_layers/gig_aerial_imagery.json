@@ -1,70 +1,104 @@
-{
-  "imageryLayers": [
-    {
-      "name": "NAIP 2023 Aerial Imagery",
-      "geographicLocation": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              -124.848974,
-              24.396308
-            ],
-            [
-              -66.93457,
-              24.396308
-            ],
-            [
-              -66.93457,
-              49.384358
-            ],
-            [
-              -124.848974,
-              49.384358
-            ],
-            [
-              -124.848974,
-              24.396308
-            ]
-          ]
-        ]
-      },
-      "serverUrl": "https://naip.imagery.server.example.com/tiles/{z}/{x}/{y}.jpg",
-      "serverType": "XYZ",
-      "attribution": "Imagery courtesy USDA Farm Service Agency (2023)"
+[
+  {
+    "attribution": {
+      "required": true,
+      "text": "Hexagon Imagery",
+      "url": "https://hexagon.com/products/aerial-imagery"
     },
-    {
-      "name": "Hexagon 15cm Aerial Imagery",
-      "geographicLocation": {
-        "type": "Polygon",
-        "coordinates": [
+    "description": "Hexagon Imagery for Washington state in USA",
+    "end_date": "2024-12-21",
+    "extent": {
+      "max_zoom": 19,
+      "polygon": [
+        [
           [
-            [
-              -180,
-              11.2489285
-            ],
-            [
-              90.0010715,
-              11.2489285
-            ],
-            [
-              90.0010715,
-              67.5010715
-            ],
-            [
-              -180,
-              67.5010715
-            ],
-            [
-              -180,
-              11.2489285
-            ]
+            -124.84,
+            48.99
+          ],
+          [
+            -124.78,
+            47.46
+          ],
+          [
+            -124.70,
+            47.15
+          ],
+          [
+            -124.47,
+            46.95
+          ],
+          [
+            -124.15,
+            46.75
+          ],
+          [
+            -124.05,
+            46.28
+          ],
+          [
+            -124.05,
+            45.94
+          ],
+          [
+            -122.40,
+            45.94
+          ],
+          [
+            -122.30,
+            46.00
+          ],
+          [
+            -121.50,
+            45.67
+          ],
+          [
+            -120.50,
+            45.70
+          ],
+          [
+            -119.90,
+            46.05
+          ],
+          [
+            -118.99,
+            46.28
+          ],
+          [
+            -117.03,
+            46.34
+          ],
+          [
+            -117.04,
+            47.76
+          ],
+          [
+            -117.05,
+            49.00
+          ],
+          [
+            -118.70,
+            49.00
+          ],
+          [
+            -120.00,
+            49.00
+          ],
+          [
+            -122.76,
+            49.00
+          ],
+          [
+            -124.84,
+            48.99
           ]
         ]
-      },
-      "serverUrl": "https://wa-imagery.sidewalks.washington.edu/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/{z}/{y}/{x}.png",
-      "serverType": "tms",
-      "attribution": "Imagery courtesy Gig Aerial Imagery (2023)"
-    }
-  ]
-}
+      ]
+    },
+    "icon": "https://ichs-p-001.sitecorecontenthub.cloud/api/public/content/a-s-s-e-t---3-9-4-2-4-39424?v=ba59b6e9",
+    "id": "HX_IMG",
+    "name": "Hexagon Imagery",
+    "start_date": "2025-12-21",
+    "type": "tms",
+    "url": "https://waprovisoimg.centralindia.cloudapp.azure.com/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/{z}/{y}/{x}.png"
+  }
+]

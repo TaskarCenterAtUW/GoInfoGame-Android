@@ -40,6 +40,7 @@ import de.westnordost.streetcomplete.util.ktx.openUri
 import de.westnordost.streetcomplete.util.ktx.setMargins
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.math.distanceTo
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.delay
@@ -77,26 +78,49 @@ open class MapFragment :
         "layers.buildings.draw.buildings-outline-style.extrude" to "false"
     )
 
-    var showArielView: Boolean = false
+    var imagery : Imagery? = null
         set(value) {
-            sceneMapComponent?.isAerialView = sceneMapComponent?.isAerialView != true
             field = value
-            if (sceneMapComponent?.isAerialView != true) {
-                binding.mapTileProviderLink.text = vectorTileProvider.copyrightText
-                binding.mapTileProviderLink.setOnClickListener {
-                    showOpenUrlDialog(
-                        vectorTileProvider.copyrightLink
-                    )
-                }
-            } else {
-                binding.mapTileProviderLink.text = "© Azure Maps"
-                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://blog.openstreetmap.org/2010/11/30/microsoft-imagery-details/") }
-
-            }
+            sceneMapComponent?.isAerialView = value != null
+            handleAttribution(imagery)
             viewLifecycleScope.launch {
                 sceneMapComponent?.loadScene()
             }
         }
+
+    private fun handleAttribution(imagery: Imagery?) {
+        if (imagery == null){
+            binding.mapTileProviderLink.text = vectorTileProvider.copyrightText
+            binding.mapTileProviderLink.setOnClickListener {
+                showOpenUrlDialog(
+                    vectorTileProvider.copyrightLink
+                )
+            }
+        }else{
+            binding.mapTileProviderLink.text = imagery.attribution.text
+            binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog(imagery.attribution.url) }
+        }
+    }
+
+//    var showArielView: Boolean = false
+//        set(value) {
+//            sceneMapComponent?.isAerialView = sceneMapComponent?.isAerialView != true
+//            field = value
+//            if (sceneMapComponent?.isAerialView != true) {
+//                binding.mapTileProviderLink.text = vectorTileProvider.copyrightText
+//                binding.mapTileProviderLink.setOnClickListener {
+//                    showOpenUrlDialog(
+//                        vectorTileProvider.copyrightLink
+//                    )
+//                }
+//            } else {
+//                binding.mapTileProviderLink.text = "© Azure Maps"
+//                binding.mapTileProviderLink.setOnClickListener { showOpenUrlDialog("https://blog.openstreetmap.org/2010/11/30/microsoft-imagery-details/") }
+//            }
+//            viewLifecycleScope.launch {
+//                sceneMapComponent?.loadScene()
+//            }
+//        }
 
     var show3DBuildings: Boolean = true
         set(value) {
@@ -309,9 +333,19 @@ open class MapFragment :
                 }
             }
 
+            fun buildTileUrl(z: Int?, x: Int?, y: Int?): String {
+                if (imagery == null) {
+                    return ""
+                }
+                val template = imagery!!.url
+                return template
+                    .replace("{z}", z.toString())
+                    .replace("{x}", x.toString())
+                    .replace("{y}", y.toString())
+            }
+
             private fun getMapsUrl(z: Int?, x: Int?, y: Int?): String {
-                val mapsUrl =
-                    "https://waprovisoimg.centralindia.cloudapp.azure.com/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/$z/$y/$x.png"
+                val mapsUrl = buildTileUrl(z, x, y)
                 return mapsUrl
             }
         }

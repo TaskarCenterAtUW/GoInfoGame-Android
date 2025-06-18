@@ -10,11 +10,14 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.location.Location
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.AnyThread
@@ -27,6 +30,7 @@ import androidx.core.graphics.minus
 import androidx.core.graphics.toPointF
 import androidx.core.graphics.toRectF
 import androidx.core.os.bundleOf
+import androidx.core.view.get
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -34,6 +38,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.radiobutton.MaterialRadioButton
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
@@ -119,13 +125,17 @@ import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.location.LocationRequestFragment
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.area
 import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
 import de.westnordost.streetcomplete.util.math.enlargedBy
 import de.westnordost.streetcomplete.util.math.initialBearingTo
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
+import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.dialogs.RequestLoginDialog
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -179,6 +189,7 @@ class MainFragment :
     // rest
     ShowsGeometryMarkers {
 
+    private val imageryRepository: ImageryRepository by inject()
     private val visibleQuestsSource: VisibleQuestsSource by inject()
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
     private val notesSource: NotesWithEditsSource by inject()
@@ -220,7 +231,7 @@ class MainFragment :
     private val editHistoryController: EditHistoryController by inject()
 
     private var delayJob: Job? = null
-
+    private var selectedImagery: Imagery? = null
 
     interface Listener {
         fun onMapInitialized()
@@ -264,6 +275,15 @@ class MainFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewLifecycleScope.launch {
+            // load imagery list
+            try {
+                imageryRepository.getImageryList()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load imagery list", e)
+                context?.toast(R.string.failed_to_load_imagery_list)
+            }
+        }
         editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
 
         binding.mapControls.respectSystemInsets(View::setMargins)
@@ -272,10 +292,10 @@ class MainFragment :
         binding.locationPointerPin.setOnClickListener { onClickLocationPointer() }
 
         binding.compassView.setOnClickListener { onClickCompassButton() }
-        binding.layerChangeButton.setOnClickListener {
-            val mapFragment = mapFragment ?: return@setOnClickListener
-            mapFragment.showArielView = true
-        }
+//        binding.layerChangeButton.setOnClickListener {
+//            val mapFragment = mapFragment ?: return@setOnClickListener
+//            mapFragment.showArielView = true
+//        }
         binding.gpsTrackingButton.setOnClickListener {
             onClickTrackingButton()
         }
@@ -289,8 +309,9 @@ class MainFragment :
         binding.messagesButton.setOnClickListener { onClickMessagesButton() }
         binding.starsCounterView.setOnClickListener { onClickAnswersCounterView() }
         binding.overlaysButton.setOnClickListener {
-            val mapFragment = mapFragment ?: return@setOnClickListener
-            mapFragment.showArielView = true
+//            val mapFragment = mapFragment ?: return@setOnClickListener
+//            mapFragment.showArielView = true
+            context?.showImageryBottomSheet()
         }
         binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
@@ -487,7 +508,7 @@ class MainFragment :
     }
 
     override fun onLongPress(x: Float, y: Float) {
-        val point = createOffsetPoint(x,y,requireContext())
+        val point = createOffsetPoint(x, y, requireContext())
         val position = mapFragment?.getPositionAt(point) ?: return
         if (bottomSheetFragment != null || editHistoryFragment != null) return
 
@@ -1563,12 +1584,77 @@ class MainFragment :
         setIsFollowingPosition(false)
     }
 
-    //endregion
+    private fun Context.showImageryBottomSheet() {
+        val bottomSheetView = LayoutInflater.from(this)
+            .inflate(R.layout.bottom_sheet_imagery, null)
+
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
+        bottomSheetDialog.show()
+
+        val radioGroup = bottomSheetView.findViewById<RadioGroup>(R.id.radioGroupImagery)
+        val radioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
+            id = View.generateViewId()
+            text = context.getString(R.string.default_imagery)
+            tag = ""
+        }
+        radioGroup.addView(radioButton)
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val imageryList = imageryRepository.getImageryList()
+                imageryList.forEachIndexed { index, imagery ->
+                    val imageryRadioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
+                        id = View.generateViewId()
+                        text = imagery.name
+                        tag = imagery // store full object for later access
+                    }
+                    radioGroup.addView(imageryRadioButton)
+                }
+
+                if (selectedImagery == null){
+                    (radioGroup.getChildAt(0) as RadioButton).isChecked = true
+                }else{
+                    // Check the radio button that matches the selected imagery
+                    for (i in 0 until radioGroup.childCount) {
+                        val button = radioGroup.getChildAt(i) as RadioButton
+                        if (button.text == selectedImagery?.name) {
+                            button.isChecked = true
+                            break
+                        }
+                    }
+                }
+
+                radioGroup.setOnCheckedChangeListener { _, checkedId ->
+                    val selectedButton = bottomSheetView.findViewById<RadioButton>(checkedId)
+                    selectedImagery = if (selectedButton.tag == "") {
+                        null // Default imagery
+                    } else {
+                        selectedButton.tag as Imagery
+                    }
+                    mapFragment?.imagery = selectedImagery
+                    Toast.makeText(
+                        this@showImageryBottomSheet,
+                        getString(R.string.selected, selectedImagery?.name ?: getString(R.string.default_imagery)),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    bottomSheetDialog.dismiss()
+                }
+
+            } catch (e: Exception) {
+                Log.d("Error", e.message.toString())
+                Toast.makeText(
+                    this@showImageryBottomSheet,
+                    getString(R.string.failed_to_load_imagery_list),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
 
     companion object {
         private const val BOTTOM_SHEET = "bottom_sheet"
         private const val EDIT_HISTORY = "edit_history"
-
+        private val TAG = MainFragment::class.simpleName.toString()
         private const val TAG_LOCATION_REQUEST = "LocationRequestFragment"
     }
 }

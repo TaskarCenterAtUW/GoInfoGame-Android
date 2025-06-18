@@ -2,62 +2,85 @@ package de.westnordost.streetcomplete.util.satellite_layers
 
 
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 @Serializable
 data class Imagery(
     @SerialName("attribution")
-    val attribution: String,
-    @SerialName("geographicLocation")
-    val geographicLocation: GeographicLocation,
+    val attribution: Attribution,
+    @SerialName("description")
+    val description: String,
+    @SerialName("end_date")
+    val endDate: String,
+    @SerialName("extent")
+    val extent: Extent,
+    @SerialName("icon")
+    val icon: String,
+    @SerialName("id")
+    val id: String,
     @SerialName("name")
     val name: String,
-    @SerialName("serverType")
-    val serverType: String,
-    @SerialName("serverUrl")
-    val serverUrl: String
+    @SerialName("start_date")
+    val startDate: String,
+    @SerialName("type")
+    val type: String,
+    @SerialName("url")
+    val url: String
 )
 
 @Serializable
-data class GeographicLocation(
-    @SerialName("coordinates")
-    val coordinates: List<List<List<Double>>>,
-    @SerialName("type")
-    val type: String
+data class Attribution(
+    @SerialName("required")
+    val required: Boolean,
+    @SerialName("text")
+    val text: String,
+    @SerialName("url")
+    val url: String
 )
 
-object ImageryRepository {
+@Serializable
+data class LatLon(
+    val lat: Double,
+    val lon: Double
+)
 
-    private const val JSON_URL = "https://example.com/imagery.json" // Replace with real URL
+@Serializable
+data class Extent(
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+    @SerialName("polygon")
+    val polygon: List<List<List<Double>>>
+)
 
-    private val httpClient by lazy { HttpClient() }
+@Serializable
+data class ImageryResponse(
+    @SerialName("imageryLayers")
+    val imagery: List<Imagery>
+)
 
-    private val jsonParser = Json { ignoreUnknownKeys = true }
 
-    private var cachedImageryList: List<Imagery>? = null
+class ImageryRepository(private val httpClient: HttpClient) {
 
-    private val fetchMutex = Mutex()
+    private val mutex = Mutex()
+    private var cache: List<Imagery>? = null
+
+    private val url = "http://tmpfiles.org/dl/2082757/gig_aerial_imagery.json" // Update this
 
     suspend fun getImageryList(): List<Imagery> = withContext(Dispatchers.IO) {
-        // Only allow one fetch at a time
-        fetchMutex.withLock {
-            if (cachedImageryList != null) return@withContext cachedImageryList!!
+        mutex.withLock {
+            cache?.let { return@withContext it }
 
-            val response: HttpResponse = httpClient.get(JSON_URL)
-            val jsonText: String = response.bodyAsText()
-
-            val parsedList = jsonParser.decodeFromString<List<Imagery>>(jsonText)
-            cachedImageryList = parsedList
-            parsedList
+            val response = httpClient.get(url)
+            val responseBody = response.body<List<Imagery>>()
+            cache = responseBody
+            responseBody
         }
     }
 }
