@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.util.satellite_layers
 
 
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -17,8 +18,6 @@ data class Imagery(
     val attribution: Attribution,
     @SerialName("description")
     val description: String,
-    @SerialName("end_date")
-    val endDate: String,
     @SerialName("extent")
     val extent: Extent,
     @SerialName("icon")
@@ -27,8 +26,6 @@ data class Imagery(
     val id: String,
     @SerialName("name")
     val name: String,
-    @SerialName("start_date")
-    val startDate: String,
     @SerialName("type")
     val type: String,
     @SerialName("url")
@@ -46,23 +43,11 @@ data class Attribution(
 )
 
 @Serializable
-data class LatLon(
-    val lat: Double,
-    val lon: Double
-)
-
-@Serializable
 data class Extent(
     @SerialName("max_zoom")
     val maxZoom: Int,
     @SerialName("polygon")
     val polygon: List<List<List<Double>>>
-)
-
-@Serializable
-data class ImageryResponse(
-    @SerialName("imageryLayers")
-    val imagery: List<Imagery>
 )
 
 
@@ -71,7 +56,32 @@ class ImageryRepository(private val httpClient: HttpClient) {
     private val mutex = Mutex()
     private var cache: List<Imagery>? = null
 
-    private val url = "http://tmpfiles.org/dl/2082757/gig_aerial_imagery.json" // Update this
+    private val url = "http://10.0.2.2:8080/gig-imagery-example.json" // Update this
+
+    suspend fun getImageryForLocation(location: LatLon) =
+        getImageryList().filter { imagery ->
+            imagery.extent.polygon.any { polygon ->
+                isPointInPolygon(location, polygon)
+            }
+        }
+
+    private fun isPointInPolygon(point: LatLon, polygon: List<List<Double>>): Boolean {
+        var inside = false
+        var j = polygon.size - 1
+        for (i in polygon.indices) {
+            val xi = polygon[i][0]
+            val yi = polygon[i][1]
+            val xj = polygon[j][0]
+            val yj = polygon[j][1]
+            if (((yi > point.latitude) != (yj > point.latitude)) &&
+                (point.longitude < (xj - xi) * (point.latitude - yi) / (yj - yi + 0.0) + xi)
+            ) {
+                inside = !inside
+            }
+            j = i
+        }
+        return inside
+    }
 
     suspend fun getImageryList(): List<Imagery> = withContext(Dispatchers.IO) {
         mutex.withLock {

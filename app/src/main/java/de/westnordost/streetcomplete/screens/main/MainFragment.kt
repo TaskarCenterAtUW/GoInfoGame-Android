@@ -30,7 +30,6 @@ import androidx.core.graphics.minus
 import androidx.core.graphics.toPointF
 import androidx.core.graphics.toRectF
 import androidx.core.os.bundleOf
-import androidx.core.view.get
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -311,7 +310,11 @@ class MainFragment :
         binding.overlaysButton.setOnClickListener {
 //            val mapFragment = mapFragment ?: return@setOnClickListener
 //            mapFragment.showArielView = true
-            context?.showImageryBottomSheet()
+            val screenCenter = mapFragment?.getCenterCoordinates()
+
+            if (screenCenter != null) {
+                context?.showImageryBottomSheet(screenCenter)
+            }
         }
         binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
@@ -1584,7 +1587,7 @@ class MainFragment :
         setIsFollowingPosition(false)
     }
 
-    private fun Context.showImageryBottomSheet() {
+    private fun Context.showImageryBottomSheet(screenCenter: LatLon) {
         val bottomSheetView = LayoutInflater.from(this)
             .inflate(R.layout.bottom_sheet_imagery, null)
 
@@ -1601,7 +1604,7 @@ class MainFragment :
         radioGroup.addView(radioButton)
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val imageryList = imageryRepository.getImageryList()
+                val imageryList = imageryRepository.getImageryForLocation(screenCenter)
                 imageryList.forEachIndexed { index, imagery ->
                     val imageryRadioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
                         id = View.generateViewId()

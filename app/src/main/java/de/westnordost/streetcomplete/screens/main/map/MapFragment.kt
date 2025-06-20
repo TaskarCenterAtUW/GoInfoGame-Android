@@ -508,4 +508,11 @@ open class MapFragment :
         val pos2 = controller?.screenPositionToLatLon(PointF(x + 1, y)) ?: return null
         return pos1.distanceTo(pos2)
     }
+
+    fun getCenterCoordinates(): LatLon? {
+        val view = view ?: return null
+        val x = view.width / 2f
+        val y = view.height / 2f
+        return controller?.screenPositionToLatLon(PointF(x, y))
+    }
 }
