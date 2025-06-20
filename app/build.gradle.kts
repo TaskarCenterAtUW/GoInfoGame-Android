@@ -10,6 +10,7 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+    id("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -198,7 +199,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
     // scheduling background jobs
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 
     // HTTP Client
     implementation("io.ktor:ktor-client-core:2.3.11")
@@ -258,7 +259,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
     debugImplementation("com.google.firebase:firebase-appdistribution:16.0.0-beta15")
-
+    implementation("com.google.firebase:firebase-perf")
 }
 
 /** Localizations that should be pulled from POEditor */
