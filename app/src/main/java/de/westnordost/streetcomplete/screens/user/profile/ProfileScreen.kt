@@ -131,7 +131,7 @@ fun ProfileScreen(
                 settingsViewModel.deleteCache()
                 finishAndLaunchNewActivity(context)
             }) {
-                Text(stringResource(R.string.user_logout).uppercase())
+                Text(stringResource(R.string.user_logout).uppercase(), color = MaterialTheme.colorScheme.onSurface)
             }
         }
 

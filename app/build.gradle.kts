@@ -39,8 +39,8 @@ android {
         applicationId = "com.tcatuw.goinfo"
         minSdk = 21
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.0.15"
+        versionCode = 17
+        versionName = "1.0.16"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true

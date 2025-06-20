@@ -6,7 +6,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -177,8 +175,8 @@ fun ShowSaveCredsDialog(
     if (openDialog.value) {
         AlertDialog(
             onDismissRequest = { openDialog.value = false },
-            title = { Text("Save Credentials?") },
-            text = { Text("Would you like to save your credentials securely on this device?") },
+            title = { Text(stringResource(R.string.save_credentials)) },
+            text = { Text(stringResource(R.string.save_credentials_message)) },
             confirmButton = {
                 Button(onClick = {
                     coroutineScope.launch {
@@ -247,7 +245,8 @@ fun LoginCard(
                         text = stringResource(
                             id = R.string.email,
                             selectedEnvironment.value.name.lowercase()
-                        )
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 keyboardOptions = KeyboardOptions(
@@ -264,7 +263,8 @@ fun LoginCard(
                         text = stringResource(
                             id = R.string.password,
                             selectedEnvironment.value.name.lowercase()
-                        )
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
@@ -272,7 +272,8 @@ fun LoginCard(
                     imeAction = ImeAction.Done
                 ),
                 trailingIcon = {
-                    val image = if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    val image =
+                        if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
                     IconButton(onClick = { visibility = !visibility }) {
                         Icon(imageVector = image, contentDescription = null)
                     }
@@ -365,7 +366,7 @@ fun EnvironmentDropdownMenu(
             )
             Button(
                 onClick = { expanded = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
 
             ) {
                 Text(text = selectedEnvironment.value.name)
