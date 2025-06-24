@@ -59,7 +59,7 @@ class BiometricHelper(
         }
     )
 
-    fun canAuthenticate(): Boolean {
+    private fun canAuthenticate(): Boolean {
         val biometricManager = BiometricManager.from(context)
         return biometricManager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or

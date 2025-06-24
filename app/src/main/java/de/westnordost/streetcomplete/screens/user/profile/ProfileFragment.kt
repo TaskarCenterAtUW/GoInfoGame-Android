@@ -12,6 +12,7 @@ import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.ui.util.composableContent
 import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
 import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -36,22 +37,43 @@ class ProfileFragment : Fragment() {
             }
         }
 
-    fun onBiometricEnabledChanged(enabled: Boolean) {
-        Log.d("ProfileFragment", "onBiometricEnabledChanged: $enabled")
-        preferences.isBiometricEnabled = enabled
+//    fun onBiometricEnabledChanged(enabled: Boolean) : Boolean {
+//        Log.d("ProfileFragment", "onBiometricEnabledChanged: $enabled")
+//        preferences.isBiometricEnabled = enabled
+//
+//        val biometricHelper = BiometricHelper(
+//            context = requireContext(),
+//            activity = requireActivity(),
+//            onSuccess = {
+//                Toast.makeText(requireContext(), "Authenticated!", Toast.LENGTH_SHORT).show()
+//                preferences.isBiometricEnabled = false
+//            },
+//            onFailure = {
+//                Toast.makeText(requireContext(), "Failed to authenticate", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        )
+//        biometricHelper.authenticate()
+//    }
 
-        val biometricHelper = BiometricHelper(
-            context = requireContext(),
-            activity = requireActivity(),
-            onSuccess = {
-                Toast.makeText(requireContext(), "Authenticated!", Toast.LENGTH_SHORT).show()
-            },
-            onFailure = {
-                Toast.makeText(requireContext(), "Failed to authenticate", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        )
-        if (enabled)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun onBiometricEnabledChanged(enabled: Boolean): Boolean =
+        kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+            Log.d("ProfileFragment", "onBiometricEnabledChanged: $enabled")
+
+            val biometricHelper = BiometricHelper(
+                context = requireContext(),
+                activity = requireActivity(),
+                onSuccess = {
+                    Toast.makeText(requireContext(), "Authenticated!", Toast.LENGTH_SHORT).show()
+                    if (cont.isActive) cont.resume(true, null)
+                },
+                onFailure = {
+                    Toast.makeText(requireContext(), "Failed to authenticate", Toast.LENGTH_SHORT)
+                        .show()
+                    if (cont.isActive) cont.resume(false, null)
+                }
+            )
             biometricHelper.authenticate()
-    }
+        }
 }

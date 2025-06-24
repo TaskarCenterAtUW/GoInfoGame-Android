@@ -23,10 +23,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,7 +46,9 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.ktx.toDp
+import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.reflect.KSuspendFunction1
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
 @OptIn(ExperimentalLayoutApi::class)
@@ -52,7 +57,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
-    onBiometricEnabledChanged: (Boolean) -> Unit
+    onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>
 ) {
     val userName by viewModel.userName.collectAsState()
     val userAvatarFile by viewModel.userAvatarFile.collectAsState()
@@ -70,7 +75,7 @@ fun ProfileScreen(
     val daysActive by viewModel.daysActive.collectAsState()
     val datesActive by viewModel.datesActive.collectAsState()
 
-    val biometricEnabled = remember { mutableStateOf(preferences.isBiometricEnabled) }
+    var isChecked by remember { mutableStateOf(preferences.isBiometricEnabled) }
 
     Column(
         modifier = Modifier
@@ -131,7 +136,10 @@ fun ProfileScreen(
                 settingsViewModel.deleteCache()
                 finishAndLaunchNewActivity(context)
             }) {
-                Text(stringResource(R.string.user_logout).uppercase(), color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    stringResource(R.string.user_logout).uppercase(),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
@@ -142,11 +150,29 @@ fun ProfileScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 16.dp)
         ) {
+            var pendingValue by remember { mutableStateOf<Boolean?>(null) }
+
             Text(text = "Enable biometric authentication")
-            Switch(biometricEnabled.value, { enabled ->
-                biometricEnabled.value = enabled
-                onBiometricEnabledChanged(enabled)
-            })
+            Switch(
+                checked = isChecked,
+                onCheckedChange = { newValue ->
+                    pendingValue = newValue // trigger LaunchedEffect
+                }
+            )
+
+            LaunchedEffect(pendingValue) {
+                pendingValue?.let { newValue ->
+                    val success = onBiometricEnabledChanged(newValue)
+                    if (success) {
+                        preferences.isBiometricEnabled = newValue
+                        isChecked = newValue
+                    } else {
+                        // Don't update preference; revert UI
+                        isChecked = !newValue
+                    }
+                    pendingValue = null // reset
+                }
+            }
         }
 
 
