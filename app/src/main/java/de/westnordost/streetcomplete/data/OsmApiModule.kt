@@ -26,7 +26,7 @@ private const val OSM_API_URL = "https://osm.workspaces-stage.sidewalks.washingt
 //https://master.apis.dev.openstreetmap.org/api/0.6/
 val osmApiModule = module {
     factory { Cleaner(get(), get(), get(), get(), get(), get()) }
-    factory { CacheTrimmer(get(), get()) }
+    factory { CacheTrimmer(get(),get(), get()) }
     factory<MapDataApi> { MapDataApiImpl(get()) }
     factory<NotesApi> { NotesApiImpl(get()) }
     factory<TracksApi> { TracksApiImpl(get()) }

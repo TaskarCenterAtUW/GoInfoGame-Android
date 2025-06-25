@@ -179,12 +179,11 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
 
-    var isBiometricEnabled : Boolean
+    var isBiometricEnabled: Boolean
         set(value) {
-            prefs.putBoolean(BIOMETRIC_ENABLED, value)
+            prefs.putBoolean("${environment}_$BIOMETRIC_ENABLED", value)
         }
-        get() = prefs.getBoolean(BIOMETRIC_ENABLED, true)
-
+        get() = prefs.getBoolean("${environment}_$BIOMETRIC_ENABLED", true)
 
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
