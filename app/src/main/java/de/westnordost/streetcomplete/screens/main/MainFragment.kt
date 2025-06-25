@@ -1643,6 +1643,12 @@ class MainFragment :
                     bottomSheetDialog.dismiss()
                 }
 
+//                if (radioGroup.checkedRadioButtonId == -1) {
+//                    // If no button was checked, default to the first one
+//                    (radioGroup.getChildAt(0) as RadioButton).isChecked = true
+//                    selectedImagery = null
+//                }
+
             } catch (e: Exception) {
                 Log.d("Error", e.message.toString())
                 Toast.makeText(

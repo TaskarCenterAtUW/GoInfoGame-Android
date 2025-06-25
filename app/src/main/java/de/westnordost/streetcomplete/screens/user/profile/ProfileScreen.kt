@@ -4,6 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,12 +51,16 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
+import de.westnordost.streetcomplete.screens.workspaces.authenticateWithBiometrics
 import de.westnordost.streetcomplete.ui.ktx.toDp
+import de.westnordost.streetcomplete.util.creds_manager.EnvCredentials
+import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.reflect.KSuspendFunction1
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
+@RequiresApi(Build.VERSION_CODES.M)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(
@@ -151,13 +161,23 @@ fun ProfileScreen(
                 .padding(horizontal = 8.dp, vertical = 16.dp)
         ) {
             var pendingValue by remember { mutableStateOf<Boolean?>(null) }
-
-            Text(text = "Enable biometric authentication")
+            val context = LocalContext.current
+            Column(modifier = Modifier.weight(3f)) {
+                Text(
+                    text = stringResource(R.string.diable_biometric_title),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = stringResource(R.string.disable_biometric_message),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Switch(
                 checked = isChecked,
                 onCheckedChange = { newValue ->
                     pendingValue = newValue // trigger LaunchedEffect
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
 
             LaunchedEffect(pendingValue) {
@@ -166,6 +186,12 @@ fun ProfileScreen(
                     if (success) {
                         preferences.isBiometricEnabled = newValue
                         isChecked = newValue
+                        if (newValue == false) {
+                            SecureCredentialStorage.deleteCredential(
+                                context,
+                                preferences.environment
+                            )
+                        }
                     } else {
                         // Don't update preference; revert UI
                         isChecked = !newValue
