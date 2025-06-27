@@ -53,13 +53,13 @@ class Uploader(
             isUploadInProgress = true
             listeners.forEach { it.onStarted() }
 
-            if (!::bannedInfo.isInitialized) {
-                bannedInfo = withContext(Dispatchers.IO) { versionIsBannedChecker.get() }
-            }
-            val banned = bannedInfo
-            if (banned is IsBanned) {
-                throw VersionBannedException(banned.reason)
-            }
+//            if (!::bannedInfo.isInitialized) {
+//                bannedInfo = withContext(Dispatchers.IO) { versionIsBannedChecker.get() }
+//            }
+//            val banned = bannedInfo
+//            if (banned is IsBanned) {
+//                throw VersionBannedException(banned.reason)
+//            }
 
             // let's fail early in case of no authorization
             if (!userLoginSource.isLoggedIn) {

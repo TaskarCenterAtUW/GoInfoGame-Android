@@ -37,6 +37,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.radiobutton.MaterialRadioButton
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -1605,12 +1608,46 @@ class MainFragment :
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val imageryList = imageryRepository.getImageryForLocation(screenCenter)
-                imageryList.forEachIndexed { index, imagery ->
+                val imageLoader = ImageLoader.Builder(this@showImageryBottomSheet)
+                    .allowHardware(false)
+                    .components {
+                        add(SvgDecoder.Factory())
+                    }
+                    .build()
+                imageryList.forEach { imagery ->
                     val imageryRadioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
                         id = View.generateViewId()
                         text = imagery.name
-                        tag = imagery // store full object for later access
+                        tag = imagery
+                        compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
                     }
+
+                    val iconUrl = imagery.icon // ensure it's a valid URL or resource
+                    val sizePx = (30 * resources.displayMetrics.density).toInt()
+
+                    val request = ImageRequest.Builder(this@showImageryBottomSheet)
+                        .data(iconUrl)
+                        .size(sizePx, sizePx)
+                        .allowHardware(false) // required for drawable access in some cases
+                        .listener(
+                            onError = { request, throwable ->
+                                Log.e("CoilError", "Failed to load image: $iconUrl", throwable.throwable)
+                            }
+                        )
+                        .target(
+                            onSuccess = { drawable ->
+                                // Ensure it's set after layout
+                                imageryRadioButton.post {
+                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)
+                                }
+                            },
+                            onError = {
+                                Log.e("Imagery", "Failed to load: $iconUrl")
+                            }
+                        )
+                        .build()
+
+                    imageLoader.enqueue(request)
                     radioGroup.addView(imageryRadioButton)
                 }
 
