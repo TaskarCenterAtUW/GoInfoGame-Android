@@ -50,6 +50,7 @@ val appModule = module {
     }
     single { DatabaseLogger(get()) }
     single { SoundFx(androidContext()) }
+    single { Json { ignoreUnknownKeys = true } }
     single {
         HttpClient {
             install(ContentNegotiation) {
@@ -110,7 +111,7 @@ val appModule = module {
         }
     }
 
-    single { ImageryRepository(get()) }
+    single { ImageryRepository(get(), get(), get()) }
 
 }
 

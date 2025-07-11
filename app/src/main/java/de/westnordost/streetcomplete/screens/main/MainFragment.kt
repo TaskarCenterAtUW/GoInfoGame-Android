@@ -277,15 +277,15 @@ class MainFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewLifecycleScope.launch {
-            // load imagery list
-            try {
-                imageryRepository.getImageryList()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to load imagery list", e)
-                context?.toast(R.string.failed_to_load_imagery_list)
-            }
-        }
+//        viewLifecycleScope.launch {
+//            // load imagery list
+//            try {
+//                imageryRepository.getImageryList()
+//            } catch (e: Exception) {
+//                Log.w(TAG, "Failed to load imagery list", e)
+//                context?.toast(R.string.failed_to_load_imagery_list)
+//            }
+//        }
         editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
 
         binding.mapControls.respectSystemInsets(View::setMargins)

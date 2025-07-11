@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.util.satellite_layers
 
 
+import android.content.Context
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -11,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class Imagery(
@@ -51,7 +53,8 @@ data class Extent(
 )
 
 
-class ImageryRepository(private val httpClient: HttpClient) {
+class ImageryRepository(private val httpClient: HttpClient, private val context: Context,
+                        private val jsonParser: Json) {
 
     private val mutex = Mutex()
     private var cache: List<Imagery>? = null
@@ -59,7 +62,7 @@ class ImageryRepository(private val httpClient: HttpClient) {
     private val url = "http://10.0.2.2:8080/gig-imagery-example.json" // Update this
 
     suspend fun getImageryForLocation(location: LatLon) =
-        getImageryList().filter { imagery ->
+        getLocalImageryList(context,jsonParser).filter { imagery ->
             imagery.extent.polygon.any { polygon ->
                 isPointInPolygon(location, polygon)
             }
@@ -81,6 +84,13 @@ class ImageryRepository(private val httpClient: HttpClient) {
             j = i
         }
         return inside
+    }
+
+    private suspend fun getLocalImageryList(context : Context, jsonParser: Json): List<Imagery> = withContext(Dispatchers.IO) {
+        val jsonString = withContext(Dispatchers.IO) {
+            context.assets.open("imagery.json").bufferedReader().use { it.readText() }
+        }
+        jsonParser.decodeFromString(jsonString)
     }
 
     suspend fun getImageryList(): List<Imagery> = withContext(Dispatchers.IO) {
