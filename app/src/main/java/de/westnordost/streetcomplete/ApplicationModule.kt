@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity.Compan
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
+import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import de.westnordost.streetcomplete.util.logs.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.auth.Auth
@@ -49,6 +50,7 @@ val appModule = module {
     }
     single { DatabaseLogger(get()) }
     single { SoundFx(androidContext()) }
+    single { Json { ignoreUnknownKeys = true } }
     single {
         HttpClient {
             install(ContentNegotiation) {
@@ -108,6 +110,9 @@ val appModule = module {
             }
         }
     }
+
+    single { ImageryRepository(get(), get(), get()) }
+
 }
 
 suspend fun refreshJwtToken(

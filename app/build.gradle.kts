@@ -62,6 +62,7 @@ android {
         }
         getByName("debug") {
             isMinifyEnabled = false
+            isDebuggable = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             applicationIdSuffix = ".debug"
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
@@ -247,6 +248,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
     implementation("io.coil-kt:coil:2.7.0")
+    implementation("io.coil-kt:coil-svg:2.7.0")
     implementation("io.ktor:ktor-client-logging:2.0.0")
     implementation("org.slf4j:slf4j-simple:2.0.9")
     implementation("com.google.android.flexbox:flexbox:3.0.0")

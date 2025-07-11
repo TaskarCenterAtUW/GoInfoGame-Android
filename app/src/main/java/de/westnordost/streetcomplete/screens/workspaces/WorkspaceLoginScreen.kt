@@ -118,7 +118,7 @@ fun LoginScreen(
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
                     val creds = SecureCredentialStorage.getCredential(
                         context,
                         selectedEnvironment.value.name
