@@ -36,7 +36,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tcatuw.goinfo"
+        applicationId = "net.opentoall.aviv.scoutroute"
         minSdk = 21
         targetSdk = 34
         versionCode = 18
@@ -64,7 +64,6 @@ android {
             isMinifyEnabled = false
             isDebuggable = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-            applicationIdSuffix = ".debug"
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
         }
         create("releaseGooglePlay") {
