@@ -228,7 +228,7 @@ class WorkSpaceActivity : AppCompatActivity() {
 ////                                    Text(text = accessToken.toString(), style = MaterialTheme.typography.titleLarge)
 //                                    Text(text = refreshToken.toString(), style = MaterialTheme.typography.titleLarge)
 
-                                    Text(text = "Go Info Game")
+                                    Text(text = resources.getString(R.string.app_name))
                                 },
                                 actions = {
                                     if (workspaceLoginState) {

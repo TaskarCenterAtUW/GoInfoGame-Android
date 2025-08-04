@@ -37,7 +37,6 @@ class MainMenuDialog(
         binding.profileButton.setOnClickListener {
             val intent = Intent(context, UserActivity::class.java)
             context.startActivity(intent)
-            dismiss()
         }
         binding.enableTeamModeButton.setOnClickListener {
             TeamModeDialog(context, onEnableTeamMode).show()

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,12 +23,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,6 +56,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.screens.workspaces.authenticateWithBiometrics
+import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.ktx.toDp
 import de.westnordost.streetcomplete.util.creds_manager.EnvCredentials
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
@@ -61,12 +66,13 @@ import kotlin.reflect.KSuspendFunction1
 
 /** Shows the user profile: username, avatar, star count and a hint regarding unpublished changes */
 @RequiresApi(Build.VERSION_CODES.M)
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
+    onClickBack: () -> Unit,
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>
 ) {
     val userName by viewModel.userName.collectAsState()
@@ -87,185 +93,191 @@ fun ProfileScreen(
 
     var isChecked by remember { mutableStateOf(preferences.isBiometricEnabled) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        // Basic user info
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text(stringResource(R.string.user_profile)) },
+            navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Image(
-                painter = getAvatarPainter(userAvatarFile.path)
-                    ?: painterResource(R.drawable.ic_osm_anon_avatar),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // Basic user info
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = userName.orEmpty(),
-                    style = MaterialTheme.typography.titleSmall
+                Image(
+                    painter = getAvatarPainter(userAvatarFile.path)
+                        ?: painterResource(R.drawable.ic_osm_anon_avatar),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(RoundedCornerShape(8.dp))
                 )
-                StarCount(editCount)
-                if (unsyncedChangesCount > 0) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        text = stringResource(
-                            R.string.unsynced_quests_description,
-                            unsyncedChangesCount
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = userName.orEmpty(),
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    //                StarCount(editCount)
+                    if (unsyncedChangesCount > 0) {
+                        Text(
+                            text = stringResource(
+                                R.string.unsynced_quests_description,
+                                unsyncedChangesCount
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            // User button row
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val context = LocalContext.current
+                //            Button(onClick = {
+                //                context.openUri("https://www.openstreetmap.org/user/" + viewModel.userName.value)
+                //            }) {
+                //                Icon(painterResource(R.drawable.ic_open_in_browser_24dp), null)
+                //                Spacer(Modifier.width(8.dp))
+                //                Text(stringResource(R.string.osm_profile).uppercase())
+                //            }
+                OutlinedButton(onClick = {
+                    viewModel.logOutUser()
+                    settingsViewModel.deleteCache()
+                    finishAndLaunchNewActivity(context)
+                }) {
+                    Text(
+                        stringResource(R.string.user_logout).uppercase(),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-        }
 
-        // User button row
-
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val context = LocalContext.current
-//            Button(onClick = {
-//                context.openUri("https://www.openstreetmap.org/user/" + viewModel.userName.value)
-//            }) {
-//                Icon(painterResource(R.drawable.ic_open_in_browser_24dp), null)
-//                Spacer(Modifier.width(8.dp))
-//                Text(stringResource(R.string.osm_profile).uppercase())
-//            }
-            OutlinedButton(onClick = {
-                viewModel.logOutUser()
-                settingsViewModel.deleteCache()
-                finishAndLaunchNewActivity(context)
-            }) {
-                Text(
-                    stringResource(R.string.user_logout).uppercase(),
-                    color = MaterialTheme.colorScheme.onSurface
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 16.dp)
+            ) {
+                var pendingValue by remember { mutableStateOf<Boolean?>(null) }
+                val context = LocalContext.current
+                Column(modifier = Modifier.weight(3f)) {
+                    Text(
+                        text = stringResource(R.string.diable_biometric_title),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.disable_biometric_message),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = isChecked,
+                    onCheckedChange = { newValue ->
+                        pendingValue = newValue // trigger LaunchedEffect
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-            }
-        }
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 16.dp)
-        ) {
-            var pendingValue by remember { mutableStateOf<Boolean?>(null) }
-            val context = LocalContext.current
-            Column(modifier = Modifier.weight(3f)) {
-                Text(
-                    text = stringResource(R.string.diable_biometric_title),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = stringResource(R.string.disable_biometric_message),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Switch(
-                checked = isChecked,
-                onCheckedChange = { newValue ->
-                    pendingValue = newValue // trigger LaunchedEffect
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            LaunchedEffect(pendingValue) {
-                pendingValue?.let { newValue ->
-                    val success = onBiometricEnabledChanged(newValue)
-                    if (success) {
-                        preferences.isBiometricEnabled = newValue
-                        isChecked = newValue
-                        if (newValue == false) {
-                            SecureCredentialStorage.deleteCredential(
-                                context,
-                                preferences.environment
-                            )
+                LaunchedEffect(pendingValue) {
+                    pendingValue?.let { newValue ->
+                        val success = onBiometricEnabledChanged(newValue)
+                        if (success) {
+                            preferences.isBiometricEnabled = newValue
+                            isChecked = newValue
+                            if (newValue == false) {
+                                SecureCredentialStorage.deleteCredential(
+                                    context,
+                                    preferences.environment
+                                )
+                            }
+                        } else {
+                            // Don't update preference; revert UI
+                            isChecked = !newValue
                         }
-                    } else {
-                        // Don't update preference; revert UI
-                        isChecked = !newValue
+                        pendingValue = null // reset
                     }
-                    pendingValue = null // reset
                 }
             }
+
+
+
+            HorizontalDivider()
+
+            // Statistics
+
+            //        var delay = 0
+            //
+            //        if (editCount > 0) {
+            //            FlowRow(
+            //                modifier = Modifier.fillMaxWidth(),
+            //                horizontalArrangement = Arrangement.SpaceAround,
+            //                verticalArrangement = Arrangement.spacedBy(16.dp)
+            //            ) {
+            //                val localStats = biggestSolvedCountCountryStatistics
+            //                if (localStats?.rank != null) {
+            //                    LocalRankBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+            //                }
+            //                if (rank > 0) {
+            //                    RankBadge(rank, getAnimationDelay(delay++))
+            //                }
+            //                if (daysActive > 0) {
+            //                    DaysActiveBadge(daysActive, getAnimationDelay(delay++))
+            //                }
+            //                if (achievementLevels > 0) {
+            //                    AchievementLevelsBadge(achievementLevels, getAnimationDelay(delay++))
+            //                }
+            //            }
+            //        }
+            //        Row(
+            //            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            //            verticalAlignment = Alignment.CenterVertically
+            //        ) {
+            //            Text(
+            //                text = stringResource(R.string.user_profile_current_week_title),
+            //                style = MaterialTheme.typography.titleLarge
+            //            )
+            //            StarCount(editCountCurrentWeek)
+            //        }
+            //        if (editCountCurrentWeek > 0) {
+            //            FlowRow(
+            //                modifier = Modifier.fillMaxWidth(),
+            //                horizontalArrangement = Arrangement.SpaceAround,
+            //                verticalArrangement = Arrangement.spacedBy(16.dp)
+            //            ) {
+            //                val localStats = biggestSolvedCountCurrentWeekCountryStatistics
+            //                if (localStats?.rank != null) {
+            //                    LocalRankCurrentWeekBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+            //                }
+            //                if (rankCurrentWeek > 0) {
+            //                    RankCurrentWeekBadge(rankCurrentWeek, getAnimationDelay(delay++))
+            //                }
+            //            }
+            //        }
+            //        Text(
+            //            text = stringResource(R.string.user_profile_dates_mapped),
+            //            style = MaterialTheme.typography.titleLarge
+            //        )
+            //        BoxWithConstraints {
+            //            DatesActiveTable(
+            //                datesActive = datesActive.datesActive.toSet(),
+            //                datesActiveRange = datesActive.range,
+            //                modifier = Modifier.width(maxWidth.coerceAtMost(640.dp))
+            //            )
+            //        }
         }
-
-
-
-        HorizontalDivider()
-
-        // Statistics
-
-//        var delay = 0
-//
-//        if (editCount > 0) {
-//            FlowRow(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceAround,
-//                verticalArrangement = Arrangement.spacedBy(16.dp)
-//            ) {
-//                val localStats = biggestSolvedCountCountryStatistics
-//                if (localStats?.rank != null) {
-//                    LocalRankBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
-//                }
-//                if (rank > 0) {
-//                    RankBadge(rank, getAnimationDelay(delay++))
-//                }
-//                if (daysActive > 0) {
-//                    DaysActiveBadge(daysActive, getAnimationDelay(delay++))
-//                }
-//                if (achievementLevels > 0) {
-//                    AchievementLevelsBadge(achievementLevels, getAnimationDelay(delay++))
-//                }
-//            }
-//        }
-//        Row(
-//            horizontalArrangement = Arrangement.spacedBy(4.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Text(
-//                text = stringResource(R.string.user_profile_current_week_title),
-//                style = MaterialTheme.typography.titleLarge
-//            )
-//            StarCount(editCountCurrentWeek)
-//        }
-//        if (editCountCurrentWeek > 0) {
-//            FlowRow(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceAround,
-//                verticalArrangement = Arrangement.spacedBy(16.dp)
-//            ) {
-//                val localStats = biggestSolvedCountCurrentWeekCountryStatistics
-//                if (localStats?.rank != null) {
-//                    LocalRankCurrentWeekBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
-//                }
-//                if (rankCurrentWeek > 0) {
-//                    RankCurrentWeekBadge(rankCurrentWeek, getAnimationDelay(delay++))
-//                }
-//            }
-//        }
-//        Text(
-//            text = stringResource(R.string.user_profile_dates_mapped),
-//            style = MaterialTheme.typography.titleLarge
-//        )
-//        BoxWithConstraints {
-//            DatesActiveTable(
-//                datesActive = datesActive.datesActive.toSet(),
-//                datesActiveRange = datesActive.range,
-//                modifier = Modifier.width(maxWidth.coerceAtMost(640.dp))
-//            )
-//        }
     }
 }
 

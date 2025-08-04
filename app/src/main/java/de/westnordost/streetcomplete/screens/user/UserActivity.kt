@@ -1,20 +1,23 @@
 package de.westnordost.streetcomplete.screens.user
 
+import android.os.Build
 import android.os.Bundle
-import android.view.MenuItem
-import android.view.View
-import androidx.appcompat.widget.Toolbar
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.material3.Surface
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.edits.EditType
-import de.westnordost.streetcomplete.screens.FragmentContainerActivity
-import de.westnordost.streetcomplete.screens.HasTitle
-import de.westnordost.streetcomplete.screens.user.login.LoginFragment
-import de.westnordost.streetcomplete.screens.user.statistics.CountryInfoFragment
-import de.westnordost.streetcomplete.screens.user.statistics.EditStatisticsFragment
-import de.westnordost.streetcomplete.screens.user.statistics.EditTypeInfoFragment
-import de.westnordost.streetcomplete.util.ktx.observe
+import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.databinding.ActivityUserBinding
+import de.westnordost.streetcomplete.screens.BaseActivity
+import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
+import de.westnordost.streetcomplete.screens.user.profile.ProfileScreen
+import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
+import de.westnordost.streetcomplete.ui.theme.AppTheme
+import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
+import de.westnordost.streetcomplete.util.logs.Log
+import de.westnordost.streetcomplete.util.viewBinding
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /** Shows all the user information, login etc.
@@ -23,91 +26,53 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
  *  The LoginFragment, the UserFragment (which contains the viewpager with more
  *  fragments) and the "fake" dialog QuestTypeInfoFragment.
  */
-class UserActivity :
-    FragmentContainerActivity(R.layout.activity_user),
-    EditStatisticsFragment.Listener {
+class UserActivity : BaseActivity() {
 
-    private val viewModel by viewModel<UserViewModel>()
-
-    private val countryDetailsFragment get() =
-        supportFragmentManager.findFragmentById(R.id.countryDetailsFragment) as CountryInfoFragment?
-
-    private val editTypeDetailsFragment get() =
-        supportFragmentManager.findFragmentById(R.id.editTypeDetailsFragment) as EditTypeInfoFragment?
-
-    private val fragmentLifecycleCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
-        override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
-            if (fragment.id == R.id.fragment_container && fragment is HasTitle) {
-                title = fragment.title
-                supportActionBar?.subtitle = fragment.subtitle
-            }
-        }
-    }
+    private val viewModel by viewModel<ProfileViewModel>()
+    private val settingsViewModel by viewModel<SettingsViewModel>()
+    private val preferences: Preferences by inject()
 
     /* --------------------------------------- Lifecycle --------------------------------------- */
+    private val binding by viewBinding(ActivityUserBinding::inflate)
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) {
-            replaceMainFragment(when {
-//                intent.getBooleanExtra(EXTRA_LAUNCH_AUTH, false) -> LoginFragment.create(true)
-                viewModel.isLoggedIn.value -> UserFragment()
-                else -> null
-            })
-        }
+        setContentView(R.layout.activity_user)
 
-        observe(viewModel.isLoggedIn) { isLoggedIn ->
-            val current = getMainFragment()
-            val replaceFragment = when (isLoggedIn) {
-                true -> current !is UserFragment
-                false -> current !is LoginFragment
-            }
-            if (replaceFragment) {
-                replaceMainFragmentAnimated(if (isLoggedIn) UserFragment() else LoginFragment())
+        binding.navHost.setContent {
+            AppTheme {
+                Surface {
+                    ProfileScreen(
+                        viewModel,
+                        settingsViewModel,
+                        preferences,
+                        onClickBack = { finish() },
+                        onBiometricEnabledChanged = ::onBiometricEnabledChanged
+                    )
+                }
             }
         }
-
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        if (toolbar != null) {
-            setSupportActionBar(toolbar)
-            supportActionBar!!.setDisplayShowHomeEnabled(true)
-            supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-        }
-
-        supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentLifecycleCallbacks, false)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return if (item.itemId == android.R.id.home) {
-            finish()
-            return true
-        } else {
-            super.onOptionsItemSelected(item)
-        }
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun onBiometricEnabledChanged(enabled: Boolean): Boolean =
+        kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+            Log.d("ProfileFragment", "onBiometricEnabledChanged: $enabled")
 
-    /* --------------------------- QuestStatisticsFragment.Listener ----------------------------- */
-
-    override fun onClickedEditType(editType: EditType, editCount: Int, questBubbleView: View) {
-        editTypeDetailsFragment?.show(editType, editCount, questBubbleView)
-    }
-
-    override fun onClickedCountryFlag(country: String, editCount: Int, rank: Int?, countryBubbleView: View) {
-        countryDetailsFragment?.show(country, editCount, rank, countryBubbleView)
-    }
-
-    /* ------------------------------------------------------------------------------------------ */
-
-    private fun replaceMainFragmentAnimated(fragment: Fragment) {
-        replaceMainFragment(fragment) {
-            setCustomAnimations(
-                R.anim.fade_in_from_bottom, R.anim.fade_out_to_top,
-                R.anim.fade_in_from_bottom, R.anim.fade_out_to_top
+            val biometricHelper = BiometricHelper(
+                context = this,
+                activity = this,
+                onSuccess = {
+                    Toast.makeText(this, "Authenticated!", Toast.LENGTH_SHORT).show()
+                    if (cont.isActive) cont.resume(true, null)
+                },
+                onFailure = {
+                    Toast.makeText(this, "Failed to authenticate", Toast.LENGTH_SHORT)
+                        .show()
+                    if (cont.isActive) cont.resume(false, null)
+                }
             )
+            biometricHelper.authenticate()
         }
-    }
-
-    companion object {
-        const val EXTRA_LAUNCH_AUTH = "de.westnordost.streetcomplete.screens.user.launch_auth"
-    }
 }
