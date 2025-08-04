@@ -264,7 +264,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             val sequence = response.body<CreateSequenceResponse>()
             Log.d("KartViewSequence", sequence.status.httpMessage)
         } else {
-            Log.e("KartViewSequence", "Sequence close failed: ${response.status}")
+            showSnackBar("Failed to close KartaView Sequence. Please try again later " + response.status,
+                view, requireActivity() as ComponentActivity)
         }
         hideProgressbar()
     }
@@ -295,10 +296,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                         "${displayedLocation?.latitude},${displayedLocation?.longitude}"
                     )
                     var finalBearing = 0.0f
-                    if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
-                        finalBearing = displayedLocation.bearing
+                    finalBearing = if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
+                        displayedLocation.bearing
                     } else {
-                        finalBearing = compassBearing.toFloat()
+                        compassBearing.toFloat()
                     }
                     append("headers", finalBearing.toInt().toString())
                     append("photo", byteArray, Headers.build {
@@ -320,6 +321,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 return Pair(true, pair)
             } else {
                 Log.e("UploadImage", "Image upload failed: ${response.status}")
+                showSnackBar("Failed to upload image to KartaView. Please try again later " + response.status,
+                    view, requireActivity() as ComponentActivity)
                 hideProgressbar()
                 return Pair(false, null)
             }
@@ -347,6 +350,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             return sequence.osv.sequence?.id
         } else {
             hideProgressbar()
+            showSnackBar("Failed to create KartaView sequence. Image upload failed. Please try again later " + response.status,
+                view, requireActivity() as ComponentActivity)
             return null
         }
     }

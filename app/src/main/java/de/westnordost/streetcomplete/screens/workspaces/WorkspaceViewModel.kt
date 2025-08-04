@@ -91,7 +91,7 @@ class WorkspaceViewModelImpl(
             viewModelScope.launch {
                 _showWorkspaces.value = WorkspaceListState.Loading
                 workspaceRepository.getWorkspaces(this@apply)
-                    .debounce(300)
+                    .debounce(1000)
                     .distinctUntilChanged()
                     .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
                     .collect { workspaces ->
