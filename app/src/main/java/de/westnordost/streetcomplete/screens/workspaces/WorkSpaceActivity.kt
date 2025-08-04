@@ -56,6 +56,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
+import de.westnordost.streetcomplete.ApplicationConstants.APP_NAME
 import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -163,7 +164,7 @@ class WorkSpaceActivity : AppCompatActivity() {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Text(
-                            "GoInfoGame needs location to be enabled to fetch workspaces nearby",
+                            "$APP_NAME needs location to be enabled to fetch workspaces nearby",
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(16.dp),
                             style = TextStyle(fontSize = 20.sp)

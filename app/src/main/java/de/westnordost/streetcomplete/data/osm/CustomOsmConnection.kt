@@ -25,7 +25,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 
-class GIGOsmConnection(
+class CustomOsmConnection(
     private val context: Context,
     url: String,
     agent: String,
@@ -47,7 +47,7 @@ class GIGOsmConnection(
             val endTime = System.currentTimeMillis()
             val duration = endTime - startTime
             // Log the request duration
-            Log.d("GIGOsmConnection", "Request to $call took $duration ms")
+            Log.d(CustomOsmConnection::class.java.simpleName, "Request to $call took $duration ms")
             handleResponseCode(connection)
 
             return if (reader != null) handleResponse(connection, reader)
