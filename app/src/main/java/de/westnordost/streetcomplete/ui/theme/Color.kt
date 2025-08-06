@@ -36,14 +36,14 @@ val GrassGray = Color(0xff888888)
 val LeafGreen = Color(0xff006a00)
 
 val LightColors = lightColorScheme(
-    primary = Color(0xFF006E32),
+    primary = Color(0xFF32006E),
     secondary = Color(0xFFE93CAC),
     onPrimary = Color.White,
     onSecondary = Color.White
 )
 
 val DarkColors = darkColorScheme(
-    primary = Color(0xFF006E32),
+    primary = Color(0xFF32006E),
     secondary = Color(0xFFE93CAC),
     onPrimary = Color.White,
     onSecondary = Color.White

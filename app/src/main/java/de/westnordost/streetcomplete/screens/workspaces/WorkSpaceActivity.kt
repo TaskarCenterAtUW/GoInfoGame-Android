@@ -28,6 +28,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -234,7 +235,8 @@ class WorkSpaceActivity : AppCompatActivity() {
                                 actions = {
                                     if (workspaceLoginState) {
                                         Icon(
-                                            imageVector = Icons.Default.Person, // Replace with your desired icon
+                                            imageVector = Icons.Default.Person,
+                                            tint = MaterialTheme.colorScheme.primary,
                                             contentDescription = "Star Icon",
                                             modifier = Modifier
                                                 .padding(16.dp)

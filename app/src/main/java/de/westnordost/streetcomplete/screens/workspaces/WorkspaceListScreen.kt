@@ -159,6 +159,7 @@ fun finishAndLaunchNewActivity(
             putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
         }
         it.startActivity(intent)
+        it.finish()
     }
 }
 
