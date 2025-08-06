@@ -12,6 +12,7 @@
         android:layout_alignParentEnd="true"
         android:focusable="true"
         android:padding="16dp"
+        app:tint="@color/primary"
         android:contentDescription="@string/close_button"
         android:src="@drawable/ic_close_24dp" />
 
@@ -31,6 +32,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="fill_vertical"
             android:padding="16dp"
+            app:drawableTint="@color/primary"
+            android:textColor="@color/primary"
             android:text="@string/user_profile"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableTopCompat="@drawable/ic_profile_48dp" />
@@ -45,6 +48,8 @@
             android:text="@string/action_settings"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             android:visibility="visible"
+            app:drawableTint="@color/primary"
+            android:textColor="@color/primary"
             app:drawableTopCompat="@drawable/ic_settings_48dp" />
 
         <TextView
@@ -86,6 +91,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:textColor="@color/primary"
             android:text="@string/action_download"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog"
             app:drawableStartCompat="@drawable/ic_search_24dp" />
@@ -96,6 +102,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:textColor="@color/primary"
             android:text="@string/switch_workspace"
             android:textAppearance="@android:style/TextAppearance.Theme.Dialog" />
 

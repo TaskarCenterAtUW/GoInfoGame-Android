@@ -39,8 +39,8 @@ android {
         applicationId = "net.opentoall.aviv.scoutroute"
         minSdk = 21
         targetSdk = 34
-        versionCode = 18
-        versionName = "1.0.17"
+        versionCode = 1
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true

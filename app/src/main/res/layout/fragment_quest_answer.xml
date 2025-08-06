@@ -64,6 +64,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:visibility="visible"
+                            android:textColor="@color/primary"
                             android:textAppearance="@style/TextAppearance.TitleLarge"/>
 
                     </LinearLayout>
@@ -74,7 +75,7 @@
                         android:layout_height="wrap_content"
                         app:srcCompat = "@drawable/baseline_visibility_off_24"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
-                        app:tint="@color/activated_tint"
+                        app:tint="@color/accent"
                         android:visibility="visible"
                         android:focusable="true"
                         android:contentDescription="@string/hide"
@@ -87,7 +88,7 @@
                         android:layout_height="wrap_content"
                         app:srcCompat = "@drawable/ic_close_24dp"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
-                        app:tint="@color/activated_tint"
+                        app:tint="@color/accent"
                         android:visibility="visible"
                         android:contentDescription="@string/close_button"
                         android:padding="16dp"/>

@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -248,6 +249,7 @@ class WorkSpaceActivity : AppCompatActivity() {
                                                     )
                                                     startActivity(intent)
                                                 }
+
                                         )
                                     }
                                 },
@@ -341,7 +343,9 @@ fun AppNavigator(
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     val fineLocationManager = FineLocationManager(context) { location ->
-                        viewModel.fetchWorkspaces(location)
+                        if (location.accuracy <= 300) {
+                            viewModel.fetchWorkspaces(location)
+                        }
                     }
                     fineLocationManager.getCurrentLocation()
                 }
