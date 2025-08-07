@@ -243,8 +243,7 @@ fun LoginCard(
                 label = {
                     Text(
                         text = stringResource(
-                            id = R.string.email,
-                            selectedEnvironment.value.name.lowercase()
+                            id = R.string.email
                         ),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -261,8 +260,7 @@ fun LoginCard(
                 label = {
                     Text(
                         text = stringResource(
-                            id = R.string.password,
-                            selectedEnvironment.value.name.lowercase()
+                            id = R.string.password
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -341,7 +339,7 @@ fun LoginCard(
                     }
                 }
             }
-            EnvironmentDropdownMenu(viewModel = viewModel, selectedEnvironment, modifier)
+//            EnvironmentDropdownMenu(viewModel = viewModel, selectedEnvironment, modifier)
         }
     }
 }
