@@ -152,14 +152,14 @@ fun ProfileScreen(
                 //                Spacer(Modifier.width(8.dp))
                 //                Text(stringResource(R.string.osm_profile).uppercase())
                 //            }
-                OutlinedButton(onClick = {
+                Button(onClick = {
                     viewModel.logOutUser()
                     settingsViewModel.deleteCache()
                     finishAndLaunchNewActivity(context)
                 }) {
                     Text(
                         stringResource(R.string.user_logout).uppercase(),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

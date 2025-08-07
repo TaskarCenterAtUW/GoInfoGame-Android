@@ -231,7 +231,7 @@ class WorkSpaceActivity : AppCompatActivity() {
 ////                                    Text(text = accessToken.toString(), style = MaterialTheme.typography.titleLarge)
 //                                    Text(text = refreshToken.toString(), style = MaterialTheme.typography.titleLarge)
 
-                                    Text(text = resources.getString(R.string.app_name))
+                                    Text(text = resources.getString(R.string.app_name), color = MaterialTheme.colorScheme.primary)
                                 },
                                 actions = {
                                     if (workspaceLoginState) {
