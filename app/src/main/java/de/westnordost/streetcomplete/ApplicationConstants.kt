@@ -8,7 +8,7 @@ object ApplicationConstants {
     const val USER_AGENT = NAME + " " + BuildConfig.VERSION_NAME
     const val QUESTTYPE_TAG_KEY = NAME + ":quest_type"
 
-    const val MAX_DOWNLOADABLE_AREA_IN_SQKM = 12.0
+    const val MAX_DOWNLOADABLE_AREA_IN_SQKM = 3.0
     const val MIN_DOWNLOADABLE_AREA_IN_SQKM = 0.1
 
     const val DATABASE_NAME = "aviv_v2.db"
