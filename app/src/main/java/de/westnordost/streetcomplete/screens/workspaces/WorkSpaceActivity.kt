@@ -12,7 +12,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -141,9 +140,9 @@ class WorkSpaceActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         isLocationEnabled()
-        if (BuildConfig.DEBUG){
+        if (BuildConfig.DEBUG) {
             checkNotificationPermission()
-        }else{
+        } else {
             val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
             setContent(showAlert)
         }
@@ -230,8 +229,12 @@ class WorkSpaceActivity : AppCompatActivity() {
 //                                    val refreshToken = Date(preferences.refreshTokenExpiryTime)
 ////                                    Text(text = accessToken.toString(), style = MaterialTheme.typography.titleLarge)
 //                                    Text(text = refreshToken.toString(), style = MaterialTheme.typography.titleLarge)
-
-                                    Text(text = resources.getString(R.string.app_name), color = MaterialTheme.colorScheme.primary)
+                                    if (workspaceLoginState) {
+                                        Text(
+                                            text = resources.getString(R.string.app_name),
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 },
                                 actions = {
                                     if (workspaceLoginState) {

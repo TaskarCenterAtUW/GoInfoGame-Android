@@ -6,6 +6,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -46,9 +49,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -60,6 +66,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
+import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
 import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
 import de.westnordost.streetcomplete.util.creds_manager.EnvCredentials
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
@@ -233,11 +240,34 @@ fun LoginCard(
             val context = LocalContext.current
             var visibility by rememberSaveable { mutableStateOf(false) }
 
-            Text(text = "Welcome!", style = MaterialTheme.typography.titleLarge)
-            Text(
-                text = "Please login to your account!",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Row(modifier = Modifier.padding(bottom = 32.dp)) {
+                Image(
+                    painter = painterResource(id = R.drawable.aviv_logo),
+                    contentDescription = "Workspace Icon",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .padding(end = 16.dp)
+                        .size(100.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Fit
+                )
+                Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                    Text(
+                        text = "AVIV",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ProximaNovaFontFamily,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        "ScoutRoute",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ProximaNovaFontFamily,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
             TextField(
                 value = email.value, onValueChange = { newText -> email.value = newText },
                 label = {
