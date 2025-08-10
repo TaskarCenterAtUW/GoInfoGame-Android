@@ -12,27 +12,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -62,7 +54,6 @@ import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
-import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
@@ -221,44 +212,10 @@ class WorkSpaceActivity : AppCompatActivity() {
                 setContent {
                     AppTheme {
                         val workspaceLoginState by preferences.workspaceLoginState.collectAsState()
-                        Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-                            TopAppBar(
-                                title = {
-                                    //Milliseconds to local date
-//                                    val accessToken = Date(preferences.accessTokenExpiryTime)
-//                                    val refreshToken = Date(preferences.refreshTokenExpiryTime)
-////                                    Text(text = accessToken.toString(), style = MaterialTheme.typography.titleLarge)
-//                                    Text(text = refreshToken.toString(), style = MaterialTheme.typography.titleLarge)
-                                    if (workspaceLoginState) {
-                                        Text(
-                                            text = resources.getString(R.string.app_name),
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                },
-                                actions = {
-                                    if (workspaceLoginState) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            contentDescription = "Star Icon",
-                                            modifier = Modifier
-                                                .padding(16.dp)
-                                                .size(36.dp, 36.dp)
-                                                .clickable {
-                                                    val intent = Intent(
-                                                        this@WorkSpaceActivity,
-                                                        UserActivity::class.java
-                                                    )
-                                                    startActivity(intent)
-                                                }
-
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.wrapContentSize(Alignment.Center),
-                            )
-                        }, contentWindowInsets = WindowInsets.statusBars) { innerPadding ->
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            contentWindowInsets = WindowInsets.statusBars
+                        ) { innerPadding ->
                             // LoginScreen(
                             //     viewModel = koinViewModel(),
                             //     modifier = Modifier.padding(innerPadding)

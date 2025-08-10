@@ -1808,4 +1808,6 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="save_credentials_message">Would you like to securely save your credentials on this device? Your information will be protected using your device\'s security features.</string>
     <string name="disable_biometric_message">Disabling this will delete all saved credentials for this environment</string>
     <string name="diable_biometric_title">Enable biometric authentication</string>
+    <string name="sync_changes">sync changes</string>
+    <string name="no_pending_changes_to_sync">No pending changes to sync</string>
 </resources>

@@ -9,12 +9,14 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.AnimationUtils
 import android.view.animation.OvershootInterpolator
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -86,6 +88,7 @@ import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -277,6 +280,9 @@ class MainFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val result = activity?.intent?.getStringExtra("WORKSPACE_TITLE")
+        binding.workspaceTitle.text = result
 //        viewLifecycleScope.launch {
 //            // load imagery list
 //            try {
@@ -337,6 +343,13 @@ class MainFragment :
             binding.uploadButton.uploadableCount = count
         }
         observe(controlsViewModel.isUploading) { isUploadInProgress ->
+            val icon = binding.uploadButton.binding.iconView
+            if (isUploadInProgress){
+                val rotate = AnimationUtils.loadAnimation(this.requireContext(), R.anim.rotate)
+                icon.startAnimation(rotate)
+            }else{
+                icon.clearAnimation()
+            }
             binding.uploadButton.isEnabled = !isUploadInProgress
             // Don't allow undoing while uploading. Should prevent race conditions.
             // (Undoing quest while also uploading it at the same time)
@@ -934,7 +947,11 @@ class MainFragment :
     private fun onClickUploadButton() {
         if (controlsViewModel.isConnected) {
             if (controlsViewModel.isLoggedIn.value) {
-                controlsViewModel.upload()
+                if (controlsViewModel.unsyncedEditsCount.value == 0) {
+                    context?.toast(getString(R.string.no_pending_changes_to_sync))
+                }else{
+                    controlsViewModel.upload()
+                }
             } else {
                 context?.let { RequestLoginDialog(it, profileViewModel).show() }
             }

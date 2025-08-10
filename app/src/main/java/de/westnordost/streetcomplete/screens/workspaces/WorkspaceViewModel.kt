@@ -10,6 +10,7 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import kotlinx.coroutines.FlowPreview
@@ -33,11 +34,11 @@ abstract class WorkspaceViewModel : ViewModel() {
     )
 
     abstract val loginState: StateFlow<WorkspaceLoginState>
-    abstract val selectedWorkspace: StateFlow<Int?>
+    abstract val selectedWorkspace: StateFlow<Workspace?>
     abstract fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState>
     abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
     abstract fun setIsLongForm(isLongForm: Boolean)
-    abstract fun setSelectedWorkspace(workspaceId: Int)
+    abstract fun setSelectedWorkspace(index: Int)
     abstract fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
     abstract fun refreshToken()
@@ -50,15 +51,16 @@ class WorkspaceViewModelImpl(
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
 
-    private val _selectedWorkspace = MutableStateFlow<Int?>(null)
-    override val selectedWorkspace: StateFlow<Int?> get() = _selectedWorkspace
+    private val _selectedWorkspace = MutableStateFlow<Workspace?>(null)
+    override val selectedWorkspace: StateFlow<Workspace?> get() = _selectedWorkspace
 
     private val _loginState = MutableStateFlow<WorkspaceLoginState>(WorkspaceLoginState.Init)
     override val loginState: StateFlow<WorkspaceLoginState> get() = _loginState
 
-    override fun setSelectedWorkspace(workspaceId: Int) {
-        _selectedWorkspace.value = workspaceId
-        preferences.workspaceId = workspaceId
+    override fun setSelectedWorkspace(index: Int) {
+        _selectedWorkspace.value = (showWorkspaces.value as WorkspaceListState.Success).workspaces
+            .filter { it.externalAppAccess == 1 && it.type == "osw" }[index]
+        preferences.workspaceId = _selectedWorkspace.value?.id
     }
 
     private var userLocation: Location? = null

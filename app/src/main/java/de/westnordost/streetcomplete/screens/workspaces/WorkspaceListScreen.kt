@@ -3,17 +3,26 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,13 +40,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.MainActivity
+import de.westnordost.streetcomplete.screens.user.UserActivity
+import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
 
 @Composable
 fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
@@ -51,6 +68,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 
     val onClick: (index: Int) -> Unit = { index ->
         viewModel.setSelectedWorkspace(index)
+//        Toast.makeText(context, index.toString() + " " + viewModel.selectedWorkspace.value?.id.toString(), Toast.LENGTH_SHORT).show()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -71,12 +89,25 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    Column {
-                        Text(
-                            text = "Please select a workspace to continue",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = modifier.padding(8.dp)
+                    Column(modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)) {
+                        val context = LocalContext.current
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            tint = MaterialTheme.colorScheme.primary,
+                            contentDescription = "Star Icon",
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .size(36.dp, 36.dp)
+                                .clickable {
+                                    val intent = Intent(
+                                        context,
+                                        UserActivity::class.java
+                                    )
+                                    context.startActivity(intent)
+                                }
+
                         )
                         WorkspaceList(
                             onClick,
@@ -111,13 +142,16 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 
 
         if (isLoading || isLongFormLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.secondary)
+            CircularProgressWithText(
+                text = "Loading workspaces..."
+            )
+//            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.secondary)
         }
 
         val selectedWorkspaceState by viewModel.selectedWorkspace.collectAsState()
         LaunchedEffect(selectedWorkspaceState) {
-            selectedWorkspaceState?.let { workspaceId ->
-                viewModel.getLongForm(workspaceId).collect { longFormState ->
+            selectedWorkspaceState?.let { workspace ->
+                viewModel.getLongForm(workspace.id).collect { longFormState ->
                     when (longFormState) {
                         is WorkspaceLongFormState.Loading -> {
                             // Handle loading state
@@ -130,7 +164,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
 //                            settingsViewModel.deleteMapQuests()
-                            finishAndLaunchNewActivity(context, longFormState.longFormItems)
+                            finishAndLaunchNewActivity(context, longFormState.longFormItems, workspace.title)
                         }
 
                         is WorkspaceLongFormState.Error -> {
@@ -153,12 +187,14 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 fun finishAndLaunchNewActivity(
     context: Context,
     addLongFormResponseItems: List<Elements>,
+    title : String
 ) {
     val activity = context as? Activity
     activity?.let {
         val intent = Intent(it, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
+            putExtra("WORKSPACE_TITLE", title)
         }
         it.startActivity(intent)
         it.finish()
@@ -185,9 +221,51 @@ fun WorkspaceList(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        LazyColumn(modifier = modifier) {
-            itemsIndexed(items) { index, workspace ->
-                WorkSpaceListItem(workspace = workspace, workspace.id, Modifier, onClick)
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.workspaces_logo_purple),
+                contentDescription = "Workspace Icon",
+                alignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .padding(end = 16.dp)
+                    .size(100.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Fit
+            )
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "AVIV",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = ProximaNovaFontFamily,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.alignBy(LastBaseline)
+                )
+                Text(
+                    "ScoutRoute",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = ProximaNovaFontFamily,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.alignBy(LastBaseline)
+                )
+            }
+
+            Text(
+                text = "Please select a workspace to continue",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = modifier.padding(8.dp)
+            )
+            LazyColumn(modifier = modifier) {
+                itemsIndexed(items) { index, workspace ->
+                    WorkSpaceListItem(workspace = workspace, index, Modifier, onClick)
+                }
             }
         }
     }
@@ -214,9 +292,31 @@ fun WorkSpaceListItem(
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.MiddleEllipsis,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .padding(16.dp)
                 .fillMaxWidth()
                 .wrapContentWidth(align = Alignment.CenterHorizontally)
+        )
+    }
+}
+
+@Composable
+fun CircularProgressWithText(
+    text: String
+) {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(30.dp),
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
         )
     }
 }

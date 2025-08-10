@@ -15,7 +15,7 @@ class UploadButton @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : RelativeLayout(context, attrs, defStyleAttr) {
 
-    private val binding = ViewUploadButtonBinding.inflate(LayoutInflater.from(context), this)
+    val binding = ViewUploadButtonBinding.inflate(LayoutInflater.from(context), this)
 
     var uploadableCount: Int = 0
         set(value) {
