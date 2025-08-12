@@ -261,6 +261,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
     debugImplementation("com.google.firebase:firebase-appdistribution:16.0.0-beta15")
     implementation("com.google.firebase:firebase-perf")
+
+    implementation("io.github.optimumcode:json-schema-validator:0.5.2")
 }
 
 /** Localizations that should be pulled from POEditor */

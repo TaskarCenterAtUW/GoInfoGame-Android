@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface WorkspaceRepository {
     fun getWorkspaces(location: Location) : Flow<List<Workspace>>
-    fun getLongFormForWorkspace(workspaceId : Int) : Flow<List<Elements>>
+    fun getLongFormForWorkspace(workspaceId : Int) : Flow<Pair<List<Elements>, String>>
     fun loginToWorkspace(username : String, password : String) : Flow<LoginResponse>
     fun getUserInfo(userEmail : String) : Flow<UserInfoResponse>
     fun refreshToken(refreshToken : String) : Flow<LoginResponse>

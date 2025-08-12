@@ -19,12 +19,12 @@ sealed class WorkspaceListState {
 
 sealed class WorkspaceLongFormState {
     data object Loading : WorkspaceLongFormState()
-    data class Success(val longFormItems: List<Elements>) : WorkspaceLongFormState()
+    data class Success(val longFormItems: Pair<List<Elements>, String>) : WorkspaceLongFormState()
     data class Error(val error: String?) : WorkspaceLongFormState()
 
     companion object {
         fun loading() = Loading
-        fun success(workspaces: List<Elements>) = Success(workspaces)
+        fun success(workspaces: Pair<List<Elements>, String>) = Success(workspaces)
         fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }
 }

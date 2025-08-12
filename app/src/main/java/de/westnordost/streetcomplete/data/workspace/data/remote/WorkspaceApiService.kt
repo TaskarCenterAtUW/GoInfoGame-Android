@@ -86,7 +86,7 @@ class WorkspaceApiService(
         }
     }
 
-    suspend fun getLongFormForWorkspace(workspaceId: Int): List<Elements> {
+    suspend fun getLongFormForWorkspace(workspaceId: Int): Pair<List<Elements>, String> {
         val url = "${environmentManager.currentEnvironment.baseUrl}/${workspaceId}/quests/long"
 
         try {
@@ -111,11 +111,11 @@ class WorkspaceApiService(
 
                 jsonElement is JsonObject && "version" in jsonElement -> {
                     val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
-                    wrapper.elements
+                    Pair(wrapper.elements, text)
                 }
 
                 jsonElement is JsonArray -> {
-                    json.decodeFromJsonElement(jsonElement)
+                   Pair(json.decodeFromJsonElement(jsonElement), text)
                 }
 
                 else -> {

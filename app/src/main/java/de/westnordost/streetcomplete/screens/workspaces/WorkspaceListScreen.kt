@@ -55,6 +55,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.MainActivity
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
+import de.westnordost.streetcomplete.util.SchemaValidator
 
 @Composable
 fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
@@ -164,7 +165,15 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
 //                            settingsViewModel.deleteMapQuests()
-                            finishAndLaunchNewActivity(context, longFormState.longFormItems, workspace.title)
+                            // Prompt : Convert the long form response to a json string and validate it
+                            if (SchemaValidator.validateJsonWithKotlinx(context, longFormState.longFormItems.second, "schema.json")) {
+                                finishAndLaunchNewActivity(context, longFormState.longFormItems.first, workspace.title)
+                            } else {
+                                // Show error message if validation fails
+                                snackBarMessage = "Error: Invalid long form response for workspace ${workspace.title}"
+                                Toast.makeText(context, "Invalid long form response", Toast.LENGTH_SHORT).show()
+                            }
+
                         }
 
                         is WorkspaceLongFormState.Error -> {

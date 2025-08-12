@@ -26,7 +26,7 @@ class WorkspaceRepositoryImpl(
         emit(workspaces)
     }
 
-    override fun getLongFormForWorkspace(workspaceId: Int): Flow<List<Elements>> {
+    override fun getLongFormForWorkspace(workspaceId: Int): Flow<Pair<List<Elements>, String>> {
         return flow {
             val longForms = apiService.getLongFormForWorkspace(workspaceId)
             emit(longForms)

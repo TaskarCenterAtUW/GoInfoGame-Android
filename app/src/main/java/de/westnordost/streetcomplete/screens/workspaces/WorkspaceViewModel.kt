@@ -136,9 +136,9 @@ class WorkspaceViewModelImpl(
         initialValue = WorkspaceLongFormState.loading()
     )
 
-    private fun emitLongFormResponse(longFormResponse: List<Elements>): WorkspaceLongFormState {
+    private fun emitLongFormResponse(longFormResponse: Pair<List<Elements>, String>): WorkspaceLongFormState {
         try {
-            for (item in longFormResponse) {
+            for (item in longFormResponse.first) {
                 item.questQuery?.toElementFilterExpression()
             }
             return WorkspaceLongFormState.success(longFormResponse)
