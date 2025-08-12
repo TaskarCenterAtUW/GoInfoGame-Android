@@ -47,21 +47,21 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editText"
-            android:layout_width="120dp"
+            android:layout_width="220dp"
             android:layout_height="wrap_content"
-            android:hint="Enter Value"
+            android:hint="@string/enter_value"
             android:inputType="number" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <ImageView
         android:id="@+id/quest_image"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
         android:scaleType="centerCrop"
-        android:visibility="gone"
+        android:visibility="visible"
         android:background="@drawable/black_image_border"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

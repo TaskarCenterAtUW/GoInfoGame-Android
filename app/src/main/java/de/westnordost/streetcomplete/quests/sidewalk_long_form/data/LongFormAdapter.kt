@@ -193,13 +193,15 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         private var position = 0
         private var textInputLayout: TextInputLayout? = null
         private var minValue: Int? = null
+        private var maxValue: Int = Int.MAX_VALUE
         fun updatePosition(position: Int) {
             this.position = position
         }
 
-        fun updateInputLayout(textInputLayout: TextInputLayout, minValue: Int? = null) {
+        fun updateInputLayout(textInputLayout: TextInputLayout, minValue: Int? = null, maxValue: Int?) {
             this.textInputLayout = textInputLayout
             this.minValue = minValue
+            this.maxValue = maxValue ?: Int.MAX_VALUE
         }
 
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -215,8 +217,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
         override fun afterTextChanged(s: Editable?) {
             val text = s.toString()
-            if (text.isNotBlank() && text.toInt() < minValue!!) {
+            if (text.isNotBlank() && text.toInt() <= (minValue ?: 0)) {
                 textInputLayout?.error = "Value should be greater than $minValue"
+            } else if (text.isNotBlank() && text.toInt() > maxValue) {
+                textInputLayout?.error = "Value should be less than $maxValue"
             } else {
                 textInputLayout?.error = null
             }
@@ -285,7 +289,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 binding.questImage.visibility = View.GONE
             }
             customTextWatcher.updatePosition(position)
-            customTextWatcher.updateInputLayout(binding.input, item.questAnswerValidation?.min)
+            customTextWatcher.updateInputLayout(binding.input,
+                item.questAnswerValidation?.min,
+                item.questAnswerValidation?.max)
             binding.input.editText?.addTextChangedListener(customTextWatcher)
         }
     }
