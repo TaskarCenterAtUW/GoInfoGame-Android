@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -213,7 +215,7 @@ class WorkSpaceActivity : AppCompatActivity() {
                     AppTheme {
                         val workspaceLoginState by preferences.workspaceLoginState.collectAsState()
                         Scaffold(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars),
                             contentWindowInsets = WindowInsets.statusBars
                         ) { innerPadding ->
                             // LoginScreen(
