@@ -9,7 +9,6 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.location.Location
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -88,7 +87,6 @@ import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -109,6 +107,7 @@ import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
 import de.westnordost.streetcomplete.screens.settings.quest_selection.QuestSelectionViewModel
+import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -120,8 +119,6 @@ import de.westnordost.streetcomplete.util.ktx.hideKeyboard
 import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.observe
-import de.westnordost.streetcomplete.util.ktx.popIn
-import de.westnordost.streetcomplete.util.ktx.popOut
 import de.westnordost.streetcomplete.util.ktx.setMargins
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.ktx.toast
@@ -282,7 +279,7 @@ class MainFragment :
         super.onViewCreated(view, savedInstanceState)
 
         val result = activity?.intent?.getStringExtra("WORKSPACE_TITLE")
-        binding.workspaceTitle.text = result
+        binding.toolbar.workspaceTitle.text = result
 //        viewLifecycleScope.launch {
 //            // load imagery list
 //            try {
@@ -312,11 +309,10 @@ class MainFragment :
         binding.zoomInButton.setOnClickListener { onClickZoomIn() }
         binding.zoomOutButton.setOnClickListener { onClickZoomOut() }
         binding.createButton.setOnClickListener { onClickCreateButton() }
-        binding.uploadButton.setOnClickListener { onClickUploadButton() }
+        binding.toolbar.uploadButton.setOnClickListener { onClickUploadButton() }
         binding.undoButton.setOnClickListener { onClickUndoButton() }
-        binding.messagesButton.setOnClickListener { onClickMessagesButton() }
-        binding.starsCounterView.setOnClickListener { onClickAnswersCounterView() }
-        binding.overlaysButton.setOnClickListener {
+
+        binding.toolbar.overlaysButton.setOnClickListener {
 //            val mapFragment = mapFragment ?: return@setOnClickListener
 //            mapFragment.showArielView = true
             val screenCenter = mapFragment?.getCenterCoordinates()
@@ -325,7 +321,7 @@ class MainFragment :
                 context?.showImageryBottomSheet(screenCenter)
             }
         }
-        binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
+        binding.toolbar.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
         updateOffsetWithOpenBottomSheet()
 
@@ -340,34 +336,27 @@ class MainFragment :
         //     binding.uploadButton.isGone = isAutoSync
         // }
         observe(controlsViewModel.unsyncedEditsCount) { count ->
-            binding.uploadButton.uploadableCount = count
+            binding.toolbar.uploadButton.uploadableCount = count
+        }
+        binding.toolbar.profileButton.setOnClickListener {
+            val intent = Intent(context, UserActivity::class.java)
+            startActivity(intent)
         }
         observe(controlsViewModel.isUploading) { isUploadInProgress ->
-            val icon = binding.uploadButton.binding.iconView
-            if (isUploadInProgress){
+            val icon = binding.toolbar.uploadButton.binding.iconView
+            if (isUploadInProgress) {
                 val rotate = AnimationUtils.loadAnimation(this.requireContext(), R.anim.rotate)
                 icon.startAnimation(rotate)
-            }else{
+            } else {
                 icon.clearAnimation()
             }
-            binding.uploadButton.isEnabled = !isUploadInProgress
+            binding.toolbar.uploadButton.isEnabled = !isUploadInProgress
             // Don't allow undoing while uploading. Should prevent race conditions.
             // (Undoing quest while also uploading it at the same time)
             binding.undoButton.isEnabled = !isUploadInProgress
         }
-        // observe(controlsViewModel.messagesCount) { messagesCount ->
-        //     binding.messagesButton.messagesCount = messagesCount
-        //     binding.messagesButton.isGone = messagesCount <= 0
-        // }
         observe(controlsViewModel.isUploadingOrDownloading) { isUploadingOrDownloading ->
             binding.starsCounterView.showProgress = isUploadingOrDownloading
-        }
-        observe(controlsViewModel.isShowingStarsCurrentWeek) { isShowingCurrentWeek ->
-            binding.starsCounterView.showLabel = isShowingCurrentWeek
-        }
-        observe(controlsViewModel.starsCount) { count ->
-            // only animate if count is positive, for positive feedback
-            binding.starsCounterView.setUploadedCount(count, count > 0)
         }
         observe(controlsViewModel.selectedOverlay) { overlay ->
 //            val iconRes = overlay?.icon ?: R.drawable.ic_overlay_black_24dp
@@ -377,12 +366,9 @@ class MainFragment :
             if (isTeamMode) {
                 // always show this toast on start to remind user that it is still on
                 context?.toast(R.string.team_mode_active)
-                binding.teamModeColorCircle.popIn()
-                binding.teamModeColorCircle.setIndexInTeam(controlsViewModel.indexInTeam)
             } else {
                 // show this only once when turning it off
                 if (controlsViewModel.teamModeChanged) context?.toast(R.string.team_mode_deactivated)
-                binding.teamModeColorCircle.popOut()
             }
             controlsViewModel.teamModeChanged = false
         }
@@ -949,7 +935,7 @@ class MainFragment :
             if (controlsViewModel.isLoggedIn.value) {
                 if (controlsViewModel.unsyncedEditsCount.value == 0) {
                     context?.toast(getString(R.string.no_pending_changes_to_sync))
-                }else{
+                } else {
                     controlsViewModel.upload()
                 }
             } else {
@@ -1571,7 +1557,7 @@ class MainFragment :
         root.addView(img)
 
         val isAutoSync = controlsViewModel.isAutoSync.value
-        val answerTarget = if (isAutoSync) binding.starsCounterView else binding.uploadButton
+        val answerTarget = binding.toolbar.uploadButton
         flingQuestMarkerTo(img, answerTarget) { root.removeView(img) }
     }
 
@@ -1632,12 +1618,13 @@ class MainFragment :
                     }
                     .build()
                 imageryList.forEach { imagery ->
-                    val imageryRadioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
-                        id = View.generateViewId()
-                        text = imagery.name
-                        tag = imagery
-                        compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
-                    }
+                    val imageryRadioButton =
+                        MaterialRadioButton(this@showImageryBottomSheet).apply {
+                            id = View.generateViewId()
+                            text = imagery.name
+                            tag = imagery
+                            compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
+                        }
 
                     val iconUrl = imagery.icon // ensure it's a valid URL or resource
                     val sizePx = (30 * resources.displayMetrics.density).toInt()
@@ -1648,14 +1635,23 @@ class MainFragment :
                         .allowHardware(false) // required for drawable access in some cases
                         .listener(
                             onError = { request, throwable ->
-                                Log.e("CoilError", "Failed to load image: $iconUrl", throwable.throwable)
+                                Log.e(
+                                    "CoilError",
+                                    "Failed to load image: $iconUrl",
+                                    throwable.throwable
+                                )
                             }
                         )
                         .target(
                             onSuccess = { drawable ->
                                 // Ensure it's set after layout
                                 imageryRadioButton.post {
-                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)
+                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(
+                                        drawable,
+                                        null,
+                                        null,
+                                        null
+                                    )
                                 }
                             },
                             onError = {
@@ -1668,9 +1664,9 @@ class MainFragment :
                     radioGroup.addView(imageryRadioButton)
                 }
 
-                if (selectedImagery == null){
+                if (selectedImagery == null) {
                     (radioGroup.getChildAt(0) as RadioButton).isChecked = true
-                }else{
+                } else {
                     // Check the radio button that matches the selected imagery
                     for (i in 0 until radioGroup.childCount) {
                         val button = radioGroup.getChildAt(i) as RadioButton
@@ -1691,7 +1687,10 @@ class MainFragment :
                     mapFragment?.imagery = selectedImagery
                     Toast.makeText(
                         this@showImageryBottomSheet,
-                        getString(R.string.selected, selectedImagery?.name ?: getString(R.string.default_imagery)),
+                        getString(
+                            R.string.selected,
+                            selectedImagery?.name ?: getString(R.string.default_imagery)
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                     bottomSheetDialog.dismiss()

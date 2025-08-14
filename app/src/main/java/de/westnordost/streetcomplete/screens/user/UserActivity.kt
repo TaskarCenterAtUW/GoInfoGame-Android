@@ -10,7 +10,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.databinding.ActivityUserBinding
 import de.westnordost.streetcomplete.screens.BaseActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
-import de.westnordost.streetcomplete.screens.user.profile.ProfileScreen
+import de.westnordost.streetcomplete.screens.user.profile.ProfileScreenNewContent
 import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
@@ -43,7 +43,7 @@ class UserActivity : BaseActivity() {
         binding.navHost.setContent {
             AppTheme {
                 Surface {
-                    ProfileScreen(
+                    ProfileScreenNewContent(
                         viewModel,
                         settingsViewModel,
                         preferences,

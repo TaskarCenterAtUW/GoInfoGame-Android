@@ -7,10 +7,12 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,12 +53,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.DpOffset
@@ -153,7 +158,8 @@ fun LoginScreen(
         LoginCard(viewModel, email, password, selectedEnvironment, activity, preferences, modifier)
 
         if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.secondary)
         }
 
         snackBarMessage?.let {
@@ -231,145 +237,166 @@ fun LoginCard(
     preferences: Preferences,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier.padding(24.dp)
-        ) {
-            val context = LocalContext.current
-            var visibility by rememberSaveable { mutableStateOf(false) }
-
-            Row(modifier = Modifier.padding(bottom = 32.dp)) {
-                Image(
-                    painter = painterResource(id = R.drawable.aviv_logo),
-                    contentDescription = "Workspace Icon",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp)
-                        .padding(end = 16.dp)
-                        .size(100.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Fit
-                )
-                Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                    Text(
-                        text = "AVIV",
-                        style = MaterialTheme.typography.displayMedium,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = ProximaNovaFontFamily,
-                        color = MaterialTheme.colorScheme.primary,
+    Surface(
+        color = Color.White,
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(verticalArrangement = Arrangement.SpaceEvenly) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.3f)
+                    .background(Color(0xFFE7E3EE))
+            ) {
+                Row(modifier = Modifier.padding(all = 32.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.aviv_logo),
+                        contentDescription = "Workspace Icon",
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .padding(end = 16.dp)
+                            .size(100.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Fit
                     )
-                    Text(
-                        "ScoutRoute",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = ProximaNovaFontFamily,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            TextField(
-                value = email.value, onValueChange = { newText -> email.value = newText },
-                label = {
-                    Text(
-                        text = stringResource(
-                            id = R.string.email
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                },
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-            )
-            TextField(
-                value = password.value,
-                onValueChange = { newText -> password.value = newText },
-                label = {
-                    Text(
-                        text = stringResource(
-                            id = R.string.password
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done
-                ),
-                trailingIcon = {
-                    val image =
-                        if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                    IconButton(onClick = { visibility = !visibility }) {
-                        Icon(imageVector = image, contentDescription = null)
-                    }
-                },
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-            )
-
-            Button(onClick = {
-                if (email.value.isEmpty() || password.value.isEmpty()) {
-                    Toast.makeText(
-                        context,
-                        "Please enter email and password",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@Button
-                }
-                viewModel.loginToWorkspace(email.value, password.value)
-            }, modifier = Modifier.padding(vertical = 24.dp)) {
-                Text(text = "Sign In", style = MaterialTheme.typography.titleMedium)
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Arrow Icon",
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
-                val coroutineScope = rememberCoroutineScope()
-                val creds = SecureCredentialStorage.getCredential(
-                    LocalContext.current,
-                    selectedEnvironment.value.name
-                )
-                if (creds != null) {
-                    Button(onClick = {
-                        coroutineScope.launch {
-                            val authenticated = authenticateWithBiometrics(
-                                context,
-                                activity = activity
-                            )
-                            if (!authenticated) {
-                                Toast.makeText(
-                                    context,
-                                    "Failed to authenticate",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            } else {
-                                email.value = creds.username
-                                password.value = creds.password
-                                viewModel.loginToWorkspace(email.value, password.value)
-                            }
-                        }
-
-                    }, modifier = Modifier.padding(vertical = 24.dp)) {
-                        Icon(
-                            painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
-                            contentDescription = "Fingerprint Icon",
-                            modifier = Modifier.padding(end = 16.dp)
+                    Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                        Text(
+                            text = "AVIV",
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ProximaNovaFontFamily,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         Text(
-                            text = "Sign In with Device Authentication",
-                            style = MaterialTheme.typography.titleMedium
+                            "ScoutRoute",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = ProximaNovaFontFamily,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
-//            EnvironmentDropdownMenu(viewModel = viewModel, selectedEnvironment, modifier)
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                val context = LocalContext.current
+                var visibility by rememberSaveable { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = email.value, onValueChange = { newText -> email.value = newText },
+                    label = {
+                        Text(
+                            text = stringResource(
+                                id = R.string.email
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp)
+                )
+                OutlinedTextField(
+                    value = password.value,
+                    onValueChange = { newText -> password.value = newText },
+                    label = {
+                        Text(
+                            text = stringResource(
+                                id = R.string.password
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    trailingIcon = {
+                        val image =
+                            if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        IconButton(onClick = { visibility = !visibility }) {
+                            Icon(imageVector = image, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp)
+                )
+
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+                    Button(onClick = {
+                        if (email.value.isEmpty() || password.value.isEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Please enter email and password",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+                        viewModel.loginToWorkspace(email.value, password.value)
+                    }, modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)) {
+                        Text(text = "Login", style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                        val coroutineScope = rememberCoroutineScope()
+                        val creds = SecureCredentialStorage.getCredential(
+                            LocalContext.current,
+                            selectedEnvironment.value.name
+                        )
+                        if (creds != null) {
+                            Button(onClick = {
+                                coroutineScope.launch {
+                                    val authenticated = authenticateWithBiometrics(
+                                        context,
+                                        activity = activity
+                                    )
+                                    if (!authenticated) {
+                                        Toast.makeText(
+                                            context,
+                                            "Failed to authenticate",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                            .show()
+                                    } else {
+                                        email.value = creds.username
+                                        password.value = creds.password
+                                        viewModel.loginToWorkspace(email.value, password.value)
+                                    }
+                                }
+
+                            }, modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 16.dp)) {
+                                Icon(
+                                    painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
+                                    contentDescription = "Fingerprint Icon",
+                                    modifier = Modifier.padding(end = 16.dp)
+                                )
+                                Text(
+                                    text = "Login with Device Authentication",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
