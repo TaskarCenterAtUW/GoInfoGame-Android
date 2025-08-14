@@ -191,7 +191,6 @@ class WorkSpaceActivity : AppCompatActivity() {
                     askPermission = true,
                     permissionGranted = {
                         showMainScreen = true
-                        Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
                     }
                 )
                 if (showMainScreen) {

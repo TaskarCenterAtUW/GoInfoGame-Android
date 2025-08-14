@@ -217,7 +217,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
         override fun afterTextChanged(s: Editable?) {
             val text = s.toString()
-            if (text.isNotBlank() && text.toInt() <= (minValue ?: 0)) {
+            if (text.isNotBlank() && text.toInt() < (minValue ?: 0)) {
                 textInputLayout?.error = "Value should be greater than $minValue"
             } else if (text.isNotBlank() && text.toInt() > maxValue) {
                 textInputLayout?.error = "Value should be less than $maxValue"
