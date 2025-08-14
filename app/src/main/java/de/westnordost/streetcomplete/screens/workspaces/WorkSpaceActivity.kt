@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -45,6 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -52,7 +57,6 @@ import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
 import de.westnordost.streetcomplete.ApplicationConstants.APP_NAME
-import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
@@ -129,21 +133,117 @@ class WorkSpaceActivity : AppCompatActivity() {
         }
     }
 
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         isLocationEnabled()
-        if (BuildConfig.DEBUG) {
-            checkNotificationPermission()
-        } else {
-            val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
-            setContent(showAlert)
+//        if (BuildConfig.DEBUG) {
+//            checkNotificationPermission()
+//        } else {
+//            val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
+//            setContent(showAlert)
+//        }
+        setContent {
+            AppTheme {
+                var showMainScreen by remember { mutableStateOf(false) }
+                var locationEnabled by remember { mutableStateOf(isLocationEnabled()) }
+
+                val lifecycleOwner = LocalLifecycleOwner.current
+                // Register the lifecycle observer
+                DisposableEffect(lifecycleOwner) {
+                    val observer = LifecycleEventObserver { _, event ->
+                        if (event == Lifecycle.Event.ON_RESUME) {
+                            // Re-check permission when the app resumes
+                            locationEnabled = isLocationEnabled()
+                        }
+                    }
+
+                    lifecycleOwner.lifecycle.addObserver(observer)
+
+                    // Cleanup the observer when the composable leaves the screen
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
+                }
+
+                PermissionHandler(
+                    permissions = listOf(
+                        PermissionModel(
+                            permission = "android.permission.POST_NOTIFICATIONS",
+                            maxSDKVersion = Int.MAX_VALUE,
+                            minSDKVersion = 33,
+                            rational = "Access to notifications is required to share feedback"
+                        ),
+                        PermissionModel(
+                            permission = "android.permission.ACCESS_FINE_LOCATION",
+                            maxSDKVersion = Int.MAX_VALUE,
+                            minSDKVersion = 23,
+                            rational = "Access to location is required to use the app"
+                        ),
+                    ),
+                    askPermission = true,
+                    permissionGranted = {
+                        showMainScreen = true
+                        Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show()
+                    }
+                )
+                if (showMainScreen) {
+                    if (locationEnabled)
+                        StartWorkspaceFlow()
+                    else
+                        ShowLocationEnableUI()
+                }
+            }
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        isLocationEnabled()
+    @Composable
+    fun ShowLocationEnableUI() {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                "$APP_NAME needs location to be enabled to fetch workspaces nearby",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp),
+                style = TextStyle(fontSize = 20.sp)
+            )
+            if (!isLocationEnabled.value) {
+                Button(onClick = {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    startActivity(intent)
+                }) {
+                    Text("Enable location")
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun StartWorkspaceFlow() {
+        val showAlert = intent.getBooleanExtra(SHOW_LOGGED_OUT_ALERT, false)
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.navigationBars),
+            contentWindowInsets = WindowInsets.statusBars
+        ) { innerPadding ->
+            var showDialog by remember { mutableStateOf(showAlert) }
+
+            MyAlertDialog(
+                showDialog = showDialog,
+                onDismiss = { showDialog = false })
+            AppNavigator(innerPadding, preferences, environmentManager, this)
+        }
     }
 
     private fun setContent(showAlert: Boolean) {
@@ -196,13 +296,6 @@ class WorkSpaceActivity : AppCompatActivity() {
         }
     }
 
-    private fun isLocationEnabled() {
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        _isLocationEnabled.value =
-            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-    }
-
     @OptIn(ExperimentalMaterial3Api::class)
     private fun checkLocationPermission(showAlert: Boolean) {
         when {
@@ -215,7 +308,9 @@ class WorkSpaceActivity : AppCompatActivity() {
                     AppTheme {
                         val workspaceLoginState by preferences.workspaceLoginState.collectAsState()
                         Scaffold(
-                            modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(WindowInsets.navigationBars),
                             contentWindowInsets = WindowInsets.statusBars
                         ) { innerPadding ->
                             // LoginScreen(
