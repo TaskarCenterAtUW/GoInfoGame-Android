@@ -65,7 +65,7 @@ class AttachPhotoFragment : Fragment(R.layout.fragment_attach_photo) {
 
     private fun updateHintVisibility() {
         binding.photosList.isGone = imagePaths.isEmpty()
-        binding.photosAreUsefulExplanation.isGone = imagePaths.isNotEmpty()
+//        binding.photosAreUsefulExplanation.isGone = imagePaths.isNotEmpty()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
