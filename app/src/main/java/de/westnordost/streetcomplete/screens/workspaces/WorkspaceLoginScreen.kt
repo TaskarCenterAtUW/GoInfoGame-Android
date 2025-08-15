@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -39,7 +38,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -158,8 +156,10 @@ fun LoginScreen(
         LoginCard(viewModel, email, password, selectedEnvironment, activity, preferences, modifier)
 
         if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.secondary)
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.secondary
+            )
         }
 
         snackBarMessage?.let {
@@ -336,20 +336,26 @@ fun LoginCard(
                         .padding(all = 16.dp)
                 )
 
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
-                    Button(onClick = {
-                        if (email.value.isEmpty() || password.value.isEmpty()) {
-                            Toast.makeText(
-                                context,
-                                "Please enter email and password",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@Button
-                        }
-                        viewModel.loginToWorkspace(email.value, password.value)
-                    }, modifier = Modifier
+                Column(
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)) {
+                        .padding(vertical = 16.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            if (email.value.isEmpty() || password.value.isEmpty()) {
+                                Toast.makeText(
+                                    context,
+                                    "Please enter email and password",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@Button
+                            }
+                            viewModel.loginToWorkspace(email.value, password.value)
+                        }, modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
                         Text(text = "Login", style = MaterialTheme.typography.titleMedium)
                     }
 
@@ -360,34 +366,31 @@ fun LoginCard(
                             selectedEnvironment.value.name
                         )
                         if (creds != null) {
-                            Button(onClick = {
-                                coroutineScope.launch {
-                                    val authenticated = authenticateWithBiometrics(
-                                        context,
-                                        activity = activity
-                                    )
-                                    if (!authenticated) {
-                                        Toast.makeText(
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val authenticated = authenticateWithBiometrics(
                                             context,
-                                            "Failed to authenticate",
-                                            Toast.LENGTH_SHORT
+                                            activity = activity
                                         )
-                                            .show()
-                                    } else {
-                                        email.value = creds.username
-                                        password.value = creds.password
-                                        viewModel.loginToWorkspace(email.value, password.value)
+                                        if (!authenticated) {
+                                            Toast.makeText(
+                                                context,
+                                                "Failed to authenticate",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                        } else {
+                                            email.value = creds.username
+                                            password.value = creds.password
+                                            viewModel.loginToWorkspace(email.value, password.value)
+                                        }
                                     }
-                                }
 
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(all = 16.dp)) {
-                                Icon(
-                                    painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
-                                    contentDescription = "Fingerprint Icon",
-                                    modifier = Modifier.padding(end = 16.dp)
-                                )
+                                }, modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(all = 16.dp)
+                            ) {
                                 Text(
                                     text = "Login with Device Authentication",
                                     style = MaterialTheme.typography.titleMedium
@@ -395,8 +398,7 @@ fun LoginCard(
                             }
                         }
                     }
-
-                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+//                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
                 }
             }
         }
