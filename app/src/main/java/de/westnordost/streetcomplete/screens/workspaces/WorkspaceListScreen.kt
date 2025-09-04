@@ -72,7 +72,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 //        Toast.makeText(context, index.toString() + " " + viewModel.selectedWorkspace.value?.id.toString(), Toast.LENGTH_SHORT).show()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         when (workspaceListState) {
             is WorkspaceListState.Loading -> {
                 // Show a loading indicator in the center of screen
@@ -165,7 +165,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
 //                            settingsViewModel.deleteMapQuests()
-                            finishAndLaunchNewActivity(context, longFormState.longFormItems, workspace.title)
+                            finishAndLaunchNewActivity(context, longFormState.longFormItems, workspace)
                         }
 
                         is WorkspaceLongFormState.Error -> {
@@ -188,14 +188,15 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 fun finishAndLaunchNewActivity(
     context: Context,
     addLongFormResponseItems: List<Elements>,
-    title : String
+    workspace: Workspace
 ) {
     val activity = context as? Activity
     activity?.let {
         val intent = Intent(it, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
-            putExtra("WORKSPACE_TITLE", title)
+            putExtra("WORKSPACE_TITLE", workspace.title)
+            putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(workspace.imageryList ?: emptyList()))
         }
         it.startActivity(intent)
         it.finish()

@@ -9,6 +9,7 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -278,8 +279,15 @@ class MainFragment :
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val result = activity?.intent?.getStringExtra("WORKSPACE_TITLE")
-        binding.toolbar.workspaceTitle.text = result
+        val workspaceTitle = activity?.intent?.getStringExtra("WORKSPACE_TITLE")
+        val imagerList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity?.intent?.getParcelableArrayListExtra("IMAGERY_LIST",
+                Imagery::class.java) ?: emptyList()
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.intent?.getParcelableArrayListExtra<Imagery>("IMAGERY_LIST") ?: emptyList()
+        }
+        binding.toolbar.workspaceTitle.text = workspaceTitle
 //        viewLifecycleScope.launch {
 //            // load imagery list
 //            try {
@@ -318,7 +326,7 @@ class MainFragment :
             val screenCenter = mapFragment?.getCenterCoordinates()
 
             if (screenCenter != null) {
-                context?.showImageryBottomSheet(screenCenter)
+                context?.showImageryBottomSheet(screenCenter, imagerList)
             }
         }
         binding.toolbar.mainMenuButton.setOnClickListener { onClickMainMenu() }
@@ -1593,7 +1601,7 @@ class MainFragment :
         setIsFollowingPosition(false)
     }
 
-    private fun Context.showImageryBottomSheet(screenCenter: LatLon) {
+    private fun Context.showImageryBottomSheet(screenCenter: LatLon, imagerList: List<Imagery>) {
         val bottomSheetView = LayoutInflater.from(this)
             .inflate(R.layout.bottom_sheet_imagery, null)
 
@@ -1609,8 +1617,9 @@ class MainFragment :
         }
         radioGroup.addView(radioButton)
         CoroutineScope(Dispatchers.Main).launch {
+
             try {
-                val imageryList = imageryRepository.getImageryForLocation(screenCenter)
+                val imageryList = imageryRepository.getImageryForLocation(screenCenter, imagerList)
                 val imageLoader = ImageLoader.Builder(this@showImageryBottomSheet)
                     .allowHardware(false)
                     .components {

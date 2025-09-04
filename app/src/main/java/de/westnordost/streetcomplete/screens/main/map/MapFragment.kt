@@ -340,6 +340,7 @@ open class MapFragment :
                 val template = imagery!!.url
                 return template
                     .replace("{z}", z.toString())
+                    .replace("{zoom}", z.toString())
                     .replace("{x}", x.toString())
                     .replace("{y}", y.toString())
             }
