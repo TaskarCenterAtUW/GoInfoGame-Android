@@ -398,7 +398,7 @@ fun LoginCard(
                             }
                         }
                     }
-                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+//                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
                 }
             }
         }

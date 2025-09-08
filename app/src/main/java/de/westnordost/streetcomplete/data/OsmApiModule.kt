@@ -31,9 +31,8 @@ val osmApiModule = module {
     factory { Preloader(get(named("CountryBoundariesLazy")), get(named("FeatureDictionaryLazy"))) }
     factory { UserApi(get()) }
     factory { EnvironmentManager(get()) }
-    single<OsmConnection> { CustomOsmConnection(
+    factory<OsmConnection> { CustomOsmConnection(
         get(),
-        get<EnvironmentManager>().currentEnvironment.osmUrl,
         ApplicationConstants.USER_AGENT,
         get<Preferences>(),
         get<EnvironmentManager>()

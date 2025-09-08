@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -46,7 +45,7 @@ abstract class WorkspaceViewModel : ViewModel() {
 
 class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
-    private val preferences: Preferences,
+    private val preferences: Preferences
 ) :
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
@@ -192,7 +191,8 @@ class WorkspaceViewModelImpl(
     }
 
     override fun setEnvironment(environment: Environment) {
-        EnvironmentManager(preferences).currentEnvironment = environment
+        val environmentManager = EnvironmentManager(preferences)
+        environmentManager.currentEnvironment = environment
     }
 
     override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {

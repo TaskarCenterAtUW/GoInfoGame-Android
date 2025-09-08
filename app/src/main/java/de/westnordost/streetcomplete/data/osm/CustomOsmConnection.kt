@@ -27,18 +27,18 @@ import java.util.Locale
 
 class CustomOsmConnection(
     private val context: Context,
-    url: String,
     agent: String,
     private val preference: Preferences,
     private val environmentManager: EnvironmentManager
 ) : OsmConnection(
-    url, agent, preference.workspaceToken, 45 * 1000
+    "", agent, preference.workspaceToken, 45 * 1000
 ) {
 
     override fun <T> makeRequest(
         call: String, method: String?, authenticate: Boolean,
         writer: ApiRequestWriter?, reader: ApiResponseReader<T>?,
     ): T? {
+        apiUrl = environmentManager.currentEnvironment.osmUrl
         var connection: HttpURLConnection? = null
         try {
             // Log the time taken for the request
