@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
@@ -398,7 +399,9 @@ fun LoginCard(
                             }
                         }
                     }
-//                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                    if (BuildConfig.BUILD_TYPE.equals("debug", true)) {
+                        EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                    }
                 }
             }
         }

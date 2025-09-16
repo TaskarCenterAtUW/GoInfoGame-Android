@@ -57,6 +57,7 @@ import de.westnordost.streetcomplete.screens.measure.arModule
 import de.westnordost.streetcomplete.screens.settings.settingsModule
 import de.westnordost.streetcomplete.screens.user.userScreenModule
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
+import de.westnordost.streetcomplete.util.banner.DebugBanner
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getSelectedLocales
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
@@ -175,6 +176,7 @@ class StreetCompleteApplication : Application() {
 
         settingsListeners += prefs.onLanguageChanged { updateDefaultLocales() }
         settingsListeners += prefs.onThemeChanged { updateTheme(it) }
+        if (BuildConfig.BUILD_TYPE.equals("debug")) DebugBanner.init(this)
     }
 
     private fun onNewVersion() {

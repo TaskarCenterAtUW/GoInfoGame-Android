@@ -64,5 +64,6 @@
          inputs -->
     <dimen name="large_input">28sp</dimen>
     <dimen name="marker_offset">120dp</dimen>
+    <dimen name="banner_default_size_debug">70dp</dimen>
 
 </resources>

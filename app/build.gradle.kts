@@ -1,3 +1,4 @@
+import com.project.starter.easylauncher.filter.ColorRibbonFilter
 import java.io.FileInputStream
 import java.io.FileWriter
 import java.util.Properties
@@ -11,6 +12,7 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
+    id("com.starter.easylauncher") version "6.4.1"
 }
 
 android {
@@ -58,17 +60,20 @@ android {
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
+            buildConfigField("boolean", "IS_GOOGLE_PLAY", "true")
         }
         getByName("debug") {
             isMinifyEnabled = false
             isDebuggable = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            applicationIdSuffix = ".debug"
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
         }
-        create("releaseGooglePlay") {
-            signingConfig = signingConfigs.getByName("release")
-            buildConfigField("boolean", "IS_GOOGLE_PLAY", "true")
+        create("releaseUW") {
+            isDebuggable = true
+            isMinifyEnabled = false
+            buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -123,6 +128,20 @@ configurations {
         // it's already included in Android
         exclude(group = "net.sf.kxml", module = "kxml2")
         exclude(group = "xmlpull", module = "xmlpull")
+    }
+}
+
+easylauncher {
+    buildTypes {
+        register("debug") {
+            filters(customRibbon(gravity = ColorRibbonFilter.Gravity.TOPRIGHT, ribbonColor = "#FF0000", label = "DEBUG"))
+        }
+        register("release") {
+            enable(false)
+        }
+        register("releaseUW") {
+            enable(false)
+        }
     }
 }
 
