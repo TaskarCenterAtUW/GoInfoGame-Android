@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 
 sealed class WorkspaceListState {
     data object Loading : WorkspaceListState()
@@ -19,12 +20,16 @@ sealed class WorkspaceListState {
 
 sealed class WorkspaceLongFormState {
     data object Loading : WorkspaceLongFormState()
-    data class Success(val longFormItems: List<Elements>) : WorkspaceLongFormState()
+    data class Success(val longFormItems: List<Elements>, val imageryList: List<Imagery>?) :
+        WorkspaceLongFormState()
+
     data class Error(val error: String?) : WorkspaceLongFormState()
 
     companion object {
         fun loading() = Loading
-        fun success(workspaces: List<Elements>) = Success(workspaces)
+        fun success(workspaces: List<Elements>, imageryList: List<Imagery>?) =
+            Success(workspaces, imageryList)
+
         fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }
 }
@@ -44,7 +49,7 @@ sealed class WorkspaceUserInfoState {
 sealed class WorkspaceLoginState {
     data object Init : WorkspaceLoginState()
     data object Loading : WorkspaceLoginState()
-    data class Success(val loginResponse: LoginResponse,val email : String) : WorkspaceLoginState()
+    data class Success(val loginResponse: LoginResponse, val email: String) : WorkspaceLoginState()
     data class Error(val error: String?) : WorkspaceLoginState()
 
     companion object {

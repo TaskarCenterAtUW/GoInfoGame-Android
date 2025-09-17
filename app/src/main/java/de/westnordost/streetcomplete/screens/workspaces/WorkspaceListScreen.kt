@@ -3,7 +3,6 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +55,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.MainActivity
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 
 @Composable
 fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
@@ -90,9 +90,11 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    Column(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
                         val context = LocalContext.current
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -146,13 +148,12 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
             CircularProgressWithText(
                 text = "Loading workspaces..."
             )
-//            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.secondary)
         }
 
         val selectedWorkspaceState by viewModel.selectedWorkspace.collectAsState()
         LaunchedEffect(selectedWorkspaceState) {
             selectedWorkspaceState?.let { workspace ->
-                viewModel.getLongForm(workspace.id).collect { longFormState ->
+                viewModel.getWorkspaceDetails(workspace.id).collect { longFormState ->
                     when (longFormState) {
                         is WorkspaceLongFormState.Loading -> {
                             // Handle loading state
@@ -165,7 +166,12 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             viewModel.setIsLongForm(true)
                             snackBarMessage = null
 //                            settingsViewModel.deleteMapQuests()
-                            finishAndLaunchNewActivity(context, longFormState.longFormItems, workspace)
+                            finishAndLaunchNewActivity(
+                                context,
+                                longFormState.longFormItems,
+                                longFormState.imageryList,
+                                workspace
+                            )
                         }
 
                         is WorkspaceLongFormState.Error -> {
@@ -188,6 +194,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
 fun finishAndLaunchNewActivity(
     context: Context,
     addLongFormResponseItems: List<Elements>,
+    imageryList: List<Imagery>?,
     workspace: Workspace
 ) {
     val activity = context as? Activity
@@ -196,7 +203,7 @@ fun finishAndLaunchNewActivity(
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
             putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
             putExtra("WORKSPACE_TITLE", workspace.title)
-            putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(workspace.imageryList ?: emptyList()))
+            putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(imageryList ?: emptyList()))
         }
         it.startActivity(intent)
         it.finish()
@@ -319,6 +326,7 @@ fun CircularProgressWithText(
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.secondary,
             fontWeight = FontWeight.SemiBold
         )
     }

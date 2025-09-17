@@ -7,7 +7,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -26,9 +26,9 @@ class WorkspaceRepositoryImpl(
         emit(workspaces)
     }
 
-    override fun getLongFormForWorkspace(workspaceId: Int): Flow<List<Elements>> {
+    override fun getWorkspaceDetails(workspaceId: Int): Flow<WorkspaceDetailsResponse> {
         return flow {
-            val longForms = apiService.getLongFormForWorkspace(workspaceId)
+            val longForms = apiService.getWorkspaceDetails(workspaceId)
             emit(longForms)
         }
     }

@@ -11,7 +11,8 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManag
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
@@ -34,7 +39,7 @@ abstract class WorkspaceViewModel : ViewModel() {
 
     abstract val loginState: StateFlow<WorkspaceLoginState>
     abstract val selectedWorkspace: StateFlow<Workspace?>
-    abstract fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState>
+    abstract fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState>
     abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
     abstract fun setIsLongForm(isLongForm: Boolean)
     abstract fun setSelectedWorkspace(index: Int)
@@ -112,15 +117,15 @@ class WorkspaceViewModelImpl(
         }
     }
 
-    override fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
+    override fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
         emit(WorkspaceLongFormState.loading())
-        workspaceRepository.getLongFormForWorkspace(workspaceId)
+        workspaceRepository.getWorkspaceDetails(workspaceId)
             .catch { e ->
                 emit(WorkspaceLongFormState.error(e.message))
                 _selectedWorkspace.value = null
             }
-            .collect { longFormResponse ->
-                emit(emitLongFormResponse(longFormResponse))
+            .collect { workspaceDetails ->
+                emit(emitLongFormResponse(workspaceDetails))
                 _selectedWorkspace.value = null
             }
 //            .collect { longFormResponse -> if (isValidLongForm(longFormResponse)) {
@@ -135,12 +140,36 @@ class WorkspaceViewModelImpl(
         initialValue = WorkspaceLongFormState.loading()
     )
 
-    private fun emitLongFormResponse(longFormResponse: List<Elements>): WorkspaceLongFormState {
+    private fun emitLongFormResponse(workspaceDetails: WorkspaceDetailsResponse): WorkspaceLongFormState {
         try {
+            val json = Json {
+                ignoreUnknownKeys = true
+            }
+            val jsonElement = workspaceDetails.longFormQuestDef
+            val longFormResponse = when {
+                jsonElement is JsonObject && "version" in jsonElement -> {
+                    val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
+                    if (wrapper.elements.isEmpty()) {
+                        return WorkspaceLongFormState.error("No long form quests available for this workspace")
+                    }
+                    wrapper.elements
+                }
+
+                jsonElement is JsonArray -> {
+                    if (jsonElement.isEmpty()) {
+                        return WorkspaceLongFormState.error("No long form quests available for this workspace")
+                    }
+                    json.decodeFromJsonElement(jsonElement)
+                }
+
+                else -> {
+                    return WorkspaceLongFormState.error("Unexpected JSON structure for long form (Null or invalid).  Please contact the admin for this workspace")
+                }
+            }
             for (item in longFormResponse) {
                 item.questQuery?.toElementFilterExpression()
             }
-            return WorkspaceLongFormState.success(longFormResponse)
+            return WorkspaceLongFormState.success(longFormResponse, workspaceDetails.imageryListDef)
         } catch (parseException: ParseException) {
             return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }
