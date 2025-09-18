@@ -28,6 +28,21 @@ data class LongFormQuest(
     @SerialName("quest_type")
     val questType: String? = null,
     var visible :Boolean = true,
-    var userInput : String? = null,
-    var selectedIndex : Int? = null,
+    var userInput : UserInput? = null,
+    var selectedIndex : MutableList<Int>? = null,
 ) : Parcelable
+
+
+@Parcelize
+@Serializable
+sealed class UserInput : Parcelable {
+    data class Single(val answer: String) : UserInput()
+    data class Multiple(val answers: MutableList<String>) : UserInput()
+
+    fun isEmpty(): Boolean {
+        return when (this) {
+            is Single -> answer.isEmpty()
+            is Multiple -> answers.isEmpty()
+        }
+    }
+}

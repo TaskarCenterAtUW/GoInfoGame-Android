@@ -12,6 +12,7 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import org.koin.core.component.KoinComponent
 import java.time.ZoneId
@@ -63,6 +64,18 @@ class AddGenericLong(val item: Elements) :
         for (quest in answer) {
             if (quest != null) {
                 tags[quest.questTag!!] = quest.userInput.toString()
+                when (quest.userInput){
+                    is UserInput.Single -> {
+                        tags[quest.questTag] = (quest.userInput as UserInput.Single).answer
+                    }
+                    is UserInput.Multiple -> {
+                        val multipleAnswers = (quest.userInput as UserInput.Multiple).answers
+                        if(multipleAnswers.isNotEmpty()){
+                            tags[quest.questTag] = multipleAnswers.joinToString(";")
+                        }
+                    }
+                    null -> {}
+                }
             }
         }
         tags["ext:gig_complete"] = "yes"
