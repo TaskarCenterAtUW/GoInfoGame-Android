@@ -40,6 +40,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -370,7 +371,7 @@ fun LoginCard(
                             selectedEnvironment.value.name
                         )
                         if (creds != null) {
-                            Button(
+                            TextButton (
                                 onClick = {
                                     coroutineScope.launch {
                                         val authenticated = authenticateWithBiometrics(
@@ -395,6 +396,11 @@ fun LoginCard(
                                     .fillMaxWidth()
                                     .padding(all = 16.dp)
                             ) {
+                                Icon(
+                                    painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
+                                    contentDescription = "Fingerprint Icon",
+                                    modifier = Modifier.padding(end = 16.dp)
+                                )
                                 Text(
                                     text = "Login with Device Authentication",
                                     style = MaterialTheme.typography.titleMedium
@@ -402,12 +408,14 @@ fun LoginCard(
                             }
                         }
                     }
-                    DebuggableBuild(
-                        viewModel,
-                        selectedEnvironment,
-                        preferences,
-                        modifier = modifier
-                    )
+                    if (BuildConfig.SHOW_DEBUG_OPTIONS) {
+                        DebuggableBuild(
+                            viewModel,
+                            selectedEnvironment,
+                            preferences,
+                            modifier = modifier
+                        )
+                    }
                 }
             }
         }
@@ -428,8 +436,7 @@ fun DebuggableBuild(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(bottom = 16.dp),
+            .fillMaxHeight(),
         contentAlignment = Alignment.BottomCenter
     ) {
         Column(
@@ -454,7 +461,7 @@ fun DebuggableBuild(
             }
 
             Text(
-                text = "Debuggable Build (v${BuildConfig.VERSION_NAME})",
+                text = "Version ${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -475,6 +482,7 @@ fun DebuggableBuild(
                     preferences.setDebugModeEnabled(!isDebugModeEnabled)
                     clickCount = 0
                     showDialog = false
+                    selectedEnvironment.value = Environment.PROD
                 },
                 onCancel = {
                     clickCount = 0

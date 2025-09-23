@@ -59,16 +59,19 @@ android {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
+            buildConfigField("boolean", "SHOW_DEBUG_OPTIONS", "false")
         }
         getByName("debug") {
             isMinifyEnabled = false
             isDebuggable = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "false")
+            buildConfigField("boolean", "SHOW_DEBUG_OPTIONS", "true")
         }
         create("releaseGooglePlay") {
             signingConfig = signingConfigs.getByName("release")
             buildConfigField("boolean", "IS_GOOGLE_PLAY", "true")
+            buildConfigField("boolean", "SHOW_DEBUG_OPTIONS", "false")
         }
     }
 
