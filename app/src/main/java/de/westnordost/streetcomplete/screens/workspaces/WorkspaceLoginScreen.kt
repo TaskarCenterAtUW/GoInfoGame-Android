@@ -8,10 +8,12 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,6 +68,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
@@ -398,10 +402,111 @@ fun LoginCard(
                             }
                         }
                     }
-//                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                    DebuggableBuild(
+                        viewModel,
+                        selectedEnvironment,
+                        preferences,
+                        modifier = modifier
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun DebuggableBuild(
+    viewModel: WorkspaceViewModel,
+    selectedEnvironment: MutableState<Environment>,
+    preferences: Preferences,
+    modifier: Modifier = Modifier
+) {
+    val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
+    var clickCount by remember { mutableIntStateOf(0) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(bottom = 16.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (isDebugModeEnabled) {
+                EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "Exit debug mode",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .clickable {
+                            showDialog = true
+                        },
+                )
+            } else {
+                viewModel.setEnvironment(Environment.PROD)
+            }
+
+            Text(
+                text = "Debuggable Build (v${BuildConfig.VERSION_NAME})",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .clickable {
+                        clickCount++
+                        if (clickCount == 7) {
+                            showDialog = true
+                        }
+                    }
+            )
+        }
+
+        if (showDialog) {
+            ShowDebugModeConfirmationDialog(
+                enable = !isDebugModeEnabled,
+                onConfirm = {
+                    preferences.setDebugModeEnabled(!isDebugModeEnabled)
+                    clickCount = 0
+                    showDialog = false
+                },
+                onCancel = {
+                    clickCount = 0
+                    showDialog = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ShowDebugModeConfirmationDialog(enable: Boolean, onConfirm: () -> Unit, onCancel: () -> Unit) {
+    val openDialog = remember { mutableStateOf(true) }
+    if (openDialog.value) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(if (enable) "Enable Debug Mode" else "Disable Debug Mode") },
+            text = { Text(if (enable) "Are you sure you want to enable debug mode?" else "Are you sure you want to disable debug mode?") },
+            confirmButton = {
+                Button(onClick = {
+                    openDialog.value = false
+                    onConfirm()
+                }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { onCancel() }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
