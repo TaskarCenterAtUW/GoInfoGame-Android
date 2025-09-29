@@ -37,7 +37,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         set(value) {
             if (givenItems.isEmpty()) {
                 givenItems = value
-                needRefreshIds = givenItems.map { it.questAnswerDependency?.questionId }
+                needRefreshIds = givenItems.map { dependency ->
+                    when (val dep = dependency.questAnswerDependency) {
+                        is List<*> -> dep.mapNotNull { it.questionId }
+                        else -> emptyList()
+                    }
+                }.flatten()
             }
 
             field = manageVisibility(value).filter { it.visible }
@@ -60,42 +65,41 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
     private fun manageVisibility(itemCopy: List<LongFormQuest>): List<LongFormQuest> {
         for (quest in itemCopy) {
+            val dependencies = quest.questAnswerDependency ?: emptyList()
+            var isVisible = true
 
-            val requiredUserInput = quest.questAnswerDependency?.requiredValue
-            val requiredQuestId = quest.questAnswerDependency?.questionId
+            for (dependency in dependencies) {
+                val requiredUserInput = dependency.requiredValue
+                val requiredQuestId = dependency.questionId
 
+                if (requiredUserInput == null || requiredQuestId == null) continue
 
-            if (requiredUserInput == null || requiredQuestId == null) {
-                itemCopy[itemCopy.indexOf(quest)].visible = true
-                continue
-            }
-            val filteredQuest = itemCopy.filter {
-                it.questId ==
-                    requiredQuestId
-            }
+                val filteredQuest = itemCopy.find { it.questId == requiredQuestId }
+                if (filteredQuest != null) {
+                    when (filteredQuest.userInput) {
+                        is UserInput.Single -> {
+                            if ((filteredQuest.userInput as UserInput.Single).answer !in requiredUserInput) {
+                                isVisible = false
+                                break
+                            }
+                        }
 
-            when (filteredQuest[0].userInput) {
-                is UserInput.Single -> {
-                    // Single Input
-                    itemCopy[itemCopy.indexOf(quest)].visible =
-                        (filteredQuest[0].userInput as UserInput.Single).answer in requiredUserInput
-                }
+                        is UserInput.Multiple -> {
+                            val userInputs = (filteredQuest.userInput as UserInput.Multiple).answers
+                            if (userInputs.none { it in requiredUserInput }) {
+                                isVisible = false
+                                break
+                            }
+                        }
 
-                is UserInput.Multiple -> {
-                    // Multiple Input
-                    val userInputs = (filteredQuest[0].userInput as UserInput.Multiple).answers
-                    var isVisible = false
-                    for (input in userInputs) {
-                        if (input in requiredUserInput) {
-                            isVisible = true
+                        else -> {
+                            isVisible = false
                             break
                         }
                     }
-                    itemCopy[itemCopy.indexOf(quest)].visible = isVisible
                 }
-
-                else -> itemCopy[itemCopy.indexOf(quest)].visible = false
             }
+            itemCopy[itemCopy.indexOf(quest)].visible = isVisible
         }
 
         itemCopy.forEach {
@@ -125,7 +129,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             this.position = position
         }
 
-        fun updateInputLayout(textInputLayout: TextInputLayout, minValue: Int? = null, maxValue: Int?) {
+        fun updateInputLayout(
+            textInputLayout: TextInputLayout,
+            minValue: Int? = null,
+            maxValue: Int?
+        ) {
             this.textInputLayout = textInputLayout
             this.minValue = minValue
             this.maxValue = maxValue ?: Int.MAX_VALUE
@@ -223,9 +231,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 binding.questImage.visibility = View.GONE
             }
             customTextWatcher.updatePosition(position)
-            customTextWatcher.updateInputLayout(binding.input,
+            customTextWatcher.updateInputLayout(
+                binding.input,
                 item.questAnswerValidation?.min,
-                item.questAnswerValidation?.max)
+                item.questAnswerValidation?.max
+            )
             binding.input.editText?.addTextChangedListener(customTextWatcher)
         }
     }
@@ -248,8 +258,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             if (allowMultiChoice)
                 item.userInput = UserInput.Multiple(mutableListOf())
             else if (item.userInput == null)
-            imageSelectAdapter.selectedIndices =
-                item.selectedIndex ?: emptyList()
+                imageSelectAdapter.selectedIndices =
+                    item.selectedIndex ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()

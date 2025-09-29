@@ -12,7 +12,8 @@ data class LongFormQuest(
     @SerialName("quest_answer_choices")
     val questAnswerChoices: List<QuestAnswerChoice?>? = null,
     @SerialName("quest_answer_dependency")
-    val questAnswerDependency: QuestAnswerDependency? = null,
+    @Serializable(with = QuestDependencySerializer::class)
+    val questAnswerDependency: List<QuestAnswerDependency>? = null,
     @SerialName("quest_answer_validation")
     val questAnswerValidation: QuestAnswerValidation? = null,
     @SerialName("quest_description")
