@@ -49,13 +49,13 @@ sealed class WorkspaceUserInfoState {
 sealed class WorkspaceLoginState {
     data object Init : WorkspaceLoginState()
     data object Loading : WorkspaceLoginState()
-    data class Success(val loginResponse: LoginResponse, val email: String) : WorkspaceLoginState()
+    data class Success(val loginResponse: LoginResponse, val email: String, val expediteLogin: Boolean = false) : WorkspaceLoginState()
     data class Error(val error: String?) : WorkspaceLoginState()
 
     companion object {
         fun Init() = Init
         fun loading() = Loading
-        fun success(loginResponse: LoginResponse, email: String) = Success(loginResponse, email)
+        fun success(loginResponse: LoginResponse, email: String, expediteLogin : Boolean = false) = Success(loginResponse, email, expediteLogin)
         fun error(errorMessage: String?) = Error(errorMessage)
     }
 }

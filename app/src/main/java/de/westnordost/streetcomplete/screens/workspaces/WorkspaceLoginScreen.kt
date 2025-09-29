@@ -135,7 +135,7 @@ fun LoginScreen(
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled && !state.expediteLogin) {
                     val creds = SecureCredentialStorage.getCredential(
                         context,
                         selectedEnvironment.value.name
@@ -179,11 +179,15 @@ fun LoginScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
-    checkForIntent(activity, environmentManager, selectedEnvironment,  preferences)
+
+    LaunchedEffect(activity) {
+        checkForIntent(activity, viewModel, environmentManager, selectedEnvironment, preferences)
+    }
 }
 
 fun checkForIntent(
     activity: AppCompatActivity,
+    viewModel: WorkspaceViewModel,
     environmentManager: EnvironmentManager,
     selectedEnvironment: MutableState<Environment>,
     preferences: Preferences
@@ -194,7 +198,6 @@ fun checkForIntent(
         val env = it.getQueryParameter("env") // e.g. ?env=staging
         preferences.workspaceRefreshToken = refreshToken
         if (!preferences.workspaceLogin) {
-            val viewModel: WorkspaceViewModel = getKoin().get()
             if (env != null) {
                 try {
                     val environment = Environment.valueOf(env.uppercase())
@@ -209,7 +212,7 @@ fun checkForIntent(
                     ).show()
                 }
             }
-            viewModel.refreshToken()
+            viewModel.refreshToken(true)
         } else {
             Toast.makeText(
                 activity.baseContext,
