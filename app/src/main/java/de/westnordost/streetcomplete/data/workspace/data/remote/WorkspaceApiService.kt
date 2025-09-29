@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoRespons
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
+import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracingMock
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -148,7 +149,7 @@ class WorkspaceApiService(
         val url = environmentManager.currentEnvironment.loginUrl + "/refresh-token"
         try {
 
-            val response = performHttpCallWithFirebaseTracing(
+            val response = performHttpCallWithFirebaseTracingMock(
                 client = httpClient,
                 url = url,
                 method = HttpMethod.Get
