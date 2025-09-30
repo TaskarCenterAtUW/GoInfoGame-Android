@@ -207,7 +207,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 }
 
                 binding.questImage.setOnLongClickListener {
-                    val dialog = Dialog(it.context)
+                    val dialog = Dialog(binding.root.context)
                     dialog.setContentView(R.layout.dialog_full_image)
 
                     dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
@@ -215,13 +215,30 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                     val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
                     val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    val title = dialog.findViewById<TextView>(R.id.title)
+                    val description = dialog.findViewById<TextView>(R.id.description)
+
+                    title.text = item.questTitle
+                    description.text = item.questDescription
+
                     closeButton.setOnClickListener {
                         dialog.dismiss()
                     }
                     fullImageView.setImageDrawable(binding.questImage.drawable)
-
+                    fullImageView.contentDescription = item.questTitle
                     fullImageView.setOnClickListener {
                         dialog.dismiss()
+                    }
+
+                    ViewCompat.replaceAccessibilityAction(
+                        fullImageView,
+                        AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                            AccessibilityNodeInfoCompat.ACTION_CLICK,
+                            "close"
+                        ), "close"
+                    ) { _, _ ->
+                        fullImageView.performClick()
+                        true
                     }
 
                     dialog.show()
@@ -275,7 +292,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 }
 
                 binding.questImage.setOnLongClickListener {
-                    val dialog = Dialog(it.context)
+                    val dialog = Dialog(binding.root.context)
                     dialog.setContentView(R.layout.dialog_full_image)
 
                     dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
@@ -283,13 +300,30 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                     val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
                     val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    val title = dialog.findViewById<TextView>(R.id.title)
+                    val description = dialog.findViewById<TextView>(R.id.description)
+
+                    title.text = item.questTitle
+                    description.text = item.questDescription
+
                     closeButton.setOnClickListener {
                         dialog.dismiss()
                     }
                     fullImageView.setImageDrawable(binding.questImage.drawable)
-
+                    fullImageView.contentDescription = item.questTitle
                     fullImageView.setOnClickListener {
                         dialog.dismiss()
+                    }
+
+                    ViewCompat.replaceAccessibilityAction(
+                        fullImageView,
+                        AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                            AccessibilityNodeInfoCompat.ACTION_CLICK,
+                            "close"
+                        ), "close"
+                    ) { _, _ ->
+                        fullImageView.performClick()
+                        true
                     }
 
                     dialog.show()
