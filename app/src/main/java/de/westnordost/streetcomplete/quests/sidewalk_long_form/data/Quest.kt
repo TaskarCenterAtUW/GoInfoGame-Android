@@ -37,12 +37,12 @@ data class LongFormQuest(
 @Parcelize
 @Serializable
 sealed class UserInput : Parcelable {
-    data class Single(val answer: String) : UserInput()
-    data class Multiple(val answers: MutableList<String>) : UserInput()
+    data class Single(var answer: String? = null) : UserInput()
+    data class Multiple(var answers: MutableList<String> = emptyList<String>().toMutableList()) : UserInput()
 
     fun isEmpty(): Boolean {
         return when (this) {
-            is Single -> answer.isEmpty()
+            is Single -> answer.isNullOrEmpty()
             is Multiple -> answers.isEmpty()
         }
     }

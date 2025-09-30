@@ -66,7 +66,7 @@ class AddGenericLong(val item: Elements) :
                 tags[quest.questTag!!] = quest.userInput.toString()
                 when (quest.userInput){
                     is UserInput.Single -> {
-                        tags[quest.questTag] = (quest.userInput as UserInput.Single).answer
+                        tags[quest.questTag] = (quest.userInput as UserInput.Single).answer!!
                     }
                     is UserInput.Multiple -> {
                         val multipleAnswers = (quest.userInput as UserInput.Multiple).answers

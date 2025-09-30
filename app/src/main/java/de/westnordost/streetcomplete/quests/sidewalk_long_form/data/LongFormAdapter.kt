@@ -248,18 +248,17 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
-            val imageSelectAdapter = ImageSelectAdapter<LongFormQuest>()
+            val imageSelectAdapter =
+                ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
-            if (allowMultiChoice)
-                item.userInput = UserInput.Multiple(mutableListOf())
-            else if (item.userInput == null)
-                imageSelectAdapter.selectedIndices =
-                    item.selectedIndex ?: emptyList()
+
+            imageSelectAdapter.selectedIndices =
+                item.selectedIndex ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
@@ -351,12 +350,22 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
-            if (givenItems[index].userInput is UserInput.Multiple) {
-                val multiple = givenItems[index].userInput as UserInput.Multiple
-                multiple.answers.add(userInput)
+            if (allowMultiChoice) {
+                var multiple = givenItems[index].userInput as? UserInput.Multiple
+                if (multiple == null) {
+                    multiple = UserInput.Multiple(mutableListOf(userInput))
+                } else {
+                    multiple.answers.add(userInput)
+                }
                 givenItems[index].userInput = multiple
             } else {
-                givenItems[index].userInput = UserInput.Single(userInput)
+                var single = givenItems[index].userInput as? UserInput.Single
+                if (single == null) {
+                    single = UserInput.Single(userInput)
+                }else{
+                    single.answer = userInput
+                }
+                givenItems[index].userInput = single
             }
             if (givenItems[index].selectedIndex == null) {
                 givenItems[index].selectedIndex = mutableListOf(imageIndex)
