@@ -24,6 +24,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
+import de.westnordost.streetcomplete.databinding.CellLongFormTextEntryItemBinding
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
@@ -240,6 +241,82 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         }
     }
 
+    inner class TextEntryViewHolder(
+        val binding: CellLongFormTextEntryItemBinding
+    ) : ViewHolder(binding.root) {
+
+        init {
+            binding.root.setOnClickListener {
+                hideKeyboard(it)
+            }
+        }
+
+        private fun hideKeyboard(view: View) {
+            val imm =
+                binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+
+        fun bind(item: LongFormQuest, position: Int) {
+
+            if (item.visible) binding.container.visibility =
+                View.VISIBLE else binding.container.visibility = View.GONE
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
+            binding.input.editText?.clearFocus()
+            binding.input.clearFocus()
+            binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
+            if (!item.questImageUrl.isNullOrBlank()) {
+                binding.questImage.visibility = View.VISIBLE
+                binding.questImage.load(item.questImageUrl) {
+                    placeholder(R.drawable.blank_big)
+                    error(R.drawable.blank_big)
+                    crossfade(true) // Smooth transition effect
+                }
+
+                binding.questImage.setOnLongClickListener {
+                    val dialog = Dialog(it.context)
+                    dialog.setContentView(R.layout.dialog_full_image)
+
+                    dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                    dialog.window?.setDimAmount(0.7f) // controls dim background
+
+                    val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+                    val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    closeButton.setOnClickListener {
+                        dialog.dismiss()
+                    }
+                    fullImageView.setImageDrawable(binding.questImage.drawable)
+
+                    fullImageView.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
+                    dialog.show()
+                    true
+                }
+
+            } else {
+                binding.questImage.visibility = View.GONE
+            }
+            binding.input.editText?.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    item.userInput = UserInput.Single(s.toString())
+                }
+
+                override fun afterTextChanged(s: Editable?) {}
+            })
+        }
+    }
+
     inner class ImageGridViewHolder(
         val binding: CellLongFormItemImageGridBinding,
         val allowMultiChoice: Boolean,
@@ -282,11 +359,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     }
                 }
 
-                fun handleChoiceFollowUp(){
-                    item.selectedIndex?.forEach {  index ->
+                fun handleChoiceFollowUp() {
+                    item.selectedIndex?.forEach { index ->
                         if (!item.questAnswerChoices?.get(index)?.choiceFollowUp.isNullOrBlank()) {
                             binding.choiceFollowUp.visibility = View.VISIBLE
-                            binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
+                            binding.choiceFollowUp.text =
+                                item.questAnswerChoices[index]?.choiceFollowUp
                             return
                         }
                     }
@@ -369,7 +447,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 var single = givenItems[index].userInput as? UserInput.Single
                 if (single == null) {
                     single = UserInput.Single(userInput)
-                }else{
+                } else {
                     single.answer = userInput
                 }
                 givenItems[index].userInput = single
@@ -404,6 +482,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 )
                 return ImageGridViewHolder(binding, false)
             }
+
             ViewType.MULTI_CHOICE.value -> {
                 val binding = CellLongFormItemImageGridBinding.inflate(
                     LayoutInflater.from(parent.context),
@@ -411,6 +490,15 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     false
                 )
                 return ImageGridViewHolder(binding, true)
+            }
+
+            ViewType.TextEntry.value -> {
+                val binding = CellLongFormTextEntryItemBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                return TextEntryViewHolder(binding)
             }
 
             else -> {
@@ -444,6 +532,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 ViewType.NUMERIC.value
             }
 
+            "TextEntry" -> {
+                ViewType.TextEntry.value
+            }
+
             else -> {
                 ViewType.DEFAULT.value
             }
@@ -460,6 +552,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         }
 
         if (holder is LongFormAdapter<*>.ImageGridViewHolder) {
+            holder.bind(items[position], position)
+        }
+
+        if (holder is LongFormAdapter<*>.TextEntryViewHolder) {
             holder.bind(items[position], position)
         }
     }
