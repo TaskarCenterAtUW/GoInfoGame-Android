@@ -265,15 +265,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     handleClick(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        item.questAnswerChoices,
-                        index, binding
+                        index
                     )
-                    if (!item.questAnswerChoices.get(index)?.choiceFollowUp.isNullOrBlank()) {
-                        binding.choiceFollowUp.visibility = View.VISIBLE
-                        binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
-                    } else {
-                        binding.choiceFollowUp.visibility = View.GONE
-                    }
+                    handleChoiceFollowUp()
                 }
 
                 override fun onIndexDeselected(index: Int) {
@@ -282,6 +276,21 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                         givenItems.indexOfFirst { it.questId == item.questId }
                     givenItems[mainIndex].selectedIndex?.remove(index)
                     givenItems[mainIndex].userInput = null
+                    handleChoiceFollowUp()
+                    if (item.questId in needRefreshIds) {
+                        items = givenItems
+                    }
+                }
+
+                fun handleChoiceFollowUp(){
+                    item.selectedIndex?.forEach {  index ->
+                        if (!item.questAnswerChoices?.get(index)?.choiceFollowUp.isNullOrBlank()) {
+                            binding.choiceFollowUp.visibility = View.VISIBLE
+                            binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
+                            return
+                        }
+                    }
+                    binding.choiceFollowUp.visibility = View.GONE
                 }
 
                 override fun onLongPress(index: Int, drawable: Drawable?) {
@@ -344,9 +353,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun handleClick(
             questId: Int,
             userInput: String,
-            questAnswerChoices: List<QuestAnswerChoice?>,
             imageIndex: Int,
-            binding: CellLongFormItemImageGridBinding
         ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
@@ -395,6 +402,14 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     parent,
                     false
                 )
+                return ImageGridViewHolder(binding, false)
+            }
+            ViewType.MULTI_CHOICE.value -> {
+                val binding = CellLongFormItemImageGridBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
                 return ImageGridViewHolder(binding, true)
             }
 
@@ -421,6 +436,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 ViewType.EXCLUSIVE.value
             }
 
+            "MultipleChoice" -> {
+                ViewType.MULTI_CHOICE.value
+            }
+
             "Numeric" -> {
                 ViewType.NUMERIC.value
             }
@@ -432,8 +451,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val longFormItem = items[position]
-
         if (holder is DefaultViewHolder) {
             holder.bind(items[position])
         }
@@ -445,9 +462,5 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         if (holder is LongFormAdapter<*>.ImageGridViewHolder) {
             holder.bind(items[position], position)
         }
-    }
-
-    interface OnDataEnteredListener {
-        fun onDataEntered(questId: Int, questTag: String? = null, questValue: String? = null)
     }
 }
