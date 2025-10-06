@@ -1813,4 +1813,5 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="enter_value">Enter Value</string>
     <string name="profile_icon">profile icon</string>
     <string name="workspace">Workspace</string>
+    <string name="enter_text">Enter text</string>
 </resources>

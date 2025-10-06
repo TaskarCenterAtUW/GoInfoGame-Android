@@ -69,6 +69,6 @@
             android:textSize="14sp"
             android:overScrollMode="always"
             android:scrollbars="vertical"
-            android:hint="Enter text" />
+            android:hint="@string/enter_text" />
     </com.google.android.material.textfield.TextInputLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
