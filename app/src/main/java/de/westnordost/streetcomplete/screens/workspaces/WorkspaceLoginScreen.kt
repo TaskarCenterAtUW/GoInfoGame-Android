@@ -171,7 +171,7 @@ fun LoginScreen(
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite)
+                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite, withDismissAction = true)
             }
         }
         SnackbarHost(

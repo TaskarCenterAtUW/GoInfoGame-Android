@@ -69,7 +69,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="avivscr" android:host="open" />
+                <data android:scheme="avivscr" />
             </intent-filter>
         </activity>
         <activity
