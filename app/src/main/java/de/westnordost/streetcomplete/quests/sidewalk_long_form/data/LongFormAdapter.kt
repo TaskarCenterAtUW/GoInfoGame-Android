@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import android.app.Dialog
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.text.Editable
@@ -13,7 +12,6 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
@@ -21,13 +19,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import coil.load
-import com.google.android.material.chip.Chip
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
-import de.westnordost.streetcomplete.databinding.CellLongFormItemExclusiveChoiceBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
+import de.westnordost.streetcomplete.databinding.CellLongFormTextEntryItemBinding
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
@@ -41,7 +38,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         set(value) {
             if (givenItems.isEmpty()) {
                 givenItems = value
-                needRefreshIds = givenItems.map { it.questAnswerDependency?.questionId }
+                needRefreshIds = givenItems.map { dependency ->
+                    when (val dep = dependency.questAnswerDependency) {
+                        is List<*> -> dep.mapNotNull { it.questionId }
+                        else -> emptyList()
+                    }
+                }.flatten()
             }
 
             field = manageVisibility(value).filter { it.visible }
@@ -51,10 +53,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     var cellLayoutId = R.layout.cell_long_form_item
 
     enum class ViewType(val value: Int) {
-        EXCLUSIVE_CHOICE(1),
-        INPUT(2),
-        IMAGE(3),
-        DEFAULT(4);
+        EXCLUSIVE(1),
+        NUMERIC(2),
+        MULTI_CHOICE(3),
+        TextEntry(4),
+        DEFAULT(5);
 
         companion object {
             fun fromInt(value: Int): ViewType? = entries.find { it.value == value }
@@ -63,22 +66,41 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
     private fun manageVisibility(itemCopy: List<LongFormQuest>): List<LongFormQuest> {
         for (quest in itemCopy) {
+            val dependencies = quest.questAnswerDependency ?: emptyList()
+            var isVisible = true
 
-            val requiredUserInput = quest.questAnswerDependency?.requiredValue
-            val requiredQuestId = quest.questAnswerDependency?.questionId
+            for (dependency in dependencies) {
+                val requiredUserInput = dependency.requiredValue
+                val requiredQuestId = dependency.questionId
 
+                if (requiredUserInput == null || requiredQuestId == null) continue
 
-            if (requiredUserInput == null || requiredQuestId == null) {
-                itemCopy[itemCopy.indexOf(quest)].visible = true
-                continue
+                val filteredQuest = itemCopy.find { it.questId == requiredQuestId }
+                if (filteredQuest != null) {
+                    when (filteredQuest.userInput) {
+                        is UserInput.Single -> {
+                            if ((filteredQuest.userInput as UserInput.Single).answer !in requiredUserInput) {
+                                isVisible = false
+                                break
+                            }
+                        }
+
+                        is UserInput.Multiple -> {
+                            val userInputs = (filteredQuest.userInput as UserInput.Multiple).answers
+                            if (userInputs.none { it in requiredUserInput }) {
+                                isVisible = false
+                                break
+                            }
+                        }
+
+                        else -> {
+                            isVisible = false
+                            break
+                        }
+                    }
+                }
             }
-            val filteredQuest = itemCopy.filter {
-                it.questId ==
-                    requiredQuestId
-            }
-
-            itemCopy[itemCopy.indexOf(quest)].visible =
-                filteredQuest[0].userInput in requiredUserInput
+            itemCopy[itemCopy.indexOf(quest)].visible = isVisible
         }
 
         itemCopy.forEach {
@@ -87,96 +109,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             }
         }
         return itemCopy
-    }
-
-    inner class ExclusiveChoiceViewHolder(val binding: CellLongFormItemExclusiveChoiceBinding) :
-        ViewHolder(binding.root) {
-        private var defaultColor: Int? = null
-        private var defaultTextColor: Int? = null
-
-        fun bind(item: LongFormQuest, position: Int) {
-            if (item.visible) binding.container.visibility =
-                View.VISIBLE else binding.container.visibility = View.GONE
-            binding.title.text = item.questTitle
-            binding.description.text = item.questDescription
-            binding.chipGroup.removeAllViews()
-
-            item.questAnswerChoices?.apply {
-                for (questItem in this) {
-//                    val chip = Chip(binding.root.context)
-//                    // val chip = Chip(ContextThemeWrapper(binding.root.context, R.style.back))
-//                    chip.text = questItem?.choiceText
-//                    defaultColor = chip.chipBackgroundColor?.defaultColor
-//                    chip.isCheckable = true
-//
-//                    if (items[position].userInput == questItem?.value) {
-//                        chip.isChecked = true
-//                    } else {
-//                        chip.isChecked = false
-//                    }
-//                    setColor(chip.isChecked, chip)
-//                    chip.setOnCheckedChangeListener { _, isChecked ->
-//                        setColor(isChecked, chip)
-//                        val index =
-//                            givenItems.indexOfFirst { it.questId == item.questId }
-//                        if (isChecked) {
-//                            givenItems[index].userInput = questItem?.value
-//                        }else{
-//                            givenItems[index].userInput = null
-//                        }
-//                        if (item.questId in needRefreshIds) {
-//                            items = givenItems
-//                        }
-//                    }
-//                    binding.chipGroup.addView(chip)
-
-                    binding.chipGroup.addCustomChip(
-                        questItem?.choiceText!!,
-                        questItem.imageUrl, items[position].userInput == questItem.value
-                    ) { isChecked ->
-                        val index =
-                            givenItems.indexOfFirst { it.questId == item.questId }
-                        if (isChecked == true) {
-                            givenItems[index].userInput = questItem.value
-                        } else {
-                            givenItems[index].userInput = null
-                        }
-                        if (item.questId in needRefreshIds) {
-                            items = givenItems
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun setColor(isChecked: Boolean, chip: Chip) {
-            if (isChecked) {
-                chip.chipBackgroundColor = ColorStateList.valueOf(
-                    ContextCompat.getColor(
-                        binding.root.context,
-                        R.color.primary
-                    )
-                )
-                chip.setTextColor(
-                    ColorStateList.valueOf(
-                        ContextCompat.getColor(
-                            binding.root.context,
-                            R.color.button_white
-                        )
-                    )
-                )
-            } else {
-                chip.chipBackgroundColor = defaultColor?.let { ColorStateList.valueOf(it) }
-                chip.setTextColor(
-                    ColorStateList.valueOf(
-                        ContextCompat.getColor(
-                            binding.root.context,
-                            R.color.traffic_black
-                        )
-                    )
-                )
-            }
-        }
     }
 
     class DefaultViewHolder(val binding: CellLongFormItemBinding) : ViewHolder(binding.root) {
@@ -198,7 +130,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             this.position = position
         }
 
-        fun updateInputLayout(textInputLayout: TextInputLayout, minValue: Int? = null, maxValue: Int?) {
+        fun updateInputLayout(
+            textInputLayout: TextInputLayout,
+            minValue: Int? = null,
+            maxValue: Int?
+        ) {
             this.textInputLayout = textInputLayout
             this.minValue = minValue
             this.maxValue = maxValue ?: Int.MAX_VALUE
@@ -212,7 +148,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
             val index =
                 givenItems.indexOfFirst { it.questId == item.questId }
-            givenItems[index].userInput = s.toString()
+            givenItems[index].userInput = UserInput.Single(s.toString())
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -261,7 +197,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
-            binding.input.editText?.setText(item.userInput)
+            binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
             if (!item.questImageUrl.isNullOrBlank()) {
                 binding.questImage.visibility = View.VISIBLE
                 binding.questImage.load(item.questImageUrl) {
@@ -271,7 +207,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 }
 
                 binding.questImage.setOnLongClickListener {
-                    val dialog = Dialog(it.context)
+                    val dialog = Dialog(binding.root.context)
                     dialog.setContentView(R.layout.dialog_full_image)
 
                     dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
@@ -279,13 +215,30 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                     val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
                     val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    val title = dialog.findViewById<TextView>(R.id.title)
+                    val description = dialog.findViewById<TextView>(R.id.description)
+
+                    title.text = item.questTitle
+                    description.text = item.questDescription
+
                     closeButton.setOnClickListener {
                         dialog.dismiss()
                     }
                     fullImageView.setImageDrawable(binding.questImage.drawable)
-
+                    fullImageView.contentDescription = item.questTitle
                     fullImageView.setOnClickListener {
                         dialog.dismiss()
+                    }
+
+                    ViewCompat.replaceAccessibilityAction(
+                        fullImageView,
+                        AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                            AccessibilityNodeInfoCompat.ACTION_CLICK,
+                            "close"
+                        ), "close"
+                    ) { _, _ ->
+                        fullImageView.performClick()
+                        true
                     }
 
                     dialog.show()
@@ -296,52 +249,160 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 binding.questImage.visibility = View.GONE
             }
             customTextWatcher.updatePosition(position)
-            customTextWatcher.updateInputLayout(binding.input,
+            customTextWatcher.updateInputLayout(
+                binding.input,
                 item.questAnswerValidation?.min,
-                item.questAnswerValidation?.max)
+                item.questAnswerValidation?.max
+            )
             binding.input.editText?.addTextChangedListener(customTextWatcher)
+        }
+    }
+
+    inner class TextEntryViewHolder(
+        val binding: CellLongFormTextEntryItemBinding
+    ) : ViewHolder(binding.root) {
+
+        init {
+            binding.root.setOnClickListener {
+                hideKeyboard(it)
+            }
+        }
+
+        private fun hideKeyboard(view: View) {
+            val imm =
+                binding.root.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+
+        fun bind(item: LongFormQuest, position: Int) {
+
+            if (item.visible) binding.container.visibility =
+                View.VISIBLE else binding.container.visibility = View.GONE
+            binding.title.text = item.questTitle
+            binding.description.text = item.questDescription
+            binding.input.editText?.clearFocus()
+            binding.input.clearFocus()
+            binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
+            if (!item.questImageUrl.isNullOrBlank()) {
+                binding.questImage.visibility = View.VISIBLE
+                binding.questImage.load(item.questImageUrl) {
+                    placeholder(R.drawable.blank_big)
+                    error(R.drawable.blank_big)
+                    crossfade(true) // Smooth transition effect
+                }
+
+                binding.questImage.setOnLongClickListener {
+                    val dialog = Dialog(binding.root.context)
+                    dialog.setContentView(R.layout.dialog_full_image)
+
+                    dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
+                    dialog.window?.setDimAmount(0.7f) // controls dim background
+
+                    val fullImageView = dialog.findViewById<ImageView>(R.id.fullImage)
+                    val closeButton = dialog.findViewById<ImageView>(R.id.close_button)
+                    val title = dialog.findViewById<TextView>(R.id.title)
+                    val description = dialog.findViewById<TextView>(R.id.description)
+
+                    title.text = item.questTitle
+                    description.text = item.questDescription
+
+                    closeButton.setOnClickListener {
+                        dialog.dismiss()
+                    }
+                    fullImageView.setImageDrawable(binding.questImage.drawable)
+                    fullImageView.contentDescription = item.questTitle
+                    fullImageView.setOnClickListener {
+                        dialog.dismiss()
+                    }
+
+                    ViewCompat.replaceAccessibilityAction(
+                        fullImageView,
+                        AccessibilityNodeInfoCompat.AccessibilityActionCompat(
+                            AccessibilityNodeInfoCompat.ACTION_CLICK,
+                            "close"
+                        ), "close"
+                    ) { _, _ ->
+                        fullImageView.performClick()
+                        true
+                    }
+
+                    dialog.show()
+                    true
+                }
+
+            } else {
+                binding.questImage.visibility = View.GONE
+            }
+            binding.input.editText?.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    item.userInput = UserInput.Single(s.toString())
+                }
+
+                override fun afterTextChanged(s: Editable?) {}
+            })
         }
     }
 
     inner class ImageGridViewHolder(
         val binding: CellLongFormItemImageGridBinding,
+        val allowMultiChoice: Boolean,
     ) : ViewHolder(binding.root) {
         fun bind(item: LongFormQuest, position: Int) {
 
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
-            val imageSelectAdapter = ImageSelectAdapter<LongFormQuest>(1)
+            val imageSelectAdapter =
+                ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
             binding.list.adapter = imageSelectAdapter
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
+
             imageSelectAdapter.selectedIndices =
-                item.selectedIndex?.let { listOf(it) } ?: emptyList()
+                item.selectedIndex ?: emptyList()
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
                     handleClick(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        item.questAnswerChoices,
-                        index, binding
+                        index
                     )
-                    if (!item.questAnswerChoices.get(index)?.choiceFollowUp.isNullOrBlank()) {
-                        binding.choiceFollowUp.visibility = View.VISIBLE
-                        binding.choiceFollowUp.text = item.questAnswerChoices[index]?.choiceFollowUp
-                    } else {
-                        binding.choiceFollowUp.visibility = View.GONE
-                    }
+                    handleChoiceFollowUp()
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
                     val mainIndex =
                         givenItems.indexOfFirst { it.questId == item.questId }
-                    givenItems[mainIndex].selectedIndex = null
+                    givenItems[mainIndex].selectedIndex?.remove(index)
                     givenItems[mainIndex].userInput = null
+                    handleChoiceFollowUp()
+                    if (item.questId in needRefreshIds) {
+                        items = givenItems
+                    }
+                }
+
+                fun handleChoiceFollowUp() {
+                    item.selectedIndex?.forEach { index ->
+                        if (!item.questAnswerChoices?.get(index)?.choiceFollowUp.isNullOrBlank()) {
+                            binding.choiceFollowUp.visibility = View.VISIBLE
+                            binding.choiceFollowUp.text =
+                                item.questAnswerChoices[index]?.choiceFollowUp
+                            return
+                        }
+                    }
+                    binding.choiceFollowUp.visibility = View.GONE
                 }
 
                 override fun onLongPress(index: Int, drawable: Drawable?) {
@@ -404,14 +465,32 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun handleClick(
             questId: Int,
             userInput: String,
-            questAnswerChoices: List<QuestAnswerChoice?>,
             imageIndex: Int,
-            binding: CellLongFormItemImageGridBinding
         ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }
-            givenItems[index].userInput = userInput
-            givenItems[index].selectedIndex = imageIndex
+            if (allowMultiChoice) {
+                var multiple = givenItems[index].userInput as? UserInput.Multiple
+                if (multiple == null) {
+                    multiple = UserInput.Multiple(mutableListOf(userInput))
+                } else {
+                    multiple.answers.add(userInput)
+                }
+                givenItems[index].userInput = multiple
+            } else {
+                var single = givenItems[index].userInput as? UserInput.Single
+                if (single == null) {
+                    single = UserInput.Single(userInput)
+                } else {
+                    single.answer = userInput
+                }
+                givenItems[index].userInput = single
+            }
+            if (givenItems[index].selectedIndex == null) {
+                givenItems[index].selectedIndex = mutableListOf(imageIndex)
+            } else {
+                givenItems[index].selectedIndex?.add(imageIndex)
+            }
             if (questId in needRefreshIds) {
                 items = givenItems
             }
@@ -420,16 +499,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         when (viewType) {
-            ViewType.EXCLUSIVE_CHOICE.value -> {
-                val binding = CellLongFormItemExclusiveChoiceBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
-                )
-                return ExclusiveChoiceViewHolder(binding)
-            }
-
-            ViewType.INPUT.value -> {
+            ViewType.NUMERIC.value -> {
                 val binding = CellLongFormItemInputBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
@@ -438,13 +508,31 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 return InputViewHolder(binding, CustomTextWatcher())
             }
 
-            ViewType.IMAGE.value -> {
+            ViewType.EXCLUSIVE.value -> {
                 val binding = CellLongFormItemImageGridBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
                 )
-                return ImageGridViewHolder(binding)
+                return ImageGridViewHolder(binding, false)
+            }
+
+            ViewType.MULTI_CHOICE.value -> {
+                val binding = CellLongFormItemImageGridBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                return ImageGridViewHolder(binding, true)
+            }
+
+            ViewType.TextEntry.value -> {
+                val binding = CellLongFormTextEntryItemBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                return TextEntryViewHolder(binding)
             }
 
             else -> {
@@ -467,11 +555,19 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
         return when (quest.questType) {
             "ExclusiveChoice" -> {
-                ViewType.IMAGE.value
+                ViewType.EXCLUSIVE.value
+            }
+
+            "MultipleChoice" -> {
+                ViewType.MULTI_CHOICE.value
             }
 
             "Numeric" -> {
-                ViewType.INPUT.value
+                ViewType.NUMERIC.value
+            }
+
+            "TextEntry" -> {
+                ViewType.TextEntry.value
             }
 
             else -> {
@@ -481,13 +577,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val longFormItem = items[position]
-
         if (holder is DefaultViewHolder) {
             holder.bind(items[position])
-        }
-        if (holder is LongFormAdapter<*>.ExclusiveChoiceViewHolder) {
-            holder.bind(items[position], position)
         }
 
         if (holder is LongFormAdapter<*>.InputViewHolder) {
@@ -497,9 +588,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         if (holder is LongFormAdapter<*>.ImageGridViewHolder) {
             holder.bind(items[position], position)
         }
-    }
 
-    interface OnDataEnteredListener {
-        fun onDataEntered(questId: Int, questTag: String? = null, questValue: String? = null)
+        if (holder is LongFormAdapter<*>.TextEntryViewHolder) {
+            holder.bind(items[position], position)
+        }
     }
 }

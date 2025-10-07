@@ -27,15 +27,15 @@ data class WorkspaceDetailsResponse(
     @SerialName("longFormQuestDef")
     val longFormQuestDef: JsonElement?,
     @SerialName("tdeiMetadata")
-    val tdeiMetadata: String,
+    val tdeiMetadata: String?,
     @SerialName("tdeiProjectGroupId")
-    val tdeiProjectGroupId: String,
+    val tdeiProjectGroupId: String?,
     @SerialName("tdeiRecordId")
-    val tdeiRecordId: String,
+    val tdeiRecordId: String?,
     @SerialName("tdeiServiceId")
-    val tdeiServiceId: String,
+    val tdeiServiceId: String?,
     @SerialName("title")
     val title: String,
     @SerialName("type")
-    val type: String
+    val type: String?
 )
