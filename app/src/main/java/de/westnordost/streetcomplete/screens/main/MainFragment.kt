@@ -9,12 +9,14 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.AnimationUtils
 import android.view.animation.OvershootInterpolator
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -106,6 +108,7 @@ import de.westnordost.streetcomplete.screens.main.map.getPinIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
 import de.westnordost.streetcomplete.screens.settings.quest_selection.QuestSelectionViewModel
+import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.screens.user.profile.ProfileViewModel
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -117,8 +120,6 @@ import de.westnordost.streetcomplete.util.ktx.hideKeyboard
 import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.observe
-import de.westnordost.streetcomplete.util.ktx.popIn
-import de.westnordost.streetcomplete.util.ktx.popOut
 import de.westnordost.streetcomplete.util.ktx.setMargins
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.ktx.toast
@@ -277,6 +278,16 @@ class MainFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val workspaceTitle = activity?.intent?.getStringExtra("WORKSPACE_TITLE")
+        val imagerList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity?.intent?.getParcelableArrayListExtra("IMAGERY_LIST",
+                Imagery::class.java) ?: emptyList()
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.intent?.getParcelableArrayListExtra<Imagery>("IMAGERY_LIST") ?: emptyList()
+        }
+        binding.toolbar.workspaceTitle.text = workspaceTitle
 //        viewLifecycleScope.launch {
 //            // load imagery list
 //            try {
@@ -306,20 +317,19 @@ class MainFragment :
         binding.zoomInButton.setOnClickListener { onClickZoomIn() }
         binding.zoomOutButton.setOnClickListener { onClickZoomOut() }
         binding.createButton.setOnClickListener { onClickCreateButton() }
-        binding.uploadButton.setOnClickListener { onClickUploadButton() }
+        binding.toolbar.uploadButton.setOnClickListener { onClickUploadButton() }
         binding.undoButton.setOnClickListener { onClickUndoButton() }
-        binding.messagesButton.setOnClickListener { onClickMessagesButton() }
-        binding.starsCounterView.setOnClickListener { onClickAnswersCounterView() }
-        binding.overlaysButton.setOnClickListener {
+
+        binding.toolbar.overlaysButton.setOnClickListener {
 //            val mapFragment = mapFragment ?: return@setOnClickListener
 //            mapFragment.showArielView = true
             val screenCenter = mapFragment?.getCenterCoordinates()
 
             if (screenCenter != null) {
-                context?.showImageryBottomSheet(screenCenter)
+                context?.showImageryBottomSheet(screenCenter, imagerList)
             }
         }
-        binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
+        binding.toolbar.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
         updateOffsetWithOpenBottomSheet()
 
@@ -334,27 +344,27 @@ class MainFragment :
         //     binding.uploadButton.isGone = isAutoSync
         // }
         observe(controlsViewModel.unsyncedEditsCount) { count ->
-            binding.uploadButton.uploadableCount = count
+            binding.toolbar.uploadButton.uploadableCount = count
+        }
+        binding.toolbar.profileButton.setOnClickListener {
+            val intent = Intent(context, UserActivity::class.java)
+            startActivity(intent)
         }
         observe(controlsViewModel.isUploading) { isUploadInProgress ->
-            binding.uploadButton.isEnabled = !isUploadInProgress
+            val icon = binding.toolbar.uploadButton.binding.iconView
+            if (isUploadInProgress) {
+                val rotate = AnimationUtils.loadAnimation(this.requireContext(), R.anim.rotate)
+                icon.startAnimation(rotate)
+            } else {
+                icon.clearAnimation()
+            }
+            binding.toolbar.uploadButton.isEnabled = !isUploadInProgress
             // Don't allow undoing while uploading. Should prevent race conditions.
             // (Undoing quest while also uploading it at the same time)
             binding.undoButton.isEnabled = !isUploadInProgress
         }
-        // observe(controlsViewModel.messagesCount) { messagesCount ->
-        //     binding.messagesButton.messagesCount = messagesCount
-        //     binding.messagesButton.isGone = messagesCount <= 0
-        // }
         observe(controlsViewModel.isUploadingOrDownloading) { isUploadingOrDownloading ->
             binding.starsCounterView.showProgress = isUploadingOrDownloading
-        }
-        observe(controlsViewModel.isShowingStarsCurrentWeek) { isShowingCurrentWeek ->
-            binding.starsCounterView.showLabel = isShowingCurrentWeek
-        }
-        observe(controlsViewModel.starsCount) { count ->
-            // only animate if count is positive, for positive feedback
-            binding.starsCounterView.setUploadedCount(count, count > 0)
         }
         observe(controlsViewModel.selectedOverlay) { overlay ->
 //            val iconRes = overlay?.icon ?: R.drawable.ic_overlay_black_24dp
@@ -364,12 +374,9 @@ class MainFragment :
             if (isTeamMode) {
                 // always show this toast on start to remind user that it is still on
                 context?.toast(R.string.team_mode_active)
-                binding.teamModeColorCircle.popIn()
-                binding.teamModeColorCircle.setIndexInTeam(controlsViewModel.indexInTeam)
             } else {
                 // show this only once when turning it off
                 if (controlsViewModel.teamModeChanged) context?.toast(R.string.team_mode_deactivated)
-                binding.teamModeColorCircle.popOut()
             }
             controlsViewModel.teamModeChanged = false
         }
@@ -934,7 +941,11 @@ class MainFragment :
     private fun onClickUploadButton() {
         if (controlsViewModel.isConnected) {
             if (controlsViewModel.isLoggedIn.value) {
-                controlsViewModel.upload()
+                if (controlsViewModel.unsyncedEditsCount.value == 0) {
+                    context?.toast(getString(R.string.no_pending_changes_to_sync))
+                } else {
+                    controlsViewModel.upload()
+                }
             } else {
                 context?.let { RequestLoginDialog(it, profileViewModel).show() }
             }
@@ -1554,7 +1565,7 @@ class MainFragment :
         root.addView(img)
 
         val isAutoSync = controlsViewModel.isAutoSync.value
-        val answerTarget = if (isAutoSync) binding.starsCounterView else binding.uploadButton
+        val answerTarget = binding.toolbar.uploadButton
         flingQuestMarkerTo(img, answerTarget) { root.removeView(img) }
     }
 
@@ -1590,7 +1601,7 @@ class MainFragment :
         setIsFollowingPosition(false)
     }
 
-    private fun Context.showImageryBottomSheet(screenCenter: LatLon) {
+    private fun Context.showImageryBottomSheet(screenCenter: LatLon, imagerList: List<Imagery>) {
         val bottomSheetView = LayoutInflater.from(this)
             .inflate(R.layout.bottom_sheet_imagery, null)
 
@@ -1606,8 +1617,9 @@ class MainFragment :
         }
         radioGroup.addView(radioButton)
         CoroutineScope(Dispatchers.Main).launch {
+
             try {
-                val imageryList = imageryRepository.getImageryForLocation(screenCenter)
+                val imageryList = imageryRepository.getImageryForLocation(screenCenter, imagerList)
                 val imageLoader = ImageLoader.Builder(this@showImageryBottomSheet)
                     .allowHardware(false)
                     .components {
@@ -1615,12 +1627,13 @@ class MainFragment :
                     }
                     .build()
                 imageryList.forEach { imagery ->
-                    val imageryRadioButton = MaterialRadioButton(this@showImageryBottomSheet).apply {
-                        id = View.generateViewId()
-                        text = imagery.name
-                        tag = imagery
-                        compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
-                    }
+                    val imageryRadioButton =
+                        MaterialRadioButton(this@showImageryBottomSheet).apply {
+                            id = View.generateViewId()
+                            text = imagery.name
+                            tag = imagery
+                            compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
+                        }
 
                     val iconUrl = imagery.icon // ensure it's a valid URL or resource
                     val sizePx = (30 * resources.displayMetrics.density).toInt()
@@ -1631,14 +1644,23 @@ class MainFragment :
                         .allowHardware(false) // required for drawable access in some cases
                         .listener(
                             onError = { request, throwable ->
-                                Log.e("CoilError", "Failed to load image: $iconUrl", throwable.throwable)
+                                Log.e(
+                                    "CoilError",
+                                    "Failed to load image: $iconUrl",
+                                    throwable.throwable
+                                )
                             }
                         )
                         .target(
                             onSuccess = { drawable ->
                                 // Ensure it's set after layout
                                 imageryRadioButton.post {
-                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null)
+                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(
+                                        drawable,
+                                        null,
+                                        null,
+                                        null
+                                    )
                                 }
                             },
                             onError = {
@@ -1651,9 +1673,9 @@ class MainFragment :
                     radioGroup.addView(imageryRadioButton)
                 }
 
-                if (selectedImagery == null){
+                if (selectedImagery == null) {
                     (radioGroup.getChildAt(0) as RadioButton).isChecked = true
-                }else{
+                } else {
                     // Check the radio button that matches the selected imagery
                     for (i in 0 until radioGroup.childCount) {
                         val button = radioGroup.getChildAt(i) as RadioButton
@@ -1674,7 +1696,10 @@ class MainFragment :
                     mapFragment?.imagery = selectedImagery
                     Toast.makeText(
                         this@showImageryBottomSheet,
-                        getString(R.string.selected, selectedImagery?.name ?: getString(R.string.default_imagery)),
+                        getString(
+                            R.string.selected,
+                            selectedImagery?.name ?: getString(R.string.default_imagery)
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                     bottomSheetDialog.dismiss()

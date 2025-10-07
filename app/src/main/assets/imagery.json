@@ -99,6 +99,6 @@
     "name": "Hexagon Imagery",
     "start_date": "2025-12-21",
     "type": "tms",
-    "url": "https://waprovisoimg.centralindia.cloudapp.azure.com/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/{z}/{y}/{x}.png"
+    "url": "https://wa-imagery.tdei.us/streaming/wmts?/1.0.0/HxGN_Imagery/default/WebMercator/{z}/{y}/{x}.png"
   }
 ]

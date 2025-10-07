@@ -185,6 +185,14 @@ class Preferences(private val prefs: ObservableSettings) {
         }
         get() = prefs.getBoolean("${environment}_$BIOMETRIC_ENABLED", true)
 
+    private val _isDebugModeEnabled = MutableStateFlow(prefs.getBoolean(DEBUG_MODE_ENABLED, false))
+    val isDebugModeEnabled: StateFlow<Boolean> get() = _isDebugModeEnabled
+
+    fun setDebugModeEnabled(value: Boolean) {
+        prefs.putBoolean(DEBUG_MODE_ENABLED, value)
+        _isDebugModeEnabled.value = value
+    }
+
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
         prefs.remove(OSM_USER_NAME)
@@ -397,5 +405,6 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
         private const val WORKSPACE_USER_ID = "workspace.user.id"
         private const val BIOMETRIC_ENABLED = "biometric.enabled"
+        private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
     }
 }

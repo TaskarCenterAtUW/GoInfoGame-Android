@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">GoInfoGame</string>
+    <string name="app_name" translatable="false">AVIV ScoutRoute</string>
 
     <!-- e.g. "house number 123: Backstübchen" -->
     <string name="label_location_name">%1$s: %2$s</string>

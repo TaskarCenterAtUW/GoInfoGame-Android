@@ -3,7 +3,7 @@
     <shape android:shape="oval">
         <stroke
             android:width="5dp"
-            android:color="@color/quest_selection_frame"/>
+            android:color="@color/accent"/>
         <size
             android:width="58dp"
             android:height="58dp"/>

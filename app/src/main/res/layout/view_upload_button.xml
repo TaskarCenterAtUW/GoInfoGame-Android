@@ -9,8 +9,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        app:srcCompat="@drawable/ic_file_upload_24dp"
-        app:tint="#000"/>
+        android:contentDescription="@string/sync_changes"
+        app:srcCompat="@drawable/ic_outline_sync"
+        app:tint="@color/primary" />
 
     <TextView
         android:id="@+id/textView"

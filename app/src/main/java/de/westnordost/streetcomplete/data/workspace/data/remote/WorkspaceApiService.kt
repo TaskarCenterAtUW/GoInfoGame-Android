@@ -5,8 +5,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -25,10 +24,6 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 import java.nio.channels.UnresolvedAddressException
 
 class WorkspaceApiService(
@@ -86,8 +81,8 @@ class WorkspaceApiService(
         }
     }
 
-    suspend fun getLongFormForWorkspace(workspaceId: Int): List<Elements> {
-        val url = "${environmentManager.currentEnvironment.baseUrl}/${workspaceId}/quests/long"
+    suspend fun getWorkspaceDetails(workspaceId: Int): WorkspaceDetailsResponse {
+        val url = "${environmentManager.currentEnvironment.baseUrl}/${workspaceId}"
 
         try {
             val response = performHttpCallWithFirebaseTracing(
@@ -98,31 +93,11 @@ class WorkspaceApiService(
                 get(url)
             }
 
-            if (response.status == HttpStatusCode.NoContent) {
-                throw Exception("Failed. Please configure long form for the workspace $workspaceId")
+            if (response.status == HttpStatusCode.NotFound) {
+                throw Exception("Failed. Workspace not found with ID : $workspaceId")
             }
-            val text = response.bodyAsText()
-            val jsonElement = Json.decodeFromString<JsonElement>(text)
 
-            val json = Json {
-                ignoreUnknownKeys = true
-            }
-            return when {
-
-                jsonElement is JsonObject && "version" in jsonElement -> {
-                    val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
-                    wrapper.elements
-                }
-
-                jsonElement is JsonArray -> {
-                    json.decodeFromJsonElement(jsonElement)
-                }
-
-                else -> {
-                    throw SerializationException("Unexpected JSON structure for long form")
-                }
-            }
-            // if OSM server does not return valid JSON, it is the server's fault, hence
+            return response.body<WorkspaceDetailsResponse>()
         } catch (e: SerializationException) {
             throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")
         } catch (e: Exception) {

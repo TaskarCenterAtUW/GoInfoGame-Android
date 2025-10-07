@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "370130474707",
-    "project_id": "goinfogame",
-    "storage_bucket": "goinfogame.firebasestorage.app"
+    "project_number": "658772378541",
+    "project_id": "aviv-scoutroute",
+    "storage_bucket": "aviv-scoutroute.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:370130474707:android:e6d008697d8905a8fba626",
+        "mobilesdk_app_id": "1:658772378541:android:654b51be3af4317115d724",
         "android_client_info": {
-          "package_name": "com.tcatuw.goinfo"
+          "package_name": "net.opentoall.aviv.scoutroute"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCeBf3fU2SqVkoycUE-AHounPlkmoWqlCU"
+          "current_key": "AIzaSyD8lYHAi8yVWoI1X6MsRdoWeNj5tkmDTdI"
         }
       ],
       "services": {
@@ -26,15 +26,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:370130474707:android:e9080c877cb052c9fba626",
+        "mobilesdk_app_id": "1:658772378541:android:a42d253d3b82399015d724",
         "android_client_info": {
-          "package_name": "com.tcatuw.goinfo.debug"
+          "package_name": "net.opentoall.aviv.scoutroute.debug"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCeBf3fU2SqVkoycUE-AHounPlkmoWqlCU"
+          "current_key": "AIzaSyD8lYHAi8yVWoI1X6MsRdoWeNj5tkmDTdI"
         }
       ],
       "services": {

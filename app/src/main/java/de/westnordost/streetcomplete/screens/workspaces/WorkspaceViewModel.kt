@@ -10,18 +10,23 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
@@ -33,11 +38,11 @@ abstract class WorkspaceViewModel : ViewModel() {
     )
 
     abstract val loginState: StateFlow<WorkspaceLoginState>
-    abstract val selectedWorkspace: StateFlow<Int?>
-    abstract fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState>
+    abstract val selectedWorkspace: StateFlow<Workspace?>
+    abstract fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState>
     abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
     abstract fun setIsLongForm(isLongForm: Boolean)
-    abstract fun setSelectedWorkspace(workspaceId: Int)
+    abstract fun setSelectedWorkspace(index: Int)
     abstract fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
     abstract fun refreshToken()
@@ -45,20 +50,21 @@ abstract class WorkspaceViewModel : ViewModel() {
 
 class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
-    private val preferences: Preferences,
+    private val preferences: Preferences
 ) :
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
 
-    private val _selectedWorkspace = MutableStateFlow<Int?>(null)
-    override val selectedWorkspace: StateFlow<Int?> get() = _selectedWorkspace
+    private val _selectedWorkspace = MutableStateFlow<Workspace?>(null)
+    override val selectedWorkspace: StateFlow<Workspace?> get() = _selectedWorkspace
 
     private val _loginState = MutableStateFlow<WorkspaceLoginState>(WorkspaceLoginState.Init)
     override val loginState: StateFlow<WorkspaceLoginState> get() = _loginState
 
-    override fun setSelectedWorkspace(workspaceId: Int) {
-        _selectedWorkspace.value = workspaceId
-        preferences.workspaceId = workspaceId
+    override fun setSelectedWorkspace(index: Int) {
+        _selectedWorkspace.value = (showWorkspaces.value as WorkspaceListState.Success).workspaces
+            .filter { it.externalAppAccess == 1 && it.type == "osw" }[index]
+        preferences.workspaceId = _selectedWorkspace.value?.id
     }
 
     private var userLocation: Location? = null
@@ -91,7 +97,6 @@ class WorkspaceViewModelImpl(
             viewModelScope.launch {
                 _showWorkspaces.value = WorkspaceListState.Loading
                 workspaceRepository.getWorkspaces(this@apply)
-                    .debounce(1000)
                     .distinctUntilChanged()
                     .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
                     .collect { workspaces ->
@@ -112,15 +117,15 @@ class WorkspaceViewModelImpl(
         }
     }
 
-    override fun getLongForm(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
+    override fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState> = flow {
         emit(WorkspaceLongFormState.loading())
-        workspaceRepository.getLongFormForWorkspace(workspaceId)
+        workspaceRepository.getWorkspaceDetails(workspaceId)
             .catch { e ->
                 emit(WorkspaceLongFormState.error(e.message))
                 _selectedWorkspace.value = null
             }
-            .collect { longFormResponse ->
-                emit(emitLongFormResponse(longFormResponse))
+            .collect { workspaceDetails ->
+                emit(emitLongFormResponse(workspaceDetails))
                 _selectedWorkspace.value = null
             }
 //            .collect { longFormResponse -> if (isValidLongForm(longFormResponse)) {
@@ -135,12 +140,36 @@ class WorkspaceViewModelImpl(
         initialValue = WorkspaceLongFormState.loading()
     )
 
-    private fun emitLongFormResponse(longFormResponse: List<Elements>): WorkspaceLongFormState {
+    private fun emitLongFormResponse(workspaceDetails: WorkspaceDetailsResponse): WorkspaceLongFormState {
         try {
+            val json = Json {
+                ignoreUnknownKeys = true
+            }
+            val jsonElement = workspaceDetails.longFormQuestDef
+            val longFormResponse = when {
+                jsonElement is JsonObject && "version" in jsonElement -> {
+                    val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
+                    if (wrapper.elements.isEmpty()) {
+                        return WorkspaceLongFormState.error("No long form quests available for this workspace")
+                    }
+                    wrapper.elements
+                }
+
+                jsonElement is JsonArray -> {
+                    if (jsonElement.isEmpty()) {
+                        return WorkspaceLongFormState.error("No long form quests available for this workspace")
+                    }
+                    json.decodeFromJsonElement(jsonElement)
+                }
+
+                else -> {
+                    return WorkspaceLongFormState.error("Unexpected JSON structure for long form (Null or invalid).  Please contact the admin for this workspace")
+                }
+            }
             for (item in longFormResponse) {
                 item.questQuery?.toElementFilterExpression()
             }
-            return WorkspaceLongFormState.success(longFormResponse)
+            return WorkspaceLongFormState.success(longFormResponse, workspaceDetails.imageryListDef)
         } catch (parseException: ParseException) {
             return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }
@@ -191,7 +220,8 @@ class WorkspaceViewModelImpl(
     }
 
     override fun setEnvironment(environment: Environment) {
-        EnvironmentManager(preferences).currentEnvironment = environment
+        val environmentManager = EnvironmentManager(preferences)
+        environmentManager.currentEnvironment = environment
     }
 
     override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {

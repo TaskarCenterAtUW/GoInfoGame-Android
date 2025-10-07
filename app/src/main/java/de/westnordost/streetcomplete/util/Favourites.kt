@@ -35,7 +35,7 @@ private data class ItemStats(val indexOfFirst: Int, var count: Int = 0)
 
 /** Counts at least the first [count], keeps going until it finds at least [n] unique values */
 private fun <T : Any> List<T?>.countUniqueNonNull(n: Int, count: Int): Map<T, ItemStats> {
-    val counts = LinkedHashMap<T, ItemStats>()
+    val counts : MutableMap<T, ItemStats> = LinkedHashMap()
 
     for (item in this.withIndex()) {
         if (item.index >= count && counts.size >= n) break

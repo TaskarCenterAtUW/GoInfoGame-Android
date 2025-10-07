@@ -9,9 +9,11 @@ import android.graphics.DashPathEffect
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.RelativeLayout
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.withRotation
 import androidx.core.view.isGone
 import androidx.core.view.updateLayoutParams
@@ -188,7 +190,7 @@ class LanesSelectPuzzle @JvmOverloads constructor(
         binding = ViewLanesSelectPuzzleBinding.inflate(LayoutInflater.from(context), this)
 
         animator.setTimeListener { _, _, deltaTime ->
-            moveCars(deltaTime)
+//            moveCars(deltaTime)
             invalidate()
         }
 
@@ -341,7 +343,7 @@ class LanesSelectPuzzle @JvmOverloads constructor(
             carsOnLanes.add(CarState(forwardDirection, carBitmaps))
         }
         while (carsOnLanes.size > laneCount) {
-            carsOnLanes.removeLast()
+            carsOnLanes.removeAt(carsOnLanes.lastIndex)
         }
     }
 

@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.data
 import de.westnordost.osmapi.OsmConnection
 import de.westnordost.osmapi.user.UserApi
 import de.westnordost.streetcomplete.ApplicationConstants
-import de.westnordost.streetcomplete.data.osm.GIGOsmConnection
+import de.westnordost.streetcomplete.data.osm.CustomOsmConnection
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApi
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiImpl
 import de.westnordost.streetcomplete.data.osmnotes.NotesApi
@@ -11,9 +11,7 @@ import de.westnordost.streetcomplete.data.osmnotes.NotesApiImpl
 import de.westnordost.streetcomplete.data.osmtracks.TracksApi
 import de.westnordost.streetcomplete.data.osmtracks.TracksApiImpl
 import de.westnordost.streetcomplete.data.preferences.Preferences
-import de.westnordost.streetcomplete.data.workspace.data.remote.Environment
 import de.westnordost.streetcomplete.data.workspace.data.remote.EnvironmentManager
-import de.westnordost.streetcomplete.screens.workspaces.WorkspaceViewModel
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -33,9 +31,8 @@ val osmApiModule = module {
     factory { Preloader(get(named("CountryBoundariesLazy")), get(named("FeatureDictionaryLazy"))) }
     factory { UserApi(get()) }
     factory { EnvironmentManager(get()) }
-    single<OsmConnection> { GIGOsmConnection(
+    factory<OsmConnection> { CustomOsmConnection(
         get(),
-        get<EnvironmentManager>().currentEnvironment.osmUrl,
         ApplicationConstants.USER_AGENT,
         get<Preferences>(),
         get<EnvironmentManager>()

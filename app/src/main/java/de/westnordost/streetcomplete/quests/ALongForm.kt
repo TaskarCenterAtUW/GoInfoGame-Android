@@ -39,7 +39,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onClickOk() {
-        val editedItems = adapter.givenItems.filter { it.visible && it.userInput != null }
+        val editedItems = adapter.givenItems.filter { it.visible && it.userInput != null  && !it.userInput!!.isEmpty()}
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
             val urls = imageUrls.joinToString(",")

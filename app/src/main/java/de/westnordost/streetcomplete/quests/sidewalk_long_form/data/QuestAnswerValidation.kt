@@ -10,5 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class QuestAnswerValidation(
     @SerialName("min")
-    val min: Int? = null
+    val min: Int? = null,
+    @SerialName("max")
+    val max: Int? = null
 ) : Parcelable

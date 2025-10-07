@@ -12,7 +12,8 @@ data class LongFormQuest(
     @SerialName("quest_answer_choices")
     val questAnswerChoices: List<QuestAnswerChoice?>? = null,
     @SerialName("quest_answer_dependency")
-    val questAnswerDependency: QuestAnswerDependency? = null,
+    @Serializable(with = QuestDependencySerializer::class)
+    val questAnswerDependency: List<QuestAnswerDependency>? = null,
     @SerialName("quest_answer_validation")
     val questAnswerValidation: QuestAnswerValidation? = null,
     @SerialName("quest_description")
@@ -28,6 +29,21 @@ data class LongFormQuest(
     @SerialName("quest_type")
     val questType: String? = null,
     var visible :Boolean = true,
-    var userInput : String? = null,
-    var selectedIndex : Int? = null,
+    var userInput : UserInput? = null,
+    var selectedIndex : MutableList<Int>? = null,
 ) : Parcelable
+
+
+@Parcelize
+@Serializable
+sealed class UserInput : Parcelable {
+    data class Single(var answer: String? = null) : UserInput()
+    data class Multiple(var answers: MutableList<String> = emptyList<String>().toMutableList()) : UserInput()
+
+    fun isEmpty(): Boolean {
+        return when (this) {
+            is Single -> answer.isNullOrEmpty()
+            is Multiple -> answers.isEmpty()
+        }
+    }
+}

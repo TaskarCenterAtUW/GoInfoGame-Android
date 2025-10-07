@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="accent">#ff6600</color>
+    <color name="primary">#FFB7A57A</color>
+    <color name="accent">#FFC5B4E3</color>
     <color name="accent_variant">#F44336</color>
+    <color name="button_background">#262626</color>
 
     <color name="attribution_text">#ccc</color>
 

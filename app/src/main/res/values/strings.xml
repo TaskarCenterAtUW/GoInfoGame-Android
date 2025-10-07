@@ -11,7 +11,7 @@
     <!-- Store description -->
 
     <string name="store_listing_short_description" tools:ignore="UnusedResources">"OpenStreetMap surveyor app"</string>
-    <string name="store_listing_full_description" tools:ignore="UnusedResources">"Help improve OpenStreetMap with GIG!
+    <string name="store_listing_full_description" tools:ignore="UnusedResources">"Help improve OpenStreetMap with AVIV ScoutRoute!
 
 This app finds missing map data in your vicinity and displays it on a map as quests. Solve each quest by visiting the location on-site and answering a simple question to update the map.
 
@@ -181,7 +181,7 @@ The info you enter is directly added to OpenStreetMap in your name, without the 
 
     <string name="tutorial_welcome_to_osm">Welcome to OpenStreetMap</string>
     <string name="tutorial_welcome_to_osm_subtitle">the free wiki world map</string>
-    <string name="tutorial_intro">GIG makes it easy to contribute to OpenStreetMap.\nIt automatically looks for missing details in your vicinity: bicycle lanes, house numbers, opening hours and much more…</string>
+    <string name="tutorial_intro">AVIV ScoutRoute makes it easy to contribute to OpenStreetMap.\nIt automatically looks for missing details in your vicinity: bicycle lanes, house numbers, opening hours and much more…</string>
     <string name="tutorial_solving_quests">Once found, the missing details will appear on your map as quests.\n\nYou can start solving them right away and later login to publish your answers.</string>
     <string name="tutorial_stay_safe">Whenever you are uncertain, you can always reply “Can’t Say” and leave a note.\n\nFinally, remember to stay safe: Be aware of your surroundings and don’t enter private property.</string>
     <string name="tutorial_happy_mapping">Happy Mapping!</string>
@@ -287,7 +287,7 @@ Each of you will then see different quests."</string>
     <string name="later">"Later"</string>
     <string name="not_authorized">"Not authorized"</string>
 
-    <string name="version_banned_message">"This version of GIG is too old. Please update!"</string>
+    <string name="version_banned_message">"This version of AVIV ScoutRoute is too old. Please update!"</string>
 
     <string name="no_gps_no_quests">"To download data around you automatically, turn on location"</string>
 
@@ -298,7 +298,7 @@ Each of you will then see different quests."</string>
     <string name="download_error_parsing">"Error while parsing the Quest Filter, Please check if it is valid"</string>
     <string name="upload_error">"Error while uploading answers"</string>
 
-    <string name="crash_title">"Oh no, GIG crashed last time!"</string>
+    <string name="crash_title">"Oh no, AVIV ScoutRoute crashed last time!"</string>
     <string name="crash_message">"Send an error report to the developer?"</string>
 
     <string name="crash_compose_email">"Compose email"</string>
@@ -355,10 +355,10 @@ You can find donation information on our website or project home, Google Play do
     <string name="credits_author_title">Author and maintainer</string>
     <string name="credits_main_contributors_title">Main contributors</string>
     <string name="credits_contributors_title">Code contributors</string>
-    <string name="credits_contributors">"See the &lt;a href=\"https://github.com/GIG/GIG/graphs/contributors\"&gt;complete list on GitHub&lt;/a&gt;."</string>
+    <string name="credits_contributors">"See the &lt;a href=\"https://github.com/AVIV ScoutRoute/AVIV ScoutRoute/graphs/contributors\"&gt;complete list on GitHub&lt;/a&gt;."</string>
     <string name="credits_translations_title">Translations</string>
     <string name="credits_art_contributors_title">Art contributors</string>
-    <string name="credits_projects_contributors_title">Projects made for GIG</string>
+    <string name="credits_projects_contributors_title">Projects made for AVIV ScoutRoute</string>
 
 
     <!-- Privacy screen -->
@@ -370,7 +370,7 @@ First off, understand that with this app, you make actual and direct contributio
 Anything you contribute in this app is directly added to the map, there is no third party in-between the app and OSM infrastructure.
 &lt;/p&gt;
 &lt;p&gt;
-Editing OpenStreetMap anonymously is not possible. Any changes you make (and their date and location) are attributed to your OSM user account and publicly visible on the openstreetmap.org website. Because GIG should only be used for on-site survey, this reveals where and when you have used the app.
+Editing OpenStreetMap anonymously is not possible. Any changes you make (and their date and location) are attributed to your OSM user account and publicly visible on the openstreetmap.org website. Because AVIV ScoutRoute should only be used for on-site survey, this reveals where and when you have used the app.
 &lt;/p&gt;
 
 &lt;h2&gt;Location&lt;/h2&gt;
@@ -381,7 +381,7 @@ The app does not share your GPS location with anyone. It is used to automaticall
 &lt;h2&gt;Data Usage&lt;/h2&gt;
 &lt;p&gt;
 This app directly communicates with OSM servers.&lt;br/&gt;
-Before uploading your changes, the app checks with a &lt;a href=\"https://www.westnordost.de/GIG/banned_versions.txt\"&gt;simple text file&lt;/a&gt; on my server to ensure that this version of the app has not been banned from uploading changes. This is a precautionary measure to be able to block versions of the app that turn out to have critical bugs from uploading corrupted data to OSM.&lt;/p&gt;"</string>
+Before uploading your changes, the app checks with a &lt;a href=\"https://www.westnordost.de/AVIV ScoutRoute/banned_versions.txt\"&gt;simple text file&lt;/a&gt; on my server to ensure that this version of the app has not been banned from uploading changes. This is a precautionary measure to be able to block versions of the app that turn out to have critical bugs from uploading corrupted data to OSM.&lt;/p&gt;"</string>
     <string name="privacy_html_tileserver2">"&lt;p&gt;To display the map, vector tiles are retrieved from %1$s. See their &lt;a href=\"%2$s\"&gt;privacy statement&lt;/a&gt; for more information.&lt;/p&gt;"</string>
     <string name="privacy_html_image_upload2">&lt;p&gt;Photos you attach to a note are uploaded to my server and deleted some days after that note has been resolved. Their meta-data is stripped before upload.&lt;/p&gt;</string>
     <string name="privacy_html_third_party_quest_sources">&lt;p&gt;For some quests, some additional data from third parties is downloaded. In particular, the oneway quest queries an API, also hosted on westnordost.de, about likely candidates for oneways.&lt;/p&gt;</string>
@@ -1007,7 +1007,7 @@ A level counts as a roof level when its windows are in the roof. Subsequently, r
     <string name="quest_cycleway_value_lane">bicycle lane</string>
     <string name="quest_cycleway_value_none">none</string>
     <string name="quest_cycleway_value_shared">lane shared explicitly with other traffic</string>
-    <!-- A kind of second-grade cycle lane. It has a lower minimum width and other traffic may drive or even legally stop on it and thus conceptually akin to "sharrows". It is often used in places where there is not enough space for both full car lanes and full cycle lanes. Hence it is usually not mandatory for cyclists. The concept of such a cycle lanes only exists in some countries. It is called differently in different countries, some examples: "advisory cycle lane" (GB), "suggestion cycle lane" (NL,BE), "protective lane" (DE,CZ), "multiple-purpose strip" (AT), see https://github.com/GIG/countrymetadata/blob/master/data/hasAdvisoryCycleLane.yml if you think something is missing -->
+    <!-- A kind of second-grade cycle lane. It has a lower minimum width and other traffic may drive or even legally stop on it and thus conceptually akin to "sharrows". It is often used in places where there is not enough space for both full car lanes and full cycle lanes. Hence it is usually not mandatory for cyclists. The concept of such a cycle lanes only exists in some countries. It is called differently in different countries, some examples: "advisory cycle lane" (GB), "suggestion cycle lane" (NL,BE), "protective lane" (DE,CZ), "multiple-purpose strip" (AT), see https://github.com/AVIV ScoutRoute/countrymetadata/blob/master/data/hasAdvisoryCycleLane.yml if you think something is missing -->
     <string name="quest_cycleway_value_advisory_lane">advisory bicycle lane</string>
     <string name="quest_cycleway_value_bus_lane">on bus lane</string>
     <string name="quest_cycleway_value_separate">displayed separately on the map</string>
@@ -1785,9 +1785,9 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="lane_narrowing_traffic_calming_choked_island">Curb extension + traffic island</string>
     <string name="lane_narrowing_traffic_calming_none">No narrowed lane here</string>
 
-    <!--    Adding for GIG-->
-    <string name="email">Email for %1$s</string>
-    <string name="password">Password for %1$s</string>
+    <!--    Adding for AVIV ScoutRoute-->
+    <string name="email">Email</string>
+    <string name="password">Password</string>
     <string name="title_activity_work_space">WorkSpaceActivity</string>
     <string name="quest_kerb_title">Is there a curb here</string>
     <string name="submit">Submit</string>
@@ -1808,4 +1808,10 @@ Alternatively, you can leave a note (with a photo)."</string>
     <string name="save_credentials_message">Would you like to securely save your credentials on this device? Your information will be protected using your device\'s security features.</string>
     <string name="disable_biometric_message">Disabling this will delete all saved credentials for this environment</string>
     <string name="diable_biometric_title">Enable biometric authentication</string>
+    <string name="sync_changes">sync changes</string>
+    <string name="no_pending_changes_to_sync">No pending changes to sync</string>
+    <string name="enter_value">Enter Value</string>
+    <string name="profile_icon">profile icon</string>
+    <string name="workspace">Workspace</string>
+    <string name="enter_text">Enter text</string>
 </resources>

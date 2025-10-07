@@ -3,15 +3,16 @@ package de.westnordost.streetcomplete
 import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
 
 object ApplicationConstants {
-    const val NAME = "GoInfoGame Android"
+    const val NAME = "AVIV ScoutRoute Android"
+    const val APP_NAME = "AVIV ScoutRoute"
     const val USER_AGENT = NAME + " " + BuildConfig.VERSION_NAME
     const val QUESTTYPE_TAG_KEY = NAME + ":quest_type"
 
-    const val MAX_DOWNLOADABLE_AREA_IN_SQKM = 12.0
+    const val MAX_DOWNLOADABLE_AREA_IN_SQKM = 3.0
     const val MIN_DOWNLOADABLE_AREA_IN_SQKM = 0.1
 
-    const val DATABASE_NAME = "streetcomplete_v2.db"
-    const val OLD_DATABASE_NAME = "streetcomplete.db"
+    const val DATABASE_NAME = "aviv_v2.db"
+    const val OLD_DATABASE_NAME = "aviv.db"
 
     /** tile zoom at which the app downloads automatically and remembers which tiles have already
      *  been downloaded */

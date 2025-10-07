@@ -44,7 +44,7 @@
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:networkSecurityConfig="@xml/network_security"
-        android:icon="@mipmap/ic_gig_logo"
+        android:icon="@mipmap/aviv_launcher_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -68,7 +68,7 @@
             android:name=".screens.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustPan">
 
 
             <intent-filter>
@@ -117,8 +117,10 @@
             android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode" />
         <activity
             android:name=".screens.user.UserActivity"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" /> <!-- For WorkManager -->
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:exported="true"
+            android:label="@string/action_settings"
+            android:parentActivityName=".screens.MainActivity" /> <!-- For WorkManager -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"

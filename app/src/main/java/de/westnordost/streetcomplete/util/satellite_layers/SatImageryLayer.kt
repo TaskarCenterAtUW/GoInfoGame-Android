@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.util.satellite_layers
 
 
 import android.content.Context
+import android.os.Parcelable
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -10,10 +11,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+@Parcelize
 @Serializable
 data class Imagery(
     @SerialName("attribution")
@@ -32,8 +35,9 @@ data class Imagery(
     val type: String,
     @SerialName("url")
     val url: String
-)
+) : Parcelable
 
+@Parcelize
 @Serializable
 data class Attribution(
     @SerialName("required")
@@ -42,15 +46,16 @@ data class Attribution(
     val text: String,
     @SerialName("url")
     val url: String
-)
+) : Parcelable
 
+@Parcelize
 @Serializable
 data class Extent(
     @SerialName("max_zoom")
     val maxZoom: Int,
     @SerialName("polygon")
     val polygon: List<List<List<Double>>>
-)
+) : Parcelable
 
 
 class ImageryRepository(private val httpClient: HttpClient, private val context: Context,
@@ -61,8 +66,8 @@ class ImageryRepository(private val httpClient: HttpClient, private val context:
 
     private val url = "http://10.0.2.2:8080/gig-imagery-example.json" // Update this
 
-    suspend fun getImageryForLocation(location: LatLon) =
-        getLocalImageryList(context,jsonParser).filter { imagery ->
+    fun getImageryForLocation(location: LatLon, imagerList: List<Imagery>) =
+        imagerList.filter { imagery ->
             imagery.extent.polygon.any { polygon ->
                 isPointInPolygon(location, polygon)
             }

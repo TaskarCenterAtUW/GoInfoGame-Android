@@ -37,7 +37,6 @@ class MainMenuDialog(
         binding.profileButton.setOnClickListener {
             val intent = Intent(context, UserActivity::class.java)
             context.startActivity(intent)
-            dismiss()
         }
         binding.enableTeamModeButton.setOnClickListener {
             TeamModeDialog(context, onEnableTeamMode).show()
@@ -63,15 +62,15 @@ class MainMenuDialog(
             dismiss()
         }
 
-        if (indexInTeam != null) {
-            binding.teamModeColorCircle.setIndexInTeam(indexInTeam)
-        }
+//        if (indexInTeam != null) {
+//            binding.teamModeColorCircle.setIndexInTeam(indexInTeam)
+//        }
         // binding.enableTeamModeButton.isGone = indexInTeam != null
         // binding.disableTeamModeButton.isGone = indexInTeam == null
 
-        binding.root.doOnPreDraw {
-            binding.bigMenuItemsContainer.columnCount = binding.root.width / binding.profileButton.width
-        }
+//        binding.root.doOnPreDraw {
+//            binding.bigMenuItemsContainer.columnCount = binding.root.width / binding.profileButton.width
+//        }
 
         setView(binding.root)
     }
