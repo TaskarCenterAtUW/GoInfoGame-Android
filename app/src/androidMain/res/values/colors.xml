@@ -52,4 +52,6 @@
     <color name="smoothness_vehicle_tyre">#292f33</color>
 
     <color name="pressed">#ddd</color>
+    <color name="popup_background_color">#FFFFFF</color>
+    <color name="light_purple_background">#FFDEDAE4</color>
 </resources>

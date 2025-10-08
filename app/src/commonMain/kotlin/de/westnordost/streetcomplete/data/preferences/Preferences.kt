@@ -7,8 +7,11 @@ import com.russhwolf.settings.double
 import com.russhwolf.settings.int
 import com.russhwolf.settings.long
 import com.russhwolf.settings.nullableString
+import com.russhwolf.settings.set
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.ktx.putStringOrNull
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class Preferences(private val prefs: ObservableSettings) {
     // application settings
@@ -73,6 +76,125 @@ class Preferences(private val prefs: ObservableSettings) {
     var oAuth2AccessToken: String? by prefs.nullableString(OAUTH2_ACCESS_TOKEN)
     val hasOAuth1AccessToken: Boolean get() = prefs.hasKey(OAUTH1_ACCESS_TOKEN)
 
+    var showLongForm : Boolean
+        set(value) {
+            prefs[WORKSPACE_SHOW_LONG_FORM] = value
+        }
+        get() =
+            prefs.getBoolean(WORKSPACE_SHOW_LONG_FORM, false)
+
+    var workspaceUserId : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_USER_ID, value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_USER_ID)
+
+    var workspaceLogin : Boolean
+        set(value) {
+            prefs[WORKSPACE_LOGIN] = value
+            setWorkspaceLoginState(value)
+        }
+        get() =
+            prefs.getBoolean(WORKSPACE_LOGIN, false)
+
+    private val _workspaceLoginState = MutableStateFlow(prefs.getBoolean(WORKSPACE_LOGIN, false))
+    val workspaceLoginState: StateFlow<Boolean> get() = _workspaceLoginState
+
+    private fun setWorkspaceLoginState(value: Boolean) {
+        _workspaceLoginState.value = value
+    }
+
+    var workspaceId : Int?
+        set(value) {
+            prefs[WORKSPACE_ID] = value
+        }
+        get() =
+            prefs.getIntOrNull(WORKSPACE_ID)
+
+    var workspaceToken : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_ACCESS_TOKEN,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
+
+    var workspaceUserName : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TDEI_USER_NAME)
+
+    var environment : String
+        set(value) {
+            prefs.putStringOrNull(ENVIRONMENT,value)
+        }
+        get() =
+            prefs.getString(ENVIRONMENT,Environment.PROD.name)
+
+    var workspaceRefreshToken : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TOKEN_REFRESH,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TOKEN_REFRESH)
+
+    var accessTokenExpiryInterval : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_TOKEN_EXPIRES,0)
+
+    var refreshTokenExpiryInterval : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,0)
+
+    var refreshTokenExpiryTime : Long
+        set(value) {
+            prefs.putLong(REFRESH_TOKEN_EXPIRY_TIME,value)
+        }
+        get() =
+            prefs.getLong(REFRESH_TOKEN_EXPIRY_TIME,0)
+
+    var accessTokenExpiryTime : Long
+        set(value) {
+            prefs.putLong(AUTH_TOKEN_EXPIRY_TIME,value)
+        }
+        get() =
+            prefs.getLong(AUTH_TOKEN_EXPIRY_TIME,0)
+
+    var workspaceLastLogin : Long
+        set(value) {
+            prefs.putLong(WORKSPACE_LAST_LOGIN,value)
+        }
+        get() =
+            prefs.getLong(WORKSPACE_LAST_LOGIN,0)
+
+    var workspaceUserEmail : String?
+        set(value) {
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_EMAIL,value)
+        }
+        get() =
+            prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
+
+    var isBiometricEnabled: Boolean
+        set(value) {
+            prefs.putBoolean("${environment}_$BIOMETRIC_ENABLED", value)
+        }
+        get() = prefs.getBoolean("${environment}_$BIOMETRIC_ENABLED", true)
+
+    private val _isDebugModeEnabled = MutableStateFlow(prefs.getBoolean(DEBUG_MODE_ENABLED, false))
+    val isDebugModeEnabled: StateFlow<Boolean> get() = _isDebugModeEnabled
+
+    fun setDebugModeEnabled(value: Boolean) {
+        prefs.putBoolean(DEBUG_MODE_ENABLED, value)
+        _isDebugModeEnabled.value = value
+    }
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
         prefs.remove(OSM_USER_NAME)
@@ -265,5 +387,25 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val ACTIVE_DATES_RANGE = "active_days_range"
         private const val IS_SYNCHRONIZING_STATISTICS = "is_synchronizing_statistics"
         private const val STATISTICS_SYNCED_ONCE = "statistics_synced_once"
+
+        //AVIV Changes
+
+        private const val WORKSPACE_LOGIN = "workspace.login"
+        private const val WORKSPACE_ACCESS_TOKEN = "workspace.accesstoken"
+        private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
+        private const val WORKSPACE_ID = "workspace.id"
+        private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"
+        private const val ENVIRONMENT = "environment"
+        private const val WORKSPACE_TOKEN_EXPIRES = "workspace.token.expires"
+        private const val WORKSPACE_TOKEN_REFRESH = "workspace.token.refresh"
+        private const val WORKSPACE_REFRESH_TOKEN_EXPIRES = "workspace.refresh.token.expires"
+        private const val WORKSPACE_LAST_LOGIN = "workspace.last.login"
+        private const val WORKSPACE_TDEI_USER_EMAIL = "workspace.tdei.email"
+
+        private const val REFRESH_TOKEN_EXPIRY_TIME = "refresh.token.expiry.time"
+        private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
+        private const val WORKSPACE_USER_ID = "workspace.user.id"
+        private const val BIOMETRIC_ENABLED = "biometric.enabled"
+        private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
     }
 }

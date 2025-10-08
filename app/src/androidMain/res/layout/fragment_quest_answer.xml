@@ -63,111 +63,39 @@
                             android:id="@+id/titleLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:visibility="visible"
+                            android:textColor="@color/primary"
                             android:textAppearance="@style/TextAppearance.TitleLarge"/>
-
-                        <TextView
-                            android:id="@+id/titleHintLabel"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.TitleLarge.Hint"
-                            android:visibility="gone"/>
 
                     </LinearLayout>
 
                     <ImageView
-                        android:id="@+id/infoButton"
+                        android:id="@+id/hide_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat = "@drawable/ic_info_outline_24dp"
+                        app:srcCompat = "@drawable/baseline_visibility_off_24"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
-                        app:tint="@color/activated_tint"
+                        app:tint="@color/accent"
                         android:visibility="visible"
-                        android:contentDescription="@string/info"
-                        android:padding="12dp"/>
+                        android:focusable="true"
+                        android:contentDescription="@string/hide"
+                        android:padding="16dp"/>
 
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/infoArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:showDividers="middle"
-                    android:divider="@drawable/space_8dp">
-
-                    <TextView
-                        android:id="@+id/infoText"
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:id="@+id/close_button"
+                        android:focusable="true"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Body"/>
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <LinearLayout
-                            android:id="@+id/infoPictures"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:showDividers="middle"
-                            android:divider="@drawable/space_8dp" />
-
-                    </HorizontalScrollView>
+                        app:srcCompat = "@drawable/ic_close_24dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        app:tint="@color/accent"
+                        android:visibility="visible"
+                        android:contentDescription="@string/close_button"
+                        android:padding="16dp"/>
 
                 </LinearLayout>
 
             </LinearLayout>
-
-
-            <LinearLayout
-                android:id="@+id/speechbubbleNoteContainer"
-                android:background="@drawable/speech_bubble_none"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginStart="@dimen/horizontal_speech_bubble_margin"
-                android:layout_marginEnd="@dimen/horizontal_speech_bubble_margin"
-                android:layout_marginBottom="4dp"
-                android:showDividers="middle"
-                android:paddingStart="22dp"
-                android:paddingEnd="22dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp"
-                android:divider="@drawable/space_16dp"
-                android:elevation="@dimen/speech_bubble_elevation"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:id="@+id/noteArea"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:showDividers="middle">
-
-                    <TextView
-                        android:id="@+id/titleNoteLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.TitleMedium"
-                        android:text="@string/note_for_object" />
-
-                    <TextView
-                        android:id="@+id/noteLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.Body"
-                        android:textStyle="italic"
-                        android:textColor="@color/hint_text"
-                        android:autoLink="web"
-                        android:textIsSelectable="true" />
-
-                </LinearLayout>
-
-
-            </LinearLayout>
-
 
             <!-- Necessary because even if the bottom sheet is already expanded, the content might
                  be still too large to fit onto the screen without scrolling (it often is) -->
@@ -188,56 +116,63 @@
                     android:clipToPadding="false">
 
                     <de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/speechbubbleContentContainer"
+                        android:background="@drawable/speech_bubble_none"
+                        android:layout_marginStart="-2.5dp"
+                        android:layout_marginEnd="-2.5dp"
+                        android:layout_marginBottom="4dp"
+                        android:elevation="@dimen/speech_bubble_elevation">
+
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:id="@+id/speechbubbleContentContainer"
-                            android:background="@drawable/speech_bubble_none"
-                            android:layout_marginStart="-2.5dp"
-                            android:layout_marginEnd="-2.5dp"
-                            android:layout_marginBottom="4dp"
-                            android:elevation="@dimen/speech_bubble_elevation">
+                            android:orientation="vertical"
+                            android:showDividers="middle"
+                            android:divider="@drawable/button_bar_divider">
 
-                            <LinearLayout
+                            <FrameLayout
+                                android:id="@+id/content"
+                                android:layout_height="wrap_content"
+                                android:layout_width="match_parent"
+                                android:orientation="vertical"
+                                android:paddingStart="@dimen/quest_form_horizontal_padding"
+                                android:paddingEnd="@dimen/quest_form_horizontal_padding"
+                                android:paddingTop="@dimen/quest_form_vertical_padding"
+                                android:paddingBottom="@dimen/quest_form_vertical_padding"/>
+
+                            <com.google.android.flexbox.FlexboxLayout
+                                android:id="@+id/buttonPanel"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:showDividers="middle"
-                                android:divider="@drawable/button_bar_divider">
+                                android:orientation="horizontal"
+                                android:layoutDirection="locale"
+                                android:gravity="center"
+                                app:flexWrap="wrap"
+                                app:justifyContent="space_between"
+                                app:showDividerHorizontal="middle"
+                                app:showDividerVertical="middle"
+                                app:dividerDrawableVertical="@drawable/button_bar_divider_with_vertical_padding"
+                                app:dividerDrawableHorizontal="@drawable/button_bar_divider_with_horizontal_padding"
+                                />
 
-                                <FrameLayout
-                                    android:id="@+id/content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_width="match_parent"
-                                    android:orientation="vertical"
-                                    android:paddingStart="@dimen/quest_form_horizontal_padding"
-                                    android:paddingEnd="@dimen/quest_form_horizontal_padding"
-                                    android:paddingTop="@dimen/quest_form_vertical_padding"
-                                    android:paddingBottom="@dimen/quest_form_vertical_padding"/>
+                        </LinearLayout>
 
-                                <com.google.android.flexbox.FlexboxLayout
-                                    android:id="@+id/buttonPanel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:layoutDirection="locale"
-                                    android:gravity="center"
-                                    app:flexWrap="wrap"
-                                    app:justifyContent="space_between"
-                                    app:showDividerHorizontal="middle"
-                                    app:showDividerVertical="middle"
-                                    app:dividerDrawableVertical="@drawable/button_bar_divider_with_vertical_padding"
-                                    app:dividerDrawableHorizontal="@drawable/button_bar_divider_with_horizontal_padding"
-                                    />
-
-                            </LinearLayout>
-
-                        </de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout>
+                    </de.westnordost.streetcomplete.view.MaskSpeechbubbleCornersFrameLayout>
 
                 </LinearLayout>
 
             </androidx.core.widget.NestedScrollView>
 
         </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

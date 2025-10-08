@@ -1,5 +1,6 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
@@ -40,6 +41,7 @@ plugins {
     id("org.jetbrains.compose") version "1.9.0"
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
+    id("kotlin-parcelize")
 }
 
 repositories {
@@ -178,6 +180,7 @@ kotlin {
                 implementation("io.insert-koin:koin-androidx-workmanager")
 
                 // Android stuff
+                implementation("androidx.compose.material3:material3:1.4.0")
                 implementation("com.google.android.material:material:1.13.0")
                 implementation("androidx.core:core-ktx:1.17.0")
                 implementation("androidx.appcompat:appcompat:1.7.1")
@@ -186,7 +189,9 @@ kotlin {
                 implementation("androidx.fragment:fragment-ktx:1.8.9")
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
-
+                implementation("androidx.compose.material:material-icons-extended:1.7.8")
+                implementation("io.coil-kt:coil:2.7.0")
+                implementation("io.coil-kt:coil-svg:2.7.0")
                 // Compose
                 implementation(compose.preview)
                 implementation("androidx.activity:activity-compose:1.11.0")
@@ -201,8 +206,12 @@ kotlin {
                 implementation("androidx.work:work-runtime-ktx:2.10.5")
 
                 // HTTP Client
-                implementation("io.ktor:ktor-client-android:3.3.0")
-
+                implementation("io.ktor:ktor-client-core:3.3.0")
+                implementation("io.ktor:ktor-client-cio:3.3.0")
+                implementation("io.ktor:ktor-client-auth:3.3.0")
+                implementation("com.github.chrisbanes:PhotoView:2.3.0")
+                implementation("androidx.biometric:biometric:1.1.0")
+                implementation("androidx.security:security-crypto:1.1.0")
                 // widgets
                 implementation("androidx.viewpager2:viewpager2:1.1.0")
                 implementation("me.grantland:autofittextview:0.2.1")
@@ -211,6 +220,17 @@ kotlin {
 
                 // map and location
                 implementation("org.maplibre.gl:android-sdk:11.13.5")
+
+                implementation(project.dependencies.platform("com.google.firebase:firebase-bom:33.14.0"))
+                implementation("com.google.firebase:firebase-analytics")
+                implementation("com.google.firebase:firebase-crashlytics")
+                implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
+                implementation("com.google.firebase:firebase-perf")
+
+                implementation("io.ktor:ktor-client-content-negotiation:3.3.0")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.0")
+                implementation("io.ktor:ktor-client-logging:3.3.0")
+
             }
         }
         iosMain {

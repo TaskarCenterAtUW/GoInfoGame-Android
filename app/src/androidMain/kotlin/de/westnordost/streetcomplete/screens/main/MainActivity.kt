@@ -440,6 +440,8 @@ class MainActivity :
     /* -------------------------------- AbstractOverlayForm.Listener ---------------------------- */
 
     override val displayedMapLocation: Location? get() = mapFragment?.displayedLocation
+    override val mutableMultiSelectQuests: MutableList<Quest>
+        get() = TODO("Not yet implemented")
 
     override val metersPerPixel: Double? get() = mapFragment?.getMetersPerPixel()
 
@@ -453,6 +455,10 @@ class MainActivity :
             LeaveNoteInsteadFragment.create(element.type, element.id, leaveNoteContext, geometry.center),
             false
         )
+    }
+
+    override fun onCloseDialog() {
+        TODO("Not yet implemented")
     }
 
     override fun onSplitWay(editType: ElementEditType, way: Way, geometry: ElementPolylinesGeometry) {

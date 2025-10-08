@@ -46,11 +46,6 @@ class AddAddressStreetForm : AbstractOsmQuestForm<StreetOrPlaceName>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setTitleHintLabel(getNameAndLocationSpanned(
-            element, resources, featureDictionary,
-            showHouseNumber = true
-        ))
-
         binding.composeViewBase.content { Surface {
             streetOrPlaceName = rememberSerializable { mutableStateOf(
                 if (lastWasPlaceName) PlaceName("") else StreetName("")

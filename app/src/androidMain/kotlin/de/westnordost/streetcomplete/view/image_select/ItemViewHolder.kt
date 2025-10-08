@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.view.image_select
 
+import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -12,13 +13,16 @@ import de.westnordost.streetcomplete.view.setText
 class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     private val imageView: ImageView? = itemView.findViewById(R.id.imageView)
-    private val textView: TextView? = itemView.findViewById(R.id.textView)
+    private val textView: OutlinedTextView? = itemView.findViewById(R.id.textView)
     private val descriptionView: TextView? = itemView.findViewById(R.id.descriptionView)
-    private val dropDownArrowImageView: ImageView? = itemView.findViewById(R.id.dropDownArrowImageView)
+    private val dropDownArrowImageView: ImageView? =
+        itemView.findViewById(R.id.dropDownArrowImageView)
 
     var isSelected: Boolean
         get() = itemView.isSelected
-        set(value) { itemView.isSelected = value }
+        set(value) {
+            itemView.isSelected = value
+        }
 
     var isGroupExpanded: Boolean = false
         set(value) {
@@ -35,6 +39,20 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
                 itemView.setOnClickListener {
                     val index = adapterPosition
                     if (index != RecyclerView.NO_POSITION) value.invoke(index)
+                }
+            }
+        }
+
+    var onLongClickListener: ((index: Int, drawable: Drawable?) -> Unit)? = null
+        set(value) {
+            field = value
+            if (value == null) {
+                itemView.setOnLongClickListener(null)
+            } else {
+                itemView.setOnLongClickListener {
+                    val index = adapterPosition
+                    if (index != RecyclerView.NO_POSITION) value.invoke(index, imageView?.drawable)
+                    false
                 }
             }
         }

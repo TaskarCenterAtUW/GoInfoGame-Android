@@ -1857,4 +1857,38 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="overlay_mtb_scale_5_description">Ultra-steep blocky terrain with counter‑uphills, boulder fields, landslides, pivot switchbacks with obstacles, back‑to‑back high drops and fallen trees. Bike carrying around obstacles impossible; riding unavoidable. Trial mastery required.</string>
     <string name="overlay_mtb_scale_6">Grade 6</string>
     <string name="overlay_mtb_scale_6_description">Dangerous and impassable terrain, not suitable for mountain biking.</string>
+
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="title_activity_work_space">WorkSpaceActivity</string>
+    <string name="quest_kerb_title">Is there a curb here</string>
+    <string name="submit">Submit</string>
+    <string name="upload_a_picture">Upload a picture</string>
+    <string name="image_link">Image link</string>
+    <string name="hide">Hide quest</string>
+    <string name="compose_note">Compose Note</string>
+    <string name="compass_icon">compass_icon</string>
+    <string name="change_map_layer">Change map layer</string>
+    <string name="add_new_feature">Add new feature</string>
+    <string name="quest_multi_select_quest">Select %1$s : %2$d %3$s selected</string>
+    <string name="quest_choice_image">quest choice image</string>
+    <string name="image">Image</string>
+    <string name="failed_to_load_imagery_list">Failed to load imagery list</string>
+    <string name="default_imagery">Default Imagery</string>
+    <string name="selected">Selected: %1$s</string>
+    <string name="save_credentials">Save Credentials?</string>
+    <string name="save_credentials_message">Would you like to securely save your credentials on this device? Your information will be protected using your device\'s security features.</string>
+    <string name="disable_biometric_message">Disabling this will delete all saved credentials for this environment</string>
+    <string name="diable_biometric_title">Enable biometric authentication</string>
+    <string name="sync_changes">sync changes</string>
+    <string name="no_pending_changes_to_sync">No pending changes to sync</string>
+    <string name="enter_value">Enter Value</string>
+    <string name="profile_icon">profile icon</string>
+    <string name="workspace">Workspace</string>
+    <string name="enter_text">Enter text</string>
+
+    <string name="close_image">Close image</string>
+    <string name="confirmation_hide_quest">"Are you sure you want to hide this quest?"</string>
+    <string name="confirmation_hide_quest_yes">"Yes"</string>
+
 </resources>

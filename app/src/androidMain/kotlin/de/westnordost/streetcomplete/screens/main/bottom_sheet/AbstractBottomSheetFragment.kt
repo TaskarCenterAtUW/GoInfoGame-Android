@@ -139,6 +139,18 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
         }
     }
 
+    fun onClickHide(onConfirmed: () -> Unit) {
+        activity?.let {
+            AlertDialog.Builder(it)
+                .setMessage(R.string.confirmation_hide_quest)
+                .setPositiveButton(R.string.confirmation_hide_quest_yes) { _, _ ->
+                    onConfirmed()
+                }
+                .setNegativeButton(R.string.short_no_answer_on_button, null)
+                .show()
+        }
+    }
+
     /** returns whether this form should not be closeable without confirmation */
     open fun isRejectingClose(): Boolean = false
 

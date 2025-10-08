@@ -116,12 +116,6 @@ abstract class AbstractQuestForm :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        setTitle(resources.getString(questType.title))
-        setTitleHintLabel(null)
-        setHint(questType.hint?.let { resources.getString(it) })
-        setHintImages(questType.hintImages.mapNotNull { requireContext().getDrawable(it) })
-
         binding.okButton.setOnClickListener {
             if (!isFormComplete()) {
                 activity?.toast(R.string.no_changes)
@@ -131,8 +125,6 @@ abstract class AbstractQuestForm :
         }
 
         infoIsExpanded = false
-        binding.infoButton.setOnClickListener { toggleInfoArea() }
-        binding.infoArea.setOnClickListener { toggleInfoArea() }
 
         // no content? -> hide the content container
         if (binding.content.childCount == 0) {
@@ -154,49 +146,32 @@ abstract class AbstractQuestForm :
         _binding = null
     }
 
+    open fun setCameraIntent() {}
+
+    open fun onImageUrlReceived(imageUrl: String) {}
+
+    protected fun showProgressbar() {
+        binding.progressBar.visibility = View.VISIBLE
+    }
+
+    protected fun hideProgressbar() {
+        binding.progressBar.visibility = View.GONE
+    }
+
     protected fun setTitle(text: CharSequence?) {
         binding.titleLabel.text = text
     }
 
-    protected fun setTitleHintLabel(text: CharSequence?) {
-        binding.titleHintLabel.isGone = text == null
-        binding.titleHintLabel.text = text
-    }
-
-    protected fun setHint(text: CharSequence?) {
-        binding.infoText.isGone = text == null
-        binding.infoText.text = text
-        updateInfoButtonVisibility()
-    }
-
-    protected fun setObjNote(text: CharSequence?) {
-        binding.noteLabel.text = text
-        binding.speechbubbleNoteContainer.isGone = binding.noteLabel.text.isEmpty()
-    }
-    protected fun setHintImages(images: List<Drawable>) {
-        binding.infoPictures.isGone = images.isEmpty()
-        binding.infoPictures.removeAllViews()
-        for (image in images) {
-            val imageView = ImageView(requireContext())
-            imageView.setImageDrawable(image)
-            imageView.scaleType
-            binding.infoPictures.addView(imageView)
+    protected fun setHideQuestOnClick(hideQuest : () -> Unit){
+        binding.hideButton.setOnClickListener {
+            onClickHide { hideQuest.invoke() }
         }
-        updateInfoButtonVisibility()
     }
 
-    private fun toggleInfoArea() {
-        infoIsExpanded = !infoIsExpanded
-        binding.infoButton.setImageResource(
-            if (infoIsExpanded) R.drawable.ic_info_filled_24dp
-            else R.drawable.ic_info_outline_24dp
-        )
-        binding.infoButton.isActivated = infoIsExpanded
-        binding.infoArea.isGone = !infoIsExpanded
-    }
-
-    private fun updateInfoButtonVisibility() {
-        binding.infoButton.isGone = binding.infoText.isGone && binding.infoPictures.isGone
+    protected fun setCloseQuestOnClick(listener: AbstractOsmQuestForm.Listener?) {
+        binding.closeButton.setOnClickListener {
+            listener?.onCloseDialog()
+        }
     }
 
     /** Inflate given layout resource id into the content view and return the inflated view */
