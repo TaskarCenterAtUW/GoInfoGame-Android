@@ -1,4 +1,4 @@
-package de.westnordost.streetcomplete.data.workspace.domain.model
+package de.westnordost.streetcomplete.data.workspace
 
 import kotlinx.serialization.Serializable
 

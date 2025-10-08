@@ -9,6 +9,7 @@ import androidx.core.content.getSystemService
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import com.google.firebase.FirebaseApp
 import com.russhwolf.settings.SettingsListener
 import de.westnordost.streetcomplete.data.CacheTrimmer
 import de.westnordost.streetcomplete.data.CleanerWorker
@@ -56,6 +57,7 @@ import de.westnordost.streetcomplete.screens.measure.arModule
 import de.westnordost.streetcomplete.screens.settings.settingsModule
 import de.westnordost.streetcomplete.screens.user.userScreenModule
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
+import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getSelectedLocales
 import de.westnordost.streetcomplete.util.ktx.deleteRecursively
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
@@ -98,7 +100,7 @@ class StreetCompleteApplication : Application() {
         super.onCreate()
 
         deleteDatabase(ApplicationConstants.OLD_DATABASE_NAME)
-
+        FirebaseApp.initializeApp(this)
         startKoin {
             androidContext(this@StreetCompleteApplication)
             workManagerFactory()
@@ -143,6 +145,7 @@ class StreetCompleteApplication : Application() {
                 workspaceModule
             )
         }
+        FirebaseAnalyticsHelper.init(this)
 
         setLoggerInstances()
 
@@ -168,13 +171,7 @@ class StreetCompleteApplication : Application() {
 
         resurveyIntervalsUpdater.update()
 
-        val lastVersion = prefs.lastDataVersion
-        if (BuildConfig.VERSION_NAME != lastVersion) {
-            prefs.lastDataVersion = BuildConfig.VERSION_NAME
-            if (lastVersion != null) {
-                onNewVersion()
-            }
-        }
+
         clearTangramCache()
 
         settingsListeners += prefs.onLanguageChanged { updateDefaultLocales() }

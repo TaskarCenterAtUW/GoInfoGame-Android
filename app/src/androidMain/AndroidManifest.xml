@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!--
     The app itself does not use foreground services but WorkManager.
     WorkManager uses foreground services on Android older than Android 12 for expedited work, but
@@ -18,11 +19,15 @@
     Foreground service types exists since Android 10.
     -->
 
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
     <uses-feature android:name="android.hardware.screen.portrait" />
 
     <!-- MapLibre 11+ needs at least OpenGL ES 3.0 -->
-    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <uses-feature
+        android:glEsVersion="0x00030000"
+        android:required="true" />
 
     <queries>
         <!-- open location in another app -->
@@ -30,12 +35,13 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="geo" />
         </intent>
-        <package android:name="de.westnordost.streetmeasure"/>
-        <package android:name="com.android.vending"/>
+
+        <package android:name="de.westnordost.streetmeasure" />
+        <package android:name="com.android.vending" />
     </queries>
 
     <application
-        android:name="de.westnordost.streetcomplete.StreetCompleteApplication"
+        android:name=".StreetCompleteApplication"
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
@@ -48,18 +54,18 @@
             android:configChanges="orientation|screenSize|screenLayout"
             android:launchMode="singleTop"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="geo" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
@@ -70,9 +76,19 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="streetcomplete" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".screens.workspaces.WorkSpaceActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
@@ -90,15 +106,13 @@
             android:name="de.westnordost.streetcomplete.screens.about.AboutActivity"
             android:label="@string/action_about2"
             android:parentActivityName="de.westnordost.streetcomplete.screens.main.MainActivity"
-            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
-            />
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode" />
         <activity
             android:name="de.westnordost.streetcomplete.screens.user.UserActivity"
             android:label="@string/user_profile"
             android:windowSoftInputMode="adjustResize"
             android:parentActivityName="de.westnordost.streetcomplete.screens.main.MainActivity"
-            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
-            />
+            android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode" />
         <!-- For WorkManager -->
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"

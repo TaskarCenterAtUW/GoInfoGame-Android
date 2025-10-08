@@ -42,6 +42,9 @@ plugins {
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
+    id("com.google.firebase.firebase-perf")
 }
 
 repositories {
@@ -268,7 +271,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "de.westnordost.streetcomplete"
+        applicationId = "net.opentoall.aviv.scoutroute"
         minSdk = 25
         targetSdk = 35
         versionCode = appVersionCode
@@ -308,7 +311,6 @@ android {
         getByName("debug") {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-            applicationIdSuffix = ".debug"
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")

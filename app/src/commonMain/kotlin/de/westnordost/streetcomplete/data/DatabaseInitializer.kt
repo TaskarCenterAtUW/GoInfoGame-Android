@@ -25,6 +25,7 @@ import de.westnordost.streetcomplete.data.user.statistics.CountryStatisticsTable
 import de.westnordost.streetcomplete.data.user.statistics.EditTypeStatisticsTable
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderTable
 import de.westnordost.streetcomplete.data.visiblequests.VisibleEditTypeTable
+import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable
 import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
@@ -99,6 +100,9 @@ object DatabaseInitializer {
         // logs
         db.exec(LogsTable.CREATE)
         db.exec(LogsTable.INDEX_CREATE)
+
+        //For AVIV SCR
+        db.exec(WorkSpaceTable.CREATE)
     }
 
     fun onUpgrade(db: Database, oldVersion: Int, newVersion: Int) {
@@ -114,7 +118,8 @@ object DatabaseInitializer {
             val oldName = "quest_visibility_old"
             db.exec("ALTER TABLE ${VisibleEditTypeTable.NAME} RENAME TO $oldName;")
             db.exec(VisibleEditTypeTable.CREATE)
-            db.exec("""
+            db.exec(
+                """
                 INSERT INTO ${VisibleEditTypeTable.NAME} (
                     ${VisibleEditTypeTable.Columns.EDIT_TYPE_PRESET_ID},
                     ${VisibleEditTypeTable.Columns.EDIT_TYPE},
@@ -124,7 +129,8 @@ object DatabaseInitializer {
                     ${VisibleEditTypeTable.Columns.EDIT_TYPE},
                     ${VisibleEditTypeTable.Columns.VISIBILITY}
                 FROM $oldName;
-            """.trimIndent())
+            """.trimIndent()
+            )
             db.exec("DROP TABLE $oldName;")
         }
         if (oldVersion <= 3 && newVersion > 3) {
@@ -137,7 +143,8 @@ object DatabaseInitializer {
             val oldGeometryTableName = "elements_geometry"
             val oldTypeName = "element_type"
             val oldIdName = "element_id"
-            db.exec("""
+            db.exec(
+                """
                 INSERT INTO ${WayGeometryTable.NAME} (
                     ${WayGeometryTable.Columns.ID},
                     ${WayGeometryTable.Columns.GEOMETRY_POLYLINES},
@@ -156,7 +163,8 @@ object DatabaseInitializer {
                     $oldTypeName = 'WAY';
             """.trimIndent()
             )
-            db.exec("""
+            db.exec(
+                """
                 INSERT INTO ${RelationGeometryTable.NAME} (
                     ${RelationGeometryTable.Columns.ID},
                     ${RelationGeometryTable.Columns.GEOMETRY_POLYLINES},
@@ -186,7 +194,11 @@ object DatabaseInitializer {
             db.exec(ActiveDatesTable.CREATE)
         }
         if (oldVersion <= 7 && newVersion > 7) {
-            db.delete(ElementEditsTable.NAME, "${ElementEditsTable.Columns.QUEST_TYPE} = 'AddShoulder'", null)
+            db.delete(
+                ElementEditsTable.NAME,
+                "${ElementEditsTable.Columns.QUEST_TYPE} = 'AddShoulder'",
+                null
+            )
         }
         if (oldVersion <= 8 && newVersion > 8) {
             db.renameQuest("AddPicnicTableCover", "AddAmenityCover")
@@ -295,7 +307,12 @@ private fun Database.renameOverlay(old: String, new: String) {
     renameValue(OpenChangesetsTable.NAME, OpenChangesetsTable.Columns.QUEST_TYPE, old, new)
 }
 
-private fun Database.renameValue(table: String, column: String, oldValue: String, newValue: String) {
+private fun Database.renameValue(
+    table: String,
+    column: String,
+    oldValue: String,
+    newValue: String,
+) {
     update(table, listOf(column to newValue), "$column = ?", arrayOf(oldValue))
 }
 

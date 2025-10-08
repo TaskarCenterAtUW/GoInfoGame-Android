@@ -17,6 +17,7 @@ object ApplicationConstants {
 
     /** Android notification channel name and id */
     const val NOTIFICATIONS_CHANNEL_SYNC = "downloading"
+
     // name is "downloading" for historic reasons, not sure if it has any side-effects if it is changed now
     const val NOTIFICATIONS_ID_SYNC = 1
 
@@ -76,7 +77,8 @@ object ApplicationConstants {
 
     const val AVATARS_CACHE_DIRECTORY = "osm_user_avatars"
 
-    const val SC_PHOTO_SERVICE_URL = "https://streetcomplete.app/photo-upload/" // must have trailing /
+    const val SC_PHOTO_SERVICE_URL =
+        "https://streetcomplete.app/photo-upload/" // must have trailing /
 
     const val ATTACH_PHOTO_QUALITY = 65 // doesn't need to look super pretty
     const val ATTACH_PHOTO_MAX_SIZE = 1920 // Full HD

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "658772378541",
+    "project_id": "aviv-scoutroute",
+    "storage_bucket": "aviv-scoutroute.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658772378541:android:654b51be3af4317115d724",
+        "android_client_info": {
+          "package_name": "net.opentoall.aviv.scoutroute"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8lYHAi8yVWoI1X6MsRdoWeNj5tkmDTdI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:658772378541:android:a42d253d3b82399015d724",
+        "android_client_info": {
+          "package_name": "net.opentoall.aviv.scoutroute.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8lYHAi8yVWoI1X6MsRdoWeNj5tkmDTdI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

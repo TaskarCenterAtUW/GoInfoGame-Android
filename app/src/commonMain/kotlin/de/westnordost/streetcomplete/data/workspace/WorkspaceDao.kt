@@ -7,7 +7,6 @@ import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.QUEST
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.TITLE
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.Columns.TYPE
 import de.westnordost.streetcomplete.data.workspace.WorkSpaceTable.NAME
-import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 
 class WorkspaceDao(private val db: Database) {
 

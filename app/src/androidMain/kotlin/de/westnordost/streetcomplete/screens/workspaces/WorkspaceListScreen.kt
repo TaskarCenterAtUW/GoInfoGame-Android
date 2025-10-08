@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
+import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.MainActivity
 import de.westnordost.streetcomplete.screens.user.UserActivity

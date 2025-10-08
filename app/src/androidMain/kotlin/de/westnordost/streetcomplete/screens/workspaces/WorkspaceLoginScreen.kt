@@ -408,14 +408,14 @@ fun LoginCard(
                             }
                         }
                     }
-                    if (BuildConfig.DEBUG) {
+
                         DebuggableBuild(
                             viewModel,
                             selectedEnvironment,
                             preferences,
                             modifier = modifier
                         )
-                    }
+
                 }
             }
         }

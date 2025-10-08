@@ -19,7 +19,10 @@ fun createSyncNotification(context: Context, cancelIntent: PendingIntent): Notif
     val manager = NotificationManagerCompat.from(context)
     if (manager.getNotificationChannelCompat(ApplicationConstants.NOTIFICATIONS_CHANNEL_SYNC) == null) {
         manager.createNotificationChannel(
-            NotificationChannelCompat.Builder(ApplicationConstants.NOTIFICATIONS_CHANNEL_SYNC, IMPORTANCE_LOW)
+            NotificationChannelCompat.Builder(
+                ApplicationConstants.NOTIFICATIONS_CHANNEL_SYNC,
+                IMPORTANCE_LOW
+            )
                 .setName(context.getString(R.string.notification_channel_sync))
                 .build()
         )
@@ -39,6 +42,10 @@ fun createSyncNotification(context: Context, cancelIntent: PendingIntent): Notif
         .setCategory(NotificationCompat.CATEGORY_PROGRESS)
         .setContentIntent(mainActivityIntent)
         .setDeleteIntent(cancelIntent)
-        .addAction(android.R.drawable.ic_delete, context.resources.getString(android.R.string.cancel), cancelIntent)
+        .addAction(
+            android.R.drawable.ic_delete,
+            context.resources.getString(android.R.string.cancel),
+            cancelIntent
+        )
         .build()
 }

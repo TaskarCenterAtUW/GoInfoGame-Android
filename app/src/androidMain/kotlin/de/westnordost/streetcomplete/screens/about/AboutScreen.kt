@@ -77,11 +77,14 @@ fun AboutScreen(
             windowInsets = AppBarDefaults.topAppBarWindowInsets,
             navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
         )
-        Column(modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-            ))
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+                    )
+                )
         ) {
 
             PreferenceCategory(null) {
