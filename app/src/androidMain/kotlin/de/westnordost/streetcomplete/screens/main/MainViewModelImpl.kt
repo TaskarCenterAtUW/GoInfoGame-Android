@@ -137,10 +137,6 @@ class MainViewModelImpl(
 
     /* intro */
 
-    override var hasShownTutorial: Boolean
-        get() = prefs.hasShownTutorial
-        set(value) { prefs.hasShownTutorial = value }
-
     /* HUD */
     override var showZoomButtons: StateFlow<Boolean> = callbackFlow {
         send(prefs.showZoomButtons)
@@ -195,9 +191,6 @@ class MainViewModelImpl(
         awaitClose { selectedOverlayController.removeListener(listener) }
     }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, null)
 
-    override var hasShownOverlaysTutorial: Boolean
-        get() = prefs.hasShownOverlaysTutorial
-        set(value) { prefs.hasShownOverlaysTutorial = value }
 
     override fun selectOverlay(overlay: Overlay?) {
         launch(IO) {

@@ -72,8 +72,6 @@ import de.westnordost.streetcomplete.screens.main.overlays.OverlaySelectionDropd
 import de.westnordost.streetcomplete.screens.main.teammode.TeamModeWizard
 import de.westnordost.streetcomplete.screens.main.urlconfig.ApplyUrlConfigEffect
 import de.westnordost.streetcomplete.screens.settings.SettingsActivity
-import de.westnordost.streetcomplete.screens.tutorial.IntroTutorialScreen
-import de.westnordost.streetcomplete.screens.tutorial.OverlaysTutorialScreen
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.common.AnimatedScreenVisibility
 import de.westnordost.streetcomplete.ui.common.LargeCreateIcon
@@ -103,7 +101,7 @@ fun MainScreen(
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
     onExplainedNeedForLocationPermission: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -152,8 +150,6 @@ fun MainScreen(
     val isRequestingLogin by viewModel.isRequestingLogin.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
-    var showOverlaysTutorial by remember { mutableStateOf(false) }
-    var showIntroTutorial by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
     var showMainMenuDialog by remember { mutableStateOf(false) }
     var shownMessage by remember { mutableStateOf<Message?>(null) }
@@ -163,16 +159,17 @@ fun MainScreen(
     val mapTilt = mapCamera?.tilt ?: 0.0
 
     val mapAttribution = listOf(
-        AttributionLink(stringResource(Res.string.map_attribution_osm), "https://osm.org/copyright"),
-        AttributionLink("© JawgMaps", "https://jawg.io")
+        AttributionLink(
+            stringResource(Res.string.map_attribution_osm),
+            "https://osm.org/copyright"
+        ),
+        AttributionLink("© JawgMaps", "https://jawg.io"),
+            AttributionLink("© HA HA", "https://ha.io"),
+                AttributionLink("© KA HA", "https://ka.io")
     )
 
     fun onClickOverlays() {
-        if (viewModel.hasShownOverlaysTutorial) {
-            showOverlaysDropdown = true
-        } else {
-            showOverlaysTutorial = true
-        }
+        showOverlaysDropdown = true
     }
 
     fun onClickMessages() {
@@ -193,12 +190,6 @@ fun MainScreen(
         scope.launch {
             val report = viewModel.createErrorReport(error)
             context.sendErrorReportEmail(report)
-        }
-    }
-
-    LaunchedEffect(viewModel.hasShownTutorial) {
-        if (!viewModel.hasShownTutorial && !isLoggedIn) {
-            showIntroTutorial = true
         }
     }
 
@@ -233,10 +224,11 @@ fun MainScreen(
             ) { Image(painterResource(Res.drawable.location_dot_small), null) }
         }
 
-        Box(Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .onGloballyPositioned { screen = it.boundsInRoot() }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .onGloballyPositioned { screen = it.boundsInRoot() }
         ) {
             // top-start controls
             Box(Modifier.align(Alignment.TopStart)) {
@@ -287,9 +279,10 @@ fun MainScreen(
             }
 
             // bottom controls
-            Column(Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomStart)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomStart)
             ) {
                 Box(Modifier.fillMaxWidth()) {
                     // bottom-end controls
@@ -381,22 +374,24 @@ fun MainScreen(
                 // Alternative to this would be to put the tutorial screens into a separate
                 // navigation destination in a TBD MainNavHost after complete migration to Compose
                 // (see #6255)
-                if (!showIntroTutorial) {
-                    Box(Modifier.fillMaxWidth().padding(4.dp)) {
-                        AttributionButton(
-                            userHasMovedMap = userHasMovedCamera,
-                            attributions = mapAttribution,
-                            modifier = Modifier.align(Alignment.TopStart),
-                            popupElevation = 4.dp,
-                        )
-                        ScaleBar(
-                            metersPerDp = metersPerDp,
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(horizontal = 12.dp),
-                            alignment = Alignment.End,
-                        )
-                    }
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                ) {
+                    AttributionButton(
+                        userHasMovedMap = userHasMovedCamera,
+                        attributions = mapAttribution,
+                        modifier = Modifier.align(Alignment.TopStart),
+                        popupElevation = 4.dp,
+                    )
+                    ScaleBar(
+                        metersPerDp = metersPerDp,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(horizontal = 12.dp),
+                        alignment = Alignment.End,
+                    )
                 }
             }
         }
@@ -432,7 +427,14 @@ fun MainScreen(
         MainMenuDialog(
             onDismissRequest = { showMainMenuDialog = false },
             onClickProfile = { context.startActivity(Intent(context, UserActivity::class.java)) },
-            onClickSettings = { context.startActivity(Intent(context, SettingsActivity::class.java)) },
+            onClickSettings = {
+                context.startActivity(
+                    Intent(
+                        context,
+                        SettingsActivity::class.java
+                    )
+                )
+            },
             onClickAbout = { context.startActivity(Intent(context, AboutActivity::class.java)) },
             onClickDownload = onClickDownload,
             onClickUpload = ::onClickUpload,
@@ -484,21 +486,6 @@ fun MainScreen(
                 )
             },
             allQuestIconIds = questIcons
-        )
-    }
-
-    AnimatedScreenVisibility(showOverlaysTutorial) {
-        OverlaysTutorialScreen(
-            onDismissRequest = { showOverlaysTutorial = false },
-            onFinished = { viewModel.hasShownOverlaysTutorial = true }
-        )
-    }
-
-    AnimatedScreenVisibility(showIntroTutorial) {
-        IntroTutorialScreen(
-            onDismissRequest = { showIntroTutorial = false },
-            onExplainedNeedForLocationPermission = onExplainedNeedForLocationPermission,
-            onFinished = { viewModel.hasShownTutorial = true },
         )
     }
 }

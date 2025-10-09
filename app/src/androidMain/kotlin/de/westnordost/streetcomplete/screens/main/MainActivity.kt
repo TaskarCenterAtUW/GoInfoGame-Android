@@ -456,7 +456,7 @@ class MainActivity :
 
     override val displayedMapLocation: Location? get() = mapFragment?.displayedLocation
     override val mutableMultiSelectQuests: MutableList<Quest>
-        get() = TODO("Not yet implemented")
+        get() = mutableListOf()
 
     override val metersPerPixel: Double? get() = mapFragment?.getMetersPerPixel()
 

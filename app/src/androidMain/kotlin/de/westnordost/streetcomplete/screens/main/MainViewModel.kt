@@ -29,9 +29,6 @@ abstract class MainViewModel : ViewModel() {
     abstract val geoUri: StateFlow<CameraPosition?>
     abstract fun consumeGeoUri() // probably only necessary while not fully converted to Compose yet
 
-    /* intro */
-    abstract var hasShownTutorial: Boolean
-
     /* HUD */
     abstract var showZoomButtons: StateFlow<Boolean>
 
@@ -43,8 +40,6 @@ abstract class MainViewModel : ViewModel() {
     /* overlays */
     abstract val selectedOverlay: StateFlow<Overlay?>
     abstract val overlays: StateFlow<List<Overlay>>
-
-    abstract var hasShownOverlaysTutorial: Boolean
 
     abstract fun selectOverlay(overlay: Overlay?)
 
