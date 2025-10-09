@@ -2,14 +2,7 @@ package de.westnordost.streetcomplete.quests
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.method.LinkMovementMethod
-import android.text.style.ClickableSpan
-import android.text.style.ForegroundColorSpan
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -39,7 +32,8 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onClickOk() {
-        val editedItems = adapter.givenItems.filter { it.visible && it.userInput != null  && !it.userInput!!.isEmpty()}
+        val editedItems =
+            adapter.givenItems.filter { it.visible && it.userInput != null && !it.userInput!!.isEmpty() }
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
             val urls = imageUrls.joinToString(",")
@@ -73,12 +67,10 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
     }
 
-
     private fun hideKeyboardFrom(context: Context, view: View) {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         imm?.hideSoftInputFromWindow(view.windowToken, 0)
     }
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

@@ -9,10 +9,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.filter
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.quest.AndroidQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import org.koin.core.component.KoinComponent

@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
-
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
@@ -28,17 +27,17 @@ data class LongFormQuest(
     val questTitle: String? = null,
     @SerialName("quest_type")
     val questType: String? = null,
-    var visible :Boolean = true,
-    var userInput : UserInput? = null,
-    var selectedIndex : MutableList<Int>? = null,
+    var visible: Boolean = true,
+    var userInput: UserInput? = null,
+    var selectedIndex: MutableList<Int>? = null,
 ) : Parcelable
-
 
 @Parcelize
 @Serializable
 sealed class UserInput : Parcelable {
     data class Single(var answer: String? = null) : UserInput()
-    data class Multiple(var answers: MutableList<String> = emptyList<String>().toMutableList()) : UserInput()
+    data class Multiple(var answers: MutableList<String> = emptyList<String>().toMutableList()) :
+        UserInput()
 
     fun isEmpty(): Boolean {
         return when (this) {

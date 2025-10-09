@@ -1,10 +1,12 @@
 package de.westnordost.streetcomplete.data.user
 
+import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.Listeners
 
 class UserLoginController(
     private val prefs: Preferences,
+    private val environmentManager: EnvironmentManager
 ) : UserLoginSource {
 
     private val listeners = Listeners<UserLoginSource.Listener>()
@@ -31,4 +33,7 @@ class UserLoginController(
     override fun removeListener(listener: UserLoginSource.Listener) {
         listeners.remove(listener)
     }
+
+    override val osmBaseUrl: String
+        get() = environmentManager.currentEnvironment.osmUrl
 }

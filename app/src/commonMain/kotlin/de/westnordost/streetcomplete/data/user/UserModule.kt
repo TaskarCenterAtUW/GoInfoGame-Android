@@ -49,7 +49,8 @@ val userModule = module {
 
     single<UserLoginSource> { get<UserLoginController>() }
     single<UserAccessTokenSource> { get<UserLoginController>() }
-    single { UserLoginController(get()) }
+    single<BaseUrlSource> { get<UserLoginController>() }
+    single { UserLoginController(get(), get()) }
 
     single { UserUpdater(get(), get(), get(), get(), get(), get()) }
 

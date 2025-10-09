@@ -1,9 +1,9 @@
 package de.westnordost.streetcomplete.data.osm.mapdata
 
-import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.data.QueryTooBigException
+import de.westnordost.streetcomplete.data.user.BaseUrlSource
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
 import de.westnordost.streetcomplete.data.wrapApiClientExceptions
 import io.ktor.client.HttpClient
@@ -22,7 +22,7 @@ import kotlinx.io.buffered
 /** Get and upload changes to map data */
 class MapDataApiClient(
     private val httpClient: HttpClient,
-    private val baseUrl: String,
+    private val baseUrlSource: BaseUrlSource,
     private val userAccessTokenSource: UserAccessTokenSource,
     private val parser: MapDataApiParser,
     private val serializer: MapDataApiSerializer,
@@ -33,7 +33,7 @@ class MapDataApiClient(
      *
      * @param changesetId id of the changeset to upload changes into
      * @param changes changes to upload.
-```suggestion
+    ```suggestion
      * @param ignoreRelation omit any relations for which the given function returns true.
      *                       Such relations can still be referred to as relation members,
      *                       though, the relations themselves are just not included
@@ -52,10 +52,10 @@ class MapDataApiClient(
     suspend fun uploadChanges(
         changesetId: Long,
         changes: MapDataChanges,
-        ignoreRelation: (tags: Map<String, String>) -> Boolean = { false }
+        ignoreRelation: (tags: Map<String, String>) -> Boolean = { false },
     ): MapDataUpdates = wrapApiClientExceptions {
         try {
-            val response = httpClient.post(baseUrl + "changeset/$changesetId/upload") {
+            val response = httpClient.post(baseUrlSource.osmBaseUrl + "changeset/$changesetId/upload") {
                 userAccessTokenSource.accessToken?.let { bearerAuth(it) }
                 setBody(serializer.serialize(changes, changesetId))
                 expectSuccess = true
@@ -68,17 +68,20 @@ class MapDataApiClient(
             when (e.response.status) {
                 // current element version is outdated or current changeset has been closed already
                 HttpStatusCode.Conflict,
-                // an element referred to by another element does not exist (anymore) or was redacted
+                    // an element referred to by another element does not exist (anymore) or was redacted
                 HttpStatusCode.PreconditionFailed,
-                // some elements do not exist anymore as it was deleted
+                    // some elements do not exist anymore as it was deleted
                 HttpStatusCode.Gone,
-                // some elements do not exist and never existed
-                HttpStatusCode.NotFound -> {
+                    // some elements do not exist and never existed
+                HttpStatusCode.NotFound,
+                    -> {
                     throw ConflictException(e.message, e)
                 }
+
                 HttpStatusCode.PayloadTooLarge -> {
                     throw ChangesetTooLargeException(e.message, e)
                 }
+
                 else -> throw e
             }
         }
@@ -101,14 +104,14 @@ class MapDataApiClient(
      */
     suspend fun getMap(
         bounds: BoundingBox,
-        ignoreRelation: (tags: Map<String, String>) -> Boolean = { false }
+        ignoreRelation: (tags: Map<String, String>) -> Boolean = { false },
     ): MutableMapData = wrapApiClientExceptions {
         if (bounds.crosses180thMeridian) {
             throw IllegalArgumentException("Bounding box crosses 180th meridian")
         }
 
         try {
-            val response = httpClient.get(baseUrl + "map") {
+            val response = httpClient.get(baseUrlSource.osmBaseUrl + "map") {
                 parameter("bbox", bounds.toOsmApiString())
                 expectSuccess = true
             }
@@ -198,7 +201,7 @@ class MapDataApiClient(
 
     private suspend fun getMapDataOrNull(query: String): MapData? = wrapApiClientExceptions {
         try {
-            val response = httpClient.get(baseUrl + query) { expectSuccess = true }
+            val response = httpClient.get(baseUrlSource.osmBaseUrl + query) { expectSuccess = true }
             val source = response.bodyAsChannel().asSource().buffered()
             return parser.parseMapData(source) { false }
         } catch (e: ClientRequestException) {
