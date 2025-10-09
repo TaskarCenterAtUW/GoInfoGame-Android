@@ -36,9 +36,11 @@ import io.ktor.http.contentType
 import io.ktor.http.headers
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.serialization.kotlinx.xml.xml
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
+import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -56,6 +58,7 @@ val appModule = module {
                 json(Json {
                     ignoreUnknownKeys = true
                 })
+                xml(XML {})
             }
             install(ContentEncoding) {
                 gzip()

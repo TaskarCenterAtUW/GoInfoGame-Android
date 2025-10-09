@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.data.user
 
-interface UserLoginSource : UserAccessTokenSource, BaseUrlSource {
+interface UserLoginSource : UserAccessTokenSource, WorkspaceConfigProvider {
     interface Listener {
         fun onLoggedIn()
         fun onLoggedOut()

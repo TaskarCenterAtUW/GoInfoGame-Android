@@ -15,15 +15,15 @@ import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
+import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class AddGenericLong(val item: Elements) :
-    OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest {
+    OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest, HasName {
 
     val resources: Resources = getKoin().get()
-
     override val changesetComment = "Changes to ${item.elementType}"
     override val wikiLink = "Key:${item.elementType?.lowercase()}"
     override val icon = when (item.elementTypeIcon) {

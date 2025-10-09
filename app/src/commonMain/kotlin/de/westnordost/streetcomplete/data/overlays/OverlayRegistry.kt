@@ -8,4 +8,4 @@ import de.westnordost.streetcomplete.data.ObjectTypeRegistry
  *
  * It is also used to assign each overlay an ordinal for serialization.
  */
-class OverlayRegistry(ordinalsAndEntries: List<Pair<Int, Overlay>>) : ObjectTypeRegistry<Overlay>(ordinalsAndEntries)
+class OverlayRegistry(ordinalsAndEntries: List<Pair<Int, Overlay>>) : ObjectTypeRegistry<Overlay>(ordinalsAndEntries.toMutableList())

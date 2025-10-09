@@ -36,4 +36,10 @@ class UserLoginController(
 
     override val osmBaseUrl: String
         get() = environmentManager.currentEnvironment.osmUrl
+
+    override val workspaceToken: String?
+        get() = prefs.workspaceToken
+
+    override val workspaceId: Int?
+        get() = prefs.workspaceId
 }

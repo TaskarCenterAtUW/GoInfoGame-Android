@@ -3,26 +3,28 @@ package de.westnordost.streetcomplete.data.osm.mapdata
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.data.QueryTooBigException
-import de.westnordost.streetcomplete.data.user.BaseUrlSource
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.data.wrapApiClientExceptions
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headers
 import io.ktor.utils.io.asSource
 import kotlinx.io.buffered
 
 /** Get and upload changes to map data */
 class MapDataApiClient(
     private val httpClient: HttpClient,
-    private val baseUrlSource: BaseUrlSource,
+    private val workspaceConfigProvider: WorkspaceConfigProvider,
     private val userAccessTokenSource: UserAccessTokenSource,
     private val parser: MapDataApiParser,
     private val serializer: MapDataApiSerializer,
@@ -55,11 +57,15 @@ class MapDataApiClient(
         ignoreRelation: (tags: Map<String, String>) -> Boolean = { false },
     ): MapDataUpdates = wrapApiClientExceptions {
         try {
-            val response = httpClient.post(baseUrlSource.osmBaseUrl + "changeset/$changesetId/upload") {
-                userAccessTokenSource.accessToken?.let { bearerAuth(it) }
-                setBody(serializer.serialize(changes, changesetId))
-                expectSuccess = true
-            }
+            val response =
+                httpClient.post(workspaceConfigProvider.osmBaseUrl + "changeset/$changesetId/upload") {
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+                    headers {
+                        append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                    }
+                    setBody(serializer.serialize(changes, changesetId))
+                    expectSuccess = true
+                }
             val source = response.bodyAsChannel().asSource().buffered()
             val updates = parser.parseElementUpdates(source)
             val changedElements = changes.creations + changes.modifications + changes.deletions
@@ -111,8 +117,9 @@ class MapDataApiClient(
         }
 
         try {
-            val response = httpClient.get(baseUrlSource.osmBaseUrl + "map") {
+            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "map") {
                 parameter("bbox", bounds.toOsmApiString())
+                header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
                 expectSuccess = true
             }
             val source = response.bodyAsChannel().asSource().buffered()
@@ -201,7 +208,12 @@ class MapDataApiClient(
 
     private suspend fun getMapDataOrNull(query: String): MapData? = wrapApiClientExceptions {
         try {
-            val response = httpClient.get(baseUrlSource.osmBaseUrl + query) { expectSuccess = true }
+            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + query) {
+                headers {
+                    append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                }
+                expectSuccess = true
+            }
             val source = response.bodyAsChannel().asSource().buffered()
             return parser.parseMapData(source) { false }
         } catch (e: ClientRequestException) {

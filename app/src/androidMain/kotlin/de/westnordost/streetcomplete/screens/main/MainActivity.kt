@@ -483,7 +483,7 @@ class MainActivity :
     }
 
     override fun onCloseDialog() {
-        TODO("Not yet implemented")
+        closeBottomSheet()
     }
 
     override fun onSplitWay(

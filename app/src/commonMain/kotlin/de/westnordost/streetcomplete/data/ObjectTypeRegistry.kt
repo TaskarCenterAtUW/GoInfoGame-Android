@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.data
 
+import de.westnordost.streetcomplete.util.platform.HasName
+
 /** A class where objects of a certain type are
  *  1. registered and can be recalled by class name
  *  2. or recalled by ordinal
@@ -21,7 +23,7 @@ open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T
         val highestOrdinal = ordinalsAndEntries.maxBy { it.first }.first
         val byOrdinalMap = HashMap<Int, T>(highestOrdinal + 1)
         for ((ordinal, objectType) in ordinalsAndEntries) {
-            val typeName = if (objectType is AddGenericLong){
+            val typeName = if (objectType is HasName){
                 objectType.name
             }else{
                 objectType::class.simpleName!!
