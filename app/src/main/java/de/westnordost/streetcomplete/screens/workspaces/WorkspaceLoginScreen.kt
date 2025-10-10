@@ -2,6 +2,8 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -82,6 +84,7 @@ import de.westnordost.streetcomplete.util.location.FineLocationManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.koin.java.KoinJavaComponent.getKoin
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -98,7 +101,6 @@ fun LoginScreen(
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
     val selectedEnvironment = remember { mutableStateOf(environmentManager.currentEnvironment) }
-
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -133,7 +135,7 @@ fun LoginScreen(
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled && !state.expediteLogin) {
                     val creds = SecureCredentialStorage.getCredential(
                         context,
                         selectedEnvironment.value.name
@@ -169,13 +171,56 @@ fun LoginScreen(
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite)
+                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite, withDismissAction = true)
             }
         }
         SnackbarHost(
             hostState = snackBarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+    }
+
+    LaunchedEffect(activity) {
+        checkForIntent(activity, viewModel, environmentManager, selectedEnvironment, preferences)
+    }
+}
+
+fun checkForIntent(
+    activity: AppCompatActivity,
+    viewModel: WorkspaceViewModel,
+    environmentManager: EnvironmentManager,
+    selectedEnvironment: MutableState<Environment>,
+    preferences: Preferences
+) {
+    val data: Uri? = activity.intent?.data
+    data?.let {
+        val refreshToken = it.getQueryParameter("code") // e.g. ?code=123
+        val env = it.getQueryParameter("env") // e.g. ?env=staging
+        preferences.workspaceRefreshToken = refreshToken
+        if (!preferences.workspaceLogin) {
+            if (env != null) {
+                try {
+                    val environment = Environment.valueOf(env.uppercase())
+                    environmentManager.currentEnvironment = environment
+                    selectedEnvironment.value = environment
+                } catch (e: IllegalArgumentException) {
+                    // Invalid environment value, handle as needed
+                    Toast.makeText(
+                        activity.baseContext,
+                        "Invalid environment value in the link. " + e.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            viewModel.refreshToken(true)
+        } else {
+            Toast.makeText(
+                activity.baseContext,
+                "User already logged in. Please logout to sign in using new credentials",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
     }
 }
 
@@ -371,7 +416,7 @@ fun LoginCard(
                             selectedEnvironment.value.name
                         )
                         if (creds != null) {
-                            TextButton (
+                            TextButton(
                                 onClick = {
                                     coroutineScope.launch {
                                         val authenticated = authenticateWithBiometrics(
