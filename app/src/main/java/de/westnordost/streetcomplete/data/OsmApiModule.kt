@@ -30,7 +30,6 @@ val osmApiModule = module {
     factory<TracksApi> { TracksApiImpl(get()) }
     factory { Preloader(get(named("CountryBoundariesLazy")), get(named("FeatureDictionaryLazy"))) }
     factory { UserApi(get()) }
-    factory { EnvironmentManager(get()) }
     factory<OsmConnection> { CustomOsmConnection(
         get(),
         ApplicationConstants.USER_AGENT,

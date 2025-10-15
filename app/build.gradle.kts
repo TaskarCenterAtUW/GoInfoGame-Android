@@ -208,6 +208,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core:2.3.11")
     implementation("io.ktor:ktor-client-cio:2.3.11")
     implementation("io.ktor:ktor-client-auth:2.3.11")
+    implementation("io.ktor:ktor-client-mock:2.3.11")
     testImplementation("io.ktor:ktor-client-mock:2.3.11")
 
     // finding in which country we are for country-specific logic
@@ -264,6 +265,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta15")
     debugImplementation("com.google.firebase:firebase-appdistribution:16.0.0-beta15")
     implementation("com.google.firebase:firebase-perf")
+    implementation("com.auth0.android:jwtdecode:2.0.1")
+
 }
 
 /** Localizations that should be pulled from POEditor */

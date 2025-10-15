@@ -5,6 +5,14 @@ import com.google.firebase.perf.metrics.HttpMetric
 import io.ktor.client.HttpClient
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpMethod
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.http.ContentType
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 
 suspend fun performHttpCallWithFirebaseTracing(
     client: HttpClient,
@@ -28,3 +36,4 @@ suspend fun performHttpCallWithFirebaseTracing(
         metric.stop()
     }
 }
+

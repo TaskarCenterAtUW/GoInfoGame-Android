@@ -51,6 +51,7 @@ val appModule = module {
     single { DatabaseLogger(get()) }
     single { SoundFx(androidContext()) }
     single { Json { ignoreUnknownKeys = true } }
+    single { EnvironmentManager(get()) }
     single {
         HttpClient {
             install(ContentNegotiation) {

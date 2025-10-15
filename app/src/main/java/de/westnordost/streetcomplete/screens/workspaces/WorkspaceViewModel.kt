@@ -14,6 +14,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.model.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
+import de.westnordost.streetcomplete.util.test_utils.getEmailFromJWT
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -45,7 +46,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setSelectedWorkspace(index: Int)
     abstract fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
-    abstract fun refreshToken()
+    abstract fun refreshToken(expediteLogin : Boolean = false)
 }
 
 class WorkspaceViewModelImpl(
@@ -190,7 +191,7 @@ class WorkspaceViewModelImpl(
         }
     }
 
-    override fun refreshToken() {
+    override fun refreshToken(expediteLogin: Boolean) {
         viewModelScope.launch {
             _loginState.value = WorkspaceLoginState.loading()
             preferences.workspaceRefreshToken?.let {
@@ -203,14 +204,20 @@ class WorkspaceViewModelImpl(
                             loginResponse.refresh_expires_in * 1000
                         preferences.accessTokenExpiryInterval = loginResponse.expires_in * 1000
                         preferences.workspaceLastLogin = System.currentTimeMillis()
-
+                        preferences.workspaceLogin = true
                         preferences.refreshTokenExpiryTime =
                             preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
                         preferences.accessTokenExpiryTime =
                             preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
-
+                        if (expediteLogin){
+                            getEmailFromJWT(loginResponse.access_token)?.let { email ->
+                                preferences.workspaceUserEmail = email
+                            }
+                        }
                         preferences.workspaceUserEmail?.apply {
-                            _loginState.value = WorkspaceLoginState.success(loginResponse, this)
+                            _loginState.value = WorkspaceLoginState.success(loginResponse, this, expediteLogin)
+                        } ?: run {
+                            _loginState.value = WorkspaceLoginState.error("No user email found")
                         }
                     }
             } ?: run {
