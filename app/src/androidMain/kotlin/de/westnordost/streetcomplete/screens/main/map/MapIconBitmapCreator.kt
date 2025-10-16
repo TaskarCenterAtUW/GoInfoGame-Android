@@ -14,7 +14,8 @@ import kotlin.math.ceil
 
 fun createPinBitmap(
     context: Context,
-    @DrawableRes iconResId: Int
+    @DrawableRes iconResId: Int,
+    @DrawableRes tickMarkResId: Int? = null
 ): Bitmap {
     val scale = 1f
     val size = context.resources.dpToPx(71 * scale)
@@ -48,6 +49,24 @@ fun createPinBitmap(
         pinTopRightPadding + iconPinOffset + iconSize
     ).toRect()
     questIcon.draw(canvas)
+
+
+    // Draw tick mark if provided
+    tickMarkResId?.let {
+        val tickMark = context.getDrawable(it)!!
+        // Position tick mark at top-right of the pin
+        val tickSize = context.resources.dpToPx(24 * scale)
+        val tickLeft = size - tickSize - pinTopRightPadding
+        val tickTop = pinTopRightPadding
+        tickMark.bounds = RectF(
+            tickLeft,
+            tickTop,
+            tickLeft + tickSize,
+            tickTop + tickSize
+        ).toRect()
+        tickMark.draw(canvas)
+    }
+
     return bitmap
 }
 

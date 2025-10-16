@@ -58,6 +58,7 @@ class QuestPinsManager(
 
     private var updateJob: Job? = null
 
+    var multiSelectQuestType: String? = null
     /** Switch visibility of quest pins layer */
     var isVisible: Boolean = false
         set(value) {
@@ -139,12 +140,12 @@ class QuestPinsManager(
     fun getQuestKey(properties: Map<String, String>): QuestKey? =
         properties.toQuestKey()
 
-    fun onNewScreenPosition() {
+    fun onNewScreenPosition(forceUpdate : Boolean = false) {
         if (!isStarted || !isVisible) return
-        viewLifecycleScope.launch { updateCurrentScreenArea() }
+        viewLifecycleScope.launch { updateCurrentScreenArea(forceUpdate) }
     }
 
-    private suspend fun updateCurrentScreenArea() {
+    private suspend fun updateCurrentScreenArea(forceUpdate : Boolean = false) {
         // require zoom >= 14, which is the lowest zoom level where quests are shown
         val zoom = map.cameraPosition.zoom
         if (zoom < 14) return
@@ -152,7 +153,7 @@ class QuestPinsManager(
         val tilesRect = displayedArea.enclosingTilesRect(TILES_ZOOM)
         // area too big -> skip (performance)
         if (tilesRect.size > 32) return
-        val isNewRect = lastDisplayedRect?.contains(tilesRect) != true
+        val isNewRect = lastDisplayedRect?.contains(tilesRect) != true || forceUpdate
         if (!isNewRect) return
 
         lastDisplayedRect = tilesRect
@@ -237,7 +238,8 @@ class QuestPinsManager(
     private fun createQuestPins(quest: Quest): List<Pin> {
         val props = quest.key.toProperties()
         val order = questTypeOrdersLock.withLock { questTypeOrders[quest.type] ?: 0 }
-        return quest.markerLocations.map { Pin(it, quest.type.icon, props, order) }
+        val isEnabled = multiSelectQuestType?.let { quest.type.name == it } ?: true
+        return quest.markerLocations.map { Pin(it, quest.type.icon, props, order, isEnabled) }
     }
 
     private fun reinitializeQuestTypeOrders() {

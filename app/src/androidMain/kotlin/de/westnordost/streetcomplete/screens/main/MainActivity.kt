@@ -89,6 +89,7 @@ import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottom
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapPositionAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MoveNodeFragment
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectViewModel
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.SplitWayFragment
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
@@ -125,6 +126,7 @@ import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.qualifier.named
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -189,6 +191,9 @@ class MainActivity :
     private val mapFragment: MainMapFragment?
         get() =
             supportFragmentManager.findFragmentById(R.id.mapFragment) as MainMapFragment?
+    private val multiSelectPoints: MutableList<Pair<LatLon, Map<String, String>>> = mutableListOf()
+    private val multiSelectQuests: MutableList<Quest> = mutableListOf()
+    private val multiSelectViewModel by viewModel<MultiSelectViewModel>()
 
     private val bottomSheetFragment: Fragment?
         get() =
@@ -409,6 +414,23 @@ class MainActivity :
         }
     }
 
+    override fun onLongClickedQuest(questKey: QuestKey, properties: Map<String, String>) {
+        val quest = visibleQuestsSource.get(questKey) ?: return
+        val f = bottomSheetFragment
+        if (f is IsCloseableBottomSheet) {
+            f.onClickClose {
+                lifecycleScope.launch {
+                    highlightMultiSelectQuest(
+                        quest,
+                        properties
+                    )
+                }
+            }
+        } else {
+            lifecycleScope.launch { highlightMultiSelectQuest(quest, properties) }
+        }
+    }
+
     override fun onClickedEdit(editKey: EditKey) {
         editHistoryViewModel.select(editKey)
     }
@@ -435,6 +457,45 @@ class MainActivity :
 
     override fun onDisplayedLocationDidChange() {
         updateDisplayedPosition()
+    }
+
+    @UiThread
+    private fun highlightMultiSelectQuest(quest: Quest, properties: Map<String, String>) {
+        val mapFragment = mapFragment ?: return
+
+        if (!quest.markerLocations.all { it -> multiSelectPoints.map { it.first }.contains(it) }) {
+            multiSelectPoints.addAll(quest.markerLocations.map { it to properties })
+            multiSelectQuests.add(quest)
+        } else {
+            multiSelectPoints.removeAll(quest.markerLocations.map { it to properties })
+            multiSelectQuests.remove(quest)
+        }
+        multiSelectViewModel.dynamicText.observe(this) { newText ->
+            newText
+        }
+        multiSelectViewModel.dynamicText.postValue(getFragmentTitle(quest))
+
+        mapFragment.highlightForMultiSelect(quest.type.icon, quest.type.name, multiSelectPoints)
+    }
+
+    private fun getFragmentTitle(quest: Quest?): String? {
+        return if (quest is OsmQuest) {
+
+            var titleTemp = ""
+            titleTemp = if (quest.type is AddGenericLong) {
+                quest.type.item.elementType.toString()
+            } else {
+                ""
+            }
+            resources?.getString(R.string.quest_multi_select_quest)?.let {
+                String.format(
+                    it,
+                    titleTemp.uppercase(Locale.getDefault()), multiSelectQuests.size, titleTemp
+                )
+            }
+        } else {
+            ""
+        }
     }
 
     private fun updateDisplayedPosition() {

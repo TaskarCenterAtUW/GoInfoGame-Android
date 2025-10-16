@@ -23,6 +23,15 @@ class MapImages(private val resources: Resources, private val style: Style) {
         }
     }
 
+    suspend fun addOnce(id: Int, name : String, createBitmap: (Int) -> Pair<Bitmap, Boolean>) = mutex.withLock {
+        if (id !in images) {
+            val (bitmap, sdf) = createBitmap(id)
+            withContext(Dispatchers.Main) { style.addImage(name, bitmap, sdf) }
+            images.add(id)
+            Log.v("MapImages", "Loaded 1 image")
+        }
+    }
+
     suspend fun addOnce(
         ids: Collection<Int>,
         createBitmap: (id: Int) -> Pair<Bitmap, Boolean>

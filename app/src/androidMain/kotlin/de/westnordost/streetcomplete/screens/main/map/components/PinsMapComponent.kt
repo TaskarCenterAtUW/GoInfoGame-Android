@@ -22,19 +22,43 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.style.expressions.Expression.all
 import org.maplibre.android.style.expressions.Expression.any
 import org.maplibre.android.style.expressions.Expression.division
+import org.maplibre.android.style.expressions.Expression.eq
 import org.maplibre.android.style.expressions.Expression.get
 import org.maplibre.android.style.expressions.Expression.gt
 import org.maplibre.android.style.expressions.Expression.gte
 import org.maplibre.android.style.expressions.Expression.literal
 import org.maplibre.android.style.expressions.Expression.log2
 import org.maplibre.android.style.expressions.Expression.lte
+import org.maplibre.android.style.expressions.Expression.match
+import org.maplibre.android.style.expressions.Expression.rgb
 import org.maplibre.android.style.expressions.Expression.sum
 import org.maplibre.android.style.expressions.Expression.toNumber
 import org.maplibre.android.style.expressions.Expression.zoom
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.Layer
 import org.maplibre.android.style.layers.Property
-import org.maplibre.android.style.layers.PropertyFactory.*
+import org.maplibre.android.style.layers.PropertyFactory.circleColor
+import org.maplibre.android.style.layers.PropertyFactory.circleRadius
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
+import org.maplibre.android.style.layers.PropertyFactory.circleTranslate
+import org.maplibre.android.style.layers.PropertyFactory.circleTranslateAnchor
+import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.iconColor
+import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.iconImage
+import org.maplibre.android.style.layers.PropertyFactory.iconOffset
+import org.maplibre.android.style.layers.PropertyFactory.iconOpacity
+import org.maplibre.android.style.layers.PropertyFactory.iconPadding
+import org.maplibre.android.style.layers.PropertyFactory.iconSize
+import org.maplibre.android.style.layers.PropertyFactory.symbolSortKey
+import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.textField
+import org.maplibre.android.style.layers.PropertyFactory.textFont
+import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.textOffset
+import org.maplibre.android.style.layers.PropertyFactory.textSize
+import org.maplibre.android.style.layers.PropertyFactory.visibility
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonOptions
 import org.maplibre.android.style.sources.GeoJsonSource
@@ -52,9 +76,11 @@ class PinsMapComponent(
     private val contentResolver: ContentResolver,
     private val map: MapLibreMap,
     private val mapImages: MapImages,
-    private val onClickPin: (properties: Map<String, String>) -> Unit
+    private val onClickPin: (properties: Map<String, String>) -> Unit,
+    private val onLongClickPin: (properties: Map<String, String>) -> Unit,
 ) {
-    private val pinsSource = GeoJsonSource(SOURCE,
+    private val pinsSource = GeoJsonSource(
+        SOURCE,
         GeoJsonOptions()
             .withCluster(true)
             .withClusterMaxZoom(CLUSTER_MAX_ZOOM)
@@ -63,11 +89,13 @@ class PinsMapComponent(
 
     val layers: List<Layer> = listOf(
         SymbolLayer("pin-cluster-layer", SOURCE)
-            .withFilter(all(
-                gte(zoom(), 13f),
-                lte(zoom(), CLUSTER_MAX_ZOOM),
-                gt(toNumber(get("point_count")), 1)
-            ))
+            .withFilter(
+                all(
+                    gte(zoom(), 13f),
+                    lte(zoom(), CLUSTER_MAX_ZOOM),
+                    gt(toNumber(get("point_count")), 1)
+                )
+            )
             .withProperties(
                 iconImage("cluster-circle"),
                 iconSize(sum(literal(0.5f), division(log2(get("point_count")), literal(10f)))),
@@ -81,10 +109,12 @@ class PinsMapComponent(
                 textIgnorePlacement(true),
             ),
         CircleLayer("pin-dot-layer", SOURCE)
-            .withFilter(any(
-                gt(zoom(), CLUSTER_MAX_ZOOM),
-                all(gte(zoom(), 14f), lte(toNumber(get("point_count")), 1))
-            ))
+            .withFilter(
+                any(
+                    gt(zoom(), CLUSTER_MAX_ZOOM),
+                    all(gte(zoom(), 14f), lte(toNumber(get("point_count")), 1))
+                )
+            )
             .withProperties(
                 circleColor("white"),
                 circleStrokeColor("#aaaaaa"),
@@ -94,7 +124,12 @@ class PinsMapComponent(
                 circleTranslateAnchor(Property.CIRCLE_TRANSLATE_ANCHOR_VIEWPORT),
             ),
         SymbolLayer("pins-layer", SOURCE)
-            .withFilter(gt(zoom(), CLUSTER_MAX_ZOOM))
+            .withFilter(
+                all(
+                    gt(zoom(), CLUSTER_MAX_ZOOM),
+                    // eq(get("enabled"), literal(true))
+                )
+            )
             .withProperties(
                 iconImage(get("icon-image")),
                 // constant icon size because click area would become a bit too small and more
@@ -107,11 +142,28 @@ class PinsMapComponent(
                 iconAllowOverlap(false),
                 iconIgnorePlacement(false),
                 symbolSortKey(get("icon-order")),
+                iconColor(
+                    match(
+                        get("enabled"),
+                        literal("true"), rgb(255.0, 255.0, 255.0),
+                        literal("false"), rgb(180.0, 180.0, 180.0),
+                        literal("transparent") // default
+                    )
+                ),
+                iconOpacity(
+                    match(
+                        get("enabled"),
+                        literal(true), literal(1.0),
+                        literal(false), literal(0.4), // dim the icon
+                        literal(1.0)
+                    )
+                )
             )
     )
 
     /** Shows/hides the pins */
-    @UiThread fun setVisible(value: Boolean) {
+    @UiThread
+    fun setVisible(value: Boolean) {
         val visibility = if (value) Property.VISIBLE else Property.NONE
         layers.forEach { it.setProperties(visibility(visibility)) }
     }
@@ -121,6 +173,7 @@ class PinsMapComponent(
         map.style?.addImageAsync("cluster-circle", context.getDrawable(R.drawable.pin_circle)!!)
         map.style?.addSource(pinsSource)
         map.addOnMapClickListener(::onClick)
+        map.addOnMapLongClickListener(::onLongClick)
     }
 
     /** Show given pins. Previously shown pins are replaced with these.  */
@@ -133,8 +186,24 @@ class PinsMapComponent(
     }
 
     /** Clear pins */
-    @UiThread fun clear() {
+    @UiThread
+    fun clear() {
         pinsSource.clear()
+    }
+
+    private fun onLongClick(target: LatLng): Boolean {
+        val feature = map.queryRenderedFeatures(
+            map.projection.toScreenLocation(target),
+            *arrayOf("pins-layer", "pin-cluster-layer")
+        ).firstOrNull() ?: return false
+        val properties = feature.properties()
+        if (properties?.has("point_count") == true) {
+            zoomToCluster(feature)
+        } else {
+            onLongClickPin(properties?.toMap().orEmpty())
+        }
+
+        return true
     }
 
     private fun onClick(position: LatLng): Boolean {
@@ -178,6 +247,7 @@ class PinsMapComponent(
         val p = JsonObject()
         p.addProperty("icon-image", context.resources.getResourceEntryName(icon))
         p.addProperty("icon-order", order + 50)
+        p.addProperty("enabled", enabled)
         properties.forEach { p.addProperty(it.first, it.second) }
         return Feature.fromGeometry(position.toPoint(), p)
     }
@@ -192,8 +262,9 @@ data class Pin(
     val position: LatLon,
     val icon: Int,
     val properties: Collection<Pair<String, String>> = emptyList(),
-    val order: Int = 0
+    val order: Int = 0,
+    var enabled: Boolean = true,
 )
 
-private fun JsonObject.toMap(): Map<String, String> =
+fun JsonObject.toMap(): Map<String, String> =
     entrySet().associate { it.key to it.value.asString }
