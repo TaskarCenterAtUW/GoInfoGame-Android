@@ -561,9 +561,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     companion object {
         private const val ARG_ELEMENT = "element"
+        private const val ARG_DISPLAYED_LOCATION = "displayedLocation"
 
-        fun createArguments(element: Element) = bundleOf(
-            ARG_ELEMENT to Json.encodeToString(element)
+        fun createArguments(element: Element, displayedLocation: Location? = null) = bundleOf(
+            ARG_ELEMENT to Json.encodeToString(element),
+            ARG_DISPLAYED_LOCATION to displayedLocation
         )
     }
 }

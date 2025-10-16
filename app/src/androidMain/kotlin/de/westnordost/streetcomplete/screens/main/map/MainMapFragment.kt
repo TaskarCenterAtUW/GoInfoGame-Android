@@ -93,6 +93,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     interface Listener {
         fun onClickedQuest(questKey: QuestKey)
         fun onLongClickedQuest(questKey: QuestKey, properties: Map<String, String>)
+        fun onClickedForMultiSelect(questKey: QuestKey, properties: Map<String, String>)
         fun onClickedEdit(editKey: EditKey)
         fun onClickedElement(elementKey: ElementKey)
         fun onClickedMapAt(position: LatLon, clickAreaSizeInMeters: Double)
@@ -228,7 +229,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         downloadedAreaMapComponent = DownloadedAreaMapComponent(context, map)
 
         selectedPinsMapComponent = SelectedPinsMapComponent(context, map, mapImages!!)
-        multiSelectPinMapComponent = MultiSelectPinMapComponent(context, map, mapImages!!, ::onLongClickPin)
+        multiSelectPinMapComponent = MultiSelectPinMapComponent(context, map, mapImages!!, ::onClickPin)
         viewLifecycleOwner.lifecycle.addObserver(selectedPinsMapComponent!!)
     }
 
@@ -344,7 +345,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
             PinMode.MULTISELECT -> {
                questPinsManager?.getQuestKey(properties)?.let {
-                   listener?.onLongClickedQuest(it, properties)
+                   listener?.onClickedForMultiSelect(it, properties)
                }
             }
 
@@ -534,6 +535,13 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
                 questPinsManager?.onNewScreenPosition()
             }
         }
+    }
+
+    fun clearMultiSelect() {
+        pinMode = PinMode.QUESTS
+        questPinsManager?.multiSelectQuestType = null
+        multiSelectPinMapComponent?.clear()
+        questPinsManager?.onNewScreenPosition()
     }
 
     fun hideNonHighlightedPins(questKey: QuestKey? = null) {

@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
@@ -89,6 +90,7 @@ import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottom
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapPositionAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MoveNodeFragment
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectOptionsFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MultiSelectViewModel
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.SplitWayFragment
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
@@ -114,6 +116,7 @@ import de.westnordost.streetcomplete.util.ktx.observe
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.ktx.toast
 import de.westnordost.streetcomplete.util.ktx.truncateTo6Decimals
+import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.location.LocationRequestFragment
@@ -416,18 +419,36 @@ class MainActivity :
 
     override fun onLongClickedQuest(questKey: QuestKey, properties: Map<String, String>) {
         val quest = visibleQuestsSource.get(questKey) ?: return
-        val f = bottomSheetFragment
-        if (f is IsCloseableBottomSheet) {
-            f.onClickClose {
-                lifecycleScope.launch {
-                    highlightMultiSelectQuest(
-                        quest,
-                        properties
-                    )
+        highlightMultiSelectQuest(quest, properties)
+        val fragment = MultiSelectOptionsFragment().apply {
+
+            onYesClick = {
+                // Handle Yes button click
+                viewLifecycleScope.launch {
+                    showMultiSelectQuestDetails(questKey)
                 }
             }
-        } else {
-            lifecycleScope.launch { highlightMultiSelectQuest(quest, properties) }
+            onNoClick = {
+                closeBottomSheet()
+                multiSelectPoints.clear()
+                multiSelectQuests.clear()
+                mapFragment?.clearMultiSelect()
+            }
+        }
+        showInBottomSheet(fragment)
+    }
+
+    override fun onClickedForMultiSelect(questKey: QuestKey, properties: Map<String, String>) {
+        val quest = visibleQuestsSource.get(questKey)
+        if (quest != null) {
+            highlightMultiSelectQuest(quest, properties)
+        }
+    }
+
+    private suspend fun showMultiSelectQuestDetails(questKey: QuestKey) {
+        val quest = visibleQuestsSource.get(questKey)
+        if (quest != null) {
+            showMultiSelectQuestDetails(quest)
         }
     }
 
@@ -517,13 +538,17 @@ class MainActivity :
 
     override val displayedMapLocation: Location? get() = mapFragment?.displayedLocation
     override val mutableMultiSelectQuests: MutableList<Quest>
-        get() = mutableListOf()
+        get() = multiSelectQuests
 
     override val metersPerPixel: Double? get() = mapFragment?.getMetersPerPixel()
 
     override fun onEdited(editType: ElementEditType, geometry: ElementGeometry) {
         showQuestSolvedAnimation(editType.icon, geometry.center)
         closeBottomSheet()
+        mapFragment?.pinMode = MainMapFragment.PinMode.QUESTS
+        multiSelectPoints.clear()
+        multiSelectQuests.clear()
+        mapFragment?.clearMultiSelect()
     }
 
     override fun onComposeNote(
@@ -1090,6 +1115,39 @@ class MainActivity :
         }
     }
 
+    private suspend fun showMultiSelectQuestDetails(quest: Quest) {
+        val mapFragment = mapFragment ?: return
+        if (isQuestDetailsCurrentlyDisplayedFor(quest.key)) return
+
+        val f = (quest.type as? AndroidQuest)?.createForm() ?: return
+        if (f.arguments == null) f.arguments = bundleOf()
+
+        val camera = mapFragment.cameraPosition
+        val rotation = camera?.rotation ?: 0.0
+        val tilt = camera?.tilt ?: 0.0
+        val args =
+            AbstractQuestForm.createArguments(quest.key, quest.type, quest.geometry, rotation, tilt)
+        f.requireArguments().putAll(args)
+        f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+
+        if (quest is OsmQuest) {
+            val element = withContext(Dispatchers.IO) {
+                mapDataWithEditsSource.get(
+                    quest.elementType,
+                    quest.elementId
+                )
+            } ?: return
+            val osmArgs = AbstractOsmQuestForm.createArguments(
+                element,
+                mapFragment.displayedLocation
+            )
+            f.requireArguments().putAll(osmArgs)
+            showInBottomSheet(f)
+        } else {
+            showInBottomSheet(f)
+        }
+    }
+
     @UiThread
     private suspend fun showQuestDetails(quest: Quest) {
         val mapFragment = mapFragment ?: return
@@ -1112,7 +1170,7 @@ class MainActivity :
                     quest.elementId
                 )
             } ?: return
-            val osmArgs = AbstractOsmQuestForm.createArguments(element)
+            val osmArgs = AbstractOsmQuestForm.createArguments(element, mapFragment.displayedLocation)
             f.requireArguments().putAll(osmArgs)
             showHighlightedElements(quest, element)
         }

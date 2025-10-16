@@ -7,6 +7,7 @@ import androidx.core.graphics.Insets
 import com.google.gson.JsonObject
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.screens.main.map.createIconBitmap
 import de.westnordost.streetcomplete.screens.main.map.createPinBitmap
 import de.westnordost.streetcomplete.screens.main.map.maplibre.MapImages
 import de.westnordost.streetcomplete.screens.main.map.maplibre.clear
@@ -127,7 +128,7 @@ class PinsMapComponent(
             .withFilter(
                 all(
                     gt(zoom(), CLUSTER_MAX_ZOOM),
-                    // eq(get("enabled"), literal(true))
+                     eq(get("enabled"), literal(true))
                 )
             )
             .withProperties(
@@ -142,22 +143,6 @@ class PinsMapComponent(
                 iconAllowOverlap(false),
                 iconIgnorePlacement(false),
                 symbolSortKey(get("icon-order")),
-                iconColor(
-                    match(
-                        get("enabled"),
-                        literal("true"), rgb(255.0, 255.0, 255.0),
-                        literal("false"), rgb(180.0, 180.0, 180.0),
-                        literal("transparent") // default
-                    )
-                ),
-                iconOpacity(
-                    match(
-                        get("enabled"),
-                        literal(true), literal(1.0),
-                        literal(false), literal(0.4), // dim the icon
-                        literal(1.0)
-                    )
-                )
             )
     )
 

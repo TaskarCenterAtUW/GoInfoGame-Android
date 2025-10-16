@@ -42,7 +42,6 @@ class MultiSelectPinMapComponent(
     ) : DefaultLifecycleObserver {
 
     private val selectedPinsSource = GeoJsonSource("multi-selected-pins-source")
-    private val animation: ValueAnimator
 
     val layers: List<Layer> = listOf(
         SymbolLayer("multi-selected-pins-layer", "multi-selected-pins-source")
@@ -64,23 +63,7 @@ class MultiSelectPinMapComponent(
     init {
         selectedPinsSource.isVolatile = true
         map.style?.addSource(selectedPinsSource)
-        animation = ValueAnimator.ofFloat(0.5f, 1.5f)
-        animation.duration = 300
-        animation.interpolator = OvershootInterpolator()
-        animation.addUpdateListener { animatePin(it.animatedValue as Float) }
         map.addOnMapClickListener(::onClick)
-    }
-
-    override fun onPause(owner: LifecycleOwner) {
-        animation.pause()
-    }
-
-    override fun onResume(owner: LifecycleOwner) {
-        animation.resume()
-    }
-
-    override fun onDestroy(owner: LifecycleOwner) {
-        animation.cancel()
     }
 
     /** Show selected pins with the given icon at the given positions. "Selected pins" are not
@@ -103,7 +86,6 @@ class MultiSelectPinMapComponent(
         }
         withContext(Dispatchers.Main) {
             selectedPinsSource.setGeoJson(FeatureCollection.fromFeatures(points))
-            animation.start()
         }
     }
 
