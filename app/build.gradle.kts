@@ -61,7 +61,7 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(BOOLEAN, "IS_FROM_MONOPOLISTIC_APP_STORE", properties["app.streetcomplete.monopolistic_app_store"]!!.toString())
         buildConfigField(STRING, "VERSION_NAME", appVersionName)
-        buildConfigField(BOOLEAN, "DEBUG", properties["app.streetcomplete.debug"]!!.toString())
+        buildConfigField(BOOLEAN, "DEBUG", "true")
     }
 
     targetConfigs {

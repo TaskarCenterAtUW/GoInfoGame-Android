@@ -136,14 +136,14 @@ fun SettingsScreen(
         ) {
             PreferenceCategory(stringResource(Res.string.pref_category_quests)) {
 
-                Preference(
-                    name = stringResource(Res.string.action_manage_presets),
-                    onClick = onClickPresetSelection,
-                    description = stringResource(Res.string.action_manage_presets_summary)
-                ) {
-                    Text(presetNameOrDefault)
-                    NextScreenIcon()
-                }
+                // Preference(
+                //     name = stringResource(Res.string.action_manage_presets),
+                //     onClick = onClickPresetSelection,
+                //     description = stringResource(Res.string.action_manage_presets_summary)
+                // ) {
+                //     Text(presetNameOrDefault)
+                //     NextScreenIcon()
+                // }
 
                 Preference(
                     name = stringResource(Res.string.pref_title_quests2),
@@ -153,57 +153,57 @@ fun SettingsScreen(
                     }
                 ) { NextScreenIcon() }
 
-                Preference(
-                    name = stringResource(Res.string.pref_title_overlays),
-                    onClick = onClickOverlaySelection,
-                    description = overlayCount?.let {
-                        stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
-                    }
-                ) { NextScreenIcon() }
+                // Preference(
+                //     name = stringResource(Res.string.pref_title_overlays),
+                //     onClick = onClickOverlaySelection,
+                //     description = overlayCount?.let {
+                //         stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
+                //     }
+                // ) { NextScreenIcon() }
 
-                Preference(
-                    name = stringResource(Res.string.pref_title_resurvey_intervals),
-                    onClick = { showResurveyIntervalsSelect = true },
-                    description = stringResource(Res.string.pref_title_resurvey_intervals_summary)
-                ) {
-                    Text(stringResource(resurveyIntervals.title))
-                }
-
-                Preference(
-                    name = stringResource(Res.string.pref_title_show_notes_not_phrased_as_questions),
-                    onClick = { viewModel.setShowAllNotes(!showAllNotes) },
-                    description = stringResource(
-                        if (showAllNotes) Res.string.pref_summaryOn_show_notes_not_phrased_as_questions
-                        else Res.string.pref_summaryOff_show_notes_not_phrased_as_questions
-                    )
-                ) {
-                    Switch(
-                        checked = showAllNotes,
-                        onCheckedChange = { viewModel.setShowAllNotes(it) }
-                    )
-                }
+                // Preference(
+                //     name = stringResource(Res.string.pref_title_resurvey_intervals),
+                //     onClick = { showResurveyIntervalsSelect = true },
+                //     description = stringResource(Res.string.pref_title_resurvey_intervals_summary)
+                // ) {
+                //     Text(stringResource(resurveyIntervals.title))
+                // }
+                //
+                // Preference(
+                //     name = stringResource(Res.string.pref_title_show_notes_not_phrased_as_questions),
+                //     onClick = { viewModel.setShowAllNotes(!showAllNotes) },
+                //     description = stringResource(
+                //         if (showAllNotes) Res.string.pref_summaryOn_show_notes_not_phrased_as_questions
+                //         else Res.string.pref_summaryOff_show_notes_not_phrased_as_questions
+                //     )
+                // ) {
+                //     Switch(
+                //         checked = showAllNotes,
+                //         onCheckedChange = { viewModel.setShowAllNotes(it) }
+                //     )
+                // }
             }
 
-            PreferenceCategory(stringResource(Res.string.pref_category_communication)) {
-                Preference(
-                    name = stringResource(Res.string.pref_title_sync2),
-                    onClick = { showAutosyncSelect = true }
-                ) {
-                    Text(stringResource(autosync.title))
-                }
-            }
+            // PreferenceCategory(stringResource(Res.string.pref_category_communication)) {
+            //     Preference(
+            //         name = stringResource(Res.string.pref_title_sync2),
+            //         onClick = { showAutosyncSelect = true }
+            //     ) {
+            //         Text(stringResource(autosync.title))
+            //     }
+            // }
 
             PreferenceCategory(stringResource(Res.string.pref_category_display)) {
 
-                Preference(
-                    name = stringResource(Res.string.pref_title_language_select2),
-                    onClick = { showLanguageSelect = true },
-                ) {
-                    Text(
-                        selectedLanguage?.let { getLanguageDisplayName(it) }
-                            ?: stringResource(Res.string.language_default)
-                    )
-                }
+                // Preference(
+                //     name = stringResource(Res.string.pref_title_language_select2),
+                //     onClick = { showLanguageSelect = true },
+                // ) {
+                //     Text(
+                //         selectedLanguage?.let { getLanguageDisplayName(it) }
+                //             ?: stringResource(Res.string.language_default)
+                //     )
+                // }
 
                 Preference(
                     name = stringResource(Res.string.pref_title_theme_select),

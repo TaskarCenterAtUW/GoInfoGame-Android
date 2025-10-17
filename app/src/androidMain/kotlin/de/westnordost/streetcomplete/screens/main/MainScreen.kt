@@ -100,6 +100,7 @@ fun MainScreen(
     onClickDownload: () -> Unit,
     onExplainedNeedForLocationPermission: () -> Unit,
     onClickImageryLayer: () -> Unit,
+    onSwitchWorkspace:() -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -440,6 +441,7 @@ fun MainScreen(
             indexInTeam = if (isTeamMode) indexInTeam else null,
             unsyncedEditsCount = if (!isAutoSync) unsyncedEditsCount else null,
             isUploadingOrDownloading = isUploadingOrDownloading,
+            onSwitchWorkspace = onSwitchWorkspace
         )
     }
 

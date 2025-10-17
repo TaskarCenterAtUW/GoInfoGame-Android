@@ -40,6 +40,7 @@ import de.westnordost.streetcomplete.resources.map_btn_stop_track
 import de.westnordost.streetcomplete.resources.map_btn_zoom_in
 import de.westnordost.streetcomplete.resources.map_btn_zoom_out
 import de.westnordost.streetcomplete.resources.team_mode
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -70,7 +71,10 @@ fun CopyIcon() {
 
 @Composable
 fun OpenInBrowserIcon() {
-    Icon(painterResource(Res.drawable.ic_open_in_browser_24), stringResource(Res.string.action_open_in_browser))
+    Icon(
+        painterResource(Res.drawable.ic_open_in_browser_24),
+        stringResource(Res.string.action_open_in_browser)
+    )
 }
 
 @Composable
@@ -95,7 +99,10 @@ fun UploadIcon() {
 
 @Composable
 fun DownloadIcon() {
-    Icon(painterResource(Res.drawable.ic_file_download_24), stringResource(Res.string.action_download))
+    Icon(
+        painterResource(Res.drawable.ic_file_download_24),
+        stringResource(Res.string.action_download)
+    )
 }
 
 @Composable
@@ -125,12 +132,18 @@ fun ZoomOutIcon() {
 
 @Composable
 fun StopRecordingIcon() {
-    Icon(painterResource(Res.drawable.ic_stop_recording_24), stringResource(Res.string.map_btn_stop_track))
+    Icon(
+        painterResource(Res.drawable.ic_stop_recording_24),
+        stringResource(Res.string.map_btn_stop_track)
+    )
 }
 
 @Composable
 fun LargeCreateIcon() {
-    Icon(painterResource(Res.drawable.ic_crosshair_32), stringResource(Res.string.action_create_new_poi))
+    Icon(
+        painterResource(Res.drawable.ic_crosshair_32),
+        stringResource(Res.string.action_create_new_poi)
+    )
 }
 
 @Composable

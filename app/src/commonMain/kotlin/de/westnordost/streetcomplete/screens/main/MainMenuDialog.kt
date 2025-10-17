@@ -29,14 +29,9 @@ import androidx.compose.ui.window.Dialog
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.action_download
 import de.westnordost.streetcomplete.resources.action_settings
-import de.westnordost.streetcomplete.resources.action_upload
-import de.westnordost.streetcomplete.resources.ic_profile_48
+import de.westnordost.streetcomplete.resources.action_switch_workspace
 import de.westnordost.streetcomplete.resources.ic_settings_48
-import de.westnordost.streetcomplete.resources.user_login
-import de.westnordost.streetcomplete.resources.user_profile
-import de.westnordost.streetcomplete.screens.main.controls.NotificationBox
 import de.westnordost.streetcomplete.ui.common.DownloadIcon
-import de.westnordost.streetcomplete.ui.common.UploadIcon
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -56,6 +51,7 @@ fun MainMenuDialog(
     indexInTeam: Int?,
     unsyncedEditsCount: Int?,
     isUploadingOrDownloading: Boolean,
+    onSwitchWorkspace : () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colors.surface,
@@ -74,13 +70,6 @@ fun MainMenuDialog(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     BigMenuButton(
-                        onClick = { onDismissRequest(); onClickProfile() },
-                        icon = { Icon(painterResource(Res.drawable.ic_profile_48), null) },
-                        text = stringResource(
-                            if (isLoggedIn) Res.string.user_profile else Res.string.user_login
-                        ),
-                    )
-                    BigMenuButton(
                         onClick = { onDismissRequest(); onClickSettings() },
                         icon = { Icon(painterResource(Res.drawable.ic_settings_48), null) },
                         text = stringResource(Res.string.action_settings),
@@ -93,24 +82,29 @@ fun MainMenuDialog(
                     icon = { DownloadIcon() },
                     text = stringResource(Res.string.action_download),
                 )
-                if (unsyncedEditsCount != null) {
-                    CompactMenuButton(
-                        onClick = { onDismissRequest(); onClickUpload() },
-                        icon = {
-                            UploadIcon()
-                            if (unsyncedEditsCount > 0) {
-                                NotificationBox {
-                                    Text(
-                                        unsyncedEditsCount.toString(),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        },
-                        text = stringResource(Res.string.action_upload),
-                        enabled = !isUploadingOrDownloading,
-                    )
-                }
+                CompactMenuButton(
+                    onClick = { onDismissRequest(); onSwitchWorkspace() },
+                    icon = { },
+                    text = stringResource(Res.string.action_switch_workspace),
+                )
+                // if (unsyncedEditsCount != null) {
+                //     CompactMenuButton(
+                //         onClick = { onDismissRequest(); onClickUpload() },
+                //         icon = {
+                //             UploadIcon()
+                //             if (unsyncedEditsCount > 0) {
+                //                 NotificationBox {
+                //                     Text(
+                //                         unsyncedEditsCount.toString(),
+                //                         textAlign = TextAlign.Center
+                //                     )
+                //                 }
+                //             }
+                //         },
+                //         text = stringResource(Res.string.action_upload),
+                //         enabled = !isUploadingOrDownloading,
+                //     )
+                // }
             }
         }
     }
@@ -190,5 +184,6 @@ private fun PreviewMainMenuDialog() {
         indexInTeam = 0,
         unsyncedEditsCount = 122,
         isUploadingOrDownloading = true,
+        onSwitchWorkspace = {}
     )
 }

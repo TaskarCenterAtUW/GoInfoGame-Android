@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.screens.main
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -113,6 +114,7 @@ import de.westnordost.streetcomplete.screens.main.map.getIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
 import de.westnordost.streetcomplete.screens.main.map.maplibre.toPadding
+import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.util.content
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -284,6 +286,14 @@ class MainActivity :
                     onClickDownload = ::onClickDownload,
                     onExplainedNeedForLocationPermission = ::requestLocation,
                     onClickImageryLayer = ::onClickImageryLayerButton,
+                    onSwitchWorkspace = {
+                        val activity = this
+                        activity.let {
+                            val intent = Intent(it, WorkSpaceActivity::class.java)
+                            it.startActivity(intent)
+                            it.finish()
+                        }
+                    }
                 )
             }
         }
