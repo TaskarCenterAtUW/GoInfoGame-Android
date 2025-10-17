@@ -37,6 +37,7 @@ import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.ktx.launch
 import de.westnordost.streetcomplete.util.parseGeoUri
+import de.westnordost.streetcomplete.util.satellite_layers.Attribution
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -401,6 +402,12 @@ class MainViewModelImpl(
     override val isRecordingTracks = MutableStateFlow(false)
 
     override val userHasMovedCamera = MutableStateFlow(false)
+
+    override var attribution: MutableStateFlow<Attribution?> = MutableStateFlow(null)
+
+    override fun addAttributionsToMap(attribution: Attribution?) {
+        this.attribution.value = attribution
+    }
 
     // ---------------------------------------------------------------------------------------
 

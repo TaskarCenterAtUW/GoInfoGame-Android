@@ -1433,6 +1433,7 @@ class MainActivity :
                         selectedButton.tag as Imagery
                     }
                     mapFragment?.imagery = selectedImagery
+                    viewModel.addAttributionsToMap(selectedImagery?.attribution)
                     Toast.makeText(
                         baseContext,
                         getString(

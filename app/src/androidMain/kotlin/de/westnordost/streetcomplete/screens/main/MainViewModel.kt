@@ -9,6 +9,7 @@ import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
+import de.westnordost.streetcomplete.util.satellite_layers.Attribution
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -69,6 +70,8 @@ abstract class MainViewModel : ViewModel() {
 
     /* stars */
     abstract val starsCount: StateFlow<Int>
+
+    abstract var attribution : MutableStateFlow<Attribution?>
     abstract val isShowingStarsCurrentWeek: StateFlow<Boolean>
     abstract fun toggleShowingCurrentWeek()
 
@@ -85,6 +88,8 @@ abstract class MainViewModel : ViewModel() {
     abstract val isRecordingTracks: MutableStateFlow<Boolean>
 
     abstract val userHasMovedCamera: MutableStateFlow<Boolean>
+
+    abstract fun addAttributionsToMap(attribution: Attribution?)
 }
 
 data class ShownUrlConfig(val urlConfig: UrlConfig, val alreadyExists: Boolean)

@@ -8,14 +8,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -57,11 +55,9 @@ import de.westnordost.streetcomplete.screens.main.controls.Crosshair
 import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
 import de.westnordost.streetcomplete.screens.main.controls.MainMenuButton
 import de.westnordost.streetcomplete.screens.main.controls.MapButton
-import de.westnordost.streetcomplete.screens.main.controls.MessagesButton
 import de.westnordost.streetcomplete.screens.main.controls.OverlaySelectionButton
 import de.westnordost.streetcomplete.screens.main.controls.PointerPinButton
 import de.westnordost.streetcomplete.screens.main.controls.ScaleBar
-import de.westnordost.streetcomplete.screens.main.controls.StarsCounter
 import de.westnordost.streetcomplete.screens.main.controls.ZoomButtons
 import de.westnordost.streetcomplete.screens.main.controls.findEllipsisIntersection
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistorySidebar
@@ -161,7 +157,7 @@ fun MainScreen(
     val mapRotation = mapCamera?.rotation ?: 0.0
     val mapTilt = mapCamera?.tilt ?: 0.0
 
-    val mapAttribution = listOf(
+    val mapAttribution = mutableListOf(
         AttributionLink(
             stringResource(Res.string.map_attribution_osm),
             "https://osm.org/copyright"
@@ -371,6 +367,14 @@ fun MainScreen(
                         .fillMaxWidth()
                         .padding(4.dp)
                 ) {
+                    val attributions = viewModel.attribution
+                    attributions.collectAsState().value?.let { it ->
+                        mapAttribution.add(
+                            AttributionLink(
+                                ensureCopyright(it.text), it.url
+                            )
+                        )
+                    }
                     AttributionButton(
                         userHasMovedMap = userHasMovedCamera,
                         attributions = mapAttribution,
@@ -479,5 +483,13 @@ fun MainScreen(
             },
             allQuestIconIds = questIcons
         )
+    }
+}
+
+fun ensureCopyright(text: String): String {
+    return if (text.contains("©")) {
+        text  // already has copyright symbol
+    } else {
+        "\u00A9 $text"  // prepend ©
     }
 }
