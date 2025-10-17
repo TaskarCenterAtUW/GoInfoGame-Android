@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.ButtonColors
 import androidx.compose.material.ButtonDefaults
@@ -28,21 +27,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.resources.action_about2
 import de.westnordost.streetcomplete.resources.action_download
 import de.westnordost.streetcomplete.resources.action_settings
 import de.westnordost.streetcomplete.resources.action_upload
-import de.westnordost.streetcomplete.resources.ic_info_outline_48
 import de.westnordost.streetcomplete.resources.ic_profile_48
 import de.westnordost.streetcomplete.resources.ic_settings_48
-import de.westnordost.streetcomplete.resources.team_mode
-import de.westnordost.streetcomplete.resources.team_mode_exit
 import de.westnordost.streetcomplete.resources.user_login
 import de.westnordost.streetcomplete.resources.user_profile
 import de.westnordost.streetcomplete.screens.main.controls.NotificationBox
-import de.westnordost.streetcomplete.screens.main.teammode.TeamModeColorCircle
 import de.westnordost.streetcomplete.ui.common.DownloadIcon
-import de.westnordost.streetcomplete.ui.common.TeamModeIcon
 import de.westnordost.streetcomplete.ui.common.UploadIcon
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -92,11 +85,7 @@ fun MainMenuDialog(
                         icon = { Icon(painterResource(Res.drawable.ic_settings_48), null) },
                         text = stringResource(Res.string.action_settings),
                     )
-                    BigMenuButton(
-                        onClick = { onDismissRequest(); onClickAbout() },
-                        icon = { Icon(painterResource(Res.drawable.ic_info_outline_48), null) },
-                        text = stringResource(Res.string.action_about2),
-                    )
+
                 }
                 Divider()
                 CompactMenuButton(
@@ -111,30 +100,15 @@ fun MainMenuDialog(
                             UploadIcon()
                             if (unsyncedEditsCount > 0) {
                                 NotificationBox {
-                                    Text(unsyncedEditsCount.toString(), textAlign = TextAlign.Center)
+                                    Text(
+                                        unsyncedEditsCount.toString(),
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         },
                         text = stringResource(Res.string.action_upload),
                         enabled = !isUploadingOrDownloading,
-                    )
-                }
-                if (indexInTeam == null) {
-                    CompactMenuButton(
-                        onClick = { onDismissRequest(); onClickEnterTeamMode() },
-                        icon = { TeamModeIcon() },
-                        text = stringResource(Res.string.team_mode)
-                    )
-                } else {
-                    CompactMenuButton(
-                        onClick = { onDismissRequest(); onClickExitTeamMode() },
-                        icon = {
-                            TeamModeColorCircle(
-                                index = indexInTeam,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
-                        text = stringResource(Res.string.team_mode_exit)
                     )
                 }
             }

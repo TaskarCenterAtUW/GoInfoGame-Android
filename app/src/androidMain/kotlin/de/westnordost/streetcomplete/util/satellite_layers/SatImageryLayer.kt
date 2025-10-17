@@ -58,20 +58,22 @@ data class Extent(
 ) : Parcelable
 
 
-class ImageryRepository(private val httpClient: HttpClient, private val context: Context,
-                        private val jsonParser: Json) {
+class ImageryRepository(private val httpClient: HttpClient) {
 
     private val mutex = Mutex()
     private var cache: List<Imagery>? = null
 
     private val url = "http://10.0.2.2:8080/gig-imagery-example.json" // Update this
 
-    fun getImageryForLocation(location: LatLon, imagerList: List<Imagery>) =
-        imagerList.filter { imagery ->
+    fun getImageryForLocation(location: LatLon?, imagerList: List<Imagery>): List<Imagery>? {
+        if (location == null) return null
+        val imagery = imagerList.filter { imagery ->
             imagery.extent.polygon.any { polygon ->
                 isPointInPolygon(location, polygon)
             }
         }
+        return imagery
+    }
 
     private fun isPointInPolygon(point: LatLon, polygon: List<List<Double>>): Boolean {
         var inside = false

@@ -5,15 +5,20 @@ import android.content.res.Configuration
 import android.provider.Settings
 import androidx.annotation.UiThread
 import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitSetStyle
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.expressions.Expression.*
+import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.PropertyFactory.*
+import org.maplibre.android.style.layers.RasterLayer
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.layers.TransitionOptions
+import org.maplibre.android.style.sources.RasterSource
+import org.maplibre.android.style.sources.TileSet
 import java.util.Locale
 
 /** Takes care of loading the base map with the right parameters (localization, night mode, style
@@ -23,8 +28,9 @@ class SceneMapComponent(
     private val map: MapLibreMap,
 ) {
     /** Load the scene */
-    suspend fun loadStyle(): Style {
-        val currentNightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+    suspend fun loadStyle(newImagery: Imagery? = null): Style {
+        val currentNightMode =
+            context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         val isNightMode = currentNightMode == Configuration.UI_MODE_NIGHT_YES
         val mapFile =
             if (isNightMode) "map_theme/streetcomplete-night.json"
@@ -36,17 +42,42 @@ class SceneMapComponent(
 
         val styleBuilder = Style.Builder().fromJson(styleJsonString)
         val style = map.awaitSetStyle(styleBuilder)
+
+        newImagery?.let { imagery ->
+            val satelliteSource = RasterSource(
+                "satellite-source",
+                TileSet(
+                    "tileset",
+                    imagery.url.replace("{zoom}", "{z}") // XYZ or TMS URL
+                ),
+                256
+            )
+            style.addSource(satelliteSource)
+
+// Add raster layer BELOW labels (so icons/roads stay visible)
+            val satelliteLayer = RasterLayer("satellite-layer", "satellite-source")
+
+// Add it **above background** so it's visible, but vector tiles still on top
+            style.addLayerAbove(satelliteLayer, "background")
+            style.layers.map { it.setProperties(lineOpacity(0.5f)) }
+        }
+
         withContext(Dispatchers.Main) { updateStyle() }
         return style
     }
 
     /** Updates part of the style depending on the user settings:
      *  Language, animator duration scale, font scale */
-    @UiThread fun updateStyle() {
+    @UiThread
+    fun updateStyle() {
         val style = map.style ?: return
 
         // apply global animator duration scale
-        val animatorDurationScale = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        val animatorDurationScale = Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        )
         style.transition = TransitionOptions(
             (300 * animatorDurationScale).toLong(),
             0,
@@ -90,7 +121,7 @@ private fun localizedName(language: String): Expression {
     return switchCase(
         // localized name set and different as main name: show both
         all(toBool(getLocalizedName), neq(get("name"), getLocalizedName)),
-            concat(get("name"), literal("\n"), getLocalizedName),
+        concat(get("name"), literal("\n"), getLocalizedName),
         // otherwise just show the name
         get("name"),
     )

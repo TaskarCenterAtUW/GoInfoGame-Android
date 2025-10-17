@@ -25,6 +25,7 @@ import de.westnordost.streetcomplete.screens.main.map.maplibre.updateCamera
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import de.westnordost.streetcomplete.util.viewBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -164,7 +165,7 @@ open class MapFragment : Fragment(R.layout.fragment_map) {
         //     true
         // }
 
-        val sceneMapComponent = SceneMapComponent(requireContext(), map)
+        val sceneMapComponent = SceneMapComponent(requireContext(), map, )
         val style = sceneMapComponent.loadStyle()
         this.sceneMapComponent = sceneMapComponent
 
@@ -174,6 +175,26 @@ open class MapFragment : Fragment(R.layout.fragment_map) {
         onMapStyleLoaded(map, style)
 
         listener?.onMapInitialized()
+    }
+
+    suspend fun updateMapStyle(newImagery: Imagery?) {
+        map?.let { maplibre ->
+
+            val currentCamera = maplibre.cameraPosition
+
+            val sceneMapComponent = SceneMapComponent(requireContext(), maplibre, )
+            val style = sceneMapComponent.loadStyle(newImagery)
+            this.sceneMapComponent = sceneMapComponent
+
+            restoreMapState()
+            maplibre.cameraPosition = currentCamera
+            binding.map.foreground = null
+
+            onMapStyleLoaded(maplibre, style)
+
+            listener?.onMapInitialized()
+        }
+
     }
 
     /* ----------------------------- Overridable map callbacks --------------------------------- */

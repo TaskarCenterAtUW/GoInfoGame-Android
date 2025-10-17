@@ -46,7 +46,10 @@ import de.westnordost.streetcomplete.util.ktx.toLocation
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
@@ -89,6 +92,13 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     private var downloadedAreaManager: DownloadedAreaManager? = null
     private var locationMapComponent: CurrentLocationMapComponent? = null
     private var tracksMapComponent: TracksMapComponent? = null
+
+    var imagery: Imagery? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            onUpdatedImagery()
+        }
 
     interface Listener {
         fun onClickedQuest(questKey: QuestKey)
@@ -681,6 +691,13 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     private fun saveMapState() {
         prefs.mapIsFollowing = isFollowingPosition
         prefs.mapIsNavigationMode = isNavigationMode
+    }
+
+    private fun onUpdatedImagery() {
+        viewLifecycleScope.launch {
+            prefs.mapIsFollowing = false
+            updateMapStyle(imagery)
+        }
     }
 
     //endregion

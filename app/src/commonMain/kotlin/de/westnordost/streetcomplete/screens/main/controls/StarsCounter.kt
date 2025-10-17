@@ -53,16 +53,6 @@ fun StarsCounter(
                     color = MaterialTheme.colors.secondary
                 )
             }
-            Icon(
-                painter = painterResource(Res.drawable.ic_star_halo_32),
-                contentDescription = null,
-                tint = haloColor
-            )
-            Icon(
-                painter = painterResource(Res.drawable.ic_star_32),
-                contentDescription = null,
-                tint = contentColorFor(surfaceColor)
-            )
         }
 
         if (isCurrentWeek) {

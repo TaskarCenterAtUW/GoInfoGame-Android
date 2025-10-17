@@ -118,10 +118,10 @@ val appModule = module {
         }
     }
 
-    single { ImageryRepository(get(), get(), get()) }
     single<Res> { Res }
     single<FileSystem> { SystemFileSystem }
     single<ResourceProvider> { DefaultResourceProvider(androidContext(), get()) }
+    single { ImageryRepository(get()) }
 }
 
 suspend fun refreshJwtToken(

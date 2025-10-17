@@ -11,12 +11,15 @@ import android.graphics.PointF
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +40,11 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import coil.ImageLoader
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.radiobutton.MaterialRadioButton
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
@@ -77,6 +85,7 @@ import de.westnordost.streetcomplete.osm.level.levelsIntersect
 import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
 import de.westnordost.streetcomplete.overlays.IsShowingElement
+import de.westnordost.streetcomplete.overlays.things.ThingsOverlay
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
@@ -120,9 +129,15 @@ import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.location.LocationRequestFragment
+import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.area
 import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
 import de.westnordost.streetcomplete.util.math.enlargedBy
+import de.westnordost.streetcomplete.util.satellite_layers.Attribution
+import de.westnordost.streetcomplete.util.satellite_layers.Extent
+import de.westnordost.streetcomplete.util.satellite_layers.Imagery
+import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -206,6 +221,9 @@ class MainActivity :
     private val allEditTypes: AllEditTypes by inject()
     private val overlayRegistry by inject<OverlayRegistry>()
 
+    private var selectedImagery: Imagery? = null
+
+    private val imageryRepository: ImageryRepository by inject()
     /* +++++++++++++++++++++++++++++++++++++++ CALLBACKS ++++++++++++++++++++++++++++++++++++++++ */
 
     private val sheetBackPressedCallback = object : OnBackPressedCallback(false) {
@@ -264,7 +282,8 @@ class MainActivity :
                     onClickCreate = ::onClickCreateButton,
                     onClickStopTrackRecording = ::onClickTracksStop,
                     onClickDownload = ::onClickDownload,
-                    onExplainedNeedForLocationPermission = ::requestLocation
+                    onExplainedNeedForLocationPermission = ::requestLocation,
+                    onClickImageryLayer = ::onClickImageryLayerButton,
                 )
             }
         }
@@ -920,12 +939,16 @@ class MainActivity :
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_note -> onClickCreateNote(position)
-                R.id.action_create_track -> onClickCreateTrack()
-                R.id.action_open_location -> onClickOpenLocationInOtherApp(position)
+                R.id.action_create_node -> showOverlaysMenu(position)
             }
             true
         }
         popupMenu.show()
+    }
+
+    private fun showOverlaysMenu(position: LatLon) {
+        val overlay = overlayRegistry[Random.nextInt(overlayRegistry.size)]
+        (overlay as ThingsOverlay).position = position
     }
 
     private fun onClickOpenLocationInOtherApp(pos: LatLon) {
@@ -1305,6 +1328,137 @@ class MainActivity :
         allEditTypes.registries.addAll(listOf(questTypeRegistry))
         allEditTypes.registries.addAll(listOf(overlayRegistry))
         allEditTypes.updateByName()
+    }
+
+    private fun onClickImageryLayerButton(){
+        // mapFragment?.imagery = Imagery(Attribution(true, "Hi", ""), "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        //     null, "", "OpenStreetMap", "hi", "xyz","")
+        val screenCenter = mapFragment?.cameraPosition?.position
+
+        val bottomSheetView = LayoutInflater.from(this)
+            .inflate(R.layout.bottom_sheet_imagery, null)
+
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
+        bottomSheetDialog.show()
+
+        val radioGroup = bottomSheetView.findViewById<RadioGroup>(R.id.radioGroupImagery)
+        val radioButton = MaterialRadioButton(this).apply {
+            id = View.generateViewId()
+            text = context.getString(R.string.default_imagery)
+            tag = ""
+        }
+        radioGroup.addView(radioButton)
+        CoroutineScope(Dispatchers.Main).launch {
+            val imagerList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableArrayListExtra("IMAGERY_LIST",
+                    Imagery::class.java) ?: emptyList()
+            } else {
+                @Suppress("DEPRECATION")
+                intent?.getParcelableArrayListExtra<Imagery>("IMAGERY_LIST") ?: emptyList()
+            }
+            try {
+                val imageryList = imageryRepository.getImageryForLocation(screenCenter, imagerList)
+                val imageLoader = ImageLoader.Builder(baseContext)
+                    .allowHardware(false)
+                    .components {
+                        add(SvgDecoder.Factory())
+                    }
+                    .build()
+                imageryList?.forEach { imagery ->
+                    val imageryRadioButton =
+                        MaterialRadioButton(this@MainActivity).apply {
+                            id = View.generateViewId()
+                            text = imagery.name
+                            tag = imagery
+                            compoundDrawablePadding = (8 * resources.displayMetrics.density).toInt()
+                        }
+
+                    val iconUrl = imagery.icon // ensure it's a valid URL or resource
+                    val sizePx = (30 * resources.displayMetrics.density).toInt()
+
+                    val request = ImageRequest.Builder(baseContext)
+                        .data(iconUrl)
+                        .size(sizePx, sizePx)
+                        .allowHardware(false) // required for drawable access in some cases
+                        .listener(
+                            onError = { request, throwable ->
+                                Log.e(
+                                    "CoilError",
+                                    "Failed to load image: $iconUrl",
+                                    throwable.throwable
+                                )
+                            }
+                        )
+                        .target(
+                            onSuccess = { drawable ->
+                                // Ensure it's set after layout
+                                imageryRadioButton.post {
+                                    imageryRadioButton.setCompoundDrawablesWithIntrinsicBounds(
+                                        drawable,
+                                        null,
+                                        null,
+                                        null
+                                    )
+                                }
+                            },
+                            onError = {
+                                Log.e("Imagery", "Failed to load: $iconUrl")
+                            }
+                        )
+                        .build()
+
+                    imageLoader.enqueue(request)
+                    radioGroup.addView(imageryRadioButton)
+                }
+
+                if (selectedImagery == null) {
+                    (radioGroup.getChildAt(0) as RadioButton).isChecked = true
+                } else {
+                    // Check the radio button that matches the selected imagery
+                    for (i in 0 until radioGroup.childCount) {
+                        val button = radioGroup.getChildAt(i) as RadioButton
+                        if (button.text == selectedImagery?.name) {
+                            button.isChecked = true
+                            break
+                        }
+                    }
+                }
+
+                radioGroup.setOnCheckedChangeListener { _, checkedId ->
+                    val selectedButton = bottomSheetView.findViewById<RadioButton>(checkedId)
+                    selectedImagery = if (selectedButton.tag == "") {
+                        null // Default imagery
+                    } else {
+                        selectedButton.tag as Imagery
+                    }
+                    mapFragment?.imagery = selectedImagery
+                    Toast.makeText(
+                        baseContext,
+                        getString(
+                            R.string.selected,
+                            selectedImagery?.name ?: getString(R.string.default_imagery)
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    bottomSheetDialog.dismiss()
+                }
+
+//                if (radioGroup.checkedRadioButtonId == -1) {
+//                    // If no button was checked, default to the first one
+//                    (radioGroup.getChildAt(0) as RadioButton).isChecked = true
+//                    selectedImagery = null
+//                }
+
+            } catch (e: Exception) {
+                Log.d("Error", e.message.toString())
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.failed_to_load_imagery_list),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     //endregion

@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -101,6 +103,7 @@ fun MainScreen(
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
     onExplainedNeedForLocationPermission: () -> Unit,
+    onClickImageryLayer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -164,12 +167,10 @@ fun MainScreen(
             "https://osm.org/copyright"
         ),
         AttributionLink("© JawgMaps", "https://jawg.io"),
-            AttributionLink("© HA HA", "https://ha.io"),
-                AttributionLink("© KA HA", "https://ka.io")
     )
 
     fun onClickOverlays() {
-        showOverlaysDropdown = true
+        onClickImageryLayer()
     }
 
     fun onClickMessages() {
@@ -233,14 +234,11 @@ fun MainScreen(
             // top-start controls
             Box(Modifier.align(Alignment.TopStart)) {
                 // stars counter
-                StarsCounter(
-                    count = starsCount,
-                    modifier = Modifier
-                        .defaultMinSize(minWidth = 96.dp)
-                        .clickable(null, null) { viewModel.toggleShowingCurrentWeek() },
-                    isCurrentWeek = isShowingStarsCurrentWeek,
-                    showProgress = isUploadingOrDownloading
-                )
+                if (isUploadingOrDownloading)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colors.secondary
+                    )
             }
 
             // top-end controls
@@ -250,12 +248,6 @@ fun MainScreen(
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AnimatedVisibility(hasMessages) {
-                    MessagesButton(
-                        onClick = ::onClickMessages,
-                        messagesCount = messagesCount
-                    )
-                }
                 if (overlays.isNotEmpty()) {
                     Box {
                         OverlaySelectionButton(
