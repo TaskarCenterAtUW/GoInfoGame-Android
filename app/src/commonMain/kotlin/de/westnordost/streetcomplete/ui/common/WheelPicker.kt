@@ -14,8 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -183,7 +183,7 @@ private fun Modifier.fadingEdges(selectedItemHeight: Dp): Modifier {
 @Composable
 private fun Modifier.pickerIndicator(selectedItemHeight: Dp): Modifier {
     val density = LocalDensity.current.density
-    val color = MaterialTheme.colors.onSurface
+    val color = MaterialTheme.colorScheme.onSurface
 
     return drawWithContent {
         drawContent()

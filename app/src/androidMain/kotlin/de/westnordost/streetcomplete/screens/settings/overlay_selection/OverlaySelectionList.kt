@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,17 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.overlays.Overlay
-import de.westnordost.streetcomplete.overlays.mtb_scale.MtbScaleOverlay
-import de.westnordost.streetcomplete.overlays.street_parking.StreetParkingOverlay
-import de.westnordost.streetcomplete.overlays.surface.SurfaceOverlay
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.enable_overlay_confirmation_title
 import de.westnordost.streetcomplete.resources.overlay
 import de.westnordost.streetcomplete.resources.quest_enabled
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** List of overlays to individually enable or disable */
 @Composable
@@ -45,11 +40,13 @@ fun OverlaySelectionList(
 
     Column(modifier) {
         val layoutDirection = LocalLayoutDirection.current
-        OverlaySelectionHeader(Modifier.padding(
-            start = contentPadding.calculateStartPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding(),
-            end = contentPadding.calculateEndPadding(layoutDirection)
-        ))
+        OverlaySelectionHeader(
+            Modifier.padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                top = contentPadding.calculateTopPadding(),
+                end = contentPadding.calculateEndPadding(layoutDirection)
+            )
+        )
         LazyColumn(
             contentPadding = PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection),
@@ -109,15 +106,3 @@ private fun OverlaySelectionHeader(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview
-@Composable
-private fun PreviewOverlaySelectionList() {
-    OverlaySelectionList(
-        items = listOf(
-            OverlaySelection(StreetParkingOverlay(), true),
-            OverlaySelection(SurfaceOverlay(), false),
-            OverlaySelection(MtbScaleOverlay(), false),
-        ),
-        onSelect = { _, _ -> },
-    )
-}

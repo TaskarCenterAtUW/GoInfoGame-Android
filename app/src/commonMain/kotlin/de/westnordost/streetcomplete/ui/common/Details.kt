@@ -7,14 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +31,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 /** Like the HTML &lt;details&gt; element or a section controlled by
  *  [disclosure controls](https://developer.apple.com/design/human-interface-guidelines/disclosure-controls)
  *  in Apple's human interface guidelines. */
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun Details(
     expanded: Boolean,
@@ -42,7 +40,7 @@ fun Details(
     enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val alpha = if (enabled) ContentAlpha.high else ContentAlpha.disabled
+    val alpha = if (enabled) 1.0f else 0.0f
     Column(modifier) {
         Surface(
             checked = expanded,
@@ -50,7 +48,7 @@ fun Details(
             shape = MaterialTheme.shapes.medium,
             enabled = enabled,
         ) {
-            ProvideTextStyle(MaterialTheme.typography.button) {
+            ProvideTextStyle(MaterialTheme.typography.bodySmall) {
                 Row (
                     modifier = Modifier.padding(start = 8.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

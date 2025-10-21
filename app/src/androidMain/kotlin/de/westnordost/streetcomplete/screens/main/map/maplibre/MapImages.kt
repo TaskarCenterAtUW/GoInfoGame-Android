@@ -47,13 +47,23 @@ class MapImages(private val resources: Resources, private val style: Style) {
         val sdfImages = data.filter { it.sdf }.associateTo(HashMap()) { it.name to it.bitmap }
         val nonSdfImages = data.filterNot { it.sdf }.associateTo(HashMap()) { it.name to it.bitmap }
 
+        var added = true
         withContext(Dispatchers.Main) {
-            if (nonSdfImages.isNotEmpty()) style.addImages(nonSdfImages, false)
-            if (sdfImages.isNotEmpty()) style.addImages(sdfImages, true)
+            try {
+                if (nonSdfImages.isNotEmpty()) style.addImages(nonSdfImages, false)
+                if (sdfImages.isNotEmpty()) style.addImages(sdfImages, true)
+            } catch (e: IllegalStateException) {
+                Log.w("MapImages", "Failed to add images — style changed: ${e.message}")
+                added = false
+            }
         }
 
-        images.addAll(loadIds)
-        Log.v("MapImages", "Loaded ${loadIds.size} images")
+        if (added) {
+            images.addAll(loadIds)
+            Log.v("MapImages", "Loaded ${loadIds.size} images")
+        } else {
+            Log.v("MapImages", "Deferred loading of ${loadIds.size} images due to style change")
+        }
     }
 
     private data class ImageWithMetadata(val name: String, val bitmap: Bitmap, val sdf: Boolean)

@@ -29,8 +29,8 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.core.content.ContextCompat
@@ -275,7 +275,7 @@ class MainActivity :
         binding.controls.content {
             // color for HUD elements without a background (e.g. scalebar, attribution button)
             CompositionLocalProvider(
-                LocalContentColor provides MaterialTheme.colors.onSurface
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
             ) {
                 MainScreen(
                     viewModel = viewModel,

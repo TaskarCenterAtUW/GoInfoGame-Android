@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ import org.jetbrains.compose.resources.painterResource
 /** Popup button to switch keyboard between ABC and 123, displayed in some corner of the screen.
  *
  *  Only works correctly in edge-to-edge. */
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SwitchKeyboardPopupButton(
     isAbc: Boolean = false,
@@ -43,11 +41,13 @@ fun SwitchKeyboardPopupButton(
     val screenPadding = WindowInsets.systemBars
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
-    Popup(ScreenAlignmentPopupPositionProvider(
-        alignment = alignment,
-        windowPaddingLeft = screenPadding.getLeft(density, layoutDirection),
-        windowPaddingTop = screenPadding.getTop(density),
-    )) {
+    Popup(
+        ScreenAlignmentPopupPositionProvider(
+            alignment = alignment,
+            windowPaddingLeft = screenPadding.getLeft(density, layoutDirection),
+            windowPaddingTop = screenPadding.getTop(density),
+        )
+    ) {
         Surface(
             onClick = { onChange(!isAbc) },
             modifier = Modifier.size(64.dp)
@@ -65,7 +65,6 @@ fun SwitchKeyboardPopupButton(
                     // shows what it changes to, not what it currently is, just like other mode
                     // change buttons on the keyboard (e.g. "?123")
                     text = if (isAbc) "123" else "ABC", letterSpacing = 0.sp,
-                    style = MaterialTheme.typography.button
                 )
                 Icon(painterResource(Res.drawable.ic_keyboard_24), null)
             }

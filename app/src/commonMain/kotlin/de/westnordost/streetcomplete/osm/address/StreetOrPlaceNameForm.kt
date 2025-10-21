@@ -4,12 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -25,7 +24,6 @@ import de.westnordost.streetcomplete.resources.quest_address_street_street_name_
 import de.westnordost.streetcomplete.resources.town_silhouette
 import de.westnordost.streetcomplete.ui.common.ButtonStyle
 import de.westnordost.streetcomplete.ui.common.SelectButton
-import de.westnordost.streetcomplete.ui.theme.largeInput
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -42,7 +40,7 @@ fun StreetOrPlaceNameForm(
 ) {
     val selections = remember { listOf(StreetName(""), PlaceName("")) }
 
-    val textStyle = MaterialTheme.typography.largeInput.copy(textAlign = TextAlign.Center)
+    val textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center)
 
     Column(modifier = modifier) {
         if (showSelect) {
@@ -53,12 +51,14 @@ fun StreetOrPlaceNameForm(
                 style = ButtonStyle.Text,
                 enabled = value.name.isEmpty(),
                 itemContent = {
-                    Text(stringResource(
-                        when (it) {
-                            is StreetName -> Res.string.quest_address_street_street_name_label
-                            is PlaceName -> Res.string.quest_address_street_place_name_label
-                        }
-                    ))
+                    Text(
+                        stringResource(
+                            when (it) {
+                                is StreetName -> Res.string.quest_address_street_street_name_label
+                                is PlaceName -> Res.string.quest_address_street_place_name_label
+                            }
+                        )
+                    )
                 }
             )
         }
@@ -74,10 +74,11 @@ fun StreetOrPlaceNameForm(
                 )
                 Text(
                     text = stringResource(Res.string.quest_address_street_hint2),
-                    color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
-                    style = MaterialTheme.typography.caption
+                    color = LocalContentColor.current.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
+
             is PlaceName -> {
                 NameInput(
                     value = value.name,
@@ -110,16 +111,18 @@ private fun NameInput(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
-        placeholder = if (!suggestion.isNullOrEmpty()) { {
-            BasicText(
-                text = suggestion,
-                style = textStyle.copy(color = textStyle.color.copy(alpha = 0.2f)),
-                // so that the text aligns center, just like the actual text
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 1,
-                autoSize = TextAutoSize.StepBased(maxFontSize = textStyle.fontSize)
-            )
-        } } else null,
+        placeholder = if (!suggestion.isNullOrEmpty()) {
+            {
+                BasicText(
+                    text = suggestion,
+                    style = textStyle.copy(color = textStyle.color.copy(alpha = 0.2f)),
+                    // so that the text aligns center, just like the actual text
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(maxFontSize = textStyle.fontSize)
+                )
+            }
+        } else null,
         textStyle = textStyle,
     )
 }

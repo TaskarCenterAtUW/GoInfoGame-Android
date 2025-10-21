@@ -51,7 +51,6 @@ import de.westnordost.streetcomplete.data.visiblequests.visibleQuestsModule
 import de.westnordost.streetcomplete.data.workspace.workspaceModule
 import de.westnordost.streetcomplete.overlays.overlaysModule
 import de.westnordost.streetcomplete.quests.questsModule
-import de.westnordost.streetcomplete.screens.about.aboutScreenModule
 import de.westnordost.streetcomplete.screens.main.mainModule
 import de.westnordost.streetcomplete.screens.measure.arModule
 import de.westnordost.streetcomplete.screens.settings.settingsModule
@@ -109,7 +108,6 @@ class StreetCompleteApplication : Application() {
                 achievementDefinitionsModule,
                 editTypeAliasesModule,
                 appModule,
-                aboutScreenModule,
                 userScreenModule,
                 createdElementsModule,
                 logsModule,
@@ -195,6 +193,7 @@ class StreetCompleteApplication : Application() {
                 // very low on memory -> drop caches
                 cacheTrimmer.clearCaches()
             }
+
             ComponentCallbacks2.TRIM_MEMORY_MODERATE, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW -> {
                 // memory needed, but not critical -> trim only
                 cacheTrimmer.trimCaches()
@@ -242,8 +241,9 @@ class StreetCompleteApplication : Application() {
     }
 }
 
-private val Theme.appCompatNightMode: Int get() = when (this) {
-    Theme.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-    Theme.DARK -> AppCompatDelegate.MODE_NIGHT_YES
-    Theme.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-}
+private val Theme.appCompatNightMode: Int
+    get() = when (this) {
+        Theme.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+        Theme.DARK -> AppCompatDelegate.MODE_NIGHT_YES
+        Theme.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+    }

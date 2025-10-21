@@ -19,9 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,7 +46,6 @@ import de.westnordost.streetcomplete.resources.team_mode_choose_color2
 import de.westnordost.streetcomplete.resources.team_mode_description
 import de.westnordost.streetcomplete.resources.team_mode_description_overlay_hint
 import de.westnordost.streetcomplete.resources.team_mode_team_size_label2
-import de.westnordost.streetcomplete.screens.tutorial.TutorialScreen
 import de.westnordost.streetcomplete.ui.common.BubblePile
 import de.westnordost.streetcomplete.ui.common.WheelPicker
 import de.westnordost.streetcomplete.ui.common.WheelPickerState
@@ -54,7 +53,6 @@ import de.westnordost.streetcomplete.ui.common.rememberWheelPickerState
 import de.westnordost.streetcomplete.ui.ktx.conditional
 import de.westnordost.streetcomplete.ui.ktx.toPx
 import de.westnordost.streetcomplete.ui.theme.TeamColors
-import de.westnordost.streetcomplete.ui.theme.headlineLarge
 import de.westnordost.streetcomplete.ui.theme.selectionBackground
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
@@ -72,51 +70,6 @@ fun TeamModeWizard(
     val teamSizeState = rememberWheelPickerState()
     var indexInTeam by remember { mutableIntStateOf(-1) }
     val teamSize = teamSizes[teamSizeState.selectedItemIndex]
-
-    TutorialScreen(
-        pageCount = 3,
-        onDismissRequest = onDismissRequest,
-        onFinished = { onFinished(teamSize, indexInTeam) },
-        dismissOnBackPress = true,
-        nextIsEnabled = { page ->
-            if (page == 2 && indexInTeam !in 0..<teamSize) false
-            else true
-        },
-        illustration = { page ->
-            val selectedIndex = if (page > 1) indexInTeam else -1
-            AnimatedContent(
-                targetState = page > 0,
-                transitionSpec = { fadeIn(tween(600)) togetherWith fadeOut(tween(600)) }
-            ) {
-                when (it) {
-                    false -> SplitQuestsIllustration(allQuestIconIds = allQuestIconIds)
-                    true -> TeamSizeIllustration(
-                        teamSize = teamSize,
-                        maxTeamSize = TeamColors.size,
-                        selectedIndex = selectedIndex
-                    )
-                }
-            }
-        }
-    ) { page ->
-        Column(
-            modifier = Modifier.fillMaxSize(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            when (page) {
-                0 -> TeamModeDescription()
-                1 -> TeamModeTeamSizeInput(
-                    teamSizes = teamSizes,
-                    teamSizeState = teamSizeState
-                )
-                2 -> TeamModeColorSelect(
-                    teamSize = teamSize,
-                    selectedIndex = indexInTeam,
-                    onSelectedIndex = { indexInTeam = it }
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -128,13 +81,13 @@ private fun TeamModeDescription() {
     )
     Text(
         text = stringResource(Res.string.team_mode_description),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
         modifier = Modifier.padding(top = 24.dp)
     )
     Text(
         text = stringResource(Res.string.team_mode_description_overlay_hint),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
         modifier = Modifier.padding(top = 24.dp)
     )
@@ -143,11 +96,11 @@ private fun TeamModeDescription() {
 @Composable
 private fun TeamModeTeamSizeInput(
     teamSizes: List<Int>,
-    teamSizeState: WheelPickerState
+    teamSizeState: WheelPickerState,
 ) {
     Text(
         text = stringResource(Res.string.team_mode_team_size_label2),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center
     )
     ProvideTextStyle(MaterialTheme.typography.headlineLarge) {
@@ -173,7 +126,7 @@ private fun TeamModeColorSelect(
 ) {
     Text(
         text = stringResource(Res.string.team_mode_choose_color2),
-        style = MaterialTheme.typography.body1,
+        style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center
     )
     FlowRow(
@@ -181,7 +134,7 @@ private fun TeamModeColorSelect(
         modifier = Modifier.padding(top = 24.dp)
     ) {
         for (index in 0..<teamSize) {
-            val selectionBackground = MaterialTheme.colors.selectionBackground
+            val selectionBackground = MaterialTheme.colorScheme.selectionBackground
             val selectionShape = MaterialTheme.shapes.small
             TeamModeColorCircle(
                 index = index,
@@ -199,7 +152,7 @@ private fun TeamModeColorSelect(
 
 @Composable
 private fun SplitQuestsIllustration(
-    allQuestIconIds: List<Int>
+    allQuestIconIds: List<Int>,
 ) {
     val padding = remember { Animatable(0f) }
     val divider = remember { Animatable(0f) }
@@ -210,7 +163,7 @@ private fun SplitQuestsIllustration(
     }
 
     val arrangement = Arrangement.spacedBy((-48 + 64 * padding.value).dp)
-    val dividerColor = MaterialTheme.colors.onSurface.copy(alpha = 0.12f)
+    val dividerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val dividerWidth = 4.dp.toPx()
     Column(
         modifier = Modifier

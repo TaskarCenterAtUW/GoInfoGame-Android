@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,14 +27,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.quests.note_discussion.OsmNoteQuestType
-import de.westnordost.streetcomplete.quests.seating.AddSeating
-import de.westnordost.streetcomplete.quests.tactile_paving.AddTactilePavingBusStop
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.enable_quest_confirmation_title
 import de.westnordost.streetcomplete.resources.quest_enabled
 import de.westnordost.streetcomplete.resources.quest_type
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import sh.calvin.reorderable.ReorderableItem
@@ -75,11 +72,13 @@ fun QuestSelectionList(
 
     Column(modifier) {
         val layoutDirection = LocalLayoutDirection.current
-        QuestSelectionHeader(Modifier.padding(
-            start = contentPadding.calculateStartPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding(),
-            end = contentPadding.calculateEndPadding(layoutDirection)
-        ))
+        QuestSelectionHeader(
+            Modifier.padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                top = contentPadding.calculateTopPadding(),
+                end = contentPadding.calculateEndPadding(layoutDirection)
+            )
+        )
         // TODO Compose: scrollbars would be nice here (not supported yet by compose)
         //      When they are available: Check other places too, don't want to add a todo in every
         //      single place that could have a scrollbar
@@ -105,7 +104,6 @@ fun QuestSelectionList(
                     val haptic = LocalHapticFeedback.current
 
                     Surface(
-                        elevation = elevation,
                         modifier = Modifier
                             .longPressDraggableHandle(
                                 enabled = item.isInteractionEnabled,
@@ -173,8 +171,6 @@ private fun PreviewQuestSelectionList() {
     QuestSelectionList(
         items = listOf(
             QuestSelection(OsmNoteQuestType, true, true),
-            QuestSelection(AddSeating(), false, true),
-            QuestSelection(AddTactilePavingBusStop(), true, false),
         ),
         displayCountry = "Atlantis",
         onSelect = { _, _ -> },

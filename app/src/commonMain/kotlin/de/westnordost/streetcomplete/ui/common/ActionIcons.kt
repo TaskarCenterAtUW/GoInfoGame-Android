@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.ui.common
 
-import androidx.compose.material.Icon
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.action_back

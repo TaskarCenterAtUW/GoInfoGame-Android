@@ -18,14 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.Divider
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,13 +45,14 @@ import de.westnordost.streetcomplete.resources.quest_presets_preset_name
 import de.westnordost.streetcomplete.resources.quest_presets_selected
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.dialogs.TextInputDialog
-import de.westnordost.streetcomplete.ui.theme.titleMedium
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 /** Shows a screen in which the user can select which preset of edit type selections he wants to
  *  use. */
-@Composable fun EditTypePresetsScreen(
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTypePresetsScreen(
     viewModel: EditTypePresetsViewModel,
     onClickBack: () -> Unit,
 ) {
@@ -59,15 +61,16 @@ import org.jetbrains.compose.resources.stringResource
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(stringResource(Res.string.action_manage_presets)) },
-            windowInsets = AppBarDefaults.topAppBarWindowInsets,
+            windowInsets = TopAppBarDefaults.windowInsets,
             navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
         )
         val insets = WindowInsets.safeDrawing.only(
             WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
         ).asPaddingValues()
-        Box(Modifier
-            .fillMaxHeight()
-            .consumeWindowInsets(insets)
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .consumeWindowInsets(insets)
         ) {
             EditTypePresetsList(
                 viewModel = viewModel,
@@ -102,17 +105,19 @@ import org.jetbrains.compose.resources.stringResource
 private fun EditTypePresetsList(
     viewModel: EditTypePresetsViewModel,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val presets by viewModel.presets.collectAsState()
 
     Column(modifier) {
         val layoutDirection = LocalLayoutDirection.current
-        EditTypePresetsHeader(Modifier.padding(
-            start = contentPadding.calculateStartPadding(layoutDirection),
-            top = contentPadding.calculateTopPadding(),
-            end = contentPadding.calculateEndPadding(layoutDirection)
-        ))
+        EditTypePresetsHeader(
+            Modifier.padding(
+                start = contentPadding.calculateStartPadding(layoutDirection),
+                top = contentPadding.calculateTopPadding(),
+                end = contentPadding.calculateEndPadding(layoutDirection)
+            )
+        )
         LazyColumn(
             contentPadding = PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection),

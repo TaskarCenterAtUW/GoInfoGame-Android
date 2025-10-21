@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.screens.user.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -20,12 +19,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.intl.Locale
-import androidx.compose.ui.unit.coerceAtMost
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.resources.Res
@@ -52,8 +50,6 @@ import de.westnordost.streetcomplete.resources.user_profile_days_active
 import de.westnordost.streetcomplete.resources.user_profile_global_rank
 import de.westnordost.streetcomplete.resources.user_profile_local_rank
 import de.westnordost.streetcomplete.ui.ktx.toDp
-import de.westnordost.streetcomplete.ui.theme.headlineLarge
-import de.westnordost.streetcomplete.ui.theme.titleLarge
 import de.westnordost.streetcomplete.util.image.fileBitmapPainter
 import de.westnordost.streetcomplete.util.ktx.displayRegion
 import org.jetbrains.compose.resources.painterResource
@@ -83,9 +79,11 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-            )),
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(
+                    WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+                )
+            ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Basic user info
@@ -96,7 +94,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             Image(
                 painter =
                     userAvatarFile?.let { fileBitmapPainter(it.toString()) }
-                    ?: painterResource(Res.drawable.avatar_osm_anonymous),
+                        ?: painterResource(Res.drawable.avatar_osm_anonymous),
                 contentDescription = null,
                 modifier = Modifier
                     .size(100.dp)
@@ -116,7 +114,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
                             Res.string.unsynced_quests_description,
                             unsyncedChangesCount
                         ),
-                        style = MaterialTheme.typography.body2
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -160,7 +158,11 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             ) {
                 val localStats = biggestSolvedCountCountryStatistics
                 if (localStats?.rank != null) {
-                    LocalRankBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+                    LocalRankBadge(
+                        localStats.rank,
+                        localStats.countryCode,
+                        getAnimationDelay(delay++)
+                    )
                 }
                 if (rank > 0) {
                     RankBadge(rank, getAnimationDelay(delay++))
@@ -191,7 +193,11 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             ) {
                 val localStats = biggestSolvedCountCurrentWeekCountryStatistics
                 if (localStats?.rank != null) {
-                    LocalRankCurrentWeekBadge(localStats.rank, localStats.countryCode, getAnimationDelay(delay++))
+                    LocalRankCurrentWeekBadge(
+                        localStats.rank,
+                        localStats.countryCode,
+                        getAnimationDelay(delay++)
+                    )
                 }
                 if (rankCurrentWeek > 0) {
                     RankCurrentWeekBadge(rankCurrentWeek, getAnimationDelay(delay++))
@@ -202,13 +208,6 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
             text = stringResource(Res.string.user_profile_dates_mapped),
             style = MaterialTheme.typography.titleLarge
         )
-        BoxWithConstraints {
-            DatesActiveTable(
-                datesActive = datesActive.datesActive.toSet(),
-                datesActiveRange = datesActive.range,
-                modifier = Modifier.width(maxWidth.coerceAtMost(640.dp))
-            )
-        }
     }
 }
 

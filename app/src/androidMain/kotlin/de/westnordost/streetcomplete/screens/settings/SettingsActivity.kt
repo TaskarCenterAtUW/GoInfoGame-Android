@@ -7,7 +7,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
-import androidx.compose.material.Surface
+import androidx.compose.material3.Surface
 import androidx.core.app.ActivityCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone

@@ -49,8 +49,6 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.osm.applyReplacePlaceTo
-import de.westnordost.streetcomplete.osm.isPlaceOrDisusedPlace
-import de.westnordost.streetcomplete.quests.shop_type.ShopGoneDialog
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.isSplittable
@@ -110,6 +108,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     open val otherAnswers = listOf<IAnswerItem>()
     open val buttonPanelAnswers = listOf<IAnswerItem>()
     private var compassBearing: Double = 0.0
+
     interface Listener {
         /** The GPS position at which the user is displayed at */
         val displayedMapLocation: Location?
@@ -342,18 +341,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     protected fun replacePlace() {
-        if (element.isPlaceOrDisusedPlace()) {
-            ShopGoneDialog(
-                requireContext(),
-                element,
-                countryOrSubdivisionCode,
-                featureDictionary,
-                onSelectedFeatureFn = this::onShopReplacementSelected,
-                onLeaveNoteFn = this::composeNote
-            ).show()
-        } else {
-            composeNote()
-        }
+        composeNote()
     }
 
     private fun onShopReplacementSelected(feature: Feature) {

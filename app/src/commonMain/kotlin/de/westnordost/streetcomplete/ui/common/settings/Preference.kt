@@ -9,15 +9,15 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Switch
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.SearchBarDefaults.colors
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.ic_chevron_next_24
-import de.westnordost.streetcomplete.ui.theme.titleSmall
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -43,11 +42,11 @@ fun PreferenceCategory(
             Text(
                 text = title,
                 modifier = Modifier.padding(top = 12.dp, start = 16.dp, end = 8.dp, bottom = 8.dp),
-                color = MaterialTheme.colors.secondary,
+                color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
         }
-        ProvideTextStyle(MaterialTheme.typography.body1) {
+        ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
             Column {
                 content()
             }
@@ -89,7 +88,7 @@ fun Preference(
                         textAlign = TextAlign.End,
                         hyphens = Hyphens.Auto
                     ),
-                    LocalContentAlpha provides ContentAlpha.medium
+                    LocalContentColor provides LocalContentColor.current.copy(alpha = 0.74f)
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(
@@ -104,8 +103,8 @@ fun Preference(
         }
         if (description != null) {
             CompositionLocalProvider(
-                LocalTextStyle provides MaterialTheme.typography.body2,
-                LocalContentAlpha provides ContentAlpha.medium
+                LocalTextStyle provides MaterialTheme.typography.bodyMedium,
+                LocalContentColor provides LocalContentColor.current.copy(alpha = 0.74f)
             ) {
                 Text(
                     text = description,

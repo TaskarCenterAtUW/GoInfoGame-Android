@@ -2,12 +2,13 @@ package de.westnordost.streetcomplete.screens.settings.overlay_selection
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 import org.jetbrains.compose.resources.stringResource
 
 /** Top bar for the overlay selection screen */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OverlaySelectionTopAppBar(
     currentPresetName: String,
@@ -36,7 +38,7 @@ fun OverlaySelectionTopAppBar(
 ) {
     TopAppBar(
         title = { OverlaySelectionTitle(currentPresetName ) },
-        windowInsets = AppBarDefaults.topAppBarWindowInsets,
+        windowInsets = TopAppBarDefaults.windowInsets,
         navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
         actions = { OverlaySelectionTopBarActions(onReset = onReset) },
         modifier = modifier,
@@ -55,7 +57,7 @@ private fun OverlaySelectionTitle(currentPresetName: String) {
             text = stringResource(Res.string.pref_subtitle_quests_preset_name, currentPresetName),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }

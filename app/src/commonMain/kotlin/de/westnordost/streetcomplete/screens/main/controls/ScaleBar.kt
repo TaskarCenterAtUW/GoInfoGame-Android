@@ -4,8 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -54,11 +54,11 @@ fun ScaleBar(
     metersPerDp: Double,
     modifier: Modifier = Modifier,
     measures: ScaleBarMeasures = defaultScaleBarMeasures(),
-    haloColor: Color = MaterialTheme.colors.surface,
+    haloColor: Color = MaterialTheme.colorScheme.surface,
     haloWidth: Dp = 0.dp,
     color: Color = contentColorFor(haloColor),
     barWidth: Dp = 2.dp,
-    textStyle: TextStyle = MaterialTheme.typography.caption,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     alignment: Alignment.Horizontal = Alignment.Start,
 ) {
     // when map is not fully initialized yet

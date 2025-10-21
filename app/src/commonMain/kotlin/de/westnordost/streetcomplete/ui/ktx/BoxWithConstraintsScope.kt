@@ -2,7 +2,7 @@ package de.westnordost.streetcomplete.ui.ktx
 
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -25,7 +25,7 @@ fun BoxWithConstraintsScope.calculateTextMaxFontSize(
 ): TextUnit {
     val ltr = LayoutDirection.Ltr
     val hPad = contentPadding.calculateLeftPadding(ltr) + contentPadding.calculateRightPadding(ltr)
-    var fontSize = textStyle.fontSize.takeIf { it.isSpecified } ?: MaterialTheme.typography.body1.fontSize
+    var fontSize = textStyle.fontSize.takeIf { it.isSpecified } ?: MaterialTheme.typography.bodyLarge.fontSize
     val calculateParagraph = @Composable {
         Paragraph(
             text = text,

@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -43,13 +43,13 @@ fun DialogContentWithIconLayout(
 
         val dialogModifier = modifier
             .backgroundWithPadding(
-                color = MaterialTheme.colors.surface,
+                color = MaterialTheme.colorScheme.surface,
                 padding = backgroundPadding,
                 shape = MaterialTheme.shapes.medium
             )
             .padding(24.dp)
 
-        val contentColor = contentColorFor(MaterialTheme.colors.surface)
+        val contentColor = contentColorFor(MaterialTheme.colorScheme.surface)
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             if (isLandscape) {
                 Row(

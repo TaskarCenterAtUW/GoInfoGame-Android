@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,7 +131,7 @@ private fun isValidInchesInput(string: String): Boolean {
 @Composable @Preview
 private fun LengthFeetInchesInputPreview() {
     var feetInch: Length.FeetAndInches? by remember { mutableStateOf(Length.FeetAndInches(3, 11)) }
-    ProvideTextStyle(MaterialTheme.typography.body1) {
+    ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
         LengthFeetInchesInput(
             length = feetInch,
             onChange = { feetInch = it },

@@ -12,16 +12,16 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Tab
-import androidx.compose.material.TabRow
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.primarySurface
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -29,18 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.resources.ic_achievements_24
-import de.westnordost.streetcomplete.resources.ic_bookmarks_24
 import de.westnordost.streetcomplete.resources.ic_profile_24
-import de.westnordost.streetcomplete.resources.ic_star_24
-import de.westnordost.streetcomplete.resources.user_achievements_title
-import de.westnordost.streetcomplete.resources.user_links_title
 import de.westnordost.streetcomplete.resources.user_profile
 import de.westnordost.streetcomplete.resources.user_profile_title
-import de.westnordost.streetcomplete.resources.user_quests_title
-import de.westnordost.streetcomplete.screens.user.achievements.AchievementsScreen
-import de.westnordost.streetcomplete.screens.user.edits.EditStatisticsScreen
-import de.westnordost.streetcomplete.screens.user.links.LinksScreen
 import de.westnordost.streetcomplete.screens.user.profile.ProfileScreen
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import kotlinx.coroutines.launch
@@ -63,44 +54,36 @@ fun UserScreen(
         )
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             verticalAlignment = Alignment.Top,
         ) { p ->
             when (UserTab.entries[p]) {
                 UserTab.Profile -> {
                     ProfileScreen(viewModel = koinViewModel())
                 }
-                UserTab.Statistics -> {
-                    EditStatisticsScreen(viewModel = koinViewModel())
-                }
-                UserTab.Achievements -> {
-                    AchievementsScreen(viewModel = koinViewModel())
-                }
-                UserTab.Links -> {
-                    LinksScreen(viewModel = koinViewModel())
-                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserScreenTopAppBar(
     onClickBack: () -> Unit,
     pagerState: PagerState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colors.primarySurface,
-        elevation = AppBarDefaults.TopAppBarElevation,
+        color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Column {
             TopAppBar(
                 title = { Text(stringResource(Res.string.user_profile)) },
-                windowInsets = AppBarDefaults.topAppBarWindowInsets,
+                windowInsets = TopAppBarDefaults.windowInsets,
                 navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
-                elevation = 0.dp
             )
 
             val scope = rememberCoroutineScope()
@@ -142,17 +125,5 @@ private enum class UserTab(
     Profile(
         icon = Res.drawable.ic_profile_24,
         text = Res.string.user_profile_title,
-    ),
-    Statistics(
-        icon = Res.drawable.ic_star_24,
-        text = Res.string.user_quests_title,
-    ),
-    Achievements(
-        icon = Res.drawable.ic_achievements_24,
-        text = Res.string.user_achievements_title
-    ),
-    Links(
-        icon = Res.drawable.ic_bookmarks_24,
-        text = Res.string.user_links_title
     ),
 }

@@ -5,11 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Divider
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -52,13 +51,13 @@ fun EditDetails(
                     text = DateFormat
                         .getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                         .format(edit.createdTimestamp),
-                    style = MaterialTheme.typography.body2,
-                    color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LocalContentColor.current.copy(alpha = 0.6f),
                 )
                 Text(
                     text = edit.getTitle(element?.tags),
-                    style = MaterialTheme.typography.body1,
-                    color = LocalContentColor.current.copy(alpha = ContentAlpha.high),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = LocalContentColor.current.copy(alpha = 0.6f),
                 )
                 if (element != null) {
                     val nameAndLocation = remember(element, context.resources) {
@@ -68,8 +67,8 @@ fun EditDetails(
                     if (nameAndLocation != null) {
                         Text(
                             text = nameAndLocation.toAnnotatedString(),
-                            style = MaterialTheme.typography.body2,
-                            color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = LocalContentColor.current.copy(alpha = 0.6f),
                         )
                     }
                 }

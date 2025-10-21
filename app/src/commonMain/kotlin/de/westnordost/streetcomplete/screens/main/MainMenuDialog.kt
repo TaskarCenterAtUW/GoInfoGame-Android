@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ButtonColors
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,10 +50,10 @@ fun MainMenuDialog(
     indexInTeam: Int?,
     unsyncedEditsCount: Int?,
     isUploadingOrDownloading: Boolean,
-    onSwitchWorkspace : () -> Unit,
+    onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
 ) {
     Dialog(onDismissRequest = onDismissRequest) {
@@ -127,13 +126,12 @@ private fun BigMenuButton(
         icon()
         Text(
             text = text,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun CompactMenuButton(
     onClick: () -> Unit,
@@ -142,14 +140,12 @@ private fun CompactMenuButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: ButtonColors = ButtonDefaults.buttonColors(
-        backgroundColor = MaterialTheme.colors.surface,
+        containerColor = MaterialTheme.colorScheme.surface,
     ),
 ) {
     Surface(
         onClick = onClick,
         enabled = enabled,
-        color = colors.backgroundColor(enabled).value,
-        contentColor = colors.contentColor(enabled).value,
     ) {
         Row(
             modifier = modifier
@@ -162,7 +158,7 @@ private fun CompactMenuButton(
                 text = text,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
             )
         }
     }

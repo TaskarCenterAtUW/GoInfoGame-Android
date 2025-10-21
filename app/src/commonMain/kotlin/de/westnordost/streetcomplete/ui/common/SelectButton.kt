@@ -8,13 +8,12 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ButtonColors
-import androidx.compose.material.ButtonElevation
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +38,6 @@ import kotlin.collections.forEach
  *  In Apple human interface design guidelines, this would be called a
  *  [Pop-up button](https://developer.apple.com/design/human-interface-guidelines/pop-up-buttons).
  *  */
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun <T> SelectButton(
     items: List<T>,

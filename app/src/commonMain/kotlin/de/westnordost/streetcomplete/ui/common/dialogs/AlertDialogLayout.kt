@@ -7,12 +7,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -31,7 +30,7 @@ fun AlertDialogLayout(
     content: (@Composable ColumnScope.() -> Unit)? = null,
     buttons: (@Composable FlowRowScope.() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
 ) {
     Surface(
@@ -42,9 +41,10 @@ fun AlertDialogLayout(
     ) {
         Column(Modifier.padding(top = 24.dp)) {
             if (title != null) {
+                val currentColor = LocalContentColor.current
                 CompositionLocalProvider(
-                    LocalContentAlpha provides ContentAlpha.high,
-                    LocalTextStyle provides MaterialTheme.typography.subtitle1
+                    LocalContentColor provides currentColor.copy(alpha = 1f),
+                    LocalTextStyle provides MaterialTheme.typography.titleMedium
                 ) {
                     Column(Modifier.padding(start = 24.dp, bottom = 16.dp, end = 24.dp)) {
                         title()
@@ -52,9 +52,10 @@ fun AlertDialogLayout(
                 }
             }
             if (content != null) {
+                val currentColor = LocalContentColor.current
                 CompositionLocalProvider(
-                    LocalContentAlpha provides ContentAlpha.medium,
-                    LocalTextStyle provides MaterialTheme.typography.body2
+                    LocalContentColor provides currentColor.copy(alpha = 0.7f),
+                    LocalTextStyle provides MaterialTheme.typography.bodyMedium
                 ) {
                     content()
                 }

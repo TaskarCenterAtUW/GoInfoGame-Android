@@ -5,15 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.AppBarDefaults
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.primarySurface
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +41,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Top bar and search field for the quest selection screen */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestSelectionTopAppBar(
     currentPresetName: String,
@@ -60,13 +61,12 @@ fun QuestSelectionTopAppBar(
 
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colors.primarySurface,
-        elevation = AppBarDefaults.TopAppBarElevation,
+        color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Column {
             TopAppBar(
                 title = { QuestSelectionTitle(currentPresetName) },
-                windowInsets = AppBarDefaults.topAppBarWindowInsets,
+                windowInsets = TopAppBarDefaults.windowInsets,
                 navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
                 actions = {
                     QuestSelectionTopBarActions(
@@ -75,7 +75,6 @@ fun QuestSelectionTopAppBar(
                         onClickSearch = { setShowSearch(!showSearch) }
                     )
                 },
-                elevation = 0.dp
             )
             ExpandableSearchField(
                 expanded = showSearch,
@@ -85,10 +84,6 @@ fun QuestSelectionTopAppBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = TextFieldDefaults.textFieldColors(
-                    textColor = MaterialTheme.colors.onSurface,
-                    backgroundColor = MaterialTheme.colors.surface
-                ),
                 keyboardOptions = KeyboardOptions(hintLocales = LocaleList.current),
             )
         }
@@ -107,7 +102,7 @@ private fun QuestSelectionTitle(currentPresetName: String) {
             text = stringResource(Res.string.pref_subtitle_quests_preset_name, currentPresetName),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }

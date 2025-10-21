@@ -9,11 +9,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ButtonColors
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -42,14 +41,13 @@ import kotlin.math.sin
  *  corner is always the the position at which it is pointing to, i.e. it will be drawn outside of
  *  its bounds when pointing to the right.
  *  [rotate] rotates the pin. As opposed to normal rotation, the content always stays upright */
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun PointerPinButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: ButtonColors = ButtonDefaults.buttonColors(
-        backgroundColor = MaterialTheme.colors.surface,
+        containerColor = MaterialTheme.colorScheme.surface,
     ),
     contentPadding: Dp = 12.dp,
     rotate: Float = 0f,
@@ -65,10 +63,7 @@ fun PointerPinButton(
                 y = (cos(a) / 2.0 - 0.5).toFloat(),
             ),
         enabled = enabled,
-        shape = pointerPinShape,
-        color = colors.backgroundColor(enabled).value,
-        contentColor = colors.contentColor(enabled).value,
-        elevation = 4.dp
+        shape = pointerPinShape
     ) {
         Box(Modifier
             .proportionalPadding(pointySize)

@@ -4,11 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonColors
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.ButtonElevation
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
@@ -30,7 +30,7 @@ fun Button2(
     border: BorderStroke? = style.border,
     colors: ButtonColors = style.buttonColors,
     contentPadding: PaddingValues = style.contentPadding,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Button(
         onClick = onClick,
@@ -46,35 +46,39 @@ fun Button2(
     )
 }
 
-val ButtonStyle.elevation : ButtonElevation? @Composable
-get() = when (this) {
-        ButtonStyle.Default -> ButtonDefaults.elevation()
+val ButtonStyle.elevation: ButtonElevation?
+    @Composable
+    get() = when (this) {
+        ButtonStyle.Default -> null
         ButtonStyle.Outlined -> null
         ButtonStyle.Text -> null
     }
 
-val ButtonStyle.shape : Shape @Composable @ReadOnlyComposable
-get() = when (this) {
+val ButtonStyle.shape: Shape
+    @Composable @ReadOnlyComposable
+    get() = when (this) {
         ButtonStyle.Default -> MaterialTheme.shapes.small
         ButtonStyle.Outlined -> MaterialTheme.shapes.small
         ButtonStyle.Text -> MaterialTheme.shapes.small
     }
 
-val ButtonStyle.border : BorderStroke? @Composable
-get() = when (this) {
+val ButtonStyle.border: BorderStroke?
+    @Composable
+    get() = when (this) {
         ButtonStyle.Default -> null
-        ButtonStyle.Outlined -> ButtonDefaults.outlinedBorder
+        ButtonStyle.Outlined -> ButtonDefaults.outlinedButtonBorder
         ButtonStyle.Text -> null
     }
 
-val ButtonStyle.buttonColors : ButtonColors @Composable
-get() = when (this) {
+val ButtonStyle.buttonColors: ButtonColors
+    @Composable
+    get() = when (this) {
         ButtonStyle.Default -> ButtonDefaults.buttonColors()
         ButtonStyle.Outlined -> ButtonDefaults.outlinedButtonColors()
         ButtonStyle.Text -> ButtonDefaults.textButtonColors()
     }
 
-val ButtonStyle.contentPadding : PaddingValues
+val ButtonStyle.contentPadding: PaddingValues
     get() = when (this) {
         ButtonStyle.Default -> ButtonDefaults.ContentPadding
         ButtonStyle.Outlined -> ButtonDefaults.ContentPadding

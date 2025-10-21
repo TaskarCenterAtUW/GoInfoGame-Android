@@ -7,14 +7,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.TextFieldColors
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.TextFieldDefaults.indicatorLine
-import androidx.compose.material.TextFieldDefaults.outlinedTextFieldPadding
-import androidx.compose.material.TextFieldDefaults.textFieldWithLabelPadding
-import androidx.compose.material.TextFieldDefaults.textFieldWithoutLabelPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextFieldDefaults.indicatorLine
+import androidx.compose.material3.TextFieldDefaults.outlinedTextFieldPadding
+import androidx.compose.material3.TextFieldDefaults.textFieldWithLabelPadding
+import androidx.compose.material3.TextFieldDefaults.textFieldWithoutLabelPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
@@ -70,10 +71,7 @@ fun TextField2(
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     // If color is not provided via the text style, use content color as a default
-    val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
-    val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -88,7 +86,6 @@ fun TextField2(
         ),
         enabled = enabled,
         readOnly = readOnly,
-        textStyle = mergedTextStyle,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         singleLine = singleLine,
@@ -96,7 +93,6 @@ fun TextField2(
         minLines = minLines,
         visualTransformation = visualTransformation,
         interactionSource = interactionSource,
-        cursorBrush = SolidColor(colors.cursorColor(isError).value),
         decorationBox = style.getDecorationBox(
             value = value,
             enabled = enabled,
@@ -143,10 +139,9 @@ fun TextField2(
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     // If color is not provided via the text style, use content color as a default
-    val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
+    val textColor = textStyle.color
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -169,7 +164,6 @@ fun TextField2(
         minLines = minLines,
         visualTransformation = visualTransformation,
         interactionSource = interactionSource,
-        cursorBrush = SolidColor(colors.cursorColor(isError).value),
         decorationBox = style.getDecorationBox(
             value = value.text,
             enabled = enabled,
@@ -188,7 +182,7 @@ fun TextField2(
     )
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun Modifier.textFieldDefaults(
     style: TextFieldStyle,
     enabled: Boolean,
@@ -227,17 +221,16 @@ private fun Modifier.defaultErrorSemantics(
 
 val TextFieldStyle.shape : Shape @Composable @ReadOnlyComposable
 get() = when (this) {
-        TextFieldStyle.Filled -> TextFieldDefaults.TextFieldShape
-        TextFieldStyle.Outlined -> TextFieldDefaults.OutlinedTextFieldShape
+        TextFieldStyle.Filled -> MaterialTheme.shapes.small
+        TextFieldStyle.Outlined -> MaterialTheme.shapes.small
     }
 
 val TextFieldStyle.colors : TextFieldColors @Composable
 get() = when (this) {
-        TextFieldStyle.Filled -> TextFieldDefaults.textFieldColors()
-        TextFieldStyle.Outlined -> TextFieldDefaults.outlinedTextFieldColors()
+        TextFieldStyle.Filled -> TextFieldDefaults.colors()
+        TextFieldStyle.Outlined -> TextFieldDefaults.colors()
     }
 
-@OptIn(ExperimentalMaterialApi::class)
 fun TextFieldStyle.getContentPadding(hasLabel: Boolean): PaddingValues = when (this) {
     TextFieldStyle.Filled -> {
         if (!hasLabel) textFieldWithoutLabelPadding()
@@ -248,7 +241,7 @@ fun TextFieldStyle.getContentPadding(hasLabel: Boolean): PaddingValues = when (t
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 private fun TextFieldStyle.getDecorationBox(
     value: String,
     enabled: Boolean,
@@ -266,7 +259,7 @@ private fun TextFieldStyle.getDecorationBox(
 ) : @Composable (innerTextField: @Composable () -> Unit) -> Unit = { innerTextField ->
     when (this) {
         TextFieldStyle.Filled ->
-            TextFieldDefaults.TextFieldDecorationBox(
+            TextFieldDefaults.DecorationBox(
                 value = value,
                 innerTextField = innerTextField,
                 enabled = enabled,
@@ -283,7 +276,7 @@ private fun TextFieldStyle.getDecorationBox(
                 contentPadding = contentPadding
             )
         TextFieldStyle.Outlined ->
-            TextFieldDefaults.OutlinedTextFieldDecorationBox(
+            TextFieldDefaults.DecorationBox(
                 value = value,
                 innerTextField = innerTextField,
                 enabled = enabled,
@@ -298,15 +291,6 @@ private fun TextFieldStyle.getDecorationBox(
                 shape = shape,
                 colors = colors,
                 contentPadding = contentPadding,
-                border = {
-                    TextFieldDefaults.BorderBox(
-                        enabled = enabled,
-                        isError = isError,
-                        interactionSource = interactionSource,
-                        colors = colors,
-                        shape = shape
-                    )
-                },
             )
     }
 }

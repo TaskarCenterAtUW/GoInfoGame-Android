@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,7 +61,6 @@ import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.location_dot_small
 import de.westnordost.streetcomplete.resources.map_attribution_osm
-import de.westnordost.streetcomplete.screens.about.AboutActivity
 import de.westnordost.streetcomplete.screens.main.controls.AttributionButton
 import de.westnordost.streetcomplete.screens.main.controls.AttributionLink
 import de.westnordost.streetcomplete.screens.main.controls.CompassButton
@@ -80,7 +79,6 @@ import de.westnordost.streetcomplete.screens.main.errors.LastCrashEffect
 import de.westnordost.streetcomplete.screens.main.errors.LastDownloadErrorEffect
 import de.westnordost.streetcomplete.screens.main.errors.LastUploadErrorEffect
 import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
-import de.westnordost.streetcomplete.screens.main.messages.MessageDialog
 import de.westnordost.streetcomplete.screens.main.teammode.TeamModeWizard
 import de.westnordost.streetcomplete.screens.main.urlconfig.ApplyUrlConfigEffect
 import de.westnordost.streetcomplete.screens.settings.SettingsActivity
@@ -266,7 +264,7 @@ fun MainScreen(
                     if (isUploadingOrDownloading)
                         CircularProgressIndicator(
                             modifier = Modifier.size(48.dp),
-                            color = MaterialTheme.colors.secondary
+                            color = MaterialTheme.colorScheme.secondary
                         )
                 }
 
@@ -357,9 +355,6 @@ fun MainScreen(
                                 modifier = Modifier
                                     .align(BiasAlignment(0.333f, 1f))
                                     .padding(4.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    backgroundColor = MaterialTheme.colors.secondaryVariant,
-                                ),
                             ) {
                                 LargeCreateIcon()
                             }
@@ -375,9 +370,7 @@ fun MainScreen(
                             if (isRecordingTracks) {
                                 MapButton(
                                     onClick = onClickStopTrackRecording,
-                                    colors = ButtonDefaults.buttonColors(
-                                        backgroundColor = MaterialTheme.colors.secondaryVariant,
-                                    ),
+
                                 ) {
                                     StopRecordingIcon()
                                 }
@@ -447,15 +440,6 @@ fun MainScreen(
         }
     }
 
-    shownMessage?.let { message ->
-        val questIcons = remember { viewModel.allQuestTypes.map { it.icon } }
-        MessageDialog(
-            message = message,
-            onDismissRequest = { shownMessage = null },
-            allQuestIconIds = questIcons
-        )
-    }
-
     if (showMainMenuDialog) {
         MainMenuDialog(
             onDismissRequest = { showMainMenuDialog = false },
@@ -468,7 +452,7 @@ fun MainScreen(
                     )
                 )
             },
-            onClickAbout = { context.startActivity(Intent(context, AboutActivity::class.java)) },
+            onClickAbout = { },
             onClickDownload = onClickDownload,
             onClickUpload = ::onClickUpload,
             onClickEnterTeamMode = { showTeamModeWizard = true },

@@ -11,11 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Checkbox
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +35,7 @@ fun OverlaySelectionRow(
     onToggleSelection: (isSelected: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val alpha = if (!item.selected) ContentAlpha.disabled else ContentAlpha.high
+    val alpha = if (!item.selected) 0.38f else 1f
 
     Row(
         modifier = modifier.height(IntrinsicSize.Min).padding(start = 16.dp),
@@ -54,7 +53,7 @@ fun OverlaySelectionRow(
             Text(
                 text = stringResource(item.overlay.title),
                 modifier = Modifier.alpha(alpha),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (item.overlay.defaultDisabledMessage != null) {
                 DisabledHint(stringResource(Res.string.questList_disabled_by_default))
@@ -76,8 +75,8 @@ fun OverlaySelectionRow(
 private fun DisabledHint(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.body2,
+        style = MaterialTheme.typography.bodyMedium,
         fontStyle = FontStyle.Italic,
-        color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
+        color = LocalContentColor.current.copy(alpha = 0.6f),
     )
 }

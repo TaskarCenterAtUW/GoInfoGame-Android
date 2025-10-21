@@ -3,9 +3,9 @@ package de.westnordost.streetcomplete.ui.common
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.MenuDefaults
-import androidx.compose.material.ProvideTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -19,10 +19,10 @@ fun DropdownMenuItem(
     enabled: Boolean = true,
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    textStyle: TextStyle = MaterialTheme.typography.body1,
-    content: @Composable RowScope.() -> Unit
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    content: @Composable RowScope.() -> Unit,
 ) {
-    androidx.compose.material.DropdownMenuItem(
+    DropdownMenuItem(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,

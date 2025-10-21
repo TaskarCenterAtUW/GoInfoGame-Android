@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Checkbox
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +29,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import de.westnordost.streetcomplete.quests.surface.AddRoadSurface
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.ic_drag_vertical_24
 import de.westnordost.streetcomplete.resources.questList_disabled_by_default
@@ -46,9 +46,9 @@ fun QuestSelectionRow(
     item: QuestSelection,
     onToggleSelection: (isSelected: Boolean) -> Unit,
     displayCountry: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val alpha = if (!item.selected) ContentAlpha.disabled else ContentAlpha.high
+    val alpha = if (!item.selected) 0.0f else 1.0f
 
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
@@ -62,26 +62,37 @@ fun QuestSelectionRow(
         Image(
             painter = painterResource(item.questType.icon),
             contentDescription = item.questType.name,
-            modifier = Modifier.size(48.dp).alpha(alpha),
+            modifier = Modifier
+                .size(48.dp)
+                .alpha(alpha),
         )
         Column(
-            modifier = Modifier.padding(start = 16.dp).weight(0.1f),
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .weight(0.1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = stringResource(item.questType.title),
                 modifier = Modifier.alpha(alpha),
-                style = MaterialTheme.typography.body1,
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (!item.enabledInCurrentCountry) {
-                DisabledHint(stringResource(Res.string.questList_disabled_in_country, displayCountry))
+                DisabledHint(
+                    stringResource(
+                        Res.string.questList_disabled_in_country,
+                        displayCountry
+                    )
+                )
             }
             if (item.questType.defaultDisabledMessage != null) {
                 DisabledHint(stringResource(Res.string.questList_disabled_by_default))
             }
         }
         Box(
-            modifier = Modifier.width(64.dp).fillMaxHeight(),
+            modifier = Modifier
+                .width(64.dp)
+                .fillMaxHeight(),
             contentAlignment = Alignment.Center
         ) {
             Checkbox(
@@ -97,9 +108,9 @@ fun QuestSelectionRow(
 private fun DisabledHint(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.body2,
+        style = MaterialTheme.typography.bodyMedium,
         fontStyle = FontStyle.Italic,
-        color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
+        color = LocalContentColor.current.copy(alpha = 0.6f),
     )
 }
 
@@ -109,7 +120,7 @@ private fun QuestSelectionRowPreview() {
     var selected by remember { mutableStateOf(true) }
 
     QuestSelectionRow(
-        item = QuestSelection(AddRoadSurface(), selected, false),
+        item = QuestSelection(AddGenericLong(Elements()), selected, false),
         onToggleSelection = { selected = !selected },
         displayCountry = "Atlantis",
     )

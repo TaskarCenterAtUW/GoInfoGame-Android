@@ -2,9 +2,9 @@ package de.westnordost.streetcomplete.ui.common
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier

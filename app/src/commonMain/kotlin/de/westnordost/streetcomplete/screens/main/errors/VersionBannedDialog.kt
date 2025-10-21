@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.errors
 
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.version_banned_message

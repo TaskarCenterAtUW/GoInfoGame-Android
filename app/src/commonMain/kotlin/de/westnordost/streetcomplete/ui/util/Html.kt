@@ -1,7 +1,7 @@
 package de.westnordost.streetcomplete.ui.util
 
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -29,13 +29,13 @@ import de.westnordost.streetcomplete.util.html.HtmlTextNode
 fun List<HtmlNode>.toAnnotatedString(
     textLinkStyles: TextLinkStyles = TextLinkStyles(
         style = SpanStyle(
-            color = MaterialTheme.colors.primary,
+            color = MaterialTheme.colorScheme.primary,
             textDecoration = TextDecoration.Underline
         ),
         focusedStyle = SpanStyle(
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colorScheme.secondary,
         )
-    )
+    ),
 ): AnnotatedString {
     val textStyle = LocalTextStyle.current
     val textMeasurer = rememberTextMeasurer()
@@ -55,7 +55,7 @@ fun List<HtmlNode>.toAnnotatedString(
 private fun AnnotatedString.Builder.append(
     nodes: List<HtmlNode>,
     bulletWidth: TextUnit,
-    textLinkStyles: TextLinkStyles
+    textLinkStyles: TextLinkStyles,
 ) {
     nodes.forEachIndexed { i, node ->
         val nextNode = nodes.getOrNull(i + 1)
@@ -89,9 +89,11 @@ private fun AnnotatedString.Builder.append(
         "h1", "h2", "h3", "h4", "h5", "h6", "p", "div" -> {
             ParagraphStyle()
         }
+
         "blockquote" -> {
             ParagraphStyle(textIndent = TextIndent(indent.sp, indent.sp))
         }
+
         "li" -> {
             ParagraphStyle(
                 textIndent = TextIndent(
@@ -100,6 +102,7 @@ private fun AnnotatedString.Builder.append(
                 )
             )
         }
+
         else -> null
     }
     if (paragraph != null) {
@@ -115,28 +118,46 @@ private fun AnnotatedString.Builder.append(
             val size = sizes[element.tag.last().digitToInt() - 1]
             SpanStyle(fontWeight = FontWeight.Bold, fontSize = TextUnit(size, TextUnitType.Em))
         }
+
         "b", "strong" ->
             SpanStyle(fontWeight = FontWeight.Bold)
+
         "i", "em", "dfn", "cite", "var" ->
             SpanStyle(fontStyle = FontStyle.Italic)
+
         "s", "strike", "del" ->
             SpanStyle(textDecoration = TextDecoration.LineThrough)
+
         "u", "ins" ->
             SpanStyle(textDecoration = TextDecoration.Underline)
+
         "tt", "code", "kbd", "samp" ->
             SpanStyle(fontFamily = FontFamily.Monospace, background = Color(0x33bbbbbb))
+
         "sup" ->
-            SpanStyle(baselineShift = BaselineShift.Superscript, fontSize = TextUnit(0.8f, TextUnitType.Em))
+            SpanStyle(
+                baselineShift = BaselineShift.Superscript,
+                fontSize = TextUnit(0.8f, TextUnitType.Em)
+            )
+
         "sub" ->
-            SpanStyle(baselineShift = BaselineShift.Subscript, fontSize = TextUnit(0.8f, TextUnitType.Em))
+            SpanStyle(
+                baselineShift = BaselineShift.Subscript,
+                fontSize = TextUnit(0.8f, TextUnitType.Em)
+            )
+
         "big" ->
             SpanStyle(fontSize = TextUnit(1.25f, TextUnitType.Em))
+
         "small" ->
             SpanStyle(fontSize = TextUnit(0.8f, TextUnitType.Em))
+
         "mark" ->
             SpanStyle(background = Color.Yellow)
+
         "span" ->
             SpanStyle()
+
         else -> null
     }
     if (span != null) pushStyle(span)
@@ -156,11 +177,17 @@ private fun AnnotatedString.Builder.append(
 }
 
 private fun AnnotatedString.Builder.tryPopAll() {
-    try { pop(0) } catch (_: Exception) {}
+    try {
+        pop(0)
+    } catch (_: Exception) {
+    }
 }
 
 private fun AnnotatedString.Builder.tryPop() {
-    try { pop() } catch (_: Exception) {}
+    try {
+        pop()
+    } catch (_: Exception) {
+    }
 }
 
 private fun HtmlNode.isBlockElement(): Boolean =

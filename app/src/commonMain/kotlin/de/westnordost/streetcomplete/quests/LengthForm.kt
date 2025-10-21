@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Button
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +29,6 @@ import de.westnordost.streetcomplete.ui.common.LengthFeetInchesInput
 import de.westnordost.streetcomplete.ui.common.LengthMetersInput
 import de.westnordost.streetcomplete.ui.common.MeasurementIcon
 import de.westnordost.streetcomplete.ui.common.SelectButton
-import de.westnordost.streetcomplete.ui.theme.extraLargeInput
-import de.westnordost.streetcomplete.ui.theme.largeInput
 import de.westnordost.streetcomplete.ui.util.rememberSerializable
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -75,7 +73,7 @@ fun LengthForm(
 
             when (selectedUnit) {
                 LengthUnit.METER -> {
-                    ProvideTextStyle(MaterialTheme.typography.extraLargeInput) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
                         LengthMetersInput(
                             length = length as? Length.Meters,
                             onChange = onChange,
@@ -85,7 +83,7 @@ fun LengthForm(
                     }
                 }
                 LengthUnit.FOOT_AND_INCH -> {
-                    ProvideTextStyle(MaterialTheme.typography.largeInput) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
                         LengthFeetInchesInput(
                             length = length as? Length.FeetAndInches,
                             onChange = onChange,

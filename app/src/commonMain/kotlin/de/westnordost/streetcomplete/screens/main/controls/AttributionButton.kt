@@ -15,13 +15,13 @@ import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ProvideTextStyle
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.material.contentColorFor
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,11 +74,11 @@ public fun AttributionButton(
     userHasMovedMap: Boolean,
     attributions: List<AttributionLink>,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = MaterialTheme.typography.body2,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     textLinkStyles: TextLinkStyles? = null,
     popupEndPadding: Dp = 0.dp,
     popupShape: Shape = RoundedCornerShape(24.dp),
-    popupColor: Color = MaterialTheme.colors.surface,
+    popupColor: Color = MaterialTheme.colorScheme.surface,
     popupContentColor: Color = contentColorFor(popupColor),
     popupBorder: BorderStroke? = null,
     popupElevation: Dp = 0.dp,
@@ -132,7 +132,6 @@ public fun AttributionButton(
                         color = popupColor,
                         contentColor = popupContentColor,
                         border = popupBorder,
-                        elevation = popupElevation,
                     ) {
                         // the content of the popup should be aligned centered vertically in general, only the
                         // icon button should be in the corner, so that it exactly overlaps the original button

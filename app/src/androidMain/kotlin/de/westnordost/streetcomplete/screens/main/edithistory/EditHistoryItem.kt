@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,7 +23,8 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestHidden
-import de.westnordost.streetcomplete.quests.recycling.AddRecyclingType
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.controls.MapButton
 import de.westnordost.streetcomplete.ui.common.UndoIcon
 import de.westnordost.streetcomplete.ui.theme.selectionBackground
@@ -40,9 +41,9 @@ fun EditHistoryItem(
     modifier: Modifier = Modifier,
 ) {
     val backgroundColor = when {
-        selected -> MaterialTheme.colors.selectionBackground
-        edit.isSynced == true -> MaterialTheme.colors.onSurface.copy(alpha = 0.1f)
-        else -> MaterialTheme.colors.surface
+        selected -> MaterialTheme.colorScheme.selectionBackground
+        edit.isSynced == true -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+        else -> MaterialTheme.colorScheme.surface
     }
     Box(
         contentAlignment = Alignment.Center,
@@ -79,6 +80,6 @@ private fun PreviewEditsColumnItem() {
         onSelect = { selected = !selected },
         onUndo = {},
         modifier = Modifier.width(80.dp),
-        edit = OsmQuestHidden(ElementType.NODE, 1L, AddRecyclingType(), ElementPointGeometry(LatLon(0.0, 0.0)), 1L),
+        edit = OsmQuestHidden(ElementType.NODE, 1L, AddGenericLong(Elements()), ElementPointGeometry(LatLon(0.0, 0.0)), 1L),
     )
 }
