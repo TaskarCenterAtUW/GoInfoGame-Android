@@ -90,6 +90,7 @@ abstract class MainViewModel : ViewModel() {
     abstract val userHasMovedCamera: MutableStateFlow<Boolean>
 
     abstract fun addAttributionsToMap(attribution: Attribution?)
+    abstract var workspaceTitle : MutableStateFlow<String>
 }
 
 data class ShownUrlConfig(val urlConfig: UrlConfig, val alreadyExists: Boolean)

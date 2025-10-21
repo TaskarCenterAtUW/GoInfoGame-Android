@@ -1,5 +1,12 @@
 package de.westnordost.streetcomplete.screens.main
 
+import android.content.res.Configuration
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,13 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -28,8 +36,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,12 +53,13 @@ fun WorkspaceCard(
     onRefreshClick: () -> Unit = {},
     onLayersClick: () -> Unit = {},
     onMenuClick: () -> Unit = {},
+    showProgress: Boolean = false,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(0.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -60,7 +71,10 @@ fun WorkspaceCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Avatar + Texts
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(0.6f)
+            ) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -84,9 +98,9 @@ fun WorkspaceCard(
                     )
                     Text(
                         text = workspaceName,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -94,7 +108,7 @@ fun WorkspaceCard(
             // Action buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp) // spacing between buttons
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Refresh button with badge
                 Box(contentAlignment = Alignment.TopEnd) {
@@ -102,24 +116,42 @@ fun WorkspaceCard(
                         onClick = onRefreshClick,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFFD5D1DB), shape = CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        val rotation = rememberInfiniteTransition()
+                            .animateFloat(
+                                initialValue = 0f,
+                                targetValue = 360f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(
+                                        durationMillis = 1000,
+                                        easing = LinearEasing
+                                    ),
+                                    repeatMode = RepeatMode.Restart
+                                )
+                            ).value
+                        Icon(
+                            Icons.Default.Sync,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = if (showProgress) modifier.rotate(rotation) else modifier
+                        )
                     }
 
                     if (pendingCount > 0) {
                         Box(
                             modifier = Modifier
-                                .offset(x = 4.dp, y = (-4).dp) // position badge top-right
-                                .size(16.dp)
-                                .background(Color.Red, shape = CircleShape),
-                            contentAlignment = Alignment.Center
+                                .offset(x = 6.dp, y = (-6).dp)
+                                .size(20.dp)
+                                .background(Color.Red, CircleShape)
+                                .wrapContentSize(Alignment.Center),
                         ) {
                             Text(
                                 text = pendingCount.toString(),
                                 color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
@@ -129,7 +161,7 @@ fun WorkspaceCard(
                     onClick = onLayersClick,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color(0xFFD5D1DB), shape = CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Layers,
@@ -142,9 +174,13 @@ fun WorkspaceCard(
                     onClick = onMenuClick,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(Color(0xFFD5D1DB), shape = CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
                 ) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -154,5 +190,11 @@ fun WorkspaceCard(
 @Preview()
 @Composable
 private fun PreviewWorkspaceCard() {
+    WorkspaceCard()
+}
+
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun PreviewDarkWorkspaceCard() {
     WorkspaceCard()
 }

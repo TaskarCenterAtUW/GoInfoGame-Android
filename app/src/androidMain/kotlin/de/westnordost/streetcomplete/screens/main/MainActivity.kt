@@ -271,7 +271,7 @@ class MainActivity :
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        viewModel.workspaceTitle.value = intent?.getStringExtra("WORKSPACE_TITLE") ?: ""
         binding.controls.content {
             // color for HUD elements without a background (e.g. scalebar, attribution button)
             CompositionLocalProvider(
@@ -1328,6 +1328,7 @@ class MainActivity :
                     "LONG_FORM",
                     Elements::class.java
                 )
+
             } else {
                 intent?.getParcelableArrayListExtra("LONG_FORM")
             }

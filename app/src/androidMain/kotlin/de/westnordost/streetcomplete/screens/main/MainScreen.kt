@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,9 +19,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -39,7 +36,6 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -245,12 +241,20 @@ fun MainScreen(
             WorkspaceCard(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally),
+                workspaceName = viewModel.workspaceTitle.collectAsState().value,
                 pendingCount = unsyncedEditsCount,
                 onRefreshClick = {
-
+                    if (unsyncedEditsCount > 0) {
+                        if (viewModel.isConnected) {
+                            viewModel.upload()
+                        } else {
+                            context.toast(R.string.offline)
+                        }
+                    }
                 },
                 onLayersClick = onClickImageryLayer,
                 onMenuClick = { showMainMenuDialog = true },
+                showProgress = isUploadingOrDownloading,
             )
             Box(
                 Modifier
@@ -371,7 +375,7 @@ fun MainScreen(
                                 MapButton(
                                     onClick = onClickStopTrackRecording,
 
-                                ) {
+                                    ) {
                                     StopRecordingIcon()
                                 }
                             }
@@ -702,4 +706,8 @@ object PreviewMainViewModel : MainViewModel() {
     override fun addAttributionsToMap(attribution: Attribution?) {
         TODO("Not yet implemented")
     }
+
+    override var workspaceTitle: MutableStateFlow<String>
+        get() = MutableStateFlow("Preview Workspace")
+        set(value) {}
 }

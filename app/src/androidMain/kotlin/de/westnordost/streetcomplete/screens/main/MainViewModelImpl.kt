@@ -408,6 +408,7 @@ class MainViewModelImpl(
     override fun addAttributionsToMap(attribution: Attribution?) {
         this.attribution.value = attribution
     }
+    override var workspaceTitle: MutableStateFlow<String> = MutableStateFlow("Workspace")
 
     // ---------------------------------------------------------------------------------------
 
