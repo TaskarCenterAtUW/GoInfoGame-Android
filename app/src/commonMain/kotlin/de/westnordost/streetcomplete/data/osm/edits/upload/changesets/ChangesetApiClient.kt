@@ -11,8 +11,10 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.header
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
 
@@ -35,10 +37,12 @@ class ChangesetApiClient(
      */
     suspend fun open(tags: Map<String, String>): Long = wrapApiClientExceptions {
         val response = httpClient.put(workspaceConfigProvider.osmBaseUrl + "changeset/create") {
-            headers {
-                append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-            }
+            header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
             workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+
+            header(HttpHeaders.ContentType, "text/xml")
+            header(HttpHeaders.Accept, "text/plain")
+
             setBody(serializer.serialize(tags))
             expectSuccess = true
         }
@@ -58,10 +62,12 @@ class ChangesetApiClient(
     suspend fun close(id: Long): Unit = wrapApiClientExceptions {
         try {
             httpClient.put(workspaceConfigProvider.osmBaseUrl + "changeset/$id/close") {
-                headers {
-                    append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-                }
+                header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
                 workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+
+                header(HttpHeaders.ContentType, "text/xml")
+                header(HttpHeaders.Accept, "text/plain")
+
                 expectSuccess = true
             }
         } catch (e: ClientRequestException) {

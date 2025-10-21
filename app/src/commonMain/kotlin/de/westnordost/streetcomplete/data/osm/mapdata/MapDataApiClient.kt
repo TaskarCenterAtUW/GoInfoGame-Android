@@ -16,6 +16,7 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
 import io.ktor.utils.io.asSource
@@ -59,10 +60,11 @@ class MapDataApiClient(
         try {
             val response =
                 httpClient.post(workspaceConfigProvider.osmBaseUrl + "changeset/$changesetId/upload") {
+                    header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
                     workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
-                    headers {
-                        append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-                    }
+
+                    header(HttpHeaders.ContentType, "application/xml")
+
                     setBody(serializer.serialize(changes, changesetId))
                     expectSuccess = true
                 }
@@ -209,9 +211,7 @@ class MapDataApiClient(
     private suspend fun getMapDataOrNull(query: String): MapData? = wrapApiClientExceptions {
         try {
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + query) {
-                headers {
-                    append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-                }
+                header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
                 expectSuccess = true
             }
             val source = response.bodyAsChannel().asSource().buffered()
