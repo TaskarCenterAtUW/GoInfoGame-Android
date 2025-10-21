@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.data.wrapApiClientExceptions
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -13,10 +14,11 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headers
 
 class ChangesetApiClient(
     private val httpClient: HttpClient,
-    private val baseUrl: String,
+    private val workspaceConfigProvider: WorkspaceConfigProvider,
     private val userAccessTokenSource: UserAccessTokenSource,
     private val serializer: ChangesetApiSerializer,
 ) {
@@ -32,8 +34,11 @@ class ChangesetApiClient(
      * @return the id of the changeset
      */
     suspend fun open(tags: Map<String, String>): Long = wrapApiClientExceptions {
-        val response = httpClient.put(baseUrl + "changeset/create") {
-            userAccessTokenSource.accessToken?.let { bearerAuth(it) }
+        val response = httpClient.put(workspaceConfigProvider.osmBaseUrl + "changeset/create") {
+            headers {
+                append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+            }
+            workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
             setBody(serializer.serialize(tags))
             expectSuccess = true
         }
@@ -52,8 +57,11 @@ class ChangesetApiClient(
      */
     suspend fun close(id: Long): Unit = wrapApiClientExceptions {
         try {
-            httpClient.put(baseUrl + "changeset/$id/close") {
-                userAccessTokenSource.accessToken?.let { bearerAuth(it) }
+            httpClient.put(workspaceConfigProvider.osmBaseUrl + "changeset/$id/close") {
+                headers {
+                    append("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                }
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                 expectSuccess = true
             }
         } catch (e: ClientRequestException) {

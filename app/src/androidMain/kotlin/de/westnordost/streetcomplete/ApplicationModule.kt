@@ -42,6 +42,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val appModule = module {
@@ -52,7 +53,19 @@ val appModule = module {
     single { DatabaseLogger(get()) }
     single { SoundFx(androidContext()) }
     single { Json { ignoreUnknownKeys = true } }
-    single {
+    single(named("osmClient")) {
+        HttpClient {
+            defaultRequest {
+                userAgent(ApplicationConstants.USER_AGENT)
+            }
+            install(ContentEncoding) {
+                gzip()
+                deflate()
+                identity()
+            }
+        }
+    }
+    single{
         HttpClient {
             install(ContentNegotiation) {
                 json(Json {
@@ -85,7 +98,7 @@ val appModule = module {
                         if (!preferences.workspaceLogin)
                             return@refreshTokens null
                         val newAccessToken =
-                            refreshJwtToken(httpClient, preferences, environmentManager)
+                            refreshJwtToken(preferences, environmentManager)
 
                         if (newAccessToken == null) {
                             preferences.workspaceLogin = false
@@ -125,9 +138,8 @@ val appModule = module {
 }
 
 suspend fun refreshJwtToken(
-    client: HttpClient,
     preferences: Preferences,
-    environmentManager: EnvironmentManager
+    environmentManager: EnvironmentManager,
 ): String? {
     return try {
 
@@ -144,7 +156,7 @@ suspend fun refreshJwtToken(
         val response =
             tempClient.post(environmentManager.currentEnvironment.loginUrl + "/refresh-token") {
                 setBody(preferences.workspaceRefreshToken)
-                headers{
+                headers {
                     contentType(ContentType.Application.Json)
                 }
             }
