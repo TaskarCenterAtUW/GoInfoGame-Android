@@ -356,6 +356,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             PinMode.MULTISELECT -> {
                questPinsManager?.getQuestKey(properties)?.let {
                    listener?.onClickedForMultiSelect(it, properties)
+                   questPinsManager?.onNewScreenPosition(true)
                }
             }
 
@@ -542,7 +543,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
                 questPinsManager?.onNewScreenPosition()
             } else if (pinPositions.size == 1) {
                 questPinsManager?.multiSelectQuestType = title
-                questPinsManager?.onNewScreenPosition()
+                questPinsManager?.onNewScreenPosition(true)
             }
         }
     }
@@ -551,7 +552,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         pinMode = PinMode.QUESTS
         questPinsManager?.multiSelectQuestType = null
         multiSelectPinMapComponent?.clear()
-        questPinsManager?.onNewScreenPosition()
+        questPinsManager?.onNewScreenPosition(true)
     }
 
     fun hideNonHighlightedPins(questKey: QuestKey? = null) {
