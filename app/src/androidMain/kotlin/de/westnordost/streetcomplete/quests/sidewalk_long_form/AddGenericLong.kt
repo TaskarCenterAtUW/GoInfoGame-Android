@@ -46,7 +46,7 @@ class AddGenericLong(val item: Elements) :
     override val achievements = listOf(PEDESTRIAN)
 
     override val name: String
-        get() = "AddGenericLong${item.elementType}"
+        get() = item.elementType!!
 
     override fun getHighlightedElements(element: Element, getMapData: () -> MapDataWithGeometry) =
         getMapData().filter(

@@ -17,7 +17,7 @@ class UserDataController(
     private val listeners = Listeners<UserDataSource.Listener>()
 
     override val userId: Long get() = prefs.userId
-    override val userName: String? get() = prefs.userName
+    override val userName: String? get() = prefs.workspaceUserName
 
     override var unreadMessagesCount: Int
         get() = prefs.userUnreadMessages

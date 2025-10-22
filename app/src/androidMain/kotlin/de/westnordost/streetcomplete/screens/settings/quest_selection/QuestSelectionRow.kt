@@ -72,8 +72,14 @@ fun QuestSelectionRow(
                 .weight(0.1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            var title = ""
+            title = if (item.questType is AddGenericLong){
+                item.questType.item.elementType!!
+            }else{
+                "Create Note"
+            }
             Text(
-                text = stringResource(item.questType.title),
+                text = title,
                 modifier = Modifier.alpha(alpha),
                 style = MaterialTheme.typography.bodyLarge,
             )

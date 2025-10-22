@@ -7,7 +7,6 @@ import androidx.core.graphics.Insets
 import com.google.gson.JsonObject
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.screens.main.map.createIconBitmap
 import de.westnordost.streetcomplete.screens.main.map.createPinBitmap
 import de.westnordost.streetcomplete.screens.main.map.maplibre.MapImages
 import de.westnordost.streetcomplete.screens.main.map.maplibre.clear
@@ -30,8 +29,6 @@ import org.maplibre.android.style.expressions.Expression.gte
 import org.maplibre.android.style.expressions.Expression.literal
 import org.maplibre.android.style.expressions.Expression.log2
 import org.maplibre.android.style.expressions.Expression.lte
-import org.maplibre.android.style.expressions.Expression.match
-import org.maplibre.android.style.expressions.Expression.rgb
 import org.maplibre.android.style.expressions.Expression.sum
 import org.maplibre.android.style.expressions.Expression.toNumber
 import org.maplibre.android.style.expressions.Expression.zoom
@@ -45,11 +42,9 @@ import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
 import org.maplibre.android.style.layers.PropertyFactory.circleTranslate
 import org.maplibre.android.style.layers.PropertyFactory.circleTranslateAnchor
 import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.iconColor
 import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
 import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.PropertyFactory.iconOffset
-import org.maplibre.android.style.layers.PropertyFactory.iconOpacity
 import org.maplibre.android.style.layers.PropertyFactory.iconPadding
 import org.maplibre.android.style.layers.PropertyFactory.iconSize
 import org.maplibre.android.style.layers.PropertyFactory.symbolSortKey
@@ -128,7 +123,7 @@ class PinsMapComponent(
             .withFilter(
                 all(
                     gt(zoom(), CLUSTER_MAX_ZOOM),
-                     eq(get("enabled"), literal(true))
+                    eq(get("enabled"), literal(true))
                 )
             )
             .withProperties(

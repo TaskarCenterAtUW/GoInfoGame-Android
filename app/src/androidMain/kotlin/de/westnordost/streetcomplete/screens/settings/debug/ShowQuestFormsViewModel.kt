@@ -66,7 +66,7 @@ class ShowQuestFormsViewModelImpl(
             quests
         } else {
             quests.filter { quest ->
-                titles[quest.name]?.lowercase()?.containsAll(words) == true
+                titles[quest.name]?.lowercase()?.containsAll(words) == true || quest.name.lowercase().containsAll(words)
             }
         }
     }

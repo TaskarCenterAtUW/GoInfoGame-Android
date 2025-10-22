@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.no_search_results
 import de.westnordost.streetcomplete.ui.common.BackIcon
@@ -138,17 +139,23 @@ private fun QuestList(
             Column(Modifier.clickable { onClickQuestType(item) }) {
                 if (index > 0) Divider()
                 Row(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    var title = ""
+                    title = if (item is AddGenericLong){
+                        item.item.elementType!!
+                    }else{
+                        "Create Note"
+                    }
                     Image(
                         painter = painterResource(item.icon),
                         contentDescription = item.name,
                         modifier = Modifier.size(32.dp),
                     )
                     Text(
-                        text = stringResource(item.title),
+                        text = title,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }

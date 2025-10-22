@@ -1,12 +1,9 @@
 package de.westnordost.streetcomplete.screens.main.map.components
 
-import android.animation.ValueAnimator
 import android.content.Context
-import android.view.animation.OvershootInterpolator
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import com.google.gson.JsonObject
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
@@ -39,7 +36,7 @@ class MultiSelectPinMapComponent(
     private val map: MapLibreMap,
     private val mapImages: MapImages,
     private val onClickPin: (properties: Map<String, String>) -> Unit,
-    ) : DefaultLifecycleObserver {
+) : DefaultLifecycleObserver {
 
     private val selectedPinsSource = GeoJsonSource("multi-selected-pins-source")
 
@@ -69,10 +66,19 @@ class MultiSelectPinMapComponent(
     /** Show selected pins with the given icon at the given positions. "Selected pins" are not
      *  related to pins, they are just visuals that are displayed on top of the normal pins and look
      *  highlighted/selected. */
-    suspend fun set(@DrawableRes iconResId: Int, pinPositions: Collection<Pair<LatLon, Map<String, String>>>) {
+    suspend fun set(
+        @DrawableRes iconResId: Int,
+        pinPositions: Collection<Pair<LatLon, Map<String, String>>>,
+    ) {
         val combinedIconId = iconResId * 100000 + R.drawable.checkbox
         val iconName = "pin_with_tick_${combinedIconId}"
-        mapImages.addOnce(combinedIconId, iconName) { createPinBitmap(context, iconResId, R.drawable.checkbox) to false }
+        mapImages.addOnce(combinedIconId, iconName) {
+            createPinBitmap(
+                context,
+                iconResId,
+                R.drawable.checkbox
+            ) to false
+        }
         val points = pinPositions.map { (latLon, properties) ->
             val p = JsonObject()
             properties.forEach { (key, value) ->
@@ -102,14 +108,9 @@ class MultiSelectPinMapComponent(
         return true
     }
 
-    private fun animatePin(value: Float) {
-        map.style?.getLayerAs<SymbolLayer>("multi-selected-pins-layer")?.setProperties(
-            iconSize(value),
-        )
-    }
-
     /** Clear the display of any selected pins */
-    @UiThread fun clear() {
+    @UiThread
+    fun clear() {
         selectedPinsSource.clear()
     }
 }

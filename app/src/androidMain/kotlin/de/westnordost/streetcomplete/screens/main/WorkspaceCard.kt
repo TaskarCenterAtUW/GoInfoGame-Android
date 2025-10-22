@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,6 +54,7 @@ fun WorkspaceCard(
     onRefreshClick: () -> Unit = {},
     onLayersClick: () -> Unit = {},
     onMenuClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     showProgress: Boolean = false,
 ) {
     Card(
@@ -78,14 +80,17 @@ fun WorkspaceCard(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
+                        .shadow(8.dp, CircleShape)
                         .background(Color(0xFF5C2D91), shape = CircleShape),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Avatar",
-                        tint = Color.White
-                    )
+                    IconButton(onClick = onProfileClick) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Avatar",
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -116,7 +121,11 @@ fun WorkspaceCard(
                         onClick = onRefreshClick,
                         modifier = Modifier
                             .size(40.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
+                            .shadow(8.dp, CircleShape)
+                            .background(
+                                MaterialTheme.colorScheme.secondaryContainer,
+                                shape = CircleShape
+                            )
                     ) {
                         val rotation = rememberInfiniteTransition()
                             .animateFloat(
@@ -161,7 +170,11 @@ fun WorkspaceCard(
                     onClick = onLayersClick,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
+                        .shadow(8.dp, CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            shape = CircleShape
+                        )
                 ) {
                     Icon(
                         Icons.Default.Layers,
@@ -174,7 +187,11 @@ fun WorkspaceCard(
                     onClick = onMenuClick,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape)
+                        .shadow(8.dp, CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            shape = CircleShape
+                        )
                 ) {
                     Icon(
                         Icons.Default.MoreVert,

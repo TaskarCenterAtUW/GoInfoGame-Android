@@ -24,6 +24,7 @@ class UserLoginController(
     fun logOut() {
         prefs.workspaceToken = null
         prefs.removeOAuth1Data()
+        prefs.workspaceLogin = false
         listeners.forEach { it.onLoggedOut() }
     }
 

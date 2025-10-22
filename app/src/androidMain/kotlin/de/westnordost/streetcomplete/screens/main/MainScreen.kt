@@ -158,7 +158,6 @@ fun MainScreen(
 
     val showZoomButtons by viewModel.showZoomButtons.collectAsState()
 
-    val isRequestingLogin by viewModel.isRequestingLogin.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
@@ -254,6 +253,9 @@ fun MainScreen(
                 },
                 onLayersClick = onClickImageryLayer,
                 onMenuClick = { showMainMenuDialog = true },
+                onProfileClick = {
+                    context.startActivity(Intent(context, UserActivity::class.java))
+                },
                 showProgress = isUploadingOrDownloading,
             )
             Box(
@@ -262,15 +264,15 @@ fun MainScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .onGloballyPositioned { screen = it.boundsInRoot() }
             ) {
-                // top-start controls
-                Box(Modifier.align(Alignment.TopStart)) {
-                    // stars counter
-                    if (isUploadingOrDownloading)
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp),
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                }
+                // // top-start controls
+                // Box(Modifier.align(Alignment.TopStart)) {
+                //     // stars counter
+                //     if (isUploadingOrDownloading)
+                //         CircularProgressIndicator(
+                //             modifier = Modifier.size(48.dp),
+                //             color = MaterialTheme.colorScheme.secondary
+                //         )
+                // }
 
                 // top-end controls
                 // Row(
@@ -484,17 +486,6 @@ fun MainScreen(
     }
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
-    }
-
-    if (isRequestingLogin) {
-        RequestLoginDialog(
-            onDismissRequest = { viewModel.finishRequestingLogin() },
-            onConfirmed = {
-                val intent = Intent(context, UserActivity::class.java)
-                intent.putExtra(UserActivity.EXTRA_LAUNCH_AUTH, true)
-                context.startActivity(intent)
-            }
-        )
     }
 
     AnimatedScreenVisibility(showTeamModeWizard) {

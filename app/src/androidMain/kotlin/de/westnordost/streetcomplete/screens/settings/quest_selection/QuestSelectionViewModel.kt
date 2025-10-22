@@ -208,7 +208,7 @@ class QuestSelectionViewModelImpl(
             quests
         } else {
             quests.filter { quest ->
-                titles[quest.questType.name]?.lowercase()?.containsAll(words) == true
+                titles[quest.questType.name]?.lowercase()?.containsAll(words) == true || quest.questType.name.lowercase().containsAll(words)
             }
         }
     }
