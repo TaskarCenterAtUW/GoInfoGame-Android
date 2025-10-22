@@ -9,6 +9,7 @@ interface OsmQuestDaoEntry {
     val elementType: ElementType
     val elementId: Long
     val position: LatLon
+    val workspaceId : Int
 }
 
 val OsmQuestDaoEntry.key get() =

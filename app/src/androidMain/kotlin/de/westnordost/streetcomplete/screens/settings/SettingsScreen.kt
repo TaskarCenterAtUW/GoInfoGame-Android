@@ -186,14 +186,14 @@ fun SettingsScreen(
                 // }
             }
 
-            // PreferenceCategory(stringResource(Res.string.pref_category_communication)) {
-            //     Preference(
-            //         name = stringResource(Res.string.pref_title_sync2),
-            //         onClick = { showAutosyncSelect = true }
-            //     ) {
-            //         Text(stringResource(autosync.title))
-            //     }
-            // }
+            PreferenceCategory(stringResource(Res.string.pref_category_communication)) {
+                Preference(
+                    name = stringResource(Res.string.pref_title_sync2),
+                    onClick = { showAutosyncSelect = true }
+                ) {
+                    Text(stringResource(autosync.title))
+                }
+            }
 
             PreferenceCategory(stringResource(Res.string.pref_category_display)) {
 

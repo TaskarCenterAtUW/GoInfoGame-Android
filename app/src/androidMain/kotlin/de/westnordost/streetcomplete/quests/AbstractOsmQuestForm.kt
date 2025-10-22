@@ -273,7 +273,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 ArrayList(quests).let {
                     if (it.isNotEmpty()) {
 
-                        val elements = mutableListOf<Element>()
+                        val elements = mutableListOf<Pair<Element, ElementGeometry>>()
                         for (msQuest in it) {
                             if (msQuest is OsmQuest) {
                                 val element = withContext(Dispatchers.IO) {
@@ -282,16 +282,16 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                                         msQuest.elementId
                                     )
                                 } ?: return@launch
-                                elements.add(element)
+                                elements.add(element to msQuest.geometry)
                             }
                         }
 
                         for (element in elements) {
                             solve(
                                 UpdateElementTagsAction(
-                                    element,
+                                    element.first,
                                     createQuestChanges(answer, extraTagList)
-                                )
+                                ), element.second
                             )
                         }
                     } else {
@@ -299,7 +299,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             UpdateElementTagsAction(
                                 element,
                                 createQuestChanges(answer, extraTagList)
-                            )
+                            ), geometry
                         )
                     }
                 }
@@ -344,14 +344,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         composeNote()
     }
 
-    private fun onShopReplacementSelected(feature: Feature) {
-        viewLifecycleScope.launch {
-            val builder = StringMapChangesBuilder(element.tags)
-            feature.applyReplacePlaceTo(builder)
-            solve(UpdateElementTagsAction(element, builder.create()))
-        }
-    }
-
     protected fun deletePoiNode() {
         AlertDialog.Builder(requireContext())
             .setMessage(R.string.osm_element_gone_description)
@@ -362,11 +354,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     private fun onDeletePoiNodeConfirmed() {
         viewLifecycleScope.launch {
-            solve(DeletePoiNodeAction(element as Node))
+            solve(DeletePoiNodeAction(element as Node), geometry)
         }
     }
 
-    private suspend fun solve(action: ElementEditAction) {
+    private suspend fun solve(action: ElementEditAction, geometry: ElementGeometry) {
         setLocked(true)
         val isSurvey = surveyChecker.checkIsSurvey(geometry)
         if (!isSurvey && !confirmIsSurvey(requireContext())) {

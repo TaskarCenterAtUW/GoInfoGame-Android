@@ -9,6 +9,7 @@ object OsmQuestTable {
         const val ELEMENT_TYPE = "element_type"
         const val LATITUDE = "latitude"
         const val LONGITUDE = "longitude"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     const val CREATE = """
@@ -18,6 +19,7 @@ object OsmQuestTable {
             ${Columns.ELEMENT_TYPE} varchar(255) NOT NULL,
             ${Columns.LATITUDE} double NOT NULL,
             ${Columns.LONGITUDE} double NOT NULL,
+            ${Columns.WORKSPACE_ID} int NOT NULL,
             PRIMARY KEY (
                 ${Columns.ELEMENT_TYPE},
                 ${Columns.ELEMENT_ID},

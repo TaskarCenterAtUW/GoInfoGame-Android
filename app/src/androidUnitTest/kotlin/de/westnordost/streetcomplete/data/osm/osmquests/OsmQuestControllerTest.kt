@@ -263,7 +263,7 @@ private fun questEntry(
     elementId: Long = 1,
     questTypeName: String = "ApplicableQuestType",
     position: LatLon = p()
-): OsmQuestDaoEntry = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, position)
+): OsmQuestDaoEntry = BasicOsmQuestDaoEntry(elementType, elementId, questTypeName, position, 1)
 
 private object ApplicableQuestType : TestQuestTypeA() {
     override fun isApplicableTo(element: Element) = true

@@ -5,10 +5,10 @@ import org.koin.dsl.module
 
 private const val STATISTICS_BACKEND_URL = "https://streetcomplete.app/statistics/"
 val statisticsModule = module {
-    factory(named("EditTypeStatistics")) { EditTypeStatisticsDao(get(), EditTypeStatisticsTable.NAME) }
+    factory(named("EditTypeStatistics")) { EditTypeStatisticsDao(get(), EditTypeStatisticsTable.NAME, get()) }
     factory(named("CountryStatistics")) { CountryStatisticsDao(get(), CountryStatisticsTable.NAME) }
 
-    factory(named("EditTypeStatisticsCurrentWeek")) { EditTypeStatisticsDao(get(), EditTypeStatisticsTable.NAME_CURRENT_WEEK) }
+    factory(named("EditTypeStatisticsCurrentWeek")) { EditTypeStatisticsDao(get(), EditTypeStatisticsTable.NAME_CURRENT_WEEK, get()) }
     factory(named("CountryStatisticsCurrentWeek")) { CountryStatisticsDao(get(), CountryStatisticsTable.NAME_CURRENT_WEEK) }
 
     factory { ActiveDatesDao(get()) }
