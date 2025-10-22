@@ -19,8 +19,6 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     private val binding by contentViewBinding(QuestLongFormListBinding::bind)
     protected lateinit var adapter: LongFormAdapter<T>
 
-    var answerMap: MutableMap<Int, Pair<String, String>> = mutableMapOf()
-
     override val defaultExpanded = false
 
     protected abstract val items: T

@@ -100,7 +100,7 @@ class AddGenericLong(val item: Elements) :
     override fun isApplicableTo(element: Element): Boolean =
         createRoadsFilter(item.questQuery!!, item.elementType!!).matches(element)
 
-    override fun createForm() = AddGenericLongForm(item.quests)
+    override fun createForm() = AddGenericLongForm.newInstance(item.quests)
 
 }
 

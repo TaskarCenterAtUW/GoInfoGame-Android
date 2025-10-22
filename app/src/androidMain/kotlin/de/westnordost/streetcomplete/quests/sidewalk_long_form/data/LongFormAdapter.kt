@@ -50,8 +50,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             notifyDataSetChanged()
         }
 
-    var cellLayoutId = R.layout.cell_long_form_item
-
     enum class ViewType(val value: Int) {
         EXCLUSIVE(1),
         NUMERIC(2),

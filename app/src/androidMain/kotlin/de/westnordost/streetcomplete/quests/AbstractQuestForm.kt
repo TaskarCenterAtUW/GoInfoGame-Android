@@ -1,11 +1,9 @@
 package de.westnordost.streetcomplete.quests
 
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.annotation.AnyThread
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
@@ -32,7 +30,6 @@ import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ResText
 import de.westnordost.streetcomplete.view.Text
 import de.westnordost.streetcomplete.view.setText
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
@@ -64,7 +61,8 @@ abstract class AbstractQuestForm :
 
     private var startedOnce = false
 
-    private var _countryInfo: CountryInfo? = null // lazy but resettable because based on lateinit var
+    private var _countryInfo: CountryInfo? =
+        null // lazy but resettable because based on lateinit var
         get() {
             if (field == null) {
                 field = countryInfos.getByLocation(
@@ -78,10 +76,11 @@ abstract class AbstractQuestForm :
     protected val countryInfo get() = _countryInfo!!
 
     /** either DE or US-NY (or null), depending on what countryBoundaries returns */
-    protected val countryOrSubdivisionCode: String? get() {
-        val latLon = geometry.center
-        return countryBoundaries.value.getIds(latLon.longitude, latLon.latitude).firstOrNull()
-    }
+    protected val countryOrSubdivisionCode: String?
+        get() {
+            val latLon = geometry.center
+            return countryBoundaries.value.getIds(latLon.longitude, latLon.latitude).firstOrNull()
+        }
 
     // passed in parameters
     override lateinit var questKey: QuestKey
@@ -108,7 +107,11 @@ abstract class AbstractQuestForm :
         _countryInfo = null // reset lazy field
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
         _binding = FragmentQuestAnswerBinding.inflate(inflater, container, false)
         contentLayoutResId?.let { setContentView(it) }
         return binding.root
@@ -162,7 +165,7 @@ abstract class AbstractQuestForm :
         binding.titleLabel.text = text
     }
 
-    protected fun setHideQuestOnClick(hideQuest : () -> Unit){
+    protected fun setHideQuestOnClick(hideQuest: () -> Unit) {
         binding.hideButton.setOnClickListener {
             onClickHide { hideQuest.invoke() }
         }
@@ -202,7 +205,8 @@ abstract class AbstractQuestForm :
     protected fun setButtonPanelAnswers(buttonPanelAnswers: List<IAnswerItem>) {
         binding.buttonPanel.removeAllViews()
         for (buttonPanelAnswer in buttonPanelAnswers) {
-            val button = ButtonPanelButtonBinding.inflate(layoutInflater, binding.buttonPanel, true).root
+            val button =
+                ButtonPanelButtonBinding.inflate(layoutInflater, binding.buttonPanel, true).root
             button.setText(buttonPanelAnswer.title)
             button.setOnClickListener { buttonPanelAnswer.action() }
         }
@@ -220,14 +224,15 @@ abstract class AbstractQuestForm :
 
     protected open fun isFormComplete(): Boolean = false
 
-    @AnyThread override fun onMapOrientation(rotation: Double, tilt: Double) {
+    @AnyThread
+    override fun onMapOrientation(rotation: Double, tilt: Double) {
         // default empty implementation
     }
 
     protected open fun onClickOk() {}
 
     protected inline fun <reified T : ViewBinding> contentViewBinding(
-        noinline viewBinder: (View) -> T
+        noinline viewBinder: (View) -> T,
     ) = FragmentViewBindingPropertyDelegate(this, viewBinder, R.id.content)
 
     companion object {
@@ -237,7 +242,13 @@ abstract class AbstractQuestForm :
         private const val ARG_MAP_ROTATION = "map_rotation"
         private const val ARG_MAP_TILT = "map_tilt"
 
-        fun createArguments(questKey: QuestKey, questType: QuestType, geometry: ElementGeometry, rotation: Double, tilt: Double) = bundleOf(
+        fun createArguments(
+            questKey: QuestKey,
+            questType: QuestType,
+            geometry: ElementGeometry,
+            rotation: Double,
+            tilt: Double,
+        ) = bundleOf(
             ARG_QUEST_KEY to Json.encodeToString(questKey),
             ARG_GEOMETRY to Json.encodeToString(geometry),
             ARG_QUESTTYPE to questType.name,

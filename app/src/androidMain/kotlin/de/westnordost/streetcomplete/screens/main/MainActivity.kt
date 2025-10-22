@@ -1024,6 +1024,9 @@ class MainActivity :
         }
         clearHighlighting()
         unfreezeMap()
+        multiSelectPoints.clear()
+        multiSelectQuests.clear()
+        mapFragment?.clearMultiSelect()
         mapFragment?.endFocus()
         sheetBackPressedCallback.isEnabled = false
     }
