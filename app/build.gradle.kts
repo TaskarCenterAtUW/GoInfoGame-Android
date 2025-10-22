@@ -1,6 +1,5 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
@@ -9,8 +8,8 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "61.3"
-val appVersionCode = 6104
+val appVersionName = "1.0.4"
+val appVersionCode = 6
 
 /** Localizations the app should be available in */
 val bcp47ExportLanguages = setOf(
@@ -37,7 +36,7 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform") version "2.2.20"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
-    id("com.android.application") version "8.11.2"
+    id("com.android.application") version "8.13.0"
     id("org.jetbrains.compose") version "1.9.0"
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
@@ -275,7 +274,7 @@ android {
     defaultConfig {
         applicationId = "net.opentoall.aviv.scoutroute"
         minSdk = 25
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -307,12 +306,12 @@ android {
             isMinifyEnabled = true
             isShrinkResources = false
             // don't use proguard-android-optimize.txt, it is too aggressive, it is more trouble than it is worth
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             testProguardFile("test-proguard-rules.pro")
         }
         getByName("debug") {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
@@ -339,7 +338,7 @@ android {
     }
 
     dependencies {
-        debugImplementation("androidx.compose.ui:ui-tooling:1.9.2")
+        debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
     }
 }
 

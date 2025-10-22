@@ -56,7 +56,6 @@
 
     <RadioButton
         android:id="@+id/leaveNoteRadioButton"
-        android:text="@string/quest_streetName_answer_noProperStreet_leaveNote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 

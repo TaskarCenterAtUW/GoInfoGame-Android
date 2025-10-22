@@ -373,7 +373,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    handleClick(
+                    handleSelection(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
                         index
@@ -383,14 +383,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
-                    val mainIndex =
-                        givenItems.indexOfFirst { it.questId == item.questId }
-                    givenItems[mainIndex].selectedIndex?.remove(index)
-                    givenItems[mainIndex].userInput = null
+                    handleDeselection(
+                        item.questId!!,
+                        item.questAnswerChoices?.get(index)?.value!!,
+                        index
+                    )
                     handleChoiceFollowUp()
-                    if (item.questId in needRefreshIds) {
-                        items = givenItems
-                    }
                 }
 
                 fun handleChoiceFollowUp() {
@@ -462,7 +460,32 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
         }
 
-        fun handleClick(
+        fun handleDeselection(
+            questId: Int,
+            userInput: String,
+            imageIndex: Int
+        ) {
+            val index =
+                givenItems.indexOfFirst { it.questId == questId }
+            if (allowMultiChoice) {
+                val multiple = givenItems[index].userInput as? UserInput.Multiple
+
+                multiple?.let {
+                    if (!it.isEmpty()) {
+                        multiple.answers.remove(userInput)
+                    }
+                }
+                givenItems[index].userInput = multiple
+            } else {
+                givenItems[index].userInput = null
+            }
+            givenItems[index].selectedIndex?.remove(imageIndex)
+            if (questId in needRefreshIds) {
+                items = givenItems
+            }
+        }
+
+        fun handleSelection(
             questId: Int,
             userInput: String,
             imageIndex: Int,

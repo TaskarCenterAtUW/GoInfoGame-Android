@@ -1,4 +1,4 @@
-rootProject.name = "StreetComplete"
+rootProject.name = "AVIVScoutRoute"
 
 pluginManagement {
     repositories {
