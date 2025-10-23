@@ -57,7 +57,6 @@ class SearchFeaturesDialog(
 
         setView(binding.root)
 
-        window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
         updateSearchResults()
     }

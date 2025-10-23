@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -213,7 +214,7 @@ fun MainScreen(
         }
     }
 
-    Box(modifier.windowInsetsPadding(WindowInsets.navigationBars)) {
+    Box(modifier) {
         if (isCreateNodeEnabled) {
             Crosshair()
         }
@@ -237,33 +238,37 @@ fun MainScreen(
                 .fillMaxSize()
                 .onGloballyPositioned { screen = it.boundsInRoot() }
         ) {
-            WorkspaceCard(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
-                workspaceName = viewModel.workspaceTitle.collectAsState().value,
-                pendingCount = unsyncedEditsCount,
-                onRefreshClick = {
-                    if (unsyncedEditsCount > 0) {
-                        if (viewModel.isConnected) {
-                            viewModel.upload()
-                        } else {
-                            context.toast(R.string.offline)
-                        }
-                    }
-                },
-                onLayersClick = onClickImageryLayer,
-                onMenuClick = { showMainMenuDialog = true },
-                onProfileClick = {
-                    context.startActivity(Intent(context, UserActivity::class.java))
-                },
-                showProgress = isUploadingOrDownloading,
-            )
+
             Box(
                 Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .onGloballyPositioned { screen = it.boundsInRoot() }
             ) {
+                Column {
+                    WorkspaceCard(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally),
+                        workspaceName = viewModel.workspaceTitle.collectAsState().value,
+                        pendingCount = unsyncedEditsCount,
+                        onRefreshClick = {
+                            if (unsyncedEditsCount > 0) {
+                                if (viewModel.isConnected) {
+                                    viewModel.upload()
+                                } else {
+                                    context.toast(R.string.offline)
+                                }
+                            }
+                        },
+                        onLayersClick = onClickImageryLayer,
+                        onMenuClick = { showMainMenuDialog = true },
+                        onProfileClick = {
+                            context.startActivity(Intent(context, UserActivity::class.java))
+                        },
+                        showProgress = isUploadingOrDownloading,
+                    )
+                }
+
                 // // top-start controls
                 // Box(Modifier.align(Alignment.TopStart)) {
                 //     // stars counter

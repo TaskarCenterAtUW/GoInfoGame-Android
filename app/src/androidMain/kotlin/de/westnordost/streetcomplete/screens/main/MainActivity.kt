@@ -497,6 +497,8 @@ class MainActivity :
             }
         } else if (editHistoryViewModel.isShowingSidebar.value) {
             editHistoryViewModel.hideSidebar()
+        } else if (viewModel.selectedOverlay.value != null) {
+            viewModel.selectOverlay(null)
         }
     }
 
@@ -963,6 +965,7 @@ class MainActivity :
     private fun showOverlaysMenu(position: LatLon) {
         val overlay = overlayRegistry[Random.nextInt(overlayRegistry.size)]
         (overlay as ThingsOverlay).position = position
+        viewModel.selectOverlay(overlay)
     }
 
     private fun onClickOpenLocationInOtherApp(pos: LatLon) {
@@ -1091,8 +1094,9 @@ class MainActivity :
         val args = AbstractOverlayForm.createArguments(overlay, null, null, rotation, tilt)
         f.requireArguments().putAll(args)
 
+        val pos = getMapPositionAt(getCrosshairPoint())
         showInBottomSheet(f)
-        val pos = getCrosshairPoint()?.let { getMapPositionAt(it) }
+
         mapFragment.updateCameraPosition {
             position = pos
             padding = getQuestFormInsets().toPadding()
@@ -1210,7 +1214,8 @@ class MainActivity :
                     quest.elementId
                 )
             } ?: return
-            val osmArgs = AbstractOsmQuestForm.createArguments(element, mapFragment.displayedLocation)
+            val osmArgs =
+                AbstractOsmQuestForm.createArguments(element, mapFragment.displayedLocation)
             f.requireArguments().putAll(osmArgs)
             showHighlightedElements(quest, element)
         }
@@ -1331,7 +1336,6 @@ class MainActivity :
                     "LONG_FORM",
                     Elements::class.java
                 )
-
             } else {
                 intent?.getParcelableArrayListExtra("LONG_FORM")
             }
@@ -1348,7 +1352,7 @@ class MainActivity :
         allEditTypes.updateByName()
     }
 
-    private fun onClickImageryLayerButton(){
+    private fun onClickImageryLayerButton() {
         // mapFragment?.imagery = Imagery(Attribution(true, "Hi", ""), "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
         //     null, "", "OpenStreetMap", "hi", "xyz","")
         val screenCenter = mapFragment?.cameraPosition?.position
@@ -1369,8 +1373,10 @@ class MainActivity :
         radioGroup.addView(radioButton)
         CoroutineScope(Dispatchers.Main).launch {
             val imagerList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent?.getParcelableArrayListExtra("IMAGERY_LIST",
-                    Imagery::class.java) ?: emptyList()
+                intent?.getParcelableArrayListExtra(
+                    "IMAGERY_LIST",
+                    Imagery::class.java
+                ) ?: emptyList()
             } else {
                 @Suppress("DEPRECATION")
                 intent?.getParcelableArrayListExtra<Imagery>("IMAGERY_LIST") ?: emptyList()
@@ -1468,7 +1474,6 @@ class MainActivity :
 //                    (radioGroup.getChildAt(0) as RadioButton).isChecked = true
 //                    selectedImagery = null
 //                }
-
             } catch (e: Exception) {
                 Log.d("Error", e.message.toString())
                 Toast.makeText(

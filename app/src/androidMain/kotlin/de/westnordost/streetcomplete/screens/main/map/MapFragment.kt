@@ -160,10 +160,10 @@ open class MapFragment : Fragment(R.layout.fragment_map) {
                 listener?.onUserCameraMoveStarted()
             }
         }
-        // map.addOnMapLongClickListener { pos ->
-        //     onLongPress(map.projection.toScreenLocation(pos), pos.toLatLon())
-        //     true
-        // }
+        map.addOnMapLongClickListener { pos ->
+            onLongPress(map.projection.toScreenLocation(pos), pos.toLatLon())
+            true
+        }
 
         val sceneMapComponent = SceneMapComponent(requireContext(), map, )
         val style = sceneMapComponent.loadStyle()

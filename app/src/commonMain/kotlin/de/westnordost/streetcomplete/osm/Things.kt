@@ -271,19 +271,13 @@ private val IS_THING_EXPRESSION by lazy {
 }
 
 val POPULAR_THING_FEATURE_IDS = listOf(
-    "natural/tree/broadleaved",    // 4.8 M
-    "highway/street_lamp",         // 4.3 M
-    "amenity/bench",               // 2.6 M
-    "emergency/fire_hydrant",      // 2.1 M
-
-    "amenity/waste_basket",        // 0.9 M
-    "amenity/bicycle_parking",     // 0.7 M
-    "amenity/shelter",             // 0.5 M
-
-    "amenity/recycling_container", // 0.4 M
-    "amenity/toilets",             // 0.4 M
-
-    "amenity/post_box",            // 0.4 M
+    "power/pole",
+    "emergency/fire_hydrant",
+    "amenity/bench",
+    "barrier/bollard",
+    "man_made/manhole",
+    "highway/street_lamp",
+    "amenity/waste_basket",
 
     // More:
 

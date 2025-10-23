@@ -58,6 +58,7 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.visibility
+import kotlin.div
 import kotlin.math.PI
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
