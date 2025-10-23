@@ -19,7 +19,6 @@ import de.westnordost.streetcomplete.osm.POPULAR_THING_FEATURE_IDS
 import de.westnordost.streetcomplete.osm.applyTo
 import de.westnordost.streetcomplete.osm.asIfItWasnt
 import de.westnordost.streetcomplete.osm.isThing
-import de.westnordost.streetcomplete.osm.localized_name.applyTo
 import de.westnordost.streetcomplete.osm.toElement
 import de.westnordost.streetcomplete.osm.toPrefixedFeature
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
@@ -40,9 +39,10 @@ class ThingsOverlayForm : AbstractOverlayForm() {
 
     private lateinit var featureCtrl: FeatureViewController
 
-    override val otherAnswers get() = listOfNotNull(
-        createDeletePoiAnswer()
-    )
+    override val otherAnswers
+        get() = listOfNotNull(
+            createDeletePoiAnswer()
+        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,7 +89,11 @@ class ThingsOverlayForm : AbstractOverlayForm() {
         setTitleHintLabel(element?.let { getNameAndLocationSpanned(it, resources, null) })
         setMarkerIcon(R.drawable.ic_quest_dot)
 
-        featureCtrl = FeatureViewController(featureDictionary, binding.featureTextView, binding.featureIconView)
+        featureCtrl = FeatureViewController(
+            featureDictionary,
+            binding.featureTextView,
+            binding.featureIconView
+        )
         featureCtrl.countryOrSubdivisionCode = countryOrSubdivisionCode
         featureCtrl.feature = originalFeature
 
@@ -131,7 +135,11 @@ class ThingsOverlayForm : AbstractOverlayForm() {
     private fun confirmDelete(node: Node) {
         AlertDialog.Builder(requireContext())
             .setMessage(R.string.osm_element_gone_description)
-            .setPositiveButton(R.string.osm_element_gone_confirmation) { _, _ -> applyEdit(DeletePoiNodeAction(node)) }
+            .setPositiveButton(R.string.osm_element_gone_confirmation) { _, _ ->
+                applyEdit(
+                    DeletePoiNodeAction(node)
+                )
+            }
             .setNeutralButton(R.string.leave_note) { _, _ -> composeNote(node) }
             .show()
     }

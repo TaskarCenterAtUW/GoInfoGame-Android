@@ -95,6 +95,8 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         }
 
         bottomSheetBinding.titleLabel.text = getString(R.string.map_btn_create_note)
+        bottomSheetBinding.hideButton.visibility = View.GONE
+        bottomSheetBinding.closeButton.visibility = View.GONE
         contentBinding.descriptionLabel.text = getString(R.string.create_new_note_description)
     }
 

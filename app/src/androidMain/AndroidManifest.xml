@@ -49,9 +49,9 @@
         android:theme="@style/AppTheme"
         android:supportsRtl="true">
         <activity
-            android:windowSoftInputMode="adjustResize"
             android:name="de.westnordost.streetcomplete.screens.main.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout"
+            android:windowSoftInputMode="adjustNothing"
             android:launchMode="singleTop"
             android:exported="true">
 

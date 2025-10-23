@@ -389,6 +389,13 @@ class MainActivity :
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+        )
+    }
+
     //region QuestsMapFragment - Callbacks from the map with its quest pins
 
     /* ---------------------------------- MapFragment.Listener ---------------------------------- */
@@ -584,6 +591,7 @@ class MainActivity :
         multiSelectPoints.clear()
         multiSelectQuests.clear()
         mapFragment?.clearMultiSelect()
+        viewModel.selectOverlay(null)
     }
 
     override fun onComposeNote(
@@ -962,10 +970,15 @@ class MainActivity :
         popupMenu.show()
     }
 
-    private fun showOverlaysMenu(position: LatLon) {
+    private fun showOverlaysMenu(position1: LatLon) {
         val overlay = overlayRegistry[Random.nextInt(overlayRegistry.size)]
-        (overlay as ThingsOverlay).position = position
+        (overlay as ThingsOverlay).position = position1
         viewModel.selectOverlay(overlay)
+
+        mapFragment?.updateCameraPosition {
+            position = position1
+            padding = getQuestFormInsets().toPadding()
+        }
     }
 
     private fun onClickOpenLocationInOtherApp(pos: LatLon) {
@@ -1097,10 +1110,10 @@ class MainActivity :
         val pos = getMapPositionAt(getCrosshairPoint())
         showInBottomSheet(f)
 
-        mapFragment.updateCameraPosition {
-            position = pos
-            padding = getQuestFormInsets().toPadding()
-        }
+        // mapFragment.updateCameraPosition {
+        //     position = pos
+        //     padding = getQuestFormInsets().toPadding()
+        // }
         mapFragment.hideNonHighlightedPins()
     }
 
