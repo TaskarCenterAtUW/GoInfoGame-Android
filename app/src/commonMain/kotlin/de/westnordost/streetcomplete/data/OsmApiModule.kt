@@ -26,7 +26,7 @@ val osmApiModule = module {
     factory { Cleaner(get(), get(), get(), get(), get(), get()) }
     factory { CacheTrimmer(get(), get()) }
     factory { MapDataApiClient(get(named("osmClient")), get(), get(), get(), get()) }
-    factory { NotesApiClient(get(), OSM_API_URL, get(), get()) }
+    factory { NotesApiClient(get(named("osmClient")), get(), get(), get()) }
     factory { TracksApiClient(get(), OSM_API_URL, get(), get()) }
     factory { UserApiClient(get(), OSM_API_URL, get(), get()) }
     factory { ChangesetApiClient(get(named("osmClient")), get(), get(), get()) }

@@ -8,6 +8,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.toOsmApiString
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.data.wrapApiClientExceptions
 import de.westnordost.streetcomplete.util.ktx.format
 import io.ktor.client.HttpClient
@@ -27,7 +28,7 @@ import kotlinx.io.buffered
  */
 class NotesApiClient(
     private val httpClient: HttpClient,
-    private val baseUrl: String,
+    private val workspaceConfigProvider: WorkspaceConfigProvider,
     private val userAccessTokenSource: UserAccessTokenSource,
     private val notesApiParser: NotesApiParser
 ) {
@@ -44,7 +45,7 @@ class NotesApiClient(
      * @return the new note
      */
     suspend fun create(pos: LatLon, text: String): Note = wrapApiClientExceptions {
-        val response = httpClient.post(baseUrl + "notes") {
+        val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes") {
             userAccessTokenSource.accessToken?.let { bearerAuth(it) }
             parameter("lat", pos.latitude.format(7))
             parameter("lon", pos.longitude.format(7))
@@ -68,7 +69,7 @@ class NotesApiClient(
      */
     suspend fun comment(id: Long, text: String): Note = wrapApiClientExceptions {
         try {
-            val response = httpClient.post(baseUrl + "notes/$id/comment") {
+            val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes/$id/comment") {
                 userAccessTokenSource.accessToken?.let { bearerAuth(it) }
                 parameter("text", text)
                 expectSuccess = true
@@ -95,7 +96,7 @@ class NotesApiClient(
      */
     suspend fun get(id: Long): Note? = wrapApiClientExceptions {
         try {
-            val response = httpClient.get(baseUrl + "notes/$id") { expectSuccess = true }
+            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes/$id") { expectSuccess = true }
             val source = response.bodyAsChannel().asSource().buffered()
             return notesApiParser.parseNotes(source).singleOrNull()
         } catch (e: ClientRequestException) {
@@ -126,7 +127,7 @@ class NotesApiClient(
         }
 
         try {
-            val response = httpClient.get(baseUrl + "notes") {
+            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes") {
                 userAccessTokenSource.accessToken?.let { bearerAuth(it) }
                 parameter("bbox", bounds.toOsmApiString())
                 parameter("limit", limit)
