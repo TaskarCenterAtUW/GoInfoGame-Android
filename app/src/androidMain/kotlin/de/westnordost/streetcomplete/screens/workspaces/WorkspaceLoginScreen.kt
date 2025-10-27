@@ -2,9 +2,8 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
+import android.net.Uri
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -133,7 +132,7 @@ fun LoginScreen(
                 val state = loginState as WorkspaceLoginState.Success
                 viewModel.setLoginState(true, state.loginResponse, state.email)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                if (preferences.isBiometricEnabled && !state.expediteLogin) {
                     val creds = SecureCredentialStorage.getCredential(
                         context,
                         selectedEnvironment.value.name
@@ -177,14 +176,56 @@ fun LoginScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
+
+    LaunchedEffect(activity) {
+        checkForIntent(activity, viewModel, environmentManager, selectedEnvironment, preferences)
+    }
 }
 
-@RequiresApi(Build.VERSION_CODES.M)
+fun checkForIntent(
+    activity: AppCompatActivity,
+    viewModel: WorkspaceViewModel,
+    environmentManager: EnvironmentManager,
+    selectedEnvironment: MutableState<Environment>,
+    preferences: Preferences,
+) {
+    val data: Uri? = activity.intent?.data
+    data?.let {
+        val refreshToken = it.getQueryParameter("code") // e.g. ?code=123
+        val env = it.getQueryParameter("env") // e.g. ?env=staging
+        preferences.workspaceRefreshToken = refreshToken
+        if (!preferences.workspaceLogin) {
+            if (env != null) {
+                try {
+                    val environment = Environment.valueOf(env.uppercase())
+                    environmentManager.currentEnvironment = environment
+                    selectedEnvironment.value = environment
+                } catch (e: IllegalArgumentException) {
+                    // Invalid environment value, handle as needed
+                    Toast.makeText(
+                        activity.baseContext,
+                        "Invalid environment value in the link. " + e.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            viewModel.refreshToken(true)
+        } else {
+            Toast.makeText(
+                activity.baseContext,
+                "User already logged in. Please logout to sign in using new credentials",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+    }
+}
+
 @Composable
 fun ShowSaveCredsDialog(
     username: String, password: String, environment: String,
     activity: AppCompatActivity,
-    navToNextPage: () -> Unit
+    navToNextPage: () -> Unit,
 ) {
     // Example Compose dialog to save credentials
     val openDialog = remember { mutableStateOf(true) }
@@ -364,14 +405,14 @@ fun LoginCard(
                         Text(text = "Login", style = MaterialTheme.typography.titleMedium)
                     }
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && preferences.isBiometricEnabled) {
+                    if (preferences.isBiometricEnabled) {
                         val coroutineScope = rememberCoroutineScope()
                         val creds = SecureCredentialStorage.getCredential(
                             LocalContext.current,
                             selectedEnvironment.value.name
                         )
                         if (creds != null) {
-                            TextButton (
+                            TextButton(
                                 onClick = {
                                     coroutineScope.launch {
                                         val authenticated = authenticateWithBiometrics(
@@ -409,12 +450,12 @@ fun LoginCard(
                         }
                     }
 
-                        DebuggableBuild(
-                            viewModel,
-                            selectedEnvironment,
-                            preferences,
-                            modifier = modifier
-                        )
+                    DebuggableBuild(
+                        viewModel,
+                        selectedEnvironment,
+                        preferences,
+                        modifier = modifier
+                    )
 
                 }
             }
@@ -427,7 +468,7 @@ fun DebuggableBuild(
     viewModel: WorkspaceViewModel,
     selectedEnvironment: MutableState<Environment>,
     preferences: Preferences,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -522,7 +563,7 @@ fun ShowDebugModeConfirmationDialog(enable: Boolean, onConfirm: () -> Unit, onCa
 fun EnvironmentDropdownMenu(
     viewModel: WorkspaceViewModel,
     selectedEnvironment: MutableState<Environment>,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -568,19 +609,19 @@ fun EnvironmentDropdownMenu(
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun authenticateWithBiometrics(
     context: Context,
-    activity: FragmentActivity
+    activity: FragmentActivity,
 ): Boolean = suspendCancellableCoroutine { continuation ->
     val biometricHelper = BiometricHelper(
         context = context,
         activity = activity,
         onSuccess = {
             if (continuation.isActive) {
-                continuation.resume(true) {}
+                continuation.resume(true) { cause, _, _ -> }
             }
         },
         onFailure = {
             if (continuation.isActive) {
-                continuation.resume(false) {}
+                continuation.resume(false) { cause, _, _ -> }
             }
             Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT).show()
         }

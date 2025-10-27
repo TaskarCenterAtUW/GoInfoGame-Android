@@ -1,5 +1,6 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
@@ -233,7 +234,7 @@ kotlin {
                 implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.0")
                 implementation("io.ktor:ktor-client-logging:3.3.0")
                 implementation("io.ktor:ktor-serialization-kotlinx-xml:3.3.0")
-
+                implementation("com.auth0.android:jwtdecode:2.0.2")
 
             }
         }
