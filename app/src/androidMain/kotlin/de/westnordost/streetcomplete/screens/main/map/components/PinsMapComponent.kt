@@ -61,6 +61,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
+import java.util.Collections
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -73,7 +74,6 @@ class PinsMapComponent(
     private val map: MapLibreMap,
     private val mapImages: MapImages,
     private val onClickPin: (properties: Map<String, String>) -> Unit,
-    private val onLongClickPin: (properties: Map<String, String>) -> Unit,
 ) {
     private val pinsSource = GeoJsonSource(
         SOURCE,
@@ -148,13 +148,19 @@ class PinsMapComponent(
         layers.forEach { it.setProperties(visibility(visibility)) }
     }
 
+    fun isVisible(): Boolean {
+        return layers.firstOrNull()?.visibility?.value == Property.VISIBLE
+    }
+
     init {
         pinsSource.isVolatile = true
         map.style?.addImageAsync("cluster-circle", context.getDrawable(R.drawable.pin_circle)!!)
         map.style?.addSource(pinsSource)
         map.addOnMapClickListener(::onClick)
-        map.addOnMapLongClickListener(::onLongClick)
+        // map.addOnMapLongClickListener(::onLongClick)
     }
+
+    private val pins = Collections.synchronizedSet(mutableSetOf<Pin>())
 
     /** Show given pins. Previously shown pins are replaced with these.  */
     suspend fun set(pins: Collection<Pin>) {
@@ -163,27 +169,33 @@ class PinsMapComponent(
         val features = pins.map { it.toFeature() }
         val mapLibreFeatures = FeatureCollection.fromFeatures(features)
         withContext(Dispatchers.Main) { pinsSource.setGeoJson(mapLibreFeatures) }
+        synchronized(this.pins) {
+            this.pins.clear()
+            this.pins.addAll(pins)
+        }
+    }
+
+    fun getPins(): Collection<Pin> {
+        return synchronized(pins) {
+            pins.toList()
+        }
     }
 
     /** Clear pins */
     @UiThread
     fun clear() {
+        synchronized(pins) {
+            pins.clear()
+        }
         pinsSource.clear()
     }
 
-    private fun onLongClick(target: LatLng): Boolean {
+    fun foundFeatureAt(target: LatLng): Pair<Boolean, Map<String, String>> {
         val feature = map.queryRenderedFeatures(
             map.projection.toScreenLocation(target),
             *arrayOf("pins-layer", "pin-cluster-layer")
-        ).firstOrNull() ?: return false
-        val properties = feature.properties()
-        if (properties?.has("point_count") == true) {
-            zoomToCluster(feature)
-        } else {
-            onLongClickPin(properties?.toMap().orEmpty())
-        }
-
-        return true
+        ).firstOrNull() ?: return Pair(false, emptyMap())
+        return Pair(true, feature.properties()?.toMap().orEmpty())
     }
 
     private fun onClick(position: LatLng): Boolean {

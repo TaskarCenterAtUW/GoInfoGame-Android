@@ -23,6 +23,7 @@ import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
+import java.util.Collections
 
 /** Takes care of displaying "selected" pins. Those pins are always shown on top of pins displayed
  *  by the [PinsMapComponent] */
@@ -34,6 +35,7 @@ class SelectedPinsMapComponent(
 
     private val selectedPinsSource = GeoJsonSource("selected-pins-source")
     private val animation: ValueAnimator
+    private val pins = Collections.synchronizedSet(mutableSetOf<LatLon>())
 
     val layers: List<Layer> = listOf(
         SymbolLayer("selected-pins-layer", "selected-pins-source")
@@ -73,9 +75,18 @@ class SelectedPinsMapComponent(
         val p = JsonObject()
         p.addProperty("icon-image", context.resources.getResourceEntryName(iconResId))
         val points = pinPositions.map { Feature.fromGeometry(it.toPoint(), p) }
+        synchronized(this.pins) {
+            this.pins.addAll(pinPositions)
+        }
         withContext(Dispatchers.Main) {
             selectedPinsSource.setGeoJson(FeatureCollection.fromFeatures(points))
             animation.start()
+        }
+    }
+
+    fun getPins(): Collection<LatLon> {
+        return synchronized(pins) {
+            pins.toList()
         }
     }
 
@@ -87,6 +98,9 @@ class SelectedPinsMapComponent(
 
     /** Clear the display of any selected pins */
     @UiThread fun clear() {
+        synchronized(pins) {
+            pins.clear()
+        }
         selectedPinsSource.clear()
     }
 }

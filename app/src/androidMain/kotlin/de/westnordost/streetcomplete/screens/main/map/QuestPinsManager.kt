@@ -1,11 +1,23 @@
 package de.westnordost.streetcomplete.screens.main.map
 
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.accessibility.AccessibilityManager
+import android.widget.FrameLayout
+import androidx.core.view.children
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.Quest
@@ -14,8 +26,10 @@ import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
+import de.westnordost.streetcomplete.screens.main.map.components.MultiSelectPinMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
+import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.maplibre.screenAreaToBoundingBox
 import de.westnordost.streetcomplete.util.math.contains
 import kotlinx.atomicfu.locks.ReentrantLock
@@ -30,7 +44,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapView
+import kotlin.math.abs
 
 /** Manages the layer of quest pins in the map view:
  *  Gets told by the QuestsMapFragment when a new area is in view and independently pulls the quests
@@ -38,16 +55,23 @@ import org.maplibre.android.maps.MapLibreMap
 class QuestPinsManager(
     private val map: MapLibreMap,
     private val pinsMapComponent: PinsMapComponent,
+    private val selectedPinsMapComponent: SelectedPinsMapComponent?,
+    private val multiSelectPinMapComponent: MultiSelectPinMapComponent?,
     private val questTypeOrderSource: QuestTypeOrderSource,
     private val questTypeRegistry: QuestTypeRegistry,
-    private val visibleQuestsSource: VisibleQuestsSource
+    private val visibleQuestsSource: VisibleQuestsSource,
+    private val accessibilityOverlay: FrameLayout,
+    private val mapFragment: MainMapFragment,
 ) : DefaultLifecycleObserver {
+    private val overlayPositions: MutableList<Pair<Float, Float>> = mutableListOf()
 
     // draw order in which the quest types should be rendered on the map
     private val questTypeOrdersLock = ReentrantLock()
     private val questTypeOrders: MutableMap<QuestType, Int> = mutableMapOf()
+
     // last displayed rect of (zoom 16) tiles
     private var lastDisplayedRect: TilesRect? = null
+
     // quests in current view: key -> [pin, ...]
     private val questsInView: MutableMap<QuestKey, List<Pin>> = mutableMapOf()
     private val questsInViewMutex = Mutex()
@@ -59,6 +83,7 @@ class QuestPinsManager(
     private var updateJob: Job? = null
 
     var multiSelectQuestType: String? = null
+
     /** Switch visibility of quest pins layer */
     var isVisible: Boolean = false
         set(value) {
@@ -140,12 +165,13 @@ class QuestPinsManager(
     fun getQuestKey(properties: Map<String, String>): QuestKey? =
         properties.toQuestKey()
 
-    fun onNewScreenPosition(forceUpdate : Boolean = false) {
+    fun onNewScreenPosition(forceUpdate: Boolean = false) {
         if (!isStarted || !isVisible) return
         viewLifecycleScope.launch { updateCurrentScreenArea(forceUpdate) }
+        updateAccessibilityOverlays()
     }
 
-    private suspend fun updateCurrentScreenArea(forceUpdate : Boolean = false) {
+    private suspend fun updateCurrentScreenArea(forceUpdate: Boolean = false) {
         // require zoom >= 14, which is the lowest zoom level where quests are shown
         val zoom = map.cameraPosition.zoom
         if (zoom < 14) return
@@ -190,13 +216,14 @@ class QuestPinsManager(
             questsInView.entries.removeAll { (_, pins) ->
                 // only have one pin (pin position = quest position)
                 pins.size == 1 ||
-                // or has no pins in the current view
-                pins.none { it.position in bbox }
+                    // or has no pins in the current view
+                    pins.none { it.position in bbox }
             }
             quests.forEach { questsInView[it.key] = createQuestPins(it) }
             questsInView.values.flatten()
         }
         pinsMapComponent.set(pins)
+        addAccessiblePins(pins)
     }
 
     private suspend fun updateQuestPins(added: Collection<Quest>, removed: Collection<QuestKey>) {
@@ -221,6 +248,7 @@ class QuestPinsManager(
             questsInView.values.flatten()
         }
         pinsMapComponent.set(pins)
+        addAccessiblePins(pins)
     }
 
     private fun initializeQuestTypeOrders() {
@@ -247,6 +275,120 @@ class QuestPinsManager(
         invalidate()
     }
 
+    private fun isTalkBackEnabled(context: Context): Boolean {
+        val accessibilityManager =
+            context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        return accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled
+    }
+
+    private fun addAccessiblePins(pins: List<Pin>) {
+        if (!isTalkBackEnabled(accessibilityOverlay.context)) {
+            return
+        }
+        Handler(Looper.getMainLooper()).post {
+            accessibilityOverlay.removeAllViews()
+            pins.filter { it.enabled }.forEach { pin ->
+                val screenPos = map.projection.toScreenLocation(
+                    LatLng(pin.position.latitude, pin.position.longitude)
+                )
+
+                val widthInDp = 48
+                val widthInPx = (widthInDp * mapFragment.resources.displayMetrics.density).toInt()
+
+                val overlayView = AccessibilityOverlayView(
+                    accessibilityOverlay.context,
+                    pin.position,
+                    screenPos,
+                    pin.position.toKey()
+                ) { _, pos ->
+                    simulatePinClick(pos.x, pos.y)
+                }.apply {
+                    contentDescription = pin.toString()
+                    isFocusable = true
+                    isClickable = true
+                    layoutParams = ViewGroup.LayoutParams(widthInPx, widthInPx)
+                    x = screenPos.x - widthInPx / 2f
+                    y = screenPos.y - widthInPx / 2f
+                }
+
+                accessibilityOverlay.addView(overlayView)
+                overlayPositions.add(Pair(overlayView.x, overlayView.y))
+            }
+        }
+    }
+
+    private fun simulatePinClick(x: Float, y: Float) {
+        val mapView = mapFragment.view?.findViewById<MapView>(R.id.map) ?: return
+
+        val mapViewLocation = IntArray(2)
+        mapView.getLocationOnScreen(mapViewLocation)
+
+        val localX = x - mapViewLocation[0]
+        val localY = y - mapViewLocation[1]
+
+        val downTime = SystemClock.uptimeMillis()
+        val eventTime = downTime + 100 // small gap between down and up
+
+        val downEvent = MotionEvent.obtain(
+            downTime, downTime, MotionEvent.ACTION_DOWN, localX, localY, 0
+        )
+        val upEvent = MotionEvent.obtain(
+            downTime, eventTime, MotionEvent.ACTION_UP, localX, localY, 0
+        )
+
+        // Send directly to the MapView
+        mapView.dispatchTouchEvent(downEvent)
+        mapView.dispatchTouchEvent(upEvent)
+
+        downEvent.recycle()
+        upEvent.recycle()
+    }
+
+    fun LatLon.toKey(): String = "%.6f_%.6f".format(latitude, longitude)
+
+    fun updateAccessibilityOverlays() {
+        val selectedPositions = selectedPinsMapComponent?.getPins() // List<LatLng>
+        val pinsSnapshot = pinsMapComponent.getPins()
+        val overlay = accessibilityOverlay
+
+        overlay.post {
+            val density = overlay.resources.displayMetrics.density
+            val halfSize = 24 * density // 48dp / 2
+
+            overlay.children
+                .filterIsInstance<AccessibilityOverlayView>()
+                .sortedBy { it.position.toKey() } // stable traversal order for TalkBack
+                .forEach { view ->
+                    val pin = pinsSnapshot.find { it.position.toKey() == view.key } ?: return@forEach
+                    val isEnabled = pin.enabled
+                    val screenPos = map.projection.toScreenLocation(
+                        LatLng(pin.position.latitude, pin.position.longitude)
+                    )
+
+                    view.screenPosition = screenPos
+                    view.x = screenPos.x - halfSize
+                    view.y = screenPos.y - halfSize
+
+                    // Use epsilon comparison for selected pins
+                    val isSelected = selectedPositions?.any {
+                        abs(it.latitude - view.position.latitude) < 1e-6 &&
+                            abs(it.longitude - view.position.longitude) < 1e-6
+                    }
+
+                    view.visibility = if (
+                        (pinsMapComponent.isVisible() || isSelected == true) && isEnabled
+                    ) View.VISIBLE else View.GONE
+                }
+
+            // Optional cleanup: remove overlays for pins no longer visible
+            val validKeys = pinsSnapshot.map { it.position.toKey() }
+            overlay.children
+                .filterIsInstance<AccessibilityOverlayView>()
+                .filter { it.key !in validKeys }
+                .forEach { overlay.removeView(it) }
+        }
+    }
+
     companion object {
         private const val TILES_ZOOM = 16
     }
@@ -267,6 +409,7 @@ private fun QuestKey.toProperties(): List<Pair<String, String>> = when (this) {
         MARKER_QUEST_GROUP to QUEST_GROUP_OSM_NOTE,
         MARKER_NOTE_ID to noteId.toString()
     )
+
     is OsmQuestKey -> listOf(
         MARKER_QUEST_GROUP to QUEST_GROUP_OSM,
         MARKER_ELEMENT_TYPE to elementType.name,
@@ -278,11 +421,13 @@ private fun QuestKey.toProperties(): List<Pair<String, String>> = when (this) {
 private fun Map<String, String>.toQuestKey(): QuestKey? = when (get(MARKER_QUEST_GROUP)) {
     QUEST_GROUP_OSM_NOTE ->
         OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong())
+
     QUEST_GROUP_OSM ->
         OsmQuestKey(
             ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
             getValue(MARKER_ELEMENT_ID).toLong(),
             getValue(MARKER_QUEST_TYPE)
         )
+
     else -> null
 }

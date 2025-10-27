@@ -6,10 +6,14 @@ import android.graphics.PointF
 import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
+import android.view.View
+import android.view.accessibility.AccessibilityManager
+import android.widget.FrameLayout
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.core.content.getSystemService
 import androidx.core.graphics.Insets
+import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
 import de.westnordost.streetcomplete.data.edithistory.EditKey
@@ -47,18 +51,16 @@ import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.visibility
-import kotlin.div
 import kotlin.math.PI
 
 /** This is the map shown in the main view. It manages a map that shows the quest pins, quest
@@ -160,6 +162,8 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private var previouslyHiddenLayers: List<String> = emptyList()
 
+    private lateinit var mapView: MapView
+    private lateinit var accessibilityOverlay: FrameLayout
     private val overlayListener = object : SelectedOverlaySource.Listener {
         override fun onSelectedOverlayChanged() {
             this@MainMapFragment.onSelectedOverlayChanged()
@@ -191,6 +195,26 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             displayedLocation = savedInstanceState.getParcelable(DISPLAYED_LOCATION)
             isRecordingTracks = savedInstanceState.getBoolean(TRACKS_IS_RECORDING)
             tracks = Json.decodeFromString(savedInstanceState.getString(TRACKS)!!)
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        accessibilityOverlay = view.findViewById(R.id.accessibility_overlay)
+        mapView = view.findViewById(R.id.map)
+
+        val accessibilityManager =
+            requireContext().getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+
+        accessibilityOverlay.setOnTouchListener { _, event ->
+            if (accessibilityManager.isTouchExplorationEnabled) {
+                // TalkBack ON → let accessibility views handle focus & clicks
+                false
+            } else {
+                // TalkBack OFF → forward normal touches to MapLibre
+                mapView.dispatchTouchEvent(event)
+                true
+            }
         }
     }
 
@@ -228,8 +252,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             context.contentResolver,
             map,
             mapImages!!,
-            ::onClickPin,
-            ::onLongClickPin
+            ::onClickPin
         )
         geometryMapComponent = FocusGeometryMapComponent(context.contentResolver, map)
         viewLifecycleOwner.lifecycle.addObserver(geometryMapComponent!!)
@@ -240,7 +263,8 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         downloadedAreaMapComponent = DownloadedAreaMapComponent(context, map)
 
         selectedPinsMapComponent = SelectedPinsMapComponent(context, map, mapImages!!)
-        multiSelectPinMapComponent = MultiSelectPinMapComponent(context, map, mapImages!!, ::onClickPin)
+        multiSelectPinMapComponent =
+            MultiSelectPinMapComponent(context, map, mapImages!!, ::onClickPin)
         viewLifecycleOwner.lifecycle.addObserver(selectedPinsMapComponent!!)
     }
 
@@ -288,9 +312,13 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         questPinsManager = QuestPinsManager(
             map,
             pinsMapComponent!!,
+            selectedPinsMapComponent,
+            multiSelectPinMapComponent,
             questTypeOrderSource,
             questTypeRegistry,
-            visibleQuestsSource
+            visibleQuestsSource,
+            accessibilityOverlay,
+            this
         )
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
@@ -318,6 +346,18 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
         val positionsLists = tracks.map { track -> track.map { it.position } }
         tracksMapComponent?.setTracks(positionsLists, isRecordingTracks)
+
+        map.addOnMapLongClickListener { pos ->
+            val isFound = pinsMapComponent?.foundFeatureAt(pos)
+            isFound?.let {
+                if (it.first) {
+                    onLongClickPin(it.second)
+                    return@addOnMapLongClickListener true
+                }
+            }
+            onLongPress(map.projection.toScreenLocation(pos), pos.toLatLon())
+            true
+        }
     }
 
     override fun onStop() {
@@ -355,10 +395,10 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             }
 
             PinMode.MULTISELECT -> {
-               questPinsManager?.getQuestKey(properties)?.let {
-                   listener?.onClickedForMultiSelect(it, properties)
-                   questPinsManager?.onNewScreenPosition(true)
-               }
+                questPinsManager?.getQuestKey(properties)?.let {
+                    listener?.onClickedForMultiSelect(it, properties)
+                    questPinsManager?.onNewScreenPosition(true)
+                }
             }
 
             PinMode.NONE -> {}
@@ -385,7 +425,9 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
                     listener?.onLongClickedQuest(it, properties)
                 }
             }
-            else -> { /* ignore */}
+
+            else -> { /* ignore */
+            }
         }
     }
 

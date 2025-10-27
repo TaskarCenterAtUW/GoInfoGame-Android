@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<org.maplibre.android.maps.MapView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/map"
+    android:id="@+id/map_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent">
+
+    <!-- MapLibre Map -->
+    <org.maplibre.android.maps.MapView
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Accessibility Overlay -->
+    <FrameLayout
+        android:id="@+id/accessibility_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="yes"
+        android:focusable="true"
+        android:clickable="true"
+        android:contentDescription="@null"
+        android:background="@android:color/transparent" />
+</FrameLayout>
