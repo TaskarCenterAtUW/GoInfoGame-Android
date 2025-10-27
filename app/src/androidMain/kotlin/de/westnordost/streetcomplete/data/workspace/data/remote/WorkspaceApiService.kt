@@ -3,16 +3,14 @@ package de.westnordost.streetcomplete.data.workspace.data.remote
 import android.location.Location
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
-import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerAuthProvider
-import io.ktor.client.plugins.plugin
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -30,7 +28,7 @@ import java.nio.channels.UnresolvedAddressException
 class WorkspaceApiService(
     private val httpClient: HttpClient,
     private val preferences: Preferences,
-    private val environmentManager: EnvironmentManager
+    private val environmentManager: EnvironmentManager,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -129,7 +127,6 @@ class WorkspaceApiService(
                 throw Exception("Login failed {${response.bodyAsText()}}")
             }
 
-
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {
             throw Exception(e.message)
@@ -167,6 +164,24 @@ class WorkspaceApiService(
             }
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
+        } catch (e: Exception) {
+            throw Exception(e.message)
+        }
+    }
+
+    suspend fun getForceUpdateInfo(): AppUpdateCheckerResponse {
+        val url = environmentManager.currentEnvironment.appUpdateVersionCheckUrl
+
+        try {
+            val response = performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                get(url)
+            }
+
+            return json.decodeFromString<AppUpdateCheckerResponse>(response.bodyAsText())
         } catch (e: Exception) {
             throw Exception(e.message)
         }

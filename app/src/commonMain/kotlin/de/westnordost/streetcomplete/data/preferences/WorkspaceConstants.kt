@@ -1,12 +1,12 @@
 package de.westnordost.streetcomplete.data.preferences
 
-import de.westnordost.streetcomplete.data.preferences.Preferences
-
 enum class Environment(
     val baseUrl: String,
     val loginUrl: String,
     val tdeiUrl: String,
     val osmUrl: String,
+    val appUpdateVersionCheckUrl: String = APP_UPDATE_VERSION_CHECKER_URL,
+    val firebaseUpdateUrl: String = FIREBASE_UPDATE_URL
 ) {
     STAGE(
         "https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces",
@@ -25,7 +25,15 @@ enum class Environment(
         "https://tdei-gateway-prod.azurewebsites.net/api/v1",
         "https://tdei-usermanagement-prod.azurewebsites.net/api/v1/user-profile",
         "https://osm-workspaces-proxy.azurewebsites.net/prod/api/0.6/"
-    ),
+    );
+
+    companion object {
+        const val APP_UPDATE_VERSION_CHECKER_URL =
+            "https://raw.githubusercontent.com/TaskarCenterAtUW/asr-config/refs/heads/main/force-update/app-force-update.json"
+        const val FIREBASE_UPDATE_URL =
+            "https://appdistribution.firebase.google.com/testerapps"
+
+    }
 }
 
 class EnvironmentManager(val preferences: Preferences) {

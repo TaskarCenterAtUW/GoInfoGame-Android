@@ -3,14 +3,16 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.data.elementfilter.ParseException
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
-import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
-import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
+import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
+import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
@@ -39,6 +41,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     )
 
     abstract val loginState: StateFlow<WorkspaceLoginState>
+    abstract val updateState: StateFlow<AppVersionUpdateState>
     abstract val selectedWorkspace: StateFlow<Workspace?>
     abstract fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState>
     abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
@@ -46,12 +49,13 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setSelectedWorkspace(index: Int)
     abstract fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
-    abstract fun refreshToken(expediteLogin : Boolean = false)
+    abstract fun refreshToken(expediteLogin: Boolean = false)
+    abstract fun getAppUpdateInfo()
 }
 
 class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
-    private val preferences: Preferences
+    private val preferences: Preferences,
 ) :
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
@@ -61,6 +65,10 @@ class WorkspaceViewModelImpl(
 
     private val _loginState = MutableStateFlow<WorkspaceLoginState>(WorkspaceLoginState.Init)
     override val loginState: StateFlow<WorkspaceLoginState> get() = _loginState
+
+    private val _updateState =
+        MutableStateFlow<AppVersionUpdateState>(AppVersionUpdateState.Loading)
+    override val updateState: StateFlow<AppVersionUpdateState> get() = _updateState
 
     override fun setSelectedWorkspace(index: Int) {
         _selectedWorkspace.value = (showWorkspaces.value as WorkspaceListState.Success).workspaces
@@ -209,13 +217,14 @@ class WorkspaceViewModelImpl(
                             preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
                         preferences.accessTokenExpiryTime =
                             preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
-                        if (expediteLogin){
+                        if (expediteLogin) {
                             getEmailFromJWT(loginResponse.access_token)?.let { email ->
                                 preferences.workspaceUserEmail = email
                             }
                         }
                         preferences.workspaceUserEmail?.apply {
-                            _loginState.value = WorkspaceLoginState.success(loginResponse, this, expediteLogin)
+                            _loginState.value =
+                                WorkspaceLoginState.success(loginResponse, this, expediteLogin)
                         } ?: run {
                             _loginState.value = WorkspaceLoginState.error("No user email found")
                         }
@@ -249,5 +258,86 @@ class WorkspaceViewModelImpl(
 
     override fun setIsLongForm(isLongForm: Boolean) {
         preferences.showLongForm = isLongForm
+    }
+
+    override fun getAppUpdateInfo() {
+        viewModelScope.launch {
+            _updateState.value = AppVersionUpdateState.Loading
+            workspaceRepository.getAppUpdateInfo()
+                .catch { e -> _updateState.value = AppVersionUpdateState.error(e.message) }
+                .collect { response ->
+                    val environmentManager = EnvironmentManager(preferences)
+                    val (isLatestNewer, isForceUpdate) = isLatestVersionNewer(
+                        BuildConfig.VERSION_NAME,
+                        getVersionForEnvironment(response, environmentManager),
+                    )
+                    _updateState.value = AppVersionUpdateState.success(
+                        isLatestNewer,
+                        isForceUpdate,
+                        environmentManager.currentEnvironment.firebaseUpdateUrl,
+                    )
+                }
+        }
+    }
+
+    private data class VersionInfo(val latestVersion: String, val minimumRequiredVersion: String)
+
+    private fun getVersionForEnvironment(
+        response: AppUpdateCheckerResponse,
+        environmentManager: EnvironmentManager,
+    ): VersionInfo {
+        return when (environmentManager.currentEnvironment) {
+            Environment.DEV -> VersionInfo(
+                response.android.dev.latestVersion,
+                response.android.dev.minRequiredVersion
+            )
+
+            Environment.STAGE -> VersionInfo(
+                response.android.stage.latestVersion,
+                response.android.stage.minRequiredVersion
+            )
+
+            Environment.PROD -> VersionInfo(
+                response.android.prod.latestVersion,
+                response.android.prod.minRequiredVersion
+            )
+        }
+    }
+
+    private fun isLatestVersionNewer(
+        currentVersion: String,
+        versionInfo: VersionInfo,
+    ): Pair<Boolean, Boolean> {
+        val curParts = currentVersion.split('.')
+        val latParts = versionInfo.latestVersion.split('.')
+        val minParts = versionInfo.minimumRequiredVersion.split('.')
+        val length = maxOf(curParts.size, latParts.size, minParts.size)
+
+        fun parsePart(part: String?): Int {
+            if (part == null) return 0
+            val digits = Regex("^\\d+").find(part)?.value
+            return digits?.toIntOrNull() ?: 0
+        }
+
+        fun compareParts(aParts: List<String>, bParts: List<String>, len: Int): Int {
+            for (i in 0 until len) {
+                val a = parsePart(aParts.getOrNull(i))
+                val b = parsePart(bParts.getOrNull(i))
+                if (a < b) return -1
+                if (a > b) return 1
+            }
+            return 0
+        }
+
+        val latestComparison = compareParts(curParts, latParts, length) // -1 if current < latest
+        val minComparison = compareParts(curParts, minParts, length) // -1 if current < minimum
+
+        val isLatestNewer = latestComparison < 0
+        val isBelowMinimum = minComparison < 0
+
+        // If current is less than latest -> (true, false).
+        // If current is less than latest and also less than minimum -> (true, true).
+        // Otherwise -> (false, false).
+        return Pair(isLatestNewer, isLatestNewer && isBelowMinimum)
     }
 }

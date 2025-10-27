@@ -59,3 +59,15 @@ sealed class WorkspaceLoginState {
         fun error(errorMessage: String?) = Error(errorMessage)
     }
 }
+
+sealed class AppVersionUpdateState {
+    data object Loading : AppVersionUpdateState()
+    data class Success(val isUpdateAvailable: Boolean, val isForceUpdate: Boolean, val updateUrl: String) : AppVersionUpdateState()
+    data class Error(val error: String?) : AppVersionUpdateState()
+
+    companion object {
+        fun loading() = Loading
+        fun success(isUpdateAvailable: Boolean, isForceUpdate : Boolean, updateUrl: String) = Success(isUpdateAvailable, isForceUpdate, updateUrl)
+        fun error(errorMessage: String?) = Error(errorMessage)
+    }
+}

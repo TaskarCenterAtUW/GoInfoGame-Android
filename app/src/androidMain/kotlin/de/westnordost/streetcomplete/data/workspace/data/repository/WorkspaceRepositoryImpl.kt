@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -45,5 +46,8 @@ class WorkspaceRepositoryImpl(
 
     override fun refreshToken(refreshToken: String): Flow<LoginResponse> =
         flow { emit(apiService.refreshToken(refreshToken)) }
+
+    override fun getAppUpdateInfo(): Flow<AppUpdateCheckerResponse> =
+        flow { emit(apiService.getForceUpdateInfo()) }
 
 }

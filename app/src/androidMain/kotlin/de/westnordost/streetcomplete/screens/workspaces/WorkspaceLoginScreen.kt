@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -438,7 +439,7 @@ fun LoginCard(
                                     .padding(all = 16.dp)
                             ) {
                                 Icon(
-                                    painter = painterResource(id = androidx.biometric.R.drawable.fingerprint_dialog_fp_icon),
+                                    imageVector = Icons.Default.Fingerprint,
                                     contentDescription = "Fingerprint Icon",
                                     modifier = Modifier.padding(end = 16.dp)
                                 )

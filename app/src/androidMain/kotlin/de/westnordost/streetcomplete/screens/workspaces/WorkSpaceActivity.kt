@@ -58,6 +58,11 @@ import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
+import androidx.core.net.toUri
+import androidx.lifecycle.ViewModelProvider
+import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import kotlin.getValue
 
 class WorkSpaceActivity : AppCompatActivity() {
 
@@ -65,6 +70,7 @@ class WorkSpaceActivity : AppCompatActivity() {
     private val environmentManager: EnvironmentManager by inject()
     private val _isLocationEnabled = mutableStateOf(false)
     private val isLocationEnabled: State<Boolean> get() = _isLocationEnabled
+    private val workspaceViewModel by viewModel<WorkspaceViewModel>()
 
     companion object {
         const val SHOW_LOGGED_OUT_ALERT = "showLogoutAlert"
@@ -125,13 +131,20 @@ class WorkSpaceActivity : AppCompatActivity() {
                     }
                 )
                 if (showMainScreen) {
-                    if (locationEnabled)
+                    if (locationEnabled){
+                        AppForceUpdateHandler(viewModel = workspaceViewModel)
                         StartWorkspaceFlow()
+                    }
                     else
                         ShowLocationEnableUI()
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        workspaceViewModel.getAppUpdateInfo()
     }
 
     @Composable
