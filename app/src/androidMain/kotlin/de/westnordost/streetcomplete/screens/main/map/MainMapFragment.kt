@@ -57,7 +57,6 @@ import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.visibility
@@ -162,7 +161,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private var previouslyHiddenLayers: List<String> = emptyList()
 
-    private lateinit var mapView: MapView
     private lateinit var accessibilityOverlay: FrameLayout
     private val overlayListener = object : SelectedOverlaySource.Listener {
         override fun onSelectedOverlayChanged() {
@@ -201,21 +199,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         accessibilityOverlay = view.findViewById(R.id.accessibility_overlay)
-        mapView = view.findViewById(R.id.map)
-
-        val accessibilityManager =
-            requireContext().getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-
-        accessibilityOverlay.setOnTouchListener { _, event ->
-            if (accessibilityManager.isTouchExplorationEnabled) {
-                // TalkBack ON → let accessibility views handle focus & clicks
-                false
-            } else {
-                // TalkBack OFF → forward normal touches to MapLibre
-                mapView.dispatchTouchEvent(event)
-                true
-            }
-        }
     }
 
     override fun onStart() {
