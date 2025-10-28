@@ -90,6 +90,12 @@ val appModule = module {
                         }
                     }
 
+                    sendWithoutRequest { request ->
+                        val url = request.url.toString()
+                        !url.contains("raw.githubusercontent.com") &&
+                            !url.contains("githubusercontent.com")
+                    }
+
                     refreshTokens {
                         val preferences = get<Preferences>()
                         val httpClient = get<HttpClient>() // Inject HttpClient for making requests

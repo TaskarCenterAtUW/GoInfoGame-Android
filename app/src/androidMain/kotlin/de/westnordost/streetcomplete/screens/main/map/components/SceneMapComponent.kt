@@ -11,9 +11,19 @@ import kotlinx.coroutines.withContext
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.expressions.Expression.*
-import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.style.layers.PropertyFactory.*
+import org.maplibre.android.style.expressions.Expression.all
+import org.maplibre.android.style.expressions.Expression.coalesce
+import org.maplibre.android.style.expressions.Expression.concat
+import org.maplibre.android.style.expressions.Expression.get
+import org.maplibre.android.style.expressions.Expression.literal
+import org.maplibre.android.style.expressions.Expression.neq
+import org.maplibre.android.style.expressions.Expression.switchCase
+import org.maplibre.android.style.expressions.Expression.toBool
+import org.maplibre.android.style.layers.PropertyFactory.lineOpacity
+import org.maplibre.android.style.layers.PropertyFactory.textField
+import org.maplibre.android.style.layers.PropertyFactory.textFont
+import org.maplibre.android.style.layers.PropertyFactory.textSize
+import org.maplibre.android.style.layers.PropertyFactory.visibility
 import org.maplibre.android.style.layers.RasterLayer
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.layers.TransitionOptions
@@ -59,7 +69,22 @@ class SceneMapComponent(
 
 // Add it **above background** so it's visible, but vector tiles still on top
             style.addLayerAbove(satelliteLayer, "background")
-            style.layers.map { it.setProperties(lineOpacity(0.5f)) }
+            style.layers.forEach { layer ->
+                val idLower = layer.id.lowercase(Locale.ROOT)
+                val isRoad =
+                    idLower.contains("road") || idLower.contains("highway") || idLower.contains("motorways")
+
+                if (isRoad) {
+                    layer.setProperties(
+                        lineOpacity(0.5f),
+                        visibility("visible")
+                    )
+                } else if (!idLower.contains("satellite-layer")) {
+                    layer.setProperties(
+                        visibility("none")
+                    )
+                }
+            }
         }
 
         withContext(Dispatchers.Main) { updateStyle() }

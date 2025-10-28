@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.main.edithistory
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,13 +13,18 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -76,7 +83,8 @@ fun EditHistorySidebar(
             .takeUnless { it < 0 }
         else null
     }
-    val state = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex ?: editItems.lastIndex)
+    val state =
+        rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex ?: editItems.lastIndex)
     LaunchedEffect(selectedEdit) {
         // except for first scroll, only scroll if not fully visible
         if (selectedIndex != null && !state.isItemAtIndexFullyVisible(selectedIndex)) {
@@ -118,7 +126,7 @@ fun EditHistorySidebar(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom,
             // bottom 24 dp to align with undo button
-            contentPadding = verticalInsets.asPaddingValues() + PaddingValues(bottom = 56.dp)
+            contentPadding = verticalInsets.asPaddingValues()
         ) {
             items(
                 items = editItems,
@@ -139,6 +147,27 @@ fun EditHistorySidebar(
                         edit = editItem.edit,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+
+            // Button at the bottom of the list
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    IconButton(
+                        onClick = { onDismissRequest() },
+                        modifier = Modifier.background(Color.Gray)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            tint = Color.White,
+                            contentDescription = "Close edit menu"
+                        )
+                    }
                 }
             }
         }
@@ -163,7 +192,7 @@ private fun DateTimeHeader(
     timestamp: Long,
     showDate: Boolean,
     showTime: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     CompositionLocalProvider(
         LocalTextStyle provides MaterialTheme.typography.titleSmall,

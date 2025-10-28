@@ -81,7 +81,7 @@ fun WorkspaceCard(
                     modifier = Modifier
                         .size(40.dp)
                         .shadow(8.dp, CircleShape)
-                        .background(Color(0xFF5C2D91), shape = CircleShape),
+                        .background(MaterialTheme.colorScheme.primary, shape = CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     IconButton(onClick = onProfileClick) {
