@@ -13,6 +13,7 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import de.westnordost.streetcomplete.resources.action_download
 import de.westnordost.streetcomplete.resources.action_settings
 import de.westnordost.streetcomplete.resources.action_switch_workspace
 import de.westnordost.streetcomplete.resources.ic_settings_48
+import de.westnordost.streetcomplete.ui.common.CloseIcon
 import de.westnordost.streetcomplete.ui.common.DownloadIcon
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -39,17 +41,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun MainMenuDialog(
     onDismissRequest: () -> Unit,
-    onClickProfile: () -> Unit,
     onClickSettings: () -> Unit,
-    onClickAbout: () -> Unit,
     onClickDownload: () -> Unit,
-    onClickUpload: () -> Unit,
-    onClickEnterTeamMode: () -> Unit,
-    onClickExitTeamMode: () -> Unit,
-    isLoggedIn: Boolean,
-    indexInTeam: Int?,
-    unsyncedEditsCount: Int?,
-    isUploadingOrDownloading: Boolean,
     onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -64,6 +57,10 @@ fun MainMenuDialog(
             contentColor = contentColor
         ) {
             Column {
+                IconButton(
+                    onClick = onDismissRequest,
+                    modifier = Modifier.padding(8.dp).align(Alignment.End)
+                ) { CloseIcon() }
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
@@ -169,17 +166,8 @@ private fun CompactMenuButton(
 private fun PreviewMainMenuDialog() {
     MainMenuDialog(
         onDismissRequest = {},
-        onClickProfile = {},
         onClickSettings = {},
-        onClickAbout = {},
         onClickDownload = {},
-        onClickUpload = {},
-        onClickEnterTeamMode = {},
-        onClickExitTeamMode = {},
-        isLoggedIn = true,
-        indexInTeam = 0,
-        unsyncedEditsCount = 122,
-        isUploadingOrDownloading = true,
         onSwitchWorkspace = {}
     )
 }

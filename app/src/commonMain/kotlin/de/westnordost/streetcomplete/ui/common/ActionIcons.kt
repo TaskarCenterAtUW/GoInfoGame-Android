@@ -126,6 +126,11 @@ fun ZoomInIcon() {
 }
 
 @Composable
+fun CloseIcon() {
+    Icon(painterResource(Res.drawable.ic_clear_24), stringResource(Res.string.action_clear))
+}
+
+@Composable
 fun ZoomOutIcon() {
     Icon(painterResource(Res.drawable.ic_subtract_24), stringResource(Res.string.map_btn_zoom_out))
 }

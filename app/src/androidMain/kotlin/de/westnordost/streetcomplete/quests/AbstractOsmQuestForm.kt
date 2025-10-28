@@ -163,9 +163,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     protected fun updateButtonPanel() {
-        val otherAnswersItem =
-            AnswerItem(R.string.quest_generic_otherAnswers2) { showOtherAnswers() }
-        setButtonPanelAnswers(listOf(otherAnswersItem) + buttonPanelAnswers)
+        // val otherAnswersItem =
+        //     AnswerItem(R.string.quest_generic_otherAnswers2) { showOtherAnswers() }
+        setButtonPanelAnswers(buttonPanelAnswers)
     }
 
     private fun assembleOtherAnswers(): List<IAnswerItem> {

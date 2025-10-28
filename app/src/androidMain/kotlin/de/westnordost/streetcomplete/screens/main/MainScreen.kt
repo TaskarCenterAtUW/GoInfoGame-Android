@@ -454,24 +454,16 @@ fun MainScreen(
     if (showMainMenuDialog) {
         MainMenuDialog(
             onDismissRequest = { viewModel.hideMenu() },
-            onClickProfile = { context.startActivity(Intent(context, UserActivity::class.java)) },
             onClickSettings = {
                 context.startActivity(
                     Intent(
+
                         context,
                         SettingsActivity::class.java
                     )
                 )
             },
-            onClickAbout = { },
             onClickDownload = onClickDownload,
-            onClickUpload = ::onClickUpload,
-            onClickEnterTeamMode = { showTeamModeWizard = true },
-            onClickExitTeamMode = { viewModel.disableTeamMode() },
-            isLoggedIn = isLoggedIn,
-            indexInTeam = if (isTeamMode) indexInTeam else null,
-            unsyncedEditsCount = if (!isAutoSync) unsyncedEditsCount else null,
-            isUploadingOrDownloading = isUploadingOrDownloading,
             onSwitchWorkspace = onSwitchWorkspace
         )
     }
