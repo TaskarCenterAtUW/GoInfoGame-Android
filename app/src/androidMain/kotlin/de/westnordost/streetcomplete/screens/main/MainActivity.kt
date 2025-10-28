@@ -1,7 +1,6 @@
 package de.westnordost.streetcomplete.screens.main
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,17 +32,15 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import coil.ImageLoader
 import coil.decode.SvgDecoder
@@ -85,6 +82,7 @@ import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenSource
 import de.westnordost.streetcomplete.databinding.ActivityMainBinding
+import de.westnordost.streetcomplete.databinding.CustomToolbarBinding
 import de.westnordost.streetcomplete.databinding.EffectQuestPlopBinding
 import de.westnordost.streetcomplete.osm.level.levelsIntersect
 import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
@@ -118,6 +116,7 @@ import de.westnordost.streetcomplete.screens.main.map.getIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
 import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
 import de.westnordost.streetcomplete.screens.main.map.maplibre.toPadding
+import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.util.content
 import de.westnordost.streetcomplete.util.SoundFx
@@ -139,8 +138,6 @@ import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.area
 import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
 import de.westnordost.streetcomplete.util.math.enlargedBy
-import de.westnordost.streetcomplete.util.satellite_layers.Attribution
-import de.westnordost.streetcomplete.util.satellite_layers.Extent
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import kotlinx.coroutines.CoroutineScope
@@ -272,6 +269,7 @@ class MainActivity :
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         viewModel.workspaceTitle.value = intent?.getStringExtra("WORKSPACE_TITLE") ?: ""
+        setUpToolbar(binding.toolbar)
         binding.controls.content {
             // color for HUD elements without a background (e.g. scalebar, attribution button)
             CompositionLocalProvider(
@@ -1018,12 +1016,49 @@ class MainActivity :
         }
     }
 
-    private fun onClickCreateTrack() {
-        mapFragment?.startPositionTrackRecording()
-        viewModel.isRecordingTracks.value = true
-    }
+    private fun setUpToolbar(toolbar: CustomToolbarBinding) {
+        toolbar.apply {
+            workspaceTitle.text = viewModel.workspaceTitle.value
+            mainMenuButton.setOnClickListener { viewModel.showMenu() }
+            profileButton.setOnClickListener {
+                startActivity(
+                    Intent(
+                        this@MainActivity,
+                        UserActivity::class.java
+                    )
+                )
+            }
+            overlaysButton.setOnClickListener {
+                onClickImageryLayerButton()
+            }
 
-    //endregion
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.unsyncedEditsCount.collect { count ->
+                        uploadButton.uploadableCount = count
+                        uploadButton.setOnClickListener {
+                            if (count > 0) {
+                                if (viewModel.isConnected) {
+                                    viewModel.upload()
+                                } else {
+                                    toast(R.string.offline)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.isUploadingOrDownloading.collect { showProgress ->
+                        uploadButton.setLoading(showProgress)
+                    }
+                }
+            }
+
+        }
+    }
 
     //region Bottom Sheet - Controlling the bottom sheet and its interaction with the map
 

@@ -449,7 +449,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         displayedLocation = location
         surveyChecker.addRecentLocation(location.toLocation())
         locationMapComponent?.targetLocation = location
-        addTrackLocation(location)
+        // addTrackLocation(location)
         compass.setLocation(location)
         centerCurrentPositionIfFollowing()
         listener?.onDisplayedLocationDidChange()

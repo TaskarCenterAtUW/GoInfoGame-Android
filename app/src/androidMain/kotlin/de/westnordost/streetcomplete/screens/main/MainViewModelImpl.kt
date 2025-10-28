@@ -410,6 +410,11 @@ class MainViewModelImpl(
     }
     override var workspaceTitle: MutableStateFlow<String> = MutableStateFlow("Workspace")
 
+    override val showMainMenuDialog : MutableStateFlow<Boolean> = MutableStateFlow(false)
+
+    override fun showMenu() { showMainMenuDialog.value = true }
+    override fun hideMenu() { showMainMenuDialog.value = false }
+
     // ---------------------------------------------------------------------------------------
 
     init {

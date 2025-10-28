@@ -162,7 +162,7 @@ fun MainScreen(
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
-    var showMainMenuDialog by remember { mutableStateOf(false) }
+    val showMainMenuDialog by viewModel.showMainMenuDialog.collectAsState()
     var shownMessage by remember { mutableStateOf<Message?>(null) }
     val showEditHistorySidebar by editHistoryViewModel.isShowingSidebar.collectAsState()
 
@@ -245,29 +245,29 @@ fun MainScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .onGloballyPositioned { screen = it.boundsInRoot() }
             ) {
-                Column {
-                    WorkspaceCard(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally),
-                        workspaceName = viewModel.workspaceTitle.collectAsState().value,
-                        pendingCount = unsyncedEditsCount,
-                        onRefreshClick = {
-                            if (unsyncedEditsCount > 0) {
-                                if (viewModel.isConnected) {
-                                    viewModel.upload()
-                                } else {
-                                    context.toast(R.string.offline)
-                                }
-                            }
-                        },
-                        onLayersClick = onClickImageryLayer,
-                        onMenuClick = { showMainMenuDialog = true },
-                        onProfileClick = {
-                            context.startActivity(Intent(context, UserActivity::class.java))
-                        },
-                        showProgress = isUploadingOrDownloading,
-                    )
-                }
+                // Column {
+                //     WorkspaceCard(
+                //         modifier = Modifier
+                //             .align(Alignment.CenterHorizontally),
+                //         workspaceName = viewModel.workspaceTitle.collectAsState().value,
+                //         pendingCount = unsyncedEditsCount,
+                //         onRefreshClick = {
+                //             if (unsyncedEditsCount > 0) {
+                //                 if (viewModel.isConnected) {
+                //                     viewModel.upload()
+                //                 } else {
+                //                     context.toast(R.string.offline)
+                //                 }
+                //             }
+                //         },
+                //         onLayersClick = onClickImageryLayer,
+                //         onMenuClick = { showMainMenuDialog = true },
+                //         onProfileClick = {
+                //             context.startActivity(Intent(context, UserActivity::class.java))
+                //         },
+                //         showProgress = isUploadingOrDownloading,
+                //     )
+                // }
 
                 // // top-start controls
                 // Box(Modifier.align(Alignment.TopStart)) {
@@ -453,7 +453,7 @@ fun MainScreen(
 
     if (showMainMenuDialog) {
         MainMenuDialog(
-            onDismissRequest = { showMainMenuDialog = false },
+            onDismissRequest = { viewModel.hideMenu() },
             onClickProfile = { context.startActivity(Intent(context, UserActivity::class.java)) },
             onClickSettings = {
                 context.startActivity(
@@ -706,4 +706,15 @@ object PreviewMainViewModel : MainViewModel() {
     override var workspaceTitle: MutableStateFlow<String>
         get() = MutableStateFlow("Preview Workspace")
         set(value) {}
+
+    override val showMainMenuDialog: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+
+    override fun showMenu() {
+        TODO("Not yet implemented")
+    }
+
+    override fun hideMenu() {
+        TODO("Not yet implemented")
+    }
 }
