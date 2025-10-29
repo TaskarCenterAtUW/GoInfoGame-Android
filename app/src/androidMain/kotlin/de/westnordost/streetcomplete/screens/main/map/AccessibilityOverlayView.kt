@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
+import android.widget.Toast
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 
@@ -15,7 +16,8 @@ class AccessibilityOverlayView(
     var screenPosition: PointF,
     val key: String,
     properties: Map<String, String>,
-    private val onDoubleTap: (LatLon, PointF, Map<String, String>) -> Unit,
+    private val onDoubleTap: (Map<String, String>) -> Unit,
+    private val onLongPress: (Map<String, String>) -> Unit
 ) :
     View(context) {
 
@@ -52,7 +54,7 @@ class AccessibilityOverlayView(
             ): Boolean {
                 return when (action) {
                     AccessibilityNodeInfo.ACTION_CLICK -> {
-                        onDoubleTap(position, screenPosition, properties)
+                        onDoubleTap(properties)
                         true
                     }
                     AccessibilityNodeInfo.ACTION_LONG_CLICK -> {
@@ -63,6 +65,11 @@ class AccessibilityOverlayView(
                     else -> super.performAccessibilityAction(host, action, args)
                 }
             }
+        }
+
+        setOnLongClickListener { // 🔹 Handle regular long-press here
+            onLongPress(properties)
+            true
         }
     }
 }

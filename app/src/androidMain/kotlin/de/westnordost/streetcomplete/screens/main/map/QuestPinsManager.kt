@@ -300,11 +300,10 @@ class QuestPinsManager(
                     pin.position,
                     screenPos,
                     pin.position.toKey(),
-                    pin.properties.toMap()
-                ) { position, pos, properties ->
-                    // simulatePinClick(pos.x, pos.y)
-                    mapFragment.onClickPin(properties)
-                }.apply {
+                    pin.properties.toMap(),
+                    ::onClick,
+                    ::onLongClick
+                ).apply {
                     contentDescription = pin.toString()
                     isFocusable = true
                     isClickable = true
@@ -317,6 +316,12 @@ class QuestPinsManager(
                 overlayPositions.add(Pair(overlayView.x, overlayView.y))
             }
         }
+    }
+    private fun onClick(properties: Map<String, String>) {
+        mapFragment.onClickPin(properties)
+    }
+    private fun onLongClick(properties: Map<String, String>) {
+        mapFragment.onLongClickPin(properties)
     }
 
     private fun simulatePinClick(x: Float, y: Float) {

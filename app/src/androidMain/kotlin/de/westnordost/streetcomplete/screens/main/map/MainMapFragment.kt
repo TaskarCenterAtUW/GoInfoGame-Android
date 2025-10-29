@@ -389,7 +389,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         }
     }
 
-    private fun onLongClickPin(properties: Map<String, String>) {
+    fun onLongClickPin(properties: Map<String, String>) {
         when (pinMode) {
             PinMode.QUESTS -> {
                 questPinsManager?.getQuestKey(properties)?.let {
