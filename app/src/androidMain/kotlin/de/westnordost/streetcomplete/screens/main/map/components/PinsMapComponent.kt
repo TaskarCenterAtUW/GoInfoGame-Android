@@ -198,7 +198,7 @@ class PinsMapComponent(
         return Pair(true, feature.properties()?.toMap().orEmpty())
     }
 
-    private fun onClick(position: LatLng): Boolean {
+    fun onClick(position: LatLng): Boolean {
         val feature = map.queryRenderedFeatures(
             map.projection.toScreenLocation(position),
             *arrayOf("pins-layer", "pin-cluster-layer")

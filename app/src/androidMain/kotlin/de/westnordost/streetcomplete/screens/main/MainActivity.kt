@@ -52,6 +52,7 @@ import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
+import de.westnordost.streetcomplete.data.edithistory.EditHistoryController
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
@@ -126,6 +127,7 @@ import de.westnordost.streetcomplete.util.ktx.getLocationInWindow
 import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
 import de.westnordost.streetcomplete.util.ktx.isLocationAvailable
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.observe
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.ktx.toast
@@ -197,6 +199,7 @@ class MainActivity :
     private val questsHiddenSource: QuestsHiddenSource by inject()
     private val featureDictionary: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     private val soundFx: SoundFx by inject()
+    private val editHistoryController: EditHistoryController by inject()
 
     private lateinit var locationManager: FineLocationManager
 
@@ -270,6 +273,7 @@ class MainActivity :
         setContentView(binding.root)
         viewModel.workspaceTitle.value = intent?.getStringExtra("WORKSPACE_TITLE") ?: ""
         setUpToolbar(binding.toolbar)
+        editHistoryController.deleteSyncedOlderThan(nowAsEpochMilliseconds() - ApplicationConstants.MAX_UNDO_HISTORY_AGE)
         binding.controls.content {
             // color for HUD elements without a background (e.g. scalebar, attribution button)
             CompositionLocalProvider(

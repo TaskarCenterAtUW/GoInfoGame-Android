@@ -5,7 +5,9 @@ import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import coil.Coil.setImageLoader
 import coil.ImageLoader
+import coil.disk.DiskCache
 import coil.load
+import coil.request.CachePolicy
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.util.logs.Log
 import okhttp3.OkHttpClient
@@ -26,37 +28,45 @@ fun ImageView.setImage(image: Image?) {
                 .addInterceptor { chain ->
                     val newRequest = chain.request().newBuilder()
                         .header("User-Agent", "Mozilla/5.0 (Android)") // Mimic browser
-                        .header(
-                            "Referer",
-                            "https://png.pngtree.com/"
-                        ) // Optional, but often required
                         .build()
                     chain.proceed(newRequest)
                 }
                 .build()
         }
+        .diskCache {
+            DiskCache.Builder()
+                .directory(context.cacheDir.resolve("image_cache"))
+                .maxSizePercent(0.02) // 2% of app storage
+                .build()
+        }
+        .memoryCachePolicy(CachePolicy.ENABLED)
+        .networkCachePolicy(CachePolicy.ENABLED)
         .build()
 
     when (image) {
         is ResImage -> setImageResource(image.resId)
         is DrawableImage -> setImageDrawable(image.drawable)
-        is ImageUrl -> this.load(image.url) {
-            setImageLoader(customImageLoader)
-            placeholder(R.drawable.blank_big)
-            error(R.drawable.blank_big)
-            listener(
-                onError = { _, throwable ->
-                    Log.w(
-                        "ImageView",
-                        "Failed to load image from URL: ${image.url}",
-                        throwable.throwable
+        is ImageUrl -> {
+            val url = image.url
+            if (url.isNullOrEmpty()) {
+                Log.w("ImageView", "Skipped loading: URL is null or empty")
+                setImageResource(R.drawable.blank_big)
+            } else {
+                this.load(url) {
+                    setImageLoader(customImageLoader)
+                    placeholder(R.drawable.blank_big)
+                    error(R.drawable.blank_big)
+                    listener(
+                        onError = { _, throwable ->
+                            Log.w("ImageView", "Failed to load image from URL: $url", throwable.throwable)
+                            setImageResource(R.drawable.blank_big)
+                        },
+                        onSuccess = { _, _ ->
+                            Log.w("ImageView", "Success to load image from URL: $url")
+                        }
                     )
-                    setImageResource(R.drawable.blank_big)
-                },
-                onSuccess = { _, _ ->
-                    Log.w("ImageView", "Success to load image from URL: ${image.url}")
                 }
-            )
+            }
         }
 
         null -> setImageDrawable(null)

@@ -12,9 +12,10 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 class AccessibilityOverlayView(
     context: Context,
     val position: LatLon,
-    var screenPosition : PointF,
-    val key : String,
-    private val onDoubleTap: (LatLon, PointF) -> Unit,
+    var screenPosition: PointF,
+    val key: String,
+    properties: Map<String, String>,
+    private val onDoubleTap: (LatLon, PointF, Map<String, String>) -> Unit,
 ) :
     View(context) {
 
@@ -23,8 +24,6 @@ class AccessibilityOverlayView(
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         isFocusable = true
-        isClickable = true
-        isLongClickable = true
         accessibilityDelegate = object : AccessibilityDelegate() {
             override fun onInitializeAccessibilityNodeInfo(
                 host: View,
@@ -35,6 +34,7 @@ class AccessibilityOverlayView(
                     className = Button::class.java.name
                     contentDescription = "Pin: $description"
                     isClickable = true
+                    isLongClickable = true
                     addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK)
                     addAction(
                         AccessibilityNodeInfo.AccessibilityAction(
@@ -50,11 +50,18 @@ class AccessibilityOverlayView(
                 action: Int,
                 args: Bundle?
             ): Boolean {
-                if (action == AccessibilityNodeInfo.ACTION_CLICK) {
-                    onDoubleTap(position, screenPosition)
-                    return true
+                return when (action) {
+                    AccessibilityNodeInfo.ACTION_CLICK -> {
+                        onDoubleTap(position, screenPosition, properties)
+                        true
+                    }
+                    AccessibilityNodeInfo.ACTION_LONG_CLICK -> {
+                        // 🔹 Handle TalkBack "double-tap and hold" here
+                        // onLongPress(position, screenPosition, properties)
+                        true
+                    }
+                    else -> super.performAccessibilityAction(host, action, args)
                 }
-                return super.performAccessibilityAction(host, action, args)
             }
         }
     }

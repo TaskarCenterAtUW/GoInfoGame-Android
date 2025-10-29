@@ -26,6 +26,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.nio.channels.UnresolvedAddressException
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.DurationUnit
 
 class WorkspaceApiService(
     private val httpClient: HttpClient,
@@ -175,6 +177,15 @@ class WorkspaceApiService(
         val url = environmentManager.currentEnvironment.appUpdateVersionCheckUrl
 
         try {
+            val lastFetched = preferences.configLastFetchTime
+            lastFetched?.let {
+                if (System.currentTimeMillis() - it < 6.hours.toLong(DurationUnit.MILLISECONDS)) {
+                    val cachedConfig = preferences.configJson
+                    cachedConfig?.let { configString ->
+                        return json.decodeFromString<AppUpdateCheckerResponse>(configString)
+                    }
+                }
+            }
             val response = performHttpCallWithFirebaseTracing(
                 client = httpClient,
                 url = url,
@@ -182,6 +193,8 @@ class WorkspaceApiService(
             ) {
                 get(url)
             }
+            preferences.configLastFetchTime = System.currentTimeMillis()
+            preferences.configJson = response.bodyAsText()
 
             return json.decodeFromString<AppUpdateCheckerResponse>(response.bodyAsText())
         } catch (e: Exception) {

@@ -119,6 +119,24 @@ class Preferences(private val prefs: ObservableSettings) {
         get() =
             prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
 
+    var configLastFetchTime : Long?
+        set(value) {
+            value?.let {
+                prefs.putLong(CONFIG_LAST_FETCHED_TIME,value)
+            }
+        }
+        get() =
+            prefs.getLongOrNull(CONFIG_LAST_FETCHED_TIME)
+
+    var configJson : String?
+        set(value) {
+            value?.let {
+                prefs.putString(CONFIG_JSON,value)
+            }
+        }
+        get() =
+            prefs.getStringOrNull(CONFIG_JSON)
+
     var workspaceUserName : String?
         set(value) {
             prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME,value)
@@ -392,6 +410,8 @@ class Preferences(private val prefs: ObservableSettings) {
 
         private const val WORKSPACE_LOGIN = "workspace.login"
         private const val WORKSPACE_ACCESS_TOKEN = "workspace.accesstoken"
+        private const val CONFIG_LAST_FETCHED_TIME = "config.last.fetched.time"
+        private const val CONFIG_JSON = "config.json"
         private const val WORKSPACE_SHOW_LONG_FORM = "workspace.showlongform"
         private const val WORKSPACE_ID = "workspace.id"
         private const val WORKSPACE_TDEI_USER_NAME = "workspace.tdei.username"

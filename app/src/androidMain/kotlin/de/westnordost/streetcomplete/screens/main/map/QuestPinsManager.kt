@@ -299,9 +299,11 @@ class QuestPinsManager(
                     accessibilityOverlay.context,
                     pin.position,
                     screenPos,
-                    pin.position.toKey()
-                ) { _, pos ->
-                    simulatePinClick(pos.x, pos.y)
+                    pin.position.toKey(),
+                    pin.properties.toMap()
+                ) { position, pos, properties ->
+                    // simulatePinClick(pos.x, pos.y)
+                    mapFragment.onClickPin(properties)
                 }.apply {
                     contentDescription = pin.toString()
                     isFocusable = true
@@ -359,7 +361,8 @@ class QuestPinsManager(
                 .filterIsInstance<AccessibilityOverlayView>()
                 .sortedBy { it.position.toKey() } // stable traversal order for TalkBack
                 .forEach { view ->
-                    val pin = pinsSnapshot.find { it.position.toKey() == view.key } ?: return@forEach
+                    val pin =
+                        pinsSnapshot.find { it.position.toKey() == view.key } ?: return@forEach
                     val isEnabled = pin.enabled
                     val screenPos = map.projection.toScreenLocation(
                         LatLng(pin.position.latitude, pin.position.longitude)
