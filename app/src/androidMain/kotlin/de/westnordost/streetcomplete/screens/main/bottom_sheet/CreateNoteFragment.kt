@@ -65,6 +65,8 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         fun getRecordedTrack(): List<Trackpoint>?
 
         fun onCreatedNote(position: LatLon)
+
+        fun closeNoteCreation()
     }
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
@@ -96,7 +98,9 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
 
         bottomSheetBinding.titleLabel.text = getString(R.string.map_btn_create_note)
         bottomSheetBinding.hideButton.visibility = View.GONE
-        bottomSheetBinding.closeButton.visibility = View.GONE
+        bottomSheetBinding.closeButton.setOnClickListener {
+            onClickClose { listener?.closeNoteCreation() }
+        }
         contentBinding.descriptionLabel.text = getString(R.string.create_new_note_description)
     }
 

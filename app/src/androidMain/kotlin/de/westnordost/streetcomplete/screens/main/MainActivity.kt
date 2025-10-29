@@ -708,6 +708,10 @@ class MainActivity :
         closeBottomSheet()
     }
 
+    override fun closeNoteCreation() {
+        closeBottomSheet()
+    }
+
     override fun getMapPositionAt(screenPos: PointF): LatLon? =
         mapFragment?.getPositionAt(screenPos)
 
