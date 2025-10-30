@@ -1,10 +1,12 @@
 package de.westnordost.streetcomplete.quests
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.provider.MediaStore
@@ -12,10 +14,13 @@ import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.PopupMenu
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import com.google.android.material.snackbar.Snackbar
@@ -50,6 +55,7 @@ import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.osm.applyReplacePlaceTo
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.isSplittable
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
@@ -72,6 +78,7 @@ import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
 import java.io.ByteArrayOutputStream
 import java.util.Locale
+import kotlin.math.PI
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
 abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails {
@@ -138,12 +145,43 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
+    private lateinit var compass: Compass
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        compass = Compass(
+            context?.getSystemService<SensorManager>()!!,
+            context?.getSystemService<WindowManager>()!!.defaultDisplay,
+            this::onCompassRotationChanged
+        )
+        lifecycle.addObserver(compass)
+
         val args = requireArguments()
-        element = Json.decodeFromString(args.getString(ARG_ELEMENT)!!)
+
+        val getElement: Element? = args.getString(ARG_ELEMENT)?.let {
+            Json.decodeFromString(it)
+        }
+        if (getElement != null) {
+            element = getElement
+        }
+        val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
+        cameraLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    showProgressbar()
+                    // Handle the image capture result here
+                    val bitmap = result.data?.extras?.getParcelable<Bitmap>("data")
+                    startKartViewFlow(bitmap, displayedLocation)
+                } else {
+
+                    // Handle the error state here
+                }
+            }
+    }
+
+    private fun onCompassRotationChanged(rot: Float, tilt: Float) {
+        compassBearing = rot * 180 / PI
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
