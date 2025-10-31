@@ -193,8 +193,10 @@ class WorkspaceApiService(
             ) {
                 get(url)
             }
-            preferences.configLastFetchTime = System.currentTimeMillis()
-            preferences.configJson = response.bodyAsText()
+            if (response.status == HttpStatusCode.OK){
+                preferences.configLastFetchTime = System.currentTimeMillis()
+                preferences.configJson = response.bodyAsText()
+            }
 
             return json.decodeFromString<AppUpdateCheckerResponse>(response.bodyAsText())
         } catch (e: Exception) {

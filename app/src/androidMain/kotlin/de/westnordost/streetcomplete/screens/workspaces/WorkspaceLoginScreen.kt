@@ -601,6 +601,7 @@ fun EnvironmentDropdownMenu(
                     selectedEnvironment.value = environment
                     expanded = false
                     viewModel.setEnvironment(environment)
+                    viewModel.getAppUpdateInfo()
                 })
             }
         }
