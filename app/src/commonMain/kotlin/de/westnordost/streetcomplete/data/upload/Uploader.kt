@@ -22,9 +22,8 @@ class Uploader(
     private val elementEditsUploader: ElementEditsUploader,
     private val downloadedTilesController: DownloadedTilesController,
     private val userLoginSource: UserLoginSource,
-    private val versionIsBannedChecker: VersionIsBannedChecker,
     private val userLoginController: UserLoginController,
-    private val mutex: Mutex
+    private val mutex: Mutex,
 ) : UploadProgressSource {
 
     private val listeners = Listeners<UploadProgressSource.Listener>()
@@ -54,14 +53,6 @@ class Uploader(
         try {
             isUploadInProgress = true
             listeners.forEach { it.onStarted() }
-
-            if (!::bannedInfo.isInitialized) {
-                bannedInfo = versionIsBannedChecker.get()
-            }
-            val banned = bannedInfo
-            if (banned is BannedInfo.IsBanned) {
-                throw VersionBannedException(banned.reason)
-            }
 
             // let's fail early in case of no authorization
             if (!userLoginSource.isLoggedIn) {
@@ -95,6 +86,7 @@ class Uploader(
     override fun addListener(listener: UploadProgressSource.Listener) {
         listeners.add(listener)
     }
+
     override fun removeListener(listener: UploadProgressSource.Listener) {
         listeners.remove(listener)
     }

@@ -48,7 +48,7 @@ fun QuestSelectionRow(
     displayCountry: String,
     modifier: Modifier = Modifier,
 ) {
-    val alpha = if (!item.selected) 0.0f else 1.0f
+    val alpha = if (!item.selected) 0.5f else 1.0f
 
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
