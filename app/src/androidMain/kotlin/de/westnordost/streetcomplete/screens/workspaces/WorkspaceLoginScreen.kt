@@ -285,7 +285,6 @@ fun LoginCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        color = Color.White,
         modifier = Modifier
             .fillMaxSize()
     ) {
@@ -296,7 +295,7 @@ fun LoginCard(
                 modifier = modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.3f)
-                    .background(Color(0xFFE7E3EE))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(modifier = Modifier.padding(all = 32.dp)) {
                     Image(
@@ -332,7 +331,6 @@ fun LoginCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = modifier
                     .fillMaxSize()
-                    .background(Color.White)
                     .padding(16.dp)
             ) {
                 val context = LocalContext.current
