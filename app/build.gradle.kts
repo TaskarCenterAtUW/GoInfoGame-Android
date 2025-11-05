@@ -34,11 +34,11 @@ val nsiVersion = "v6.0.20250817"
 val poEditorProjectId = "97843"
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform") version "2.2.20"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
+    id("org.jetbrains.kotlin.multiplatform") version "2.2.21"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
     id("com.android.application") version "8.13.0"
-    id("org.jetbrains.compose") version "1.9.0"
+    id("org.jetbrains.compose") version "1.9.2"
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
     id("kotlin-parcelize")
