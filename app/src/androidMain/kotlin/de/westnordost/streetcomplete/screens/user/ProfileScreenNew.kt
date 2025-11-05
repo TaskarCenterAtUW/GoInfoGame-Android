@@ -72,7 +72,7 @@ fun ProfileScreenNewContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFE5E5E5))
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -118,7 +118,7 @@ fun ProfileScreenNewContent(
                 .fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Text(
                 "Preferences".uppercase(),
@@ -139,12 +139,12 @@ fun ProfileScreenNewContent(
                 Column(modifier = Modifier.weight(3f)) {
                     Text(
                         text = stringResource(R.string.diable_biometric_title),
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
                         text = stringResource(R.string.disable_biometric_message),
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.westnordost.streetcomplete.ui.theme.AppTheme
 
 @Composable
 fun WorkspaceCard(
@@ -213,5 +214,7 @@ private fun PreviewWorkspaceCard() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun PreviewDarkWorkspaceCard() {
-    WorkspaceCard()
+    AppTheme {
+        WorkspaceCard()
+    }
 }
