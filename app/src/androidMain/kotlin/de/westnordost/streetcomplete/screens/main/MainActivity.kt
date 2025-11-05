@@ -12,6 +12,7 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -981,7 +982,7 @@ class MainActivity :
         (overlay as ThingsOverlay).position = position1
         viewModel.selectOverlay(overlay)
 
-        mapFragment?.updateCameraPosition {
+        mapFragment?.updateCameraPosition(300) {
             position = position1
             padding = getQuestFormInsets().toPadding()
         }
@@ -1024,6 +1025,7 @@ class MainActivity :
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setUpToolbar(toolbar: CustomToolbarBinding) {
         toolbar.apply {
             workspaceTitle.text = viewModel.workspaceTitle.value
@@ -1064,7 +1066,12 @@ class MainActivity :
                     }
                 }
             }
-
+            this.root.setOnTouchListener { v, event ->
+                // optionally prevent parent from intercepting (useful for nested scrolls)
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                // handle or ignore event; returning true means "I consumed it"
+                true
+            }
         }
     }
 

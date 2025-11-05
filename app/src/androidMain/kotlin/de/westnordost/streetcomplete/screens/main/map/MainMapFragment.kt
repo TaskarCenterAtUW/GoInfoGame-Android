@@ -7,8 +7,6 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.view.View
-import android.view.accessibility.AccessibilityManager
-import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.FrameLayout
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
