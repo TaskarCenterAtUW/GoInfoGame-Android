@@ -14,10 +14,16 @@ data class OsmQuest(
     override val type: OsmElementQuestType<*>,
     override val elementType: ElementType,
     override val elementId: Long,
-    override val geometry: ElementGeometry
+    override val geometry: ElementGeometry,
+    override var workspaceId : Int = 0
 ) : Quest, OsmQuestDaoEntry {
 
-    override val key: OsmQuestKey by lazy { OsmQuestKey(elementType, elementId, questTypeName) }
+    override val key: OsmQuestKey by lazy { OsmQuestKey(
+        elementType,
+        elementId,
+        questTypeName,
+        workspaceId
+    ) }
 
     override val questTypeName: String get() = type.name
 
@@ -48,7 +54,6 @@ data class OsmQuest(
         listOf(position)
     }
 
-    override var workspaceId : Int = 0
 }
 
 const val MAXIMUM_MARKER_DISTANCE = 400

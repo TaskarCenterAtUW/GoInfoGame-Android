@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestHidden
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.screens.main.edithistory.icon
@@ -29,6 +30,7 @@ import kotlinx.coroutines.withContext
 class EditHistoryPinsManager(
     private val pinsMapComponent: PinsMapComponent,
     private val editHistorySource: EditHistorySource,
+    private val preferences: Preferences
 ) : DefaultLifecycleObserver {
 
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
@@ -79,7 +81,7 @@ class EditHistoryPinsManager(
     }
 
     fun getEditKey(properties: Map<String, String>): EditKey? =
-        properties.toEditKey()
+        properties.toEditKey(preferences.workspaceId ?: 0)
 
     private fun updatePins() {
         if (!isVisible) return
@@ -136,7 +138,7 @@ private fun Edit.toProperties(): List<Pair<String, String>> = when (this) {
     else -> throw IllegalArgumentException()
 }
 
-private fun Map<String, String>.toEditKey(): EditKey? = when (get(MARKER_EDIT_TYPE)) {
+private fun Map<String, String>.toEditKey(workspaceId: Int): EditKey? = when (get(MARKER_EDIT_TYPE)) {
     EDIT_TYPE_ELEMENT ->
         ElementEditKey(getValue(MARKER_ID).toLong())
     EDIT_TYPE_NOTE ->
@@ -145,7 +147,8 @@ private fun Map<String, String>.toEditKey(): EditKey? = when (get(MARKER_EDIT_TY
         QuestHiddenKey(OsmQuestKey(
             ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
             getValue(MARKER_ELEMENT_ID).toLong(),
-            getValue(MARKER_QUEST_TYPE)
+            getValue(MARKER_QUEST_TYPE),
+            workspaceId
         ))
     EDIT_TYPE_HIDE_OSM_NOTE_QUEST ->
         QuestHiddenKey(OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong()))

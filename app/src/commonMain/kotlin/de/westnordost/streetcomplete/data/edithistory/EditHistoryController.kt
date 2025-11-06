@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.QuestKey
@@ -30,9 +31,11 @@ class EditHistoryController(
     private val notesSource: NotesWithEditsSource,
     private val mapDataSource: MapDataWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
+    private val preferences: Preferences
 ) : EditHistorySource {
     private val listeners = Listeners<EditHistorySource.Listener>()
-
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
     private val osmElementEditsListener = object : ElementEditsSource.Listener {
         override fun onAddedEdit(edit: ElementEdit) {
             if (edit.action !is IsRevertAction) onAdded(edit)
@@ -72,7 +75,7 @@ class EditHistoryController(
             is OsmQuestKey -> {
                 val geometry = mapDataSource.getGeometry(key.elementType, key.elementId) ?: return null
                 val questType = questTypeRegistry.getByName(key.questTypeName) as? OsmElementQuestType<*> ?: return null
-                OsmQuestHidden(key.elementType, key.elementId, questType, geometry, timestamp)
+                OsmQuestHidden(key.elementType, key.elementId, questType, geometry, timestamp, workspaceId)
             }
         }
     }

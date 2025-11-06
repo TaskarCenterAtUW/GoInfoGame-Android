@@ -13,13 +13,14 @@ import nl.adaptivity.xmlutil.EventType.*
 import nl.adaptivity.xmlutil.XmlReader
 import nl.adaptivity.xmlutil.core.kxio.newReader
 import nl.adaptivity.xmlutil.xmlStreaming
+import kotlin.time.ExperimentalTime
 
 class NotesApiParser {
-    fun parseNotes(source: Source): List<Note> =
-        xmlStreaming.newReader(source).parseNotes()
+    fun parseNotes(source: Source, workspaceId: Int?): List<Note> =
+        xmlStreaming.newReader(source).parseNotes(workspaceId)
 }
 
-private fun XmlReader.parseNotes(): List<Note> = try {
+private fun XmlReader.parseNotes(workspaceId: Int?): List<Note> = try {
     val result = ArrayList<Note>()
 
     var note: ApiNote? = null
@@ -55,7 +56,7 @@ private fun XmlReader.parseNotes(): List<Note> = try {
             // note
             "note" -> {
                 val n = note!!
-                result.add(Note(n.position, n.id!!, n.timestampCreated!!, n.timestampClosed, n.status!!, n.comments))
+                result.add(Note(n.position, n.id!!, n.timestampCreated!!, n.timestampClosed, n.status!!, n.comments, workspaceId ?: 0))
             }
             // comment
             "comment" -> {
@@ -94,5 +95,6 @@ private val dateFormat = DateTimeComponents.Format {
     timeZoneId()
 }
 
+@OptIn(ExperimentalTime::class)
 private fun parseTimestamp(date: String): Long =
     dateFormat.parse(date).toInstantUsingOffset().toEpochMilliseconds()

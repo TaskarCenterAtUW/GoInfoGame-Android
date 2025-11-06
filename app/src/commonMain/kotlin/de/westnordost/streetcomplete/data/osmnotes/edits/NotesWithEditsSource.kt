@@ -141,7 +141,8 @@ class NotesWithEditsSource(
         createdTimestamp,
         null,
         Note.Status.OPEN,
-        arrayListOf(createNoteComment(NoteComment.Action.OPENED))
+        arrayListOf(createNoteComment(NoteComment.Action.OPENED)),
+        workspaceId
     )
 
     private fun NoteEdit.createNoteComment(action: NoteComment.Action = NoteComment.Action.COMMENTED): NoteComment {

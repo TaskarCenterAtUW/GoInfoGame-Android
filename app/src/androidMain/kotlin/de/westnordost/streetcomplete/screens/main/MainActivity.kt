@@ -1183,7 +1183,7 @@ class MainActivity :
                 ?.takeIf { questsHiddenSource.get(OsmNoteQuestKey(it.id)) == null }
         }
         if (note != null) {
-            showQuestDetails(createOsmNoteQuest(note.id, note.position))
+            showQuestDetails(createOsmNoteQuest(note.id, note.position, note.workspaceId))
             return
         }
 

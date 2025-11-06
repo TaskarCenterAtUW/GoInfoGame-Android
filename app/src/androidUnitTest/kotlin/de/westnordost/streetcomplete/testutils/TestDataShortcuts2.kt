@@ -42,6 +42,6 @@ fun osmQuestKey(
     elementType: ElementType = ElementType.NODE,
     elementId: Long = 1L,
     questTypeName: String = QUEST_TYPE.name
-) = OsmQuestKey(elementType, elementId, questTypeName)
+) = OsmQuestKey(elementType, elementId, questTypeName, workspaceId)
 
 val QUEST_TYPE = TestQuestTypeA()

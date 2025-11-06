@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
+import kotlin.time.ExperimentalTime
 
 @Stable
 abstract class EditHistoryViewModel : ViewModel() {
@@ -166,6 +167,7 @@ class EditHistoryViewModelImpl(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun List<Edit>.toEditItems(): List<EditItem> {
         var editAboveDateTime: LocalDateTime? = null
         return map { edit ->

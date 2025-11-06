@@ -21,6 +21,8 @@ class OsmNoteQuestController(
     /* Must be a singleton because there is a listener that should respond to a change in the
      *  database table */
 
+    private val workspaceId
+        get() = prefs.workspaceId ?: 0
     private val listeners = Listeners<OsmNoteQuestSource.Listener>()
 
     private val showOnlyNotesPhrasedAsQuestions: Boolean get() =
@@ -78,7 +80,7 @@ class OsmNoteQuestController(
 
     private fun createQuestForNote(note: Note): OsmNoteQuest? =
         if (note.shouldShowAsQuest(userDataSource.userId, showOnlyNotesPhrasedAsQuestions)) {
-            createOsmNoteQuest(note.id, note.position)
+            createOsmNoteQuest(note.id, note.position, workspaceId)
         } else {
             null
         }

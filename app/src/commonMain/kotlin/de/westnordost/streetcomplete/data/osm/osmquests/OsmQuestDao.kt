@@ -24,6 +24,7 @@ class OsmQuestDao(private val db: Database, val preferences: Preferences) {
         get() = preferences.workspaceId ?: 0
 
     fun put(quest: OsmQuestDaoEntry) {
+        quest.workspaceId = workspaceId
         db.replace(NAME, quest.toPairs())
     }
 
@@ -123,5 +124,5 @@ data class BasicOsmQuestDaoEntry(
     override val elementId: Long,
     override val questTypeName: String,
     override val position: LatLon,
-    override val workspaceId: Int
+    override var workspaceId: Int
 ) : OsmQuestDaoEntry

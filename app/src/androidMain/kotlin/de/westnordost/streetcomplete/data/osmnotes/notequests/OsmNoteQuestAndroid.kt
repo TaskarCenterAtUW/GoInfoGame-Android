@@ -11,7 +11,8 @@ import de.westnordost.streetcomplete.quests.note_discussion.OsmNoteQuestType
 /** Represents one task for the user to contribute to a public OSM note */
 data class OsmNoteQuestAndroid(
     override val id: Long,
-    override val position: LatLon
+    override val position: LatLon,
+    override var workspaceId: Int
 ) : OsmNoteQuest, Quest {
     override val type: QuestType get() = OsmNoteQuestType
     override val key: OsmNoteQuestKey by lazy { OsmNoteQuestKey(id) }
@@ -19,5 +20,5 @@ data class OsmNoteQuestAndroid(
     override val geometry: ElementGeometry get() = ElementPointGeometry(position)
 }
 
-actual fun createOsmNoteQuest(id: Long, position: LatLon): OsmNoteQuest =
-    OsmNoteQuestAndroid(id, position)
+actual fun createOsmNoteQuest(id: Long, position: LatLon, workspaceId: Int): OsmNoteQuest =
+    OsmNoteQuestAndroid(id, position, workspaceId)

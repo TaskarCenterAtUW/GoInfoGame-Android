@@ -30,7 +30,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 20
+    const val DB_VERSION = 21
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -279,6 +279,12 @@ object DatabaseInitializer {
             db.exec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.exec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.exec("ALTER TABLE osm_edit_elements ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        }
+
+        if (oldVersion<= 20 && newVersion == 21){
+            db.exec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.exec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
     }
 }
