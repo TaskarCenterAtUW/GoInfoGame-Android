@@ -49,6 +49,8 @@ abstract class EditHistoryViewModel : ViewModel() {
     //      compose <-> fragment communication necessary anymore
     abstract fun showSidebar()
     abstract fun hideSidebar()
+
+    abstract fun refreshForNewWorkspace()
     abstract val isShowingSidebar: StateFlow<Boolean>
 }
 
@@ -108,6 +110,11 @@ class EditHistoryViewModelImpl(
     override fun hideSidebar() {
         selectedEdit.value = null
         isShowingSidebar.value = false
+    }
+
+    override fun refreshForNewWorkspace() {
+        // updateEdits()
+        editHistoryController.refresh()
     }
 
     override val isShowingSidebar = MutableStateFlow<Boolean>(false)

@@ -22,14 +22,19 @@ class QuestsHiddenController(
 
     // the cache must be in-sync with the db
     private val cacheLock = ReentrantLock()
-    private val cache: MutableMap<QuestKey, Long> by lazy {
+    private val cache: MutableMap<QuestKey, Long> = HashMap()
+
+    init {
+        refreshCache()
+    }
+
+    fun refreshCache() {
         cacheLock.withLock {
+            cache.clear()
             val allOsmHidden = osmDb.getAll()
             val allNotesHidden = notesDb.getAll()
-            val result = HashMap<QuestKey, Long>(allOsmHidden.size + allNotesHidden.size)
-            allOsmHidden.forEach { result[it.key] = it.timestamp }
-            allNotesHidden.forEach { result[OsmNoteQuestKey(it.noteId)] = it.timestamp }
-            result
+            allOsmHidden.forEach { cache[it.key] = it.timestamp }
+            allNotesHidden.forEach { cache[OsmNoteQuestKey(it.noteId)] = it.timestamp }
         }
     }
 

@@ -98,6 +98,10 @@ class EditHistoryController(
         }
     }
 
+    public fun refresh(){
+        hiddenQuestsController.refreshCache()
+    }
+
     fun deleteSyncedOlderThan(timestamp: Long): Int =
         elementEditsController.deleteSyncedOlderThan(timestamp) +
         noteEditsController.deleteSyncedOlderThan(timestamp)
