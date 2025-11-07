@@ -1413,6 +1413,8 @@ class MainActivity :
         allEditTypes.registries.addAll(listOf(questTypeRegistry))
         allEditTypes.registries.addAll(listOf(overlayRegistry))
         allEditTypes.updateByName()
+
+        editHistoryViewModel.refreshForNewWorkspace()
     }
 
     private fun onClickImageryLayerButton() {

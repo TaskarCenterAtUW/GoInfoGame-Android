@@ -53,7 +53,6 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.MainActivity
-import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
@@ -61,7 +60,6 @@ import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 @Composable
 fun WorkSpaceListScreen(
     viewModel: WorkspaceViewModel,
-    editHistoryViewModel: EditHistoryViewModel,
     modifier: Modifier = Modifier,
 ) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
@@ -69,7 +67,6 @@ fun WorkSpaceListScreen(
     var isLongFormLoading by remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
-
     val context = LocalContext.current
 
     val onClick: (index: Int) -> Unit = { index ->
@@ -176,7 +173,6 @@ fun WorkSpaceListScreen(
                                 longFormState.imageryList,
                                 workspace
                             )
-                            editHistoryViewModel.refreshForNewWorkspace()
                         }
 
                         is WorkspaceLongFormState.Error -> {
