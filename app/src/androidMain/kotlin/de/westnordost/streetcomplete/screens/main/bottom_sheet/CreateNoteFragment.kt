@@ -153,8 +153,15 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         val createNoteMarker = binding.markerCreateLayout.pin.root
         val screenPos = createNoteMarker.getLocationInWindow()
         screenPos.offset(createNoteMarker.width / 2, createNoteMarker.height / 2)
-        val position = listener?.getMapPositionAt(screenPos.toPointF()) ?: return
 
+        val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight = if (statusBarResId != 0) resources.getDimensionPixelSize(
+            statusBarResId
+        ) else 0
+
+        screenPos.offset(0, -statusBarHeight)
+
+        val position = listener?.getMapPositionAt(screenPos.toPointF()) ?: return
         binding.markerCreateLayout.markerLayoutContainer.visibility = View.INVISIBLE
 
         viewLifecycleScope.launch {
