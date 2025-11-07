@@ -12,7 +12,7 @@ data class Note(
     val timestampClosed: Long?,
     val status: Status,
     val comments: List<NoteComment>,
-    var workspaceId : Int
+    var workspaceId : Int = 0
 ) {
     val isOpen get() = status == Status.OPEN
     val isClosed get() = status == Status.CLOSED

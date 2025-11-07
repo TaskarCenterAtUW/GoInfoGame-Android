@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.QueryTooBigException
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.testutils.OsmDevApi
 import io.ktor.client.HttpClient
 import io.ktor.client.request.bearerAuth
@@ -118,7 +119,14 @@ class NotesApiClientTest {
     private fun client(token: String?) =
         NotesApiClient(
             httpClient = HttpClient(),
-            baseUrl = OsmDevApi.URL,
+            workspaceConfigProvider = object : WorkspaceConfigProvider{
+                override val osmBaseUrl: String
+                    get() = ""
+                override val workspaceId: Int
+                    get() = 1
+                override val workspaceToken: String?
+                    get() = token
+            },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
             notesApiParser = NotesApiParser()
         )

@@ -29,7 +29,7 @@ val osmApiModule = module {
     factory { NotesApiClient(get(named("osmClient")), get(), get(), get()) }
     factory { TracksApiClient(get(), OSM_API_URL, get(), get()) }
     factory { UserApiClient(get(), OSM_API_URL, get(), get()) }
-    factory { ChangesetApiClient(get(named("osmClient")), get(), get(), get()) }
+    factory { ChangesetApiClient(get(named("osmClient")), get(),  get()) }
     factory { EnvironmentManager(get()) }
 
     factory { Preloader(get(named("CountryBoundariesLazy")), get(named("FeatureDictionaryLazy"))) }

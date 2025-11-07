@@ -40,14 +40,18 @@ import kotlin.test.assertTrue
 
 class ElementEditsDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: ElementEditsDao
-
-    @BeforeTest fun createDao() {
+    private val workspaceId = 0
+    @BeforeTest
+    fun createDao() {
         val list = listOf(1 to TEST_QUEST_TYPE, 2 to TEST_QUEST_TYPE2)
         val list2 = listOf(1 to TestOverlay)
-        dao = ElementEditsDao(database, AllEditTypes(listOf(QuestTypeRegistry(list), OverlayRegistry(list2))))
+        dao = ElementEditsDao(
+            database, AllEditTypes(mutableListOf(QuestTypeRegistry(list), OverlayRegistry(list2)))
+        )
     }
 
-    @Test fun addGet_UpdateElementTagsEdit() {
+    @Test
+    fun addGet_UpdateElementTagsEdit() {
         val edit = updateTags()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -55,7 +59,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_RevertUpdateElementTagsEdit() {
+    @Test
+    fun addGet_RevertUpdateElementTagsEdit() {
         val edit = revertUpdateTags()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -63,7 +68,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_DeletePoiNodeEdit() {
+    @Test
+    fun addGet_DeletePoiNodeEdit() {
         val edit = deletePoi()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -71,7 +77,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_RevertDeletePoiNodeEdit() {
+    @Test
+    fun addGet_RevertDeletePoiNodeEdit() {
         val edit = revertDeletePoi()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -79,7 +86,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_SplitWayEdit() {
+    @Test
+    fun addGet_SplitWayEdit() {
         val edit = splitWay()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -87,7 +95,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_AddNodeEdit() {
+    @Test
+    fun addGet_AddNodeEdit() {
         val edit = createNode()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -95,7 +104,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGet_RevertAddNodeEdit() {
+    @Test
+    fun addGet_RevertAddNodeEdit() {
         val edit = revertCreateNode()
         dao.put(edit)
         assertNotNull(edit.id)
@@ -103,7 +113,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(edit, dbEdit)
     }
 
-    @Test fun addGetDelete() {
+    @Test
+    fun addGetDelete() {
         val edit = updateTags()
         // nothing there
         assertFalse(dao.delete(1L))
@@ -118,7 +129,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertNull(dao.get(edit.id))
     }
 
-    @Test fun deleteAll() {
+    @Test
+    fun deleteAll() {
         val e1 = updateTags()
         val e2 = updateTags()
         val e3 = updateTags()
@@ -136,7 +148,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertNull(dao.get(3))
     }
 
-    @Test fun getAll() {
+    @Test
+    fun getAll() {
         val e1 = updateTags(timestamp = 10)
         val e2 = deletePoi(timestamp = 100)
         val e3 = splitWay(timestamp = 1000)
@@ -147,7 +160,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(listOf(e1, e2, e3), dao.getAll())
     }
 
-    @Test fun getAllUnsynced() {
+    @Test
+    fun getAllUnsynced() {
         val e1 = updateTags(timestamp = 10)
         val e2 = deletePoi(timestamp = 100)
         val e3 = splitWay(timestamp = 1000)
@@ -159,7 +173,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(listOf(e1, e2, e3), dao.getAllUnsynced())
     }
 
-    @Test fun markSynced() {
+    @Test
+    fun markSynced() {
         val e = updateTags(isSynced = false)
         dao.put(e)
         val id = e.id
@@ -168,7 +183,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertTrue(dao.get(id)!!.isSynced)
     }
 
-    @Test fun peekUnsynced() {
+    @Test
+    fun peekUnsynced() {
         assertNull(dao.getOldestUnsynced())
 
         val e1 = updateTags(isSynced = true)
@@ -188,7 +204,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(e4, dao.getOldestUnsynced())
     }
 
-    @Test fun getUnsyncedCount() {
+    @Test
+    fun getUnsyncedCount() {
         assertEquals(0, dao.getUnsyncedCount())
 
         dao.put(updateTags(isSynced = true))
@@ -201,7 +218,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(2, dao.getUnsyncedCount())
     }
 
-    @Test fun getSyncedOlderThan() {
+    @Test
+    fun getSyncedOlderThan() {
         val oldEnough = updateTags(timestamp = 500, isSynced = true)
         val tooYoung = updateTags(timestamp = 1000, isSynced = true)
         val notSynced = updateTags(timestamp = 500, isSynced = false)
@@ -211,7 +229,8 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(listOf(oldEnough), dao.getSyncedOlderThan(1000))
     }
 
-    @Test fun put_with_same_id_overwrites() {
+    @Test
+    fun put_with_same_id_overwrites() {
         val edit = updateTags()
         dao.put(edit)
         val updatedEdit = edit.copy(createdTimestamp = 999L)
@@ -229,7 +248,7 @@ private fun updateTags(
     element: Element = node,
     geometry: ElementGeometry = geom,
     timestamp: Long = 123L,
-    isSynced: Boolean = false
+    isSynced: Boolean = false,
 ) = ElementEdit(
     0,
     TEST_QUEST_TYPE,
@@ -239,11 +258,13 @@ private fun updateTags(
     isSynced,
     UpdateElementTagsAction(
         element,
-        StringMapChanges(listOf(
-            StringMapEntryAdd("a", "b"),
-            StringMapEntryModify("c", "d", "e"),
-            StringMapEntryDelete("f", "g"),
-        ))
+        StringMapChanges(
+            listOf(
+                StringMapEntryAdd("a", "b"),
+                StringMapEntryModify("c", "d", "e"),
+                StringMapEntryDelete("f", "g"),
+            )
+        )
     ),
     false
 )
@@ -257,11 +278,13 @@ private fun revertUpdateTags(timestamp: Long = 123L, isSynced: Boolean = false) 
     isSynced,
     RevertUpdateElementTagsAction(
         node,
-        StringMapChanges(listOf(
-            StringMapEntryAdd("a", "b"),
-            StringMapEntryModify("c", "d", "e"),
-            StringMapEntryDelete("f", "g"),
-        ))
+        StringMapChanges(
+            listOf(
+                StringMapEntryAdd("a", "b"),
+                StringMapEntryModify("c", "d", "e"),
+                StringMapEntryDelete("f", "g"),
+            )
+        )
     ),
     false
 )
@@ -339,7 +362,9 @@ private val TEST_QUEST_TYPE = TestQuestType()
 private val TEST_QUEST_TYPE2 = TestQuestType2()
 
 private object TestOverlay : Overlay {
-    override fun getStyledElements(mapData: MapDataWithGeometry) = sequenceOf<Pair<Element, OverlayStyle>>()
+    override fun getStyledElements(mapData: MapDataWithGeometry) =
+        sequenceOf<Pair<Element, OverlayStyle>>()
+
     override val changesetComment = "bla"
     override val icon = 0
     override val title = 0

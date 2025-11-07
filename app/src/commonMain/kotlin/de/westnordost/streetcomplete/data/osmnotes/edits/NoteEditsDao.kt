@@ -22,10 +22,10 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-class NoteEditsDao(private val db: Database, private val preferences: Preferences) {
+class NoteEditsDao(private val db: Database, private val preferences: Preferences? = null) {
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun add(edit: NoteEdit): Boolean =
         db.transaction {

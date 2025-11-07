@@ -37,7 +37,7 @@ data class NoteEdit(
 
     /** attached GPS location history */
     val track: List<Trackpoint>,
-    override var workspaceId: Int
+    override var workspaceId: Int = 0
 ) : Edit {
     override val isUndoable: Boolean get() = !isSynced
     override val key: NoteEditKey get() = NoteEditKey(id)

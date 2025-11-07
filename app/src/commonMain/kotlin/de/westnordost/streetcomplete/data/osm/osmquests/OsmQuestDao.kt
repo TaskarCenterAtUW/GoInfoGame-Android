@@ -18,10 +18,10 @@ import de.westnordost.streetcomplete.data.queryIn
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 
 /** Persists OsmQuest objects, or more specifically, OsmQuestEntry objects */
-class OsmQuestDao(private val db: Database, val preferences: Preferences) {
+class OsmQuestDao(private val db: Database, val preferences: Preferences? = null) {
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun put(quest: OsmQuestDaoEntry) {
         quest.workspaceId = workspaceId
@@ -124,5 +124,5 @@ data class BasicOsmQuestDaoEntry(
     override val elementId: Long,
     override val questTypeName: String,
     override val position: LatLon,
-    override var workspaceId: Int
+    override var workspaceId: Int = 0
 ) : OsmQuestDaoEntry

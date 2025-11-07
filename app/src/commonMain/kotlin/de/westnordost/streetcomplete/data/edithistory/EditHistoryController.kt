@@ -31,11 +31,11 @@ class EditHistoryController(
     private val notesSource: NotesWithEditsSource,
     private val mapDataSource: MapDataWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
-    private val preferences: Preferences
+    private val preferences: Preferences? = null
 ) : EditHistorySource {
     private val listeners = Listeners<EditHistorySource.Listener>()
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
     private val osmElementEditsListener = object : ElementEditsSource.Listener {
         override fun onAddedEdit(edit: ElementEdit) {
             if (edit.action !is IsRevertAction) onAdded(edit)

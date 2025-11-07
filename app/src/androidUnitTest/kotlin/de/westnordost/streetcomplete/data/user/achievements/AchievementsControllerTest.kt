@@ -40,7 +40,7 @@ class AchievementsControllerTest {
         on(userAchievementsDao.getAll()).thenReturn(mapOf())
         userLinksDao = mock()
         statisticsSource = mock()
-        allEditTypes = AllEditTypes(listOf(
+        allEditTypes = AllEditTypes(mutableListOf(
             QuestTypeRegistry(listOf(0 to QuestOne, 1 to QuestTwo)),
             OverlayRegistry(listOf(0 to OverlayOne)),
         ))

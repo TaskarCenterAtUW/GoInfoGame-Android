@@ -12,7 +12,7 @@ import de.westnordost.streetcomplete.quests.note_discussion.OsmNoteQuestType
 data class OsmNoteQuestAndroid(
     override val id: Long,
     override val position: LatLon,
-    override var workspaceId: Int
+    override var workspaceId: Int = 0
 ) : OsmNoteQuest, Quest {
     override val type: QuestType get() = OsmNoteQuestType
     override val key: OsmNoteQuestKey by lazy { OsmNoteQuestKey(id) }

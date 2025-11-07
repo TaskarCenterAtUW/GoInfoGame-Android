@@ -13,7 +13,7 @@ data class OsmQuestHidden(
     val questType: OsmElementQuestType<*>,
     val geometry: ElementGeometry,
     override val createdTimestamp: Long,
-    override val workspaceId: Int
+    override val workspaceId: Int = 0
 ) : Edit {
     override val position: LatLon get() = geometry.center
     val questKey get() = OsmQuestKey(elementType, elementId, questType.name, workspaceId)

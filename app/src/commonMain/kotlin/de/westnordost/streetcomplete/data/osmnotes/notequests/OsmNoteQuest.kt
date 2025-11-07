@@ -8,4 +8,4 @@ interface OsmNoteQuest : Quest {
     val id: Long
 }
 
-expect fun createOsmNoteQuest(id: Long, position: LatLon, workspaceId : Int): OsmNoteQuest
+expect fun createOsmNoteQuest(id: Long, position: LatLon, workspaceId : Int = 0): OsmNoteQuest

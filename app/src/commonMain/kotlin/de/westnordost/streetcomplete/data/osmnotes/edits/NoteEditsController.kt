@@ -13,12 +13,12 @@ import kotlinx.atomicfu.locks.withLock
 
 class NoteEditsController(
     private val editsDB: NoteEditsDao,
-    private val preferences: Preferences
+    private val preferences: Preferences? = null
 ) : NoteEditsSource {
     /* Must be a singleton because there is a listener that should respond to a change in the
      * database table */
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
     private val listeners = Listeners<NoteEditsSource.Listener>()
 
     private val lock = ReentrantLock()

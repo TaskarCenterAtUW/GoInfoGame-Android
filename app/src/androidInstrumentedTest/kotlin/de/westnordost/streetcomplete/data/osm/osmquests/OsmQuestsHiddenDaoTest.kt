@@ -22,7 +22,7 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
     }
 
     @Test fun addGetDelete() {
-        val key = OsmQuestKey(ElementType.NODE, 123L, "bla", workspaceId)
+        val key = OsmQuestKey(ElementType.NODE, 123L, "bla")
         assertFalse(dao.delete(key))
         dao.add(key)
         assertNotNull(dao.getTimestamp(key))
@@ -32,8 +32,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
 
     @Test fun getNewerThan() = runBlocking {
         val keys = listOf(
-            OsmQuestKey(ElementType.NODE, 123L, "bla", workspaceId),
-            OsmQuestKey(ElementType.NODE, 124L, "bla", workspaceId)
+            OsmQuestKey(ElementType.NODE, 123L, "bla"),
+            OsmQuestKey(ElementType.NODE, 124L, "bla")
         )
         dao.add(keys[0])
         delay(200)
@@ -45,8 +45,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
 
     @Test fun getAll() {
         val keys = setOf(
-            OsmQuestKey(ElementType.NODE, 123L, "bla", workspaceId),
-            OsmQuestKey(ElementType.NODE, 124L, "bla", workspaceId)
+            OsmQuestKey(ElementType.NODE, 123L, "bla"),
+            OsmQuestKey(ElementType.NODE, 124L, "bla")
         )
         keys.forEach { dao.add(it) }
         assertEquals(
@@ -58,8 +58,8 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
     @Test fun deleteAll() {
         assertEquals(0, dao.deleteAll())
         val keys = listOf(
-            OsmQuestKey(ElementType.NODE, 123L, "bla", workspaceId),
-            OsmQuestKey(ElementType.NODE, 124L, "bla", workspaceId)
+            OsmQuestKey(ElementType.NODE, 123L, "bla"),
+            OsmQuestKey(ElementType.NODE, 124L, "bla")
         )
         keys.forEach { dao.add(it) }
         assertEquals(2, dao.deleteAll())
@@ -69,7 +69,7 @@ class OsmQuestsHiddenDaoTest : ApplicationDbTestCase() {
 
     @Test fun countAll() {
         assertEquals(0, dao.countAll())
-        dao.add(OsmQuestKey(ElementType.NODE, 123L, "bla", workspaceId))
+        dao.add(OsmQuestKey(ElementType.NODE, 123L, "bla"))
         assertEquals(1, dao.countAll())
     }
 }

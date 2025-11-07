@@ -26,8 +26,6 @@ import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.RevertUpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.preferences.Preferences
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -36,7 +34,7 @@ import kotlinx.serialization.modules.subclass
 class ElementEditsDao(
     private val db: Database,
     private val allEditTypes: AllEditTypes,
-    private val preferences: Preferences
+    private val preferences: Preferences? = null,
 ) {
     private val json = Json {
         serializersModule = SerializersModule {
@@ -56,7 +54,7 @@ class ElementEditsDao(
     }
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun put(edit: ElementEdit) {
         edit.workspaceId = workspaceId
@@ -66,39 +64,55 @@ class ElementEditsDao(
     }
 
     fun get(id: Long): ElementEdit? =
-        db.queryOne(NAME, where = "$ID = $id AND $WORKSPACE_ID = ${preferences.workspaceId}") { it.toElementEdit() }
+        db.queryOne(
+            NAME,
+            where = "$ID = $id AND $WORKSPACE_ID = $workspaceId"
+        ) { it.toElementEdit() }
 
     fun getOldestUnsynced(): ElementEdit? =
-        db.queryOne(NAME,
-            where = "$IS_SYNCED = 0  AND $WORKSPACE_ID = ${preferences.workspaceId}",
+        db.queryOne(
+            NAME,
+            where = "$IS_SYNCED = 0  AND $WORKSPACE_ID = $workspaceId",
             orderBy = CREATED_TIMESTAMP
         ) { it.toElementEdit() }
 
     fun getUnsyncedCount(): Int =
-        db.queryOne(NAME,
+        db.queryOne(
+            NAME,
             columns = arrayOf("COUNT(*) AS count"),
-            where = "$IS_SYNCED = 0 AND $WORKSPACE_ID = ${preferences.workspaceId}"
+            where = "$IS_SYNCED = 0 AND $WORKSPACE_ID = $workspaceId"
         ) { it.getInt("count") } ?: 0
 
     fun getAllUnsynced(): List<ElementEdit> =
-        db.query(NAME, where = "$IS_SYNCED = 0  AND $WORKSPACE_ID = ${preferences.workspaceId}", orderBy = CREATED_TIMESTAMP) { it.toElementEdit() }
+        db.query(
+            NAME,
+            where = "$IS_SYNCED = 0  AND $WORKSPACE_ID = $workspaceId",
+            orderBy = CREATED_TIMESTAMP
+        ) { it.toElementEdit() }
 
     fun getAll(): List<ElementEdit> =
-        db.query(NAME, where = "$WORKSPACE_ID = ${preferences.workspaceId}", orderBy = "$IS_SYNCED, $CREATED_TIMESTAMP") { it.toElementEdit() }
+        db.query(
+            NAME,
+            where = "$WORKSPACE_ID = $workspaceId",
+            orderBy = "$IS_SYNCED, $CREATED_TIMESTAMP"
+        ) { it.toElementEdit() }
 
     fun markSynced(id: Long): Boolean =
-        db.update(NAME, listOf(IS_SYNCED to 1), "$WORKSPACE_ID = ${preferences.workspaceId} AND $ID = $id") == 1
+        db.update(NAME, listOf(IS_SYNCED to 1), "$WORKSPACE_ID = $workspaceId AND $ID = $id") == 1
 
     fun delete(id: Long): Boolean =
-        db.delete(NAME, "$WORKSPACE_ID = ${preferences.workspaceId} AND $ID = $id") == 1
+        db.delete(NAME, "$WORKSPACE_ID = $workspaceId AND $ID = $id") == 1
 
     fun deleteAll(ids: List<Long>): Int {
         if (ids.isEmpty()) return 0
-        return db.delete(NAME, "$WORKSPACE_ID = ${preferences.workspaceId} AND $ID in (${ids.joinToString(",")})")
+        return db.delete(NAME, "$WORKSPACE_ID = $workspaceId AND $ID in (${ids.joinToString(",")})")
     }
 
     fun getSyncedOlderThan(timestamp: Long): List<ElementEdit> =
-        db.query(NAME, where = "$IS_SYNCED = 1 AND $CREATED_TIMESTAMP < $timestamp AND $WORKSPACE_ID = ${preferences.workspaceId}") { it.toElementEdit() }
+        db.query(
+            NAME,
+            where = "$IS_SYNCED = 1 AND $CREATED_TIMESTAMP < $timestamp AND $WORKSPACE_ID = $workspaceId"
+        ) { it.toElementEdit() }
 
     private fun ElementEdit.toPairs(): List<Pair<String, Any?>> = listOfNotNull(
         if (id <= 0) null else ID to id,
@@ -111,7 +125,7 @@ class ElementEditsDao(
         IS_SYNCED to if (isSynced) 1 else 0,
         ACTION to json.encodeToString(action),
         IS_NEAR_USER_LOCATION to if (isNearUserLocation) 1 else 0,
-        WORKSPACE_ID to preferences.workspaceId
+        WORKSPACE_ID to workspaceId
     )
 
     private fun CursorPosition.toElementEdit() = ElementEdit(

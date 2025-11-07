@@ -7,9 +7,11 @@ import kotlinx.io.Buffer
 import kotlinx.io.writeString
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.ExperimentalTime
 
 class NotesApiParserTest {
 
+    @OptIn(ExperimentalTime::class)
     @Test fun `parse one minimum note`() {
         val buffer = Buffer()
         buffer.writeString("""
@@ -34,10 +36,11 @@ class NotesApiParserTest {
 
         assertEquals(listOf(note), NotesApiParser().parseNotes(
             buffer,
-            workspaceConfigProvider.workspaceId
+            0
         ))
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test fun `parse one full note`() {
         val buffer = Buffer()
         buffer.writeString("""
@@ -94,10 +97,11 @@ class NotesApiParserTest {
 
         assertEquals(listOf(note), NotesApiParser().parseNotes(
             buffer,
-            workspaceConfigProvider.workspaceId
+            0
         ))
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test fun `parse several notes`() {
         val buffer = Buffer()
         buffer.writeString("""
@@ -135,7 +139,7 @@ class NotesApiParserTest {
             ),
         )
 
-        assertEquals(notes, NotesApiParser().parseNotes(buffer, workspaceConfigProvider.workspaceId))
+        assertEquals(notes, NotesApiParser().parseNotes(buffer, 0))
     }
 
     @Test fun `parse note with XML entity refs`() {
@@ -162,7 +166,7 @@ class NotesApiParserTest {
             """.trimIndent()
         )
 
-        val comment = NotesApiParser().parseNotes(buffer, workspaceConfigProvider.workspaceId)[0].comments[0]
+        val comment = NotesApiParser().parseNotes(buffer, 0)[0].comments[0]
 
         assertEquals("dude & <dudette>", comment.user?.displayName)
         assertEquals("I opened it & \"nothing\" broke!", comment.text)

@@ -14,10 +14,10 @@ import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 
 /** Persists which osm quests should be hidden (because the user selected so) */
-class OsmQuestsHiddenDao(private val db: Database, val preferences: Preferences) {
+class OsmQuestsHiddenDao(private val db: Database, val preferences: Preferences? = null) {
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun add(osmQuestKey: OsmQuestKey) {
         osmQuestKey.workspaceId = workspaceId

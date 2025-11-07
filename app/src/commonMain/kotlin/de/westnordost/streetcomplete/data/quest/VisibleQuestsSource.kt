@@ -41,7 +41,7 @@ class VisibleQuestsSource(
     private val visibleEditTypeSource: VisibleEditTypeSource,
     private val teamModeQuestFilter: TeamModeQuestFilter,
     private val selectedOverlaySource: SelectedOverlaySource,
-    private val preferences: Preferences
+    private val preferences: Preferences? = null
 ) {
     interface Listener {
         /** Called when given quests in the given group have been added/removed */
@@ -132,9 +132,10 @@ class VisibleQuestsSource(
             )
         }
     }
-
+    private val workspaceId
+        get() = preferences?.workspaceId ?: 0
     private val cache
-        get() = getOrCreateCache(preferences.workspaceId!!)
+        get() = getOrCreateCache(workspaceId)
 
 
     init {

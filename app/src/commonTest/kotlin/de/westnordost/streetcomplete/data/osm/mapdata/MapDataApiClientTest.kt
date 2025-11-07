@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.QueryTooBigException
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.ChangesetApiClient
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.ChangesetApiSerializer
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.testutils.OsmDevApi
 import de.westnordost.streetcomplete.testutils.node
 import de.westnordost.streetcomplete.testutils.p
@@ -183,7 +184,14 @@ class MapDataApiClientTest {
     private fun client(token: String?) =
         MapDataApiClient(
             httpClient = HttpClient(),
-            baseUrl = OsmDevApi.URL,
+            workspaceConfigProvider = object : WorkspaceConfigProvider{
+                override val osmBaseUrl: String
+                    get() = ""
+                override val workspaceId: Int
+                    get() = 1
+                override val workspaceToken: String?
+                    get() = token
+            },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
             parser = MapDataApiParser(),
             serializer = MapDataApiSerializer()
@@ -192,15 +200,28 @@ class MapDataApiClientTest {
     private fun changesetClient(token: String?) =
         ChangesetApiClient(
             httpClient = HttpClient(),
-            baseUrl = OsmDevApi.URL,
-            userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
+            workspaceConfigProvider = object : WorkspaceConfigProvider{
+                override val osmBaseUrl: String
+                    get() = ""
+                override val workspaceId: Int
+                    get() = 1
+                override val workspaceToken: String?
+                    get() = token
+            },
             serializer = ChangesetApiSerializer()
         )
 
     private val liveClient =
         MapDataApiClient(
             httpClient = HttpClient(),
-            baseUrl = "https://api.openstreetmap.org/api/0.6/",
+            workspaceConfigProvider = object : WorkspaceConfigProvider{
+                override val osmBaseUrl: String
+                    get() = ""
+                override val workspaceId: Int
+                    get() = 1
+                override val workspaceToken: String?
+                    get() = null
+            },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = null },
             parser = MapDataApiParser(),
             serializer = MapDataApiSerializer()
