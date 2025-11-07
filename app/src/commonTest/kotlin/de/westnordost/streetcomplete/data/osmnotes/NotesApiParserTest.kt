@@ -32,7 +32,10 @@ class NotesApiParserTest {
             comments = listOf()
         )
 
-        assertEquals(listOf(note), NotesApiParser().parseNotes(buffer))
+        assertEquals(listOf(note), NotesApiParser().parseNotes(
+            buffer,
+            workspaceConfigProvider.workspaceId
+        ))
     }
 
     @Test fun `parse one full note`() {
@@ -89,7 +92,10 @@ class NotesApiParserTest {
             )
         )
 
-        assertEquals(listOf(note), NotesApiParser().parseNotes(buffer))
+        assertEquals(listOf(note), NotesApiParser().parseNotes(
+            buffer,
+            workspaceConfigProvider.workspaceId
+        ))
     }
 
     @Test fun `parse several notes`() {
@@ -129,7 +135,7 @@ class NotesApiParserTest {
             ),
         )
 
-        assertEquals(notes, NotesApiParser().parseNotes(buffer))
+        assertEquals(notes, NotesApiParser().parseNotes(buffer, workspaceConfigProvider.workspaceId))
     }
 
     @Test fun `parse note with XML entity refs`() {
@@ -156,7 +162,7 @@ class NotesApiParserTest {
             """.trimIndent()
         )
 
-        val comment = NotesApiParser().parseNotes(buffer)[0].comments[0]
+        val comment = NotesApiParser().parseNotes(buffer, workspaceConfigProvider.workspaceId)[0].comments[0]
 
         assertEquals("dude & <dudette>", comment.user?.displayName)
         assertEquals("I opened it & \"nothing\" broke!", comment.text)

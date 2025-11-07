@@ -5,17 +5,20 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.Note
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.Listeners
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
 
 class NoteEditsController(
-    private val editsDB: NoteEditsDao
+    private val editsDB: NoteEditsDao,
+    private val preferences: Preferences
 ) : NoteEditsSource {
     /* Must be a singleton because there is a listener that should respond to a change in the
      * database table */
-
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
     private val listeners = Listeners<NoteEditsSource.Listener>()
 
     private val lock = ReentrantLock()
@@ -38,7 +41,7 @@ class NoteEditsController(
             nowAsEpochMilliseconds(),
             false,
             imagePaths.isNotEmpty(),
-            track,
+            track, workspaceId
         )
         lock.withLock { editsDB.add(edit) }
         onAddedEdit(edit)

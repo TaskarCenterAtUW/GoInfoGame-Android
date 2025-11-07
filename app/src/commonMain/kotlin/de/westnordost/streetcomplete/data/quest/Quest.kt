@@ -16,4 +16,6 @@ interface Quest {
     val geometry: ElementGeometry
     /** The type of the quest */
     val type: QuestType
+
+    var workspaceId : Int
 }

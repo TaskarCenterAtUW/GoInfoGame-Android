@@ -18,7 +18,8 @@ class ElementEditsController(
 ) : ElementEditsSource, AddElementEditsController {
     /* Must be a singleton because there is a listener that should respond to a change in the
      * database table */
-
+    private val workspaceId
+        get() = prefs.workspaceId ?: 0
     private val listeners = Listeners<ElementEditsSource.Listener>()
 
     private val lock = ReentrantLock()
@@ -34,7 +35,7 @@ class ElementEditsController(
         isNearUserLocation: Boolean
     ) {
         Log.d(TAG, "Add ${type.name} for ${action.elementKeys.joinToString()}")
-        add(ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation))
+        add(ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation, workspaceId))
     }
 
     override fun get(id: Long): ElementEdit? =
@@ -121,7 +122,7 @@ class ElementEditsController(
             // need to delete the original edit from history because this should not be undoable anymore
             delete(edit)
             // ... and add a new revert to the queue
-            add(ElementEdit(0, edit.type, edit.originalGeometry, edit.source, nowAsEpochMilliseconds(), false, reverted, edit.isNearUserLocation))
+            add(ElementEdit(0, edit.type, edit.originalGeometry, edit.source, nowAsEpochMilliseconds(), false, reverted, edit.isNearUserLocation, workspaceId))
         } else {
             // not uploaded yet
             Log.d(TAG, "Undo ${edit.type.name} for ${edit.action.elementKeys.joinToString()}")

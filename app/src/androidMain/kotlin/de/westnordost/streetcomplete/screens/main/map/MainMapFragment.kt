@@ -300,12 +300,13 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             questTypeRegistry,
             visibleQuestsSource,
             accessibilityOverlay,
-            this
+            this,
+            prefs
         )
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
 
-        editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource)
+        editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, prefs)
         editHistoryPinsManager!!.isVisible = pinMode == PinMode.EDITS
         viewLifecycleOwner.lifecycle.addObserver(editHistoryPinsManager!!)
 

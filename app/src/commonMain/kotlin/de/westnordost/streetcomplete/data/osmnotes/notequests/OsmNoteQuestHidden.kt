@@ -15,4 +15,6 @@ data class OsmNoteQuestHidden(
     override val isUndoable: Boolean get() = true
     override val position: LatLon get() = note.position
     override val isSynced: Boolean? get() = null
+    override val workspaceId: Int
+        get() = note.workspaceId
 }

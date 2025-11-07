@@ -55,7 +55,11 @@ class ElementEditsDao(
         }
     }
 
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
+
     fun put(edit: ElementEdit) {
+        edit.workspaceId = workspaceId
         val rowId = db.replace(NAME, edit.toPairs())
         // only set id if it was "undefined" before
         if (edit.id <= 0) edit.id = rowId
@@ -119,5 +123,6 @@ class ElementEditsDao(
         getInt(IS_SYNCED) == 1,
         json.decodeFromString(getString(ACTION)),
         getInt(IS_NEAR_USER_LOCATION) == 1,
+        getInt(WORKSPACE_ID)
     )
 }

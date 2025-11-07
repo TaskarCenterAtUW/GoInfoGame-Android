@@ -12,6 +12,7 @@ object NoteTable {
         const val CLOSED = "note_closed"
         const val COMMENTS = "comments"
         const val LAST_SYNC = "last_sync"
+        const val WORKSPACE_ID = "workspace_id"
     }
 
     const val CREATE = """
@@ -23,7 +24,8 @@ object NoteTable {
             ${Columns.CLOSED} int,
             ${Columns.STATUS} varchar(255) NOT NULL,
             ${Columns.COMMENTS} text NOT NULL,
-            ${Columns.LAST_SYNC} int NOT NULL
+            ${Columns.LAST_SYNC} int NOT NULL,
+            ${Columns.WORKSPACE_ID} int NOT NULL
         );
     """
 

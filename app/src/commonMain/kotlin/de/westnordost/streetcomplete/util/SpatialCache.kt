@@ -85,6 +85,7 @@ class SpatialCache<K, T>(
             // because all tiles that are in cache must be complete
             val tile = byTile[item.getTilePos()] ?: continue
             tile.add(item)
+            Log.d("SpatialCache", "Added item ${item.getKey()} to cache in tile $tile")
             byKey[item.getKey()] = item
         }
     } }

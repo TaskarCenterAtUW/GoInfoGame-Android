@@ -10,6 +10,7 @@ interface Edit {
     val isUndoable: Boolean
     val position: LatLon
     val isSynced: Boolean?
+    val workspaceId : Int
 }
 
 @Serializable

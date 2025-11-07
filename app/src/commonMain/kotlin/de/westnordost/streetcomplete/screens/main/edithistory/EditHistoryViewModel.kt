@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
+import kotlin.time.ExperimentalTime
 
 @Stable
 abstract class EditHistoryViewModel : ViewModel() {
@@ -48,6 +49,8 @@ abstract class EditHistoryViewModel : ViewModel() {
     //      compose <-> fragment communication necessary anymore
     abstract fun showSidebar()
     abstract fun hideSidebar()
+
+    abstract fun refreshForNewWorkspace()
     abstract val isShowingSidebar: StateFlow<Boolean>
 }
 
@@ -109,6 +112,11 @@ class EditHistoryViewModelImpl(
         isShowingSidebar.value = false
     }
 
+    override fun refreshForNewWorkspace() {
+        // updateEdits()
+        editHistoryController.refresh()
+    }
+
     override val isShowingSidebar = MutableStateFlow<Boolean>(false)
 
     private val editHistoryListener = object : EditHistorySource.Listener {
@@ -166,6 +174,7 @@ class EditHistoryViewModelImpl(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     private fun List<Edit>.toEditItems(): List<EditItem> {
         var editAboveDateTime: LocalDateTime? = null
         return map { edit ->

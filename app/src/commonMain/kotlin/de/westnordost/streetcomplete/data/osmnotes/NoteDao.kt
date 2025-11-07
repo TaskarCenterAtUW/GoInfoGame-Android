@@ -4,6 +4,10 @@ import de.westnordost.streetcomplete.data.CursorPosition
 import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.ELEMENT_ID
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.ELEMENT_TYPE
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable.Columns.QUEST_TYPE
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.CLOSED
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.COMMENTS
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.CREATED
@@ -12,28 +16,35 @@ import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.LAST_SYNC
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.LATITUDE
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.LONGITUDE
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.STATUS
+import de.westnordost.streetcomplete.data.osmnotes.NoteTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osmnotes.NoteTable.NAME
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Stores OSM notes */
-class NoteDao(private val db: Database) {
+class NoteDao(private val db: Database, val preferences: Preferences) {
+
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
+
     fun put(note: Note) {
+        note.workspaceId = workspaceId
         db.replace(NAME, note.toPairs())
     }
 
     fun get(id: Long): Note? =
-        db.queryOne(NAME, where = "$ID = $id") { it.toNote() }
+        db.queryOne(NAME, where = "$ID = $id AND $WORKSPACE_ID = $workspaceId") { it.toNote() }
 
     fun delete(id: Long): Boolean =
-        db.delete(NAME, "$ID = $id") == 1
+        db.delete(NAME, "$ID = $id AND $WORKSPACE_ID = $workspaceId") == 1
 
     fun putAll(notes: Collection<Note>) {
         if (notes.isEmpty()) return
 
         db.replaceMany(NAME,
-            arrayOf(ID, LATITUDE, LONGITUDE, STATUS, CREATED, CLOSED, COMMENTS, LAST_SYNC),
+            arrayOf(ID, LATITUDE, LONGITUDE, STATUS, CREATED, CLOSED, COMMENTS, LAST_SYNC, WORKSPACE_ID),
             notes.map { arrayOf(
                 it.id,
                 it.position.latitude,
@@ -42,7 +53,8 @@ class NoteDao(private val db: Database) {
                 it.timestampCreated,
                 it.timestampClosed,
                 Json.encodeToString(it.comments),
-                nowAsEpochMilliseconds()
+                nowAsEpochMilliseconds(),
+                workspaceId
             ) }
         )
     }
@@ -58,7 +70,7 @@ class NoteDao(private val db: Database) {
 
     fun getAll(ids: Collection<Long>): List<Note> {
         if (ids.isEmpty()) return emptyList()
-        return db.query(NAME, where = "$ID IN (${ids.joinToString(",")})") { it.toNote() }
+        return db.query(NAME, where = "$ID IN (${ids.joinToString(",")}) AND $WORKSPACE_ID = $workspaceId") { it.toNote() }
     }
 
     fun getIdsOlderThan(timestamp: Long, limit: Int? = null): List<Long> =
@@ -67,18 +79,21 @@ class NoteDao(private val db: Database) {
         } else {
             db.query(NAME,
                 columns = arrayOf(ID),
-                where = "$LAST_SYNC < $timestamp",
+                where = "$LAST_SYNC < $timestamp AND $WORKSPACE_ID = $workspaceId",
                 limit = limit
             ) { it.getLong(ID) }
         }
 
     fun deleteAll(ids: Collection<Long>): Int {
         if (ids.isEmpty()) return 0
-        return db.delete(NAME, "$ID IN (${ids.joinToString(",")})")
+        return db.delete(NAME, "$ID IN (${ids.joinToString(",")}) AND $WORKSPACE_ID = $workspaceId")
     }
 
     fun clear() {
-        db.delete(NAME)
+        db.delete(NAME,  where = "$WORKSPACE_ID = ?",
+            args = arrayOf(
+                workspaceId
+            ))
     }
 
     private fun Note.toPairs() = listOf(
@@ -89,7 +104,8 @@ class NoteDao(private val db: Database) {
         CREATED to timestampCreated,
         CLOSED to timestampClosed,
         COMMENTS to Json.encodeToString(comments),
-        LAST_SYNC to nowAsEpochMilliseconds()
+        LAST_SYNC to nowAsEpochMilliseconds(),
+        WORKSPACE_ID to workspaceId
     )
 
     private fun CursorPosition.toNote() = Note(
@@ -98,11 +114,13 @@ class NoteDao(private val db: Database) {
         getLong(CREATED),
         getLongOrNull(CLOSED),
         Note.Status.valueOf(getString(STATUS)),
-        Json.decodeFromString(getString(COMMENTS))
+        Json.decodeFromString(getString(COMMENTS)),
+        getInt(WORKSPACE_ID)
     )
 
     private fun inBoundsSql(bbox: BoundingBox): String = """
         ($LATITUDE BETWEEN ${bbox.min.latitude} AND ${bbox.max.latitude}) AND
-        ($LONGITUDE BETWEEN ${bbox.min.longitude} AND ${bbox.max.longitude})
+        ($LONGITUDE BETWEEN ${bbox.min.longitude} AND ${bbox.max.longitude}) AND
+        ($WORKSPACE_ID = $workspaceId)
     """.trimIndent()
 }

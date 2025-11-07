@@ -18,6 +18,7 @@ import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.Quest
@@ -62,6 +63,7 @@ class QuestPinsManager(
     private val visibleQuestsSource: VisibleQuestsSource,
     private val accessibilityOverlay: FrameLayout,
     private val mapFragment: MainMapFragment,
+    private val preferences: Preferences
 ) : DefaultLifecycleObserver {
     private val overlayPositions: MutableList<Pair<Float, Float>> = mutableListOf()
 
@@ -107,6 +109,9 @@ class QuestPinsManager(
             invalidate()
         }
     }
+
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
 
     private val questTypeOrderListener = object : QuestTypeOrderSource.Listener {
         override fun onQuestTypeOrderAdded(item: QuestType, toAfter: QuestType) {
@@ -163,7 +168,7 @@ class QuestPinsManager(
     }
 
     fun getQuestKey(properties: Map<String, String>): QuestKey? =
-        properties.toQuestKey()
+        properties.toQuestKey(workspaceId)
 
     fun onNewScreenPosition(forceUpdate: Boolean = false) {
         if (!isStarted || !isVisible) return
@@ -236,6 +241,7 @@ class QuestPinsManager(
             }
             added.forEach {
                 if (displayedBBox.contains(it.position)) {
+                    it.workspaceId = workspaceId
                     questsInView[it.key] = createQuestPins(it)
                     hasChanges = true
                 } else {
@@ -426,7 +432,7 @@ private fun QuestKey.toProperties(): List<Pair<String, String>> = when (this) {
     )
 }
 
-private fun Map<String, String>.toQuestKey(): QuestKey? = when (get(MARKER_QUEST_GROUP)) {
+private fun Map<String, String>.toQuestKey(workspaceId: Int): QuestKey? = when (get(MARKER_QUEST_GROUP)) {
     QUEST_GROUP_OSM_NOTE ->
         OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong())
 
@@ -434,7 +440,8 @@ private fun Map<String, String>.toQuestKey(): QuestKey? = when (get(MARKER_QUEST
         OsmQuestKey(
             ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
             getValue(MARKER_ELEMENT_ID).toLong(),
-            getValue(MARKER_QUEST_TYPE)
+            getValue(MARKER_QUEST_TYPE),
+            workspaceId
         )
 
     else -> null

@@ -53,12 +53,17 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.main.MainActivity
+import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 
 @Composable
-fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modifier) {
+fun WorkSpaceListScreen(
+    viewModel: WorkspaceViewModel,
+    editHistoryViewModel: EditHistoryViewModel,
+    modifier: Modifier = Modifier,
+) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     var isLongFormLoading by remember { mutableStateOf(false) }
@@ -120,7 +125,6 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                             viewModel
                         )
                     }
-
                 }
             }
 
@@ -172,6 +176,7 @@ fun WorkSpaceListScreen(viewModel: WorkspaceViewModel, modifier: Modifier = Modi
                                 longFormState.imageryList,
                                 workspace
                             )
+                            editHistoryViewModel.refreshForNewWorkspace()
                         }
 
                         is WorkspaceLongFormState.Error -> {
@@ -195,7 +200,7 @@ fun finishAndLaunchNewActivity(
     context: Context,
     addLongFormResponseItems: List<Elements>,
     imageryList: List<Imagery>?,
-    workspace: Workspace
+    workspace: Workspace,
 ) {
     val activity = context as? Activity
     activity?.let {
@@ -311,7 +316,7 @@ fun WorkSpaceListItem(
 
 @Composable
 fun CircularProgressWithText(
-    text: String
+    text: String,
 ) {
     Column(
         verticalArrangement = Arrangement.Center,

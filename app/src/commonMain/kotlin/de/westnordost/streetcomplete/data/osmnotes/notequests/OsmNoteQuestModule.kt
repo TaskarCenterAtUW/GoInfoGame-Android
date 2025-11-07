@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.data.osmnotes.notequests
 import org.koin.dsl.module
 
 val osmNoteQuestModule = module {
-    factory { NoteQuestsHiddenDao(get()) }
+    factory { NoteQuestsHiddenDao(get(), get()) }
 
     single<OsmNoteQuestSource> { get<OsmNoteQuestController>() }
 

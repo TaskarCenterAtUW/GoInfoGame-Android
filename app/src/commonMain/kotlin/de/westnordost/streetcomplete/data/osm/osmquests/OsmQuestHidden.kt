@@ -12,10 +12,11 @@ data class OsmQuestHidden(
     val elementId: Long,
     val questType: OsmElementQuestType<*>,
     val geometry: ElementGeometry,
-    override val createdTimestamp: Long
+    override val createdTimestamp: Long,
+    override val workspaceId: Int
 ) : Edit {
     override val position: LatLon get() = geometry.center
-    val questKey get() = OsmQuestKey(elementType, elementId, questType.name)
+    val questKey get() = OsmQuestKey(elementType, elementId, questType.name, workspaceId)
     override val key: QuestHiddenKey get() = QuestHiddenKey(questKey)
     override val isUndoable: Boolean get() = true
     override val isSynced: Boolean? get() = null

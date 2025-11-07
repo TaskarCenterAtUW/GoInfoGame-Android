@@ -7,7 +7,7 @@ import org.koin.dsl.module
 val notesModule = module {
     factory { AvatarsDownloader(get(), get(), get(), get(named("AvatarsCacheDirectory"))) }
     factory { AvatarsInNotesUpdater(get()) }
-    factory { NoteDao(get()) }
+    factory { NoteDao(get(), get()) }
     factory { NotesDownloader(get(), get()) }
     factory { PhotoServiceApiClient(get(), get(), ApplicationConstants.SC_PHOTO_SERVICE_URL) }
 

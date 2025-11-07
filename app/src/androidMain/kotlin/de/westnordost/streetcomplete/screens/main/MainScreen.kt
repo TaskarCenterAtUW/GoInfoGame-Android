@@ -551,6 +551,10 @@ object PreviewEditHistoryViewModel : EditHistoryViewModel() {
         TODO("Not yet implemented")
     }
 
+    override fun refreshForNewWorkspace() {
+        TODO("Not yet implemented")
+    }
+
     override val featureDictionaryLazy: Lazy<FeatureDictionary>
         get() = TODO("Not yet implemented")
 

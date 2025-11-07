@@ -13,6 +13,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.key
 import de.westnordost.streetcomplete.data.osmnotes.Note
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.util.Listeners
@@ -45,8 +46,10 @@ class OsmQuestController internal constructor(
     private val notesSource: NotesWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
     private val countryBoundaries: Lazy<CountryBoundaries>,
+    private val preferences: Preferences
 ) : OsmQuestSource {
-
+    private val workspaceId
+        get() = preferences.workspaceId ?: 0
     private val listeners = Listeners<OsmQuestSource.Listener>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -167,7 +170,7 @@ class OsmQuestController internal constructor(
                         val geometry = mapDataWithGeometry.getGeometry(element.type, element.id)
                             ?: continue
                         if (!mayCreateQuest(questType, geometry, bbox)) continue
-                        questsForType.add(OsmQuest(questType, element.type, element.id, geometry))
+                        questsForType.add(OsmQuest(questType, element.type, element.id, geometry, workspaceId))
                         questCount++
                     }
 
@@ -287,7 +290,7 @@ class OsmQuestController internal constructor(
     private fun createOsmQuest(entry: OsmQuestDaoEntry, geometry: ElementGeometry?): OsmQuest? {
         if (geometry == null) return null
         val questType = questTypeRegistry.getByName(entry.questTypeName) as? OsmElementQuestType<*> ?: return null
-        return OsmQuest(questType, entry.elementType, entry.elementId, geometry)
+        return OsmQuest(questType, entry.elementType, entry.elementId, geometry, workspaceId)
     }
 
     private fun getBlacklistedPositions(bbox: BoundingBox): Set<LatLon> =
