@@ -208,7 +208,7 @@ class OsmQuestController internal constructor(
                 if (!appliesToElement) return@async null
 
                 if (mayCreateQuest(questType, geometry, null)) {
-                    OsmQuest(questType, element.type, element.id, geometry)
+                    OsmQuest(questType, element.type, element.id, geometry, workspaceId)
                 } else {
                     null
                 }
