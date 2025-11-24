@@ -704,7 +704,7 @@ object PreviewMainViewModel : MainViewModel() {
         set(value) {}
 
     override val showMainMenuDialog: MutableStateFlow<Boolean>
-        get() = TODO("Not yet implemented")
+        get() = MutableStateFlow(false)
 
     override fun showMenu() {
         TODO("Not yet implemented")

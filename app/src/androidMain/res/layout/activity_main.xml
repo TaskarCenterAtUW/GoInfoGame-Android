@@ -12,8 +12,7 @@
         android:name="de.westnordost.streetcomplete.screens.main.map.MainMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout="@layout/fragment_map"
-        />
+        tools:layout="@layout/fragment_map" />
 
     <include
         android:id="@+id/toolbar"
@@ -34,6 +33,12 @@
         android:layout_height="0dp"
         tools:ignore="MissingConstraints" />
 
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/accessibility_view"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <!-- is a RelativeLayout so that the child layout can, if it is not matching parent, use layout_alignParent* -->
     <RelativeLayout
         android:id="@+id/map_bottom_sheet_container"
@@ -41,4 +46,4 @@
         android:layout_height="match_parent"
         android:clipChildren="false" />
 
- </de.westnordost.streetcomplete.view.RelativeLayoutFix >
+</de.westnordost.streetcomplete.view.RelativeLayoutFix>

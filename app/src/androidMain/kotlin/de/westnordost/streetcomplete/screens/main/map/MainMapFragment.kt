@@ -85,7 +85,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     private var selectedPinsMapComponent: SelectedPinsMapComponent? = null
     private var multiSelectPinMapComponent: MultiSelectPinMapComponent? = null
     private var geometryMapComponent: FocusGeometryMapComponent? = null
-    private var questPinsManager: QuestPinsManager? = null
+    var questPinsManager: QuestPinsManager? = null
     private var editHistoryPinsManager: EditHistoryPinsManager? = null
     private var styleableOverlayMapComponent: StyleableOverlayMapComponent? = null
     private var styleableOverlayManager: StyleableOverlayManager? = null
@@ -113,7 +113,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         fun onDisplayedLocationDidChange()
     }
 
-    private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
+    val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     /** When the view follows the GPS position, whether the view already zoomed to the location once*/
     private var zoomedYet = false

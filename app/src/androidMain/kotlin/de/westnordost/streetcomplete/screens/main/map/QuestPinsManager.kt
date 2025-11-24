@@ -3,8 +3,6 @@ package de.westnordost.streetcomplete.screens.main.map
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
@@ -12,7 +10,6 @@ import android.widget.FrameLayout
 import androidx.core.view.children
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -32,6 +29,7 @@ import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.SelectedPinsMapComponent
 import de.westnordost.streetcomplete.screens.main.map.maplibre.screenAreaToBoundingBox
+import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.math.contains
 import kotlinx.atomicfu.locks.ReentrantLock
 import kotlinx.atomicfu.locks.withLock
@@ -47,7 +45,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
 import kotlin.math.abs
 
 /** Manages the layer of quest pins in the map view:
@@ -206,6 +203,12 @@ class QuestPinsManager(
         }
     }
 
+    suspend fun getQuestsInViewSnapshot(): List<Quest> {
+        val quests = visibleQuestsSourceMutex.withLock {
+            withContext(Dispatchers.IO) { visibleQuestsSource.getQuestAroundPosition(mapFragment.displayedLocation!!.toLatLon(), 200.0) }
+        }
+        return quests
+    }
     private suspend fun setQuestPins(bbox: BoundingBox) {
         val quests = visibleQuestsSourceMutex.withLock {
             withContext(Dispatchers.IO) { visibleQuestsSource.getAll(bbox) }
@@ -328,33 +331,6 @@ class QuestPinsManager(
     }
     private fun onLongClick(properties: Map<String, String>) {
         mapFragment.onLongClickPin(properties)
-    }
-
-    private fun simulatePinClick(x: Float, y: Float) {
-        val mapView = mapFragment.view?.findViewById<MapView>(R.id.map) ?: return
-
-        val mapViewLocation = IntArray(2)
-        mapView.getLocationOnScreen(mapViewLocation)
-
-        val localX = x - mapViewLocation[0]
-        val localY = y - mapViewLocation[1]
-
-        val downTime = SystemClock.uptimeMillis()
-        val eventTime = downTime + 100 // small gap between down and up
-
-        val downEvent = MotionEvent.obtain(
-            downTime, downTime, MotionEvent.ACTION_DOWN, localX, localY, 0
-        )
-        val upEvent = MotionEvent.obtain(
-            downTime, eventTime, MotionEvent.ACTION_UP, localX, localY, 0
-        )
-
-        // Send directly to the MapView
-        mapView.dispatchTouchEvent(downEvent)
-        mapView.dispatchTouchEvent(upEvent)
-
-        downEvent.recycle()
-        upEvent.recycle()
     }
 
     fun LatLon.toKey(): String = "%.6f_%.6f".format(latitude, longitude)

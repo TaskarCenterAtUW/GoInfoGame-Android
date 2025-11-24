@@ -2,6 +2,8 @@ package de.westnordost.streetcomplete.data.quest
 
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.mapdata.fromCenterAndRadiusMeters
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuest
@@ -150,6 +152,12 @@ class VisibleQuestsSource(
     fun getAll(bbox: BoundingBox): List<Quest> =
         cache.get(bbox)
 
+    fun getQuestAroundPosition(position: LatLon, radiusMeters: Double): List<Quest> {
+        val bbox = fromCenterAndRadiusMeters(position, radiusMeters)
+        return getAll(bbox).filter {
+            LatLon.distanceInMeters(it.position, position) <= radiusMeters
+        }
+    }
     /** Retrieve all visible quests in the given bounding box from local database */
     private fun getAllFromDatabase(bbox: BoundingBox): List<Quest> {
         // we could just get all quests from the quest sources and then filter it with

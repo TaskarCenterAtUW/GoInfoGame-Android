@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.screens.main
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,7 +13,6 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -27,7 +27,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.AnyThread
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -99,6 +98,7 @@ import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.BaseActivity
+import de.westnordost.streetcomplete.screens.main.accessibility.FollowModeScreen
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -305,6 +305,20 @@ class MainActivity :
             }
         }
 
+        binding.toolbar.followModeButton.setOnClickListener {
+            binding.accessibilityView.visibility = View.VISIBLE
+            binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+            binding.accessibilityView.content {
+                // color for HUD elements without a background (e.g. scalebar, attribution button)
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                ) {
+                    FollowModeScreen(mapFragment!!, onClose = ::hideAccessibilityView)
+                }}
+        }
+
+
+
         onBackPressedDispatcher.addCallback(this, sheetBackPressedCallback)
         sheetBackPressedCallback.isEnabled = bottomSheetFragment is IsCloseableBottomSheet
 
@@ -340,6 +354,10 @@ class MainActivity :
                 viewModel.isNavigationMode.value = mapFragment?.isNavigationMode ?: false
             }
         }
+    }
+
+    fun hideAccessibilityView(){
+        binding.accessibilityView.visibility = View.GONE
     }
 
     override fun onStart() {
