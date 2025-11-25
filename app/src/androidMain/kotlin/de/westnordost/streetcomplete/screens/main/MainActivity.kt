@@ -31,6 +31,9 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
@@ -99,6 +102,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.BaseActivity
 import de.westnordost.streetcomplete.screens.main.accessibility.FollowModeScreen
+import de.westnordost.streetcomplete.screens.main.accessibility.UndoEditsScreen
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -148,6 +152,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.qualifier.named
 import java.util.Locale
@@ -313,8 +318,25 @@ class MainActivity :
                 CompositionLocalProvider(
                     LocalContentColor provides MaterialTheme.colorScheme.onSurface
                 ) {
-                    FollowModeScreen(mapFragment!!, onClose = ::hideAccessibilityView)
-                }}
+                    val showUndoScreen = remember { mutableStateOf(false) }
+                    FollowModeScreen(
+                        mapFragment!!,
+                        onClose = ::hideAccessibilityView,
+                        onUndoEdits = {
+                            showUndoScreen.value = true
+                        }, onBackToMap = {
+                            hideAccessibilityView()
+                        })
+                    if (showUndoScreen.value) {
+                        UndoEditsScreen(
+                            modifier = Modifier, koinViewModel(),
+                            onClose = {
+                                showUndoScreen.value = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
 
@@ -356,7 +378,7 @@ class MainActivity :
         }
     }
 
-    fun hideAccessibilityView(){
+    fun hideAccessibilityView() {
         binding.accessibilityView.visibility = View.GONE
     }
 

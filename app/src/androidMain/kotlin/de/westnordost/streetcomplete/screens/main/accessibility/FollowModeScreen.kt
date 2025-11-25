@@ -44,6 +44,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,9 +84,9 @@ fun FollowModeScreen(
     )
 
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
-    val refreshTrigger = remember { mutableStateOf(0) }
+    val refreshTrigger = remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(mapFragment, refreshTrigger.value) {
+    LaunchedEffect(mapFragment, refreshTrigger.intValue) {
         // Get current quests in view and store in a remembered state so it's accessible elsewhere
         val loaded = mapFragment.questPinsManager?.getQuestsInViewSnapshot()?.map { quest ->
             QuestUiModel(
@@ -363,11 +364,11 @@ private fun BottomButtons(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedButton(
             onClick = onUndoEdits,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.65f),
             shape = RoundedCornerShape(50)
         ) {
             Icon(
