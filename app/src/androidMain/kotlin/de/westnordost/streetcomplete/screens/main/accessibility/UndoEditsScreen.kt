@@ -103,14 +103,18 @@ fun UndoEditsScreen(
     }
 
     UndoEditsSection(
+        selectedEdit,
         sections = sections,
         onClose = onClose,
         onItemClick = {},
-        onBackToPrevious = onClose, editHistoryViewModel)
+        onBackToPrevious = onClose,
+        editHistoryViewModel
+    )
 }
 
 @Composable
 fun UndoEditsSection(
+    selectedEdit: Edit?,
     sections: List<UndoSection>,
     onClose: () -> Unit = {},
     onItemClick: (UndoQuestItem) -> Unit = {},
@@ -186,7 +190,13 @@ fun UndoEditsSection(
                     items(section.items, key = { it.id }) { item ->
                         UndoItemCard(
                             item = item,
-                            onClick = { onItemClick(item) }, viewModel,
+                            isSelected = selectedEdit?.key == item.edit?.key,
+                            onClick = {
+                                viewModel.select(item.edit?.key)
+                                onItemClick(item)
+                            },
+                            onDismiss = { viewModel.select(null) },
+                            viewModel,
                         )
                         Spacer(Modifier.height(12.dp))
                     }
@@ -251,7 +261,9 @@ private fun DateHeader(date: String) {
 @Composable
 private fun UndoItemCard(
     item: UndoQuestItem,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onDismiss: () -> Unit,
     viewModel: EditHistoryViewModel,
 ) {
     var element by remember { mutableStateOf<Element?>(null) }
@@ -268,10 +280,12 @@ private fun UndoItemCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, Color(0xFFE3E4F0)),
         shadowElevation = 1.dp,
         onClick = {
+            onClick()
             showSheet = true
         }
     ) {
@@ -321,11 +335,18 @@ private fun UndoItemCard(
                 item.edit,
                 type = "Sidewalk",
                 dateTime = "08 October 2025, 05:45 PM",
-                onRevertClick = { /* handle revert */ },
+                onRevertClick = {
+                    if (item.edit != null) {
+                        viewModel.undo(item.edit.key)
+                    }
+                    showSheet = false
+                },
                 onCancelClick = { showSheet = false },
                 onCloseClick = { showSheet = false },
             )
         }
+    } else {
+        onDismiss()
     }
 }
 
