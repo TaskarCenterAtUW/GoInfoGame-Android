@@ -51,6 +51,8 @@ import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
@@ -121,7 +123,8 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     /** The GPS position at which the user is displayed at */
     var displayedLocation: Location? = null
         private set
-
+    private val _displayedLocationFlow = MutableStateFlow<Location?>(null)
+    val displayedLocationFlow: StateFlow<Location?> get() = _displayedLocationFlow
     /** The GPS trackpoints the user has walked */
     private var tracks: ArrayList<ArrayList<Trackpoint>>
 
@@ -190,6 +193,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         super.onCreate(savedInstanceState)
         if (savedInstanceState != null) {
             displayedLocation = savedInstanceState.getParcelable(DISPLAYED_LOCATION)
+            _displayedLocationFlow.value = displayedLocation
             isRecordingTracks = savedInstanceState.getBoolean(TRACKS_IS_RECORDING)
             tracks = Json.decodeFromString(savedInstanceState.getString(TRACKS)!!)
         }
@@ -447,6 +451,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private fun onLocationChanged(location: Location) {
         displayedLocation = location
+        _displayedLocationFlow.value = location
         surveyChecker.addRecentLocation(location.toLocation())
         locationMapComponent?.targetLocation = location
         // addTrackLocation(location)
