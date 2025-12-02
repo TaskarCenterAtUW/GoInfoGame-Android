@@ -203,9 +203,9 @@ class QuestPinsManager(
         }
     }
 
-    suspend fun getQuestsInViewSnapshot(): List<Quest> {
+    suspend fun getQuestsInViewSnapshot(currentLocation: android.location.Location): List<Quest> {
         val quests = visibleQuestsSourceMutex.withLock {
-            withContext(Dispatchers.IO) { visibleQuestsSource.getQuestAroundPosition(mapFragment.displayedLocation!!.toLatLon(), 200.0) }
+            withContext(Dispatchers.IO) { visibleQuestsSource.getQuestAroundPosition(currentLocation.toLatLon(), 200.0) }
         }
         return quests
     }

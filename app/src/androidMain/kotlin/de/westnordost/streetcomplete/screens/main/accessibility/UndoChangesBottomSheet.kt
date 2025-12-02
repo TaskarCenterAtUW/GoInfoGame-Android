@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -106,29 +107,6 @@ fun UndoChangesBottomSheetContent(
         }
         Spacer(Modifier.height(16.dp))
 
-        // Changes list (static example – plug your own data)
-        // ChangeSectionHeader("ADDED")
-        // ChangeRow("ext:surface", "concrete")
-        // Spacer(Modifier.height(8.dp))
-        //
-        // ChangeSectionHeader("ADDED")
-        // ChangeRow("ext:obstruction", "no")
-        // Spacer(Modifier.height(8.dp))
-        //
-        // ChangeSectionHeader("MODIFIED")
-        // ChangeRow("ext:gig_complete", "yes")
-        // Spacer(Modifier.height(8.dp))
-        //
-        // ChangeSectionHeader("ADDED")
-        // ChangeRow("ext:surface", "concrete")
-        // Spacer(Modifier.height(8.dp))
-        //
-        // ChangeSectionHeader("MODIFIED")
-        // ChangeRow("ext:surface", "concrete")
-        //
-        // Spacer(Modifier.height(24.dp))
-
-        // Buttons
         Button(
             onClick = onRevertClick,
             modifier = Modifier
@@ -136,7 +114,7 @@ fun UndoChangesBottomSheetContent(
                 .height(52.dp),
             shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFE94057) // red/pink
+                containerColor = Color.Red // red/pink
             )
         ) {
             Text(
@@ -154,11 +132,12 @@ fun UndoChangesBottomSheetContent(
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(26.dp),
-            border = ButtonDefaults.outlinedButtonBorder.copy(
-                width = 2.dp
+            border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                width = 1.5.dp,
+                brush = SolidColor(MaterialTheme.colorScheme.primary)
             ),
             colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFF3A0CA3) // purple
+                contentColor = MaterialTheme.colorScheme.primary
             )
         ) {
             Text(
@@ -169,40 +148,6 @@ fun UndoChangesBottomSheetContent(
         }
 
         Spacer(Modifier.height(12.dp))
-    }
-}
-
-// ---------- Small helper composables ----------
-
-@Composable
-private fun ChangeSectionHeader(label: String) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall.copy(
-            color = Color(0xFFB0B0B0),
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.5.sp
-        )
-    )
-}
-
-@Composable
-private fun ChangeRow(key: String, value: String) {
-    Row {
-        Text(
-            text = key,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            )
-        )
-        Text(
-            text = "  =  ",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
     }
 }
 

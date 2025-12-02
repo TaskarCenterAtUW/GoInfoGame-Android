@@ -159,6 +159,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sqrt
 import kotlin.random.Random
+import androidx.compose.runtime.collectAsState
 
 /** Controls the main view.
  *
@@ -319,9 +320,12 @@ class MainActivity :
                     LocalContentColor provides MaterialTheme.colorScheme.onSurface
                 ) {
                     val showUndoScreen = remember { mutableStateOf(false) }
+                    val isUndoAvailable =
+                        editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
                     FollowModeScreen(
                         mapFragment!!,
                         onClose = ::hideAccessibilityView,
+                        isUndoAvailable = isUndoAvailable,
                         onUndoEdits = {
                             showUndoScreen.value = true
                         }, onBackToMap = {
@@ -332,6 +336,7 @@ class MainActivity :
                             modifier = Modifier, koinViewModel(),
                             onClose = {
                                 showUndoScreen.value = false
+                                mapFragment?.clearHighlighting()
                             }
                         )
                     }

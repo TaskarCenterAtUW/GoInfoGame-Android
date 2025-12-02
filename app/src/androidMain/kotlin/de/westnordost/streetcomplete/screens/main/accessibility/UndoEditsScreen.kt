@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.main.edithistory.getTitle
+import de.westnordost.streetcomplete.screens.user.DottedDivider
 
 // ---------- Models ----------
 
@@ -93,7 +95,7 @@ fun UndoEditsScreen(
                         .format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))
                     UndoQuestItem(
                         id = e.edit.key.toString(),
-                        timeLabel = timeLabel,
+                        timeLabel = "$dateLabel  $timeLabel",
                         e.edit,
                         editHistoryViewModel
                     )
@@ -121,12 +123,11 @@ fun UndoEditsSection(
     onBackToPrevious: () -> Unit = {},
     viewModel: EditHistoryViewModel,
 ) {
-    val bgColor = Color(0xFFF7F7FB)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
@@ -144,7 +145,6 @@ fun UndoEditsSection(
                     text = "Undo Edits",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF272848)
                     ),
                     modifier = Modifier.weight(1f)
                 )
@@ -162,19 +162,16 @@ fun UndoEditsSection(
             Text(
                 text = "Undo your recent changes",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF363A5E)
+                fontWeight = FontWeight.SemiBold
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "Select the quest based on date and time for preview & revert",
-                fontSize = 14.sp,
-                color = Color(0xFF7A7F98)
+                fontSize = 14.sp
             )
 
-            Divider(
+            DottedDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
-                color = Color(0xFFE2E1EC)
             )
 
             // List
@@ -195,7 +192,7 @@ fun UndoEditsSection(
                                 viewModel.select(item.edit?.key)
                                 onItemClick(item)
                             },
-                            onDismiss = { viewModel.select(null) },
+                            onDismiss = { viewModel.hideSidebar() },
                             viewModel,
                         )
                         Spacer(Modifier.height(12.dp))
@@ -206,9 +203,8 @@ fun UndoEditsSection(
                 }
             }
 
-            Divider(
+            DottedDivider(
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-                color = Color(0xFFE2E1EC)
             )
 
             // Bottom button
@@ -216,11 +212,15 @@ fun UndoEditsSection(
                 onClick = onBackToPrevious,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(vertical = 8.dp)
                     .height(54.dp),
                 shape = RoundedCornerShape(30.dp),
-                border = BorderStroke(1.5.dp, Color(0xFF3C0E7A)),
+                border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                    width = 1.5.dp,
+                    brush = SolidColor(MaterialTheme.colorScheme.primary)
+                ),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF3C0E7A)
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(
@@ -252,7 +252,6 @@ private fun DateHeader(date: String) {
             .padding(vertical = 4.dp),
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFFB0B4C5)
     )
     Spacer(Modifier.height(4.dp))
 }
@@ -282,7 +281,7 @@ private fun UndoItemCard(
         shape = RoundedCornerShape(18.dp),
         color = if (isSelected) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, Color(0xFFE3E4F0)),
+        border = BorderStroke(1.dp, Color.White),
         shadowElevation = 1.dp,
         onClick = {
             onClick()
@@ -301,21 +300,19 @@ private fun UndoItemCard(
                     text = item.timeLabel,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF4E506B)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Type: $label",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF363A5E)
                 )
             }
 
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color(0xFFB2B5C8)
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -333,8 +330,8 @@ private fun UndoItemCard(
         ) {
             UndoChangesBottomSheetContent(
                 item.edit,
-                type = "Sidewalk",
-                dateTime = "08 October 2025, 05:45 PM",
+                type = label,
+                dateTime = item.timeLabel,
                 onRevertClick = {
                     if (item.edit != null) {
                         viewModel.undo(item.edit.key)
@@ -349,35 +346,3 @@ private fun UndoItemCard(
         onDismiss()
     }
 }
-
-// ---------- Preview ----------
-
-// @Composable
-// @Preview(showBackground = true, showSystemUi = true)
-// fun UndoEditsSectionPreview() {
-//     val sampleSections = remember {
-//         listOf(
-//             UndoSection(
-//                 dateLabel = "08 October 2025",
-//                 items = listOf(
-//                     UndoQuestItem("1", "05:45 PM", null, {}),
-//                     UndoQuestItem("2", "05:45 PM", null, getElement),
-//                     UndoQuestItem("3", "05:45 PM", null, getElement),
-//                 )
-//             ),
-//             UndoSection(
-//                 dateLabel = "07 October 2025",
-//                 items = listOf(
-//                     UndoQuestItem("4", "05:45 PM", null, getElement),
-//                     UndoQuestItem("5", "05:45 PM", null, getElement),
-//                     UndoQuestItem("6", "05:45 PM", null, getElement),
-//                 )
-//             )
-//         )
-//     }
-//
-//     MaterialTheme {
-//         UndoEditsSection(sections = sampleSections)
-//     }
-// }
-

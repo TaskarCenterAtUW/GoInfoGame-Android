@@ -220,10 +220,10 @@ fun ProfileScreenNewContent(
 
 @Composable
 fun DottedDivider(
+    modifier: Modifier = Modifier,
     color: Color = Color.Gray,
     strokeWidth: Float = 2f,
     dotInterval: Float = 10f, // space between dots
-    modifier: Modifier = Modifier,
 ) {
     Canvas(
         modifier = modifier

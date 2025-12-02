@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -44,7 +43,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -54,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
+import de.westnordost.streetcomplete.screens.user.DottedDivider
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -74,36 +72,31 @@ import kotlin.math.sqrt
 fun FollowModeScreen(
     mapFragment: MainMapFragment,
     onClose: () -> Unit = {},
-    onRefresh: () -> Unit = {},
+    isUndoAvailable: Boolean,
     onUndoEdits: () -> Unit = {},
     onBackToMap: () -> Unit = {},
 ) {
-    val bgGradient = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFFE4FFCF),
-            Color(0xFFF4FFF0)
-        )
-    )
-
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
     val refreshTrigger = remember { mutableIntStateOf(0) }
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
 
     LaunchedEffect(mapFragment, refreshTrigger.intValue, displayedLocation) {
+        val currentLocation = displayedLocation ?: return@LaunchedEffect
         // Get current quests in view and store in a remembered state so it's accessible elsewhere
-        val loaded = mapFragment.questPinsManager?.getQuestsInViewSnapshot()?.map { quest ->
-            QuestUiModel(
-                id = quest.key.toString(),
-                distanceMeters = getDistanceBetweenPoints(
-                    mapFragment.displayedLocation!!.toLatLon(), quest.position
-                ),
-                questName = quest.type.name,
-                direction = getDirectionFromBearing(mapFragment.displayedLocation?.bearing),
-                onClick = {
-                    mapFragment.listener?.onClickedQuest(quest.key)
-                }
-            )
-        } ?: emptyList()
+        val loaded =
+            mapFragment.questPinsManager?.getQuestsInViewSnapshot(currentLocation)?.map { quest ->
+                QuestUiModel(
+                    id = quest.key.toString(),
+                    distanceMeters = getDistanceBetweenPoints(
+                        mapFragment.displayedLocation!!.toLatLon(), quest.position
+                    ),
+                    questName = quest.type.name,
+                    direction = getDirectionFromBearing(mapFragment.displayedLocation?.bearing),
+                    onClick = {
+                        mapFragment.listener?.onClickedQuest(quest.key)
+                    }
+                )
+            } ?: emptyList()
         val nearest = loaded.sortedBy { model -> model.distanceMeters }.take(5)
         questsState.clear()
         questsState.addAll(nearest)
@@ -112,13 +105,13 @@ fun FollowModeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgGradient)
+            .background(MaterialTheme.colorScheme.surface)
     ) {
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(vertical = 12.dp)
         ) {
             // Status-bar inset
             Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
@@ -127,43 +120,42 @@ fun FollowModeScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Foreground white sheet
-            Surface(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize(),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                color = Color.White.copy(alpha = 0.95f),
-                shadowElevation = 4.dp
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 20.dp)
             ) {
-                Column(
+                HeaderRow(
+                    questCount = questsState.size,
+                    onRefresh = { refreshTrigger.intValue++ }
+                )
+
+                DottedDivider(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 20.dp)
-                ) {
-                    HeaderRow(
-                        questCount = questsState.size,
-                        onRefresh = { refreshTrigger.value++ }
-                    )
+                        .padding(top = 16.dp, bottom = 8.dp),
+                )
 
-                    Divider(
-                        modifier = Modifier
-                            .padding(top = 16.dp, bottom = 8.dp),
-                        color = Color(0xFFE4E0F5)
-                    )
+                QuestList(
+                    quests = questsState,
+                    modifier = Modifier
+                        .weight(1f, fill = true)
+                        .padding(vertical = 8.dp)
+                )
 
-                    QuestList(
-                        quests = questsState,
-                        modifier = Modifier.weight(1f, fill = true)
-                    )
 
-                    Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-                    BottomButtons(
-                        onUndoEdits = onUndoEdits,
-                        onBackToMap = onBackToMap
-                    )
-                }
+                DottedDivider(
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 16.dp),
+                )
+                BottomButtons(
+                    isUndoEnabled = isUndoAvailable,
+                    onUndoEdits = onUndoEdits,
+                    onBackToMap = onBackToMap
+                )
             }
+
         }
     }
 }
@@ -208,7 +200,7 @@ data class QuestUiModel(
     val onClick: () -> Unit = { },
 ) {
     val description: String
-        get() = "You are $distanceMeters meters from '$questName',\n" +
+        get() = "You are $distanceMeters meters from '$questName' Quest, " +
             "to the $direction"
 }
 
@@ -218,7 +210,8 @@ data class QuestUiModel(
 private fun TopBar(onClose: () -> Unit) {
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -254,13 +247,13 @@ private fun HeaderRow(
                 text = "Nearest Quests: %02d".format(questCount),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
-                color = Color(0xFF27125F)
+                color = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "Select the quest and start answering.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF6A6A7A)
+                color = MaterialTheme.colorScheme.secondary
             )
         }
 
@@ -271,7 +264,7 @@ private fun HeaderRow(
             shape = RoundedCornerShape(50),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
             colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = Color(0xFF4E2C9F),
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
             )
         ) {
@@ -307,8 +300,10 @@ private fun QuestList(
 private fun QuestCard(quest: QuestUiModel) {
     var showSheet by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF3C0E7A),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        color = MaterialTheme.colorScheme.primary,
         shape = RoundedCornerShape(24.dp),
         shadowElevation = 2.dp,
         onClick = {
@@ -317,14 +312,14 @@ private fun QuestCard(quest: QuestUiModel) {
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF56C271)),
+                    .background(MaterialTheme.colorScheme.secondary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -362,6 +357,7 @@ private fun QuestCard(quest: QuestUiModel) {
 
 @Composable
 private fun BottomButtons(
+    isUndoEnabled: Boolean,
     onUndoEdits: () -> Unit,
     onBackToMap: () -> Unit,
 ) {
@@ -372,7 +368,15 @@ private fun BottomButtons(
         OutlinedButton(
             onClick = onUndoEdits,
             modifier = Modifier.weight(0.65f),
-            shape = RoundedCornerShape(50)
+            shape = RoundedCornerShape(50),
+            enabled = isUndoEnabled,
+            border = if (isUndoEnabled) ButtonDefaults.outlinedButtonBorder(true).copy(
+                width = 1.5.dp,
+                brush = SolidColor(MaterialTheme.colorScheme.primary)
+            ) else ButtonDefaults.outlinedButtonBorder(false),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         ) {
             Icon(
                 imageVector = Icons.Default.Undo,
@@ -389,7 +393,14 @@ private fun BottomButtons(
         OutlinedButton(
             onClick = onBackToMap,
             modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(50)
+            shape = RoundedCornerShape(50),
+            border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                width = 1.5.dp,
+                brush = SolidColor(MaterialTheme.colorScheme.primary)
+            ),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
@@ -425,12 +436,12 @@ fun QuestBottomSheet(
         onDismissRequest = onClose,
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp)
         ) {
 
             // Header row
@@ -446,14 +457,14 @@ fun QuestBottomSheet(
                         text = "Selected Type:",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
-                        color = Color(0xFF3C3973)
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = selectedType,
                         fontWeight = FontWeight.Medium,
                         fontSize = 16.sp,
-                        color = Color(0xFF3C0E7A)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -465,9 +476,8 @@ fun QuestBottomSheet(
                 }
             }
 
-            Divider(
+            DottedDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
-                color = Color(0xFFE2E1EC)
             )
 
             // Primary button
@@ -481,7 +491,7 @@ fun QuestBottomSheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3C0E7A),
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
                 )
             ) {
@@ -503,12 +513,12 @@ fun QuestBottomSheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(26.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF3C0E7A)
-                ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
+                border = ButtonDefaults.outlinedButtonBorder(true).copy(
                     width = 1.5.dp,
-                    brush = SolidColor(Color(0xFF3C0E7A))
+                    brush = SolidColor(MaterialTheme.colorScheme.primary)
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text(
@@ -530,7 +540,7 @@ fun QuestBottomSheet(
                 Text(
                     text = "Not now",
                     fontSize = 15.sp,
-                    color = Color(0xFF3C0E7A),
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                 )
             }
