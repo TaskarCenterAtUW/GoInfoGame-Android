@@ -32,6 +32,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -289,6 +290,8 @@ class MainActivity :
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface
             ) {
+                val showAttribution by remember { mutableStateOf(true) }
+                if (prefs.isFollowModeEnabled) !showAttribution else showAttribution
                 MainScreen(
                     viewModel = viewModel,
                     editHistoryViewModel = editHistoryViewModel,
@@ -300,7 +303,6 @@ class MainActivity :
                     onClickCreate = ::onClickCreateButton,
                     onClickStopTrackRecording = ::onClickTracksStop,
                     onClickDownload = ::onClickDownload,
-                    onExplainedNeedForLocationPermission = ::requestLocation,
                     onClickImageryLayer = ::onClickImageryLayerButton,
                     onSwitchWorkspace = {
                         val activity = this
@@ -315,49 +317,8 @@ class MainActivity :
         }
 
         binding.toolbar.followModeButton.setOnClickListener {
-            binding.accessibilityView.visibility = View.VISIBLE
-            binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
-            binding.accessibilityView.content {
-                // color for HUD elements without a background (e.g. scalebar, attribution button)
-                CompositionLocalProvider(
-                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
-                ) {
-                    val showUndoScreen = remember { mutableStateOf(false) }
-                    val isUndoAvailable =
-                        editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
-                    val refreshTrigger = remember { mutableIntStateOf(0) }
-
-
-                    if (showUndoScreen.value) {
-                        UndoEditsScreen(
-                            modifier = Modifier, koinViewModel(),
-                            onClose = {
-                                showUndoScreen.value = false
-                                mapFragment?.clearHighlighting()
-                                refreshTrigger.intValue++
-                            }
-                        )
-                    } else {
-                        FollowModeScreen(
-                            mapFragment!!,
-                            refreshTrigger,
-                            onClose = ::hideAccessibilityView,
-                            isUndoAvailable = isUndoAvailable,
-                            onHideQuest = { questKey ->
-                                hiddenQuestsController.hide(questKey)
-                                refreshTrigger.intValue++
-                            },
-                            onUndoEdits = {
-                                showUndoScreen.value = true
-                            }, onBackToMap = {
-                                hideAccessibilityView()
-                            })
-                    }
-                }
-            }
+            startFollowMode()
         }
-
-
 
         onBackPressedDispatcher.addCallback(this, sheetBackPressedCallback)
         sheetBackPressedCallback.isEnabled = bottomSheetFragment is IsCloseableBottomSheet
@@ -392,6 +353,49 @@ class MainActivity :
                 mapFragment?.setInitialCameraPosition(geoUri)
                 viewModel.isFollowingPosition.value = mapFragment?.isFollowingPosition ?: false
                 viewModel.isNavigationMode.value = mapFragment?.isNavigationMode ?: false
+            }
+        }
+    }
+
+    private fun startFollowMode() {
+        binding.accessibilityView.visibility = View.VISIBLE
+        binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        binding.accessibilityView.content {
+            // color for HUD elements without a background (e.g. scalebar, attribution button)
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                val showUndoScreen = remember { mutableStateOf(false) }
+                val isUndoAvailable =
+                    editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
+                val refreshTrigger = remember { mutableIntStateOf(0) }
+
+
+                if (showUndoScreen.value) {
+                    UndoEditsScreen(
+                        modifier = Modifier, koinViewModel(),
+                        onClose = {
+                            showUndoScreen.value = false
+                            mapFragment?.clearHighlighting()
+                            refreshTrigger.intValue++
+                        }
+                    )
+                } else {
+                    FollowModeScreen(
+                        mapFragment!!,
+                        refreshTrigger,
+                        onClose = ::hideAccessibilityView,
+                        isUndoAvailable = isUndoAvailable,
+                        onHideQuest = { questKey ->
+                            hiddenQuestsController.hide(questKey)
+                            refreshTrigger.intValue++
+                        },
+                        onUndoEdits = {
+                            showUndoScreen.value = true
+                        }, onBackToMap = {
+                            hideAccessibilityView()
+                        })
+                }
             }
         }
     }
@@ -455,6 +459,10 @@ class MainActivity :
         window.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         )
+        if (prefs.isFollowModeEnabled){
+            startFollowMode()
+            viewModel.userHasMovedCamera.value = true
+        }
     }
 
     //region QuestsMapFragment - Callbacks from the map with its quest pins

@@ -1868,4 +1868,6 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="map_btn_create_node">Add new feature</string>
 
+    <string name="follow_mode">Follow Mode</string>
+    <string name="enable_follow_mode">Enable Follow Mode</string>
 </resources>

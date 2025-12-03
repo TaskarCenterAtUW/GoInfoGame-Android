@@ -110,7 +110,6 @@ fun MainScreen(
     onClickCreate: () -> Unit,
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
-    onExplainedNeedForLocationPermission: () -> Unit,
     onClickImageryLayer: () -> Unit,
     onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
@@ -523,7 +522,6 @@ private fun PreviewMainScreen() {
         onClickCreate = {},
         onClickStopTrackRecording = {},
         onClickDownload = {},
-        onExplainedNeedForLocationPermission = {},
         onClickImageryLayer = {},
         onSwitchWorkspace = {}
     )
