@@ -43,10 +43,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.quest.QuestKey
+import de.westnordost.streetcomplete.screens.main.MainViewModel
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
 import de.westnordost.streetcomplete.screens.user.DottedDivider
 import de.westnordost.streetcomplete.util.ktx.toLatLon
@@ -75,7 +74,8 @@ import kotlin.math.sqrt
 @Composable
 fun FollowModeScreen(
     mapFragment: MainMapFragment,
-    refreshTrigger: MutableIntState,
+    viewModel: MainViewModel,
+    triggerRefresh: () -> Unit,
     onClose: () -> Unit = {},
     onHideQuest: (questKey: QuestKey) -> Unit,
     isUndoAvailable: Boolean,
@@ -85,8 +85,8 @@ fun FollowModeScreen(
 
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
-
-    LaunchedEffect(mapFragment, refreshTrigger.intValue, displayedLocation) {
+    val refreshTrigger by viewModel.refreshCounter.collectAsState()
+    LaunchedEffect(mapFragment, refreshTrigger, displayedLocation) {
         val currentLocation = displayedLocation ?: return@LaunchedEffect
         // Get current quests in view and store in a remembered state so it's accessible
         val loaded =
@@ -107,7 +107,6 @@ fun FollowModeScreen(
         questsState.clear()
         questsState.addAll(nearest)
     }
-    refreshTrigger.intValue++
 
     Box(
         modifier = Modifier
@@ -128,11 +127,11 @@ fun FollowModeScreen(
             Spacer(Modifier.height(12.dp))
 
             if (questsState.isEmpty()) {
-                NoQuestsUI(refreshTrigger)
+                NoQuestsUI(triggerRefresh)
             } else {
                 QuestListUI(
                     questsState,
-                    refreshTrigger,
+                    triggerRefresh,
                     isUndoAvailable,
                     onUndoEdits,
                     onBackToMap,
@@ -144,7 +143,7 @@ fun FollowModeScreen(
 }
 
 @Composable
-fun NoQuestsUI(refreshTrigger: MutableIntState, modifier: Modifier = Modifier) {
+fun NoQuestsUI(refreshTrigger: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = modifier
@@ -200,7 +199,7 @@ fun NoQuestsUI(refreshTrigger: MutableIntState, modifier: Modifier = Modifier) {
 
             // rounded outline button with icon and text
             OutlinedButton(
-                onClick = { refreshTrigger.intValue++ },
+                onClick = refreshTrigger,
                 shape = RoundedCornerShape(28.dp),
                 border = ButtonDefaults.outlinedButtonBorder(true).copy(
                     width = 1.5.dp,
@@ -233,7 +232,7 @@ fun NoQuestsUI(refreshTrigger: MutableIntState, modifier: Modifier = Modifier) {
 @Composable
 private fun QuestListUI(
     questsState: SnapshotStateList<QuestUiModel>,
-    refreshTrigger: MutableIntState,
+    refreshTrigger: () -> Unit,
     isUndoAvailable: Boolean,
     onUndoEdits: () -> Unit,
     onBackToMap: () -> Unit,
@@ -246,7 +245,7 @@ private fun QuestListUI(
     ) {
         HeaderRow(
             questCount = questsState.size,
-            onRefresh = { refreshTrigger.intValue++ }
+            onRefresh = refreshTrigger
         )
 
         DottedDivider(
@@ -416,7 +415,14 @@ private fun QuestList(
 
 @Composable
 private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> Unit) {
-    var showSheet by remember { mutableStateOf(false) }
+    var showOnQuestSelectionBottomSheet by remember { mutableStateOf(false) }
+    var showArrivedBottomSheet by remember { mutableStateOf(false) }
+    var showedArrivedBottomSheetOnce by remember { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = quest.distanceMeters, key2 = showOnQuestSelectionBottomSheet) {
+        showArrivedBottomSheet =
+            quest.distanceMeters <= 20 && !showOnQuestSelectionBottomSheet && !showedArrivedBottomSheetOnce
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -425,7 +431,7 @@ private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> 
         shape = RoundedCornerShape(24.dp),
         shadowElevation = 2.dp,
         onClick = {
-            showSheet = true
+            showOnQuestSelectionBottomSheet = true
         }
     ) {
         Row(
@@ -459,16 +465,36 @@ private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> 
         }
     }
 
-    if (showSheet) {
+    if (showOnQuestSelectionBottomSheet) {
         QuestBottomSheet(
             selectedType = quest.questName,
             onStartAnswering = {
-                showSheet = false
+                showOnQuestSelectionBottomSheet = false
+                showedArrivedBottomSheetOnce = true
                 quest.onClick()
             },
             onHideQuest = { onHideQuest(quest.id) },
-            onNotNow = { showSheet = false },
-            onClose = { showSheet = false }
+            onNotNow = {
+                showOnQuestSelectionBottomSheet = false
+                showedArrivedBottomSheetOnce = true
+            },
+            onClose = {
+                showOnQuestSelectionBottomSheet = false
+                showedArrivedBottomSheetOnce = true
+            }
+        )
+    }
+
+    if (showArrivedBottomSheet) {
+        ArrivedBottomSheet(
+            questType = quest.questName,
+            onStartAnswering = {
+                showArrivedBottomSheet = false
+                quest.onClick()
+            },
+            onHide = { onHideQuest(quest.id) },
+            onNotNow = { showArrivedBottomSheet = false },
+            onClose = { showArrivedBottomSheet = false }
         )
     }
 }

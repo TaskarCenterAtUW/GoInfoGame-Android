@@ -711,4 +711,17 @@ object PreviewMainViewModel : MainViewModel() {
     override fun hideMenu() {
         TODO("Not yet implemented")
     }
+
+    override val followVisible: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+
+    override val undoVisible: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+
+    override val refreshCounter: MutableStateFlow<Int>
+        get() = TODO("Not yet implemented")
+
+    override fun triggerRefresh() {
+        TODO("Not yet implemented")
+    }
 }

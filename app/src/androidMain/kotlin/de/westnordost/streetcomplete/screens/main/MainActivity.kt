@@ -31,9 +31,9 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -357,44 +357,65 @@ class MainActivity :
         }
     }
 
+    private fun showFollowMode() {
+        viewModel.followVisible.value = true
+        viewModel.undoVisible.value = false
+    }
+
+    private fun showUndoMode() {
+        viewModel.followVisible.value = false
+        viewModel.undoVisible.value = true
+    }
+
     private fun startFollowMode() {
         binding.accessibilityView.visibility = View.VISIBLE
+        showFollowMode()
         binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
         binding.accessibilityView.content {
             // color for HUD elements without a background (e.g. scalebar, attribution button)
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface
             ) {
-                val showUndoScreen = remember { mutableStateOf(false) }
                 val isUndoAvailable =
                     editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
-                val refreshTrigger = remember { mutableIntStateOf(0) }
+                val refreshTrigger by viewModel.refreshCounter.collectAsState()
+
+                val followVisible by viewModel.followVisible.collectAsState()
+                val undoVisible by viewModel.undoVisible.collectAsState()
 
 
-                if (showUndoScreen.value) {
-                    UndoEditsScreen(
-                        modifier = Modifier, koinViewModel(),
-                        onClose = {
-                            showUndoScreen.value = false
-                            mapFragment?.clearHighlighting()
-                            refreshTrigger.intValue++
-                        }
-                    )
-                } else {
+                if (followVisible) {
                     FollowModeScreen(
                         mapFragment!!,
-                        refreshTrigger,
+                        viewModel,
+                        triggerRefresh = {
+                            viewModel.triggerRefresh()
+                        },
                         onClose = ::hideAccessibilityView,
                         isUndoAvailable = isUndoAvailable,
                         onHideQuest = { questKey ->
                             hiddenQuestsController.hide(questKey)
-                            refreshTrigger.intValue++
+                            viewModel.triggerRefresh()
                         },
                         onUndoEdits = {
-                            showUndoScreen.value = true
+                            showUndoMode()
                         }, onBackToMap = {
                             hideAccessibilityView()
                         })
+                    LaunchedEffect(key1 = followVisible) {
+                        viewModel.triggerRefresh()
+                    }
+                }
+
+                if (undoVisible) {
+                    UndoEditsScreen(
+                        modifier = Modifier, koinViewModel(),
+                        onClose = {
+                            showFollowMode()
+                            mapFragment?.clearHighlighting()
+                            viewModel.triggerRefresh()
+                        }
+                    )
                 }
             }
         }
@@ -402,6 +423,8 @@ class MainActivity :
 
     fun hideAccessibilityView() {
         binding.accessibilityView.visibility = View.GONE
+        viewModel.followVisible.value = false
+        viewModel.undoVisible.value = false
     }
 
     override fun onStart() {
@@ -459,7 +482,7 @@ class MainActivity :
         window.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         )
-        if (prefs.isFollowModeEnabled){
+        if (prefs.isFollowModeEnabled) {
             startFollowMode()
             viewModel.userHasMovedCamera.value = true
         }
@@ -661,6 +684,7 @@ class MainActivity :
         multiSelectQuests.clear()
         mapFragment?.clearMultiSelect()
         viewModel.selectOverlay(null)
+        viewModel.triggerRefresh()
     }
 
     override fun onComposeNote(
