@@ -31,6 +31,8 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -84,6 +86,7 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
+import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenSource
 import de.westnordost.streetcomplete.databinding.ActivityMainBinding
 import de.westnordost.streetcomplete.databinding.CustomToolbarBinding
@@ -159,7 +162,6 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sqrt
 import kotlin.random.Random
-import androidx.compose.runtime.collectAsState
 
 /** Controls the main view.
  *
@@ -235,6 +237,7 @@ class MainActivity :
     private val overlayRegistry by inject<OverlayRegistry>()
 
     private var selectedImagery: Imagery? = null
+    private val hiddenQuestsController: QuestsHiddenController by inject()
 
     private val imageryRepository: ImageryRepository by inject()
     /* +++++++++++++++++++++++++++++++++++++++ CALLBACKS ++++++++++++++++++++++++++++++++++++++++ */
@@ -322,10 +325,17 @@ class MainActivity :
                     val showUndoScreen = remember { mutableStateOf(false) }
                     val isUndoAvailable =
                         editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
+                    val refreshTrigger = remember { mutableIntStateOf(0) }
+
                     FollowModeScreen(
                         mapFragment!!,
+                        refreshTrigger,
                         onClose = ::hideAccessibilityView,
                         isUndoAvailable = isUndoAvailable,
+                        onHideQuest = { questKey ->
+                            hiddenQuestsController.hide(questKey)
+                            refreshTrigger.intValue++
+                        },
                         onUndoEdits = {
                             showUndoScreen.value = true
                         }, onBackToMap = {
@@ -337,6 +347,7 @@ class MainActivity :
                             onClose = {
                                 showUndoScreen.value = false
                                 mapFragment?.clearHighlighting()
+                                refreshTrigger.intValue++
                             }
                         )
                     }

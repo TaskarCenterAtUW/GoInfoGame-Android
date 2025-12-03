@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.NotListedLocation
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Navigation
@@ -42,6 +43,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +51,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
 import de.westnordost.streetcomplete.screens.user.DottedDivider
 import de.westnordost.streetcomplete.util.ktx.toLatLon
@@ -71,13 +75,14 @@ import kotlin.math.sqrt
 @Composable
 fun FollowModeScreen(
     mapFragment: MainMapFragment,
+    refreshTrigger: MutableIntState,
     onClose: () -> Unit = {},
+    onHideQuest: (questKey: QuestKey) -> Unit,
     isUndoAvailable: Boolean,
     onUndoEdits: () -> Unit = {},
     onBackToMap: () -> Unit = {},
 ) {
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
-    val refreshTrigger = remember { mutableIntStateOf(0) }
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
 
     LaunchedEffect(mapFragment, refreshTrigger.intValue, displayedLocation) {
@@ -86,7 +91,7 @@ fun FollowModeScreen(
         val loaded =
             mapFragment.questPinsManager?.getQuestsInViewSnapshot(currentLocation)?.map { quest ->
                 QuestUiModel(
-                    id = quest.key.toString(),
+                    id = quest.key,
                     distanceMeters = getDistanceBetweenPoints(
                         mapFragment.displayedLocation!!.toLatLon(), quest.position
                     ),
@@ -120,43 +125,153 @@ fun FollowModeScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 20.dp)
-            ) {
-                HeaderRow(
-                    questCount = questsState.size,
-                    onRefresh = { refreshTrigger.intValue++ }
-                )
-
-                DottedDivider(
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp),
-                )
-
-                QuestList(
-                    quests = questsState,
-                    modifier = Modifier
-                        .weight(1f, fill = true)
-                        .padding(vertical = 8.dp)
-                )
-
-
-                Spacer(Modifier.height(16.dp))
-
-                DottedDivider(
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 16.dp),
-                )
-                BottomButtons(
-                    isUndoEnabled = isUndoAvailable,
-                    onUndoEdits = onUndoEdits,
-                    onBackToMap = onBackToMap
+            if (questsState.isEmpty()) {
+                NoQuestsUI(refreshTrigger)
+            } else {
+                QuestListUI(
+                    questsState,
+                    refreshTrigger,
+                    isUndoAvailable,
+                    onUndoEdits,
+                    onBackToMap,
+                    onHideQuest
                 )
             }
-
         }
+    }
+}
+
+@Composable
+fun NoQuestsUI(refreshTrigger: MutableIntState, modifier: Modifier = Modifier) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(106.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.NotListedLocation,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(80.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "No Quests Found!",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Try moving to a different location to discover more quests.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 16.dp)
+                .align(Alignment.BottomCenter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            DottedDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 18.dp)
+            )
+
+            // rounded outline button with icon and text
+            OutlinedButton(
+                onClick = { refreshTrigger.intValue++ },
+                shape = RoundedCornerShape(28.dp),
+                border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                    width = 1.5.dp,
+                    brush = SolidColor(MaterialTheme.colorScheme.primary)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Refresh",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Refresh List",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuestListUI(
+    questsState: SnapshotStateList<QuestUiModel>,
+    refreshTrigger: MutableIntState,
+    isUndoAvailable: Boolean,
+    onUndoEdits: () -> Unit,
+    onBackToMap: () -> Unit,
+    onHideQuest: (questKey: QuestKey) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 20.dp)
+    ) {
+        HeaderRow(
+            questCount = questsState.size,
+            onRefresh = { refreshTrigger.intValue++ }
+        )
+
+        DottedDivider(
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 8.dp),
+        )
+
+        QuestList(
+            quests = questsState,
+            onHideQuest,
+            modifier = Modifier
+                .weight(1f, fill = true)
+                .padding(vertical = 8.dp)
+        )
+
+
+        Spacer(Modifier.height(16.dp))
+
+        DottedDivider(
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 16.dp),
+        )
+        BottomButtons(
+            isUndoEnabled = isUndoAvailable,
+            onUndoEdits = onUndoEdits,
+            onBackToMap = onBackToMap
+        )
     }
 }
 
@@ -193,7 +308,7 @@ fun getDistanceBetweenPoints(point1: LatLon, point2: LatLon): Int {
 // ---------- Models ----------
 
 data class QuestUiModel(
-    val id: String,
+    val id: QuestKey,
     val distanceMeters: Int,
     val questName: String,
     val direction: String,
@@ -282,6 +397,7 @@ private fun HeaderRow(
 @Composable
 private fun QuestList(
     quests: List<QuestUiModel>,
+    onHideQuest: (questKey: QuestKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -291,13 +407,13 @@ private fun QuestList(
     ) {
         quests.forEachIndexed { index, quest ->
             if (index > 0) Spacer(Modifier.height(12.dp))
-            QuestCard(quest)
+            QuestCard(quest, onHideQuest)
         }
     }
 }
 
 @Composable
-private fun QuestCard(quest: QuestUiModel) {
+private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> Unit) {
     var showSheet by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
@@ -348,7 +464,7 @@ private fun QuestCard(quest: QuestUiModel) {
                 showSheet = false
                 quest.onClick()
             },
-            onHideQuest = { },
+            onHideQuest = { onHideQuest(quest.id) },
             onNotNow = { showSheet = false },
             onClose = { showSheet = false }
         )
