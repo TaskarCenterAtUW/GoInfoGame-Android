@@ -82,12 +82,13 @@ fun FollowModeScreen(
     onUndoEdits: () -> Unit = {},
     onBackToMap: () -> Unit = {},
 ) {
+
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
 
     LaunchedEffect(mapFragment, refreshTrigger.intValue, displayedLocation) {
         val currentLocation = displayedLocation ?: return@LaunchedEffect
-        // Get current quests in view and store in a remembered state so it's accessible elsewhere
+        // Get current quests in view and store in a remembered state so it's accessible
         val loaded =
             mapFragment.questPinsManager?.getQuestsInViewSnapshot(currentLocation)?.map { quest ->
                 QuestUiModel(
@@ -106,6 +107,7 @@ fun FollowModeScreen(
         questsState.clear()
         questsState.addAll(nearest)
     }
+    refreshTrigger.intValue++
 
     Box(
         modifier = Modifier

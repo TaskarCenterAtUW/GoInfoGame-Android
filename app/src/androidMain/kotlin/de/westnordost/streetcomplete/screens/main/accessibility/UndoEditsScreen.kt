@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.screens.main.accessibility
 import UndoChangesBottomSheetContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,13 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +56,7 @@ import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
-import de.westnordost.streetcomplete.screens.main.edithistory.getTitle
+import de.westnordost.streetcomplete.screens.main.edithistory.getName
 import de.westnordost.streetcomplete.screens.user.DottedDivider
 
 // ---------- Models ----------
@@ -61,6 +64,7 @@ import de.westnordost.streetcomplete.screens.user.DottedDivider
 data class UndoQuestItem(
     val id: String,
     val timeLabel: String,   // "05:45 PM"
+    val dateLabel: String,
     val edit: Edit?,
     val viewModel: EditHistoryViewModel,    // "Sidewalk", "Curb"
 )
@@ -95,7 +99,8 @@ fun UndoEditsScreen(
                         .format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"))
                     UndoQuestItem(
                         id = e.edit.key.toString(),
-                        timeLabel = "$dateLabel  $timeLabel",
+                        timeLabel = timeLabel,
+                        dateLabel = dateLabel,
                         e.edit,
                         editHistoryViewModel
                     )
@@ -174,37 +179,48 @@ fun UndoEditsSection(
                 modifier = Modifier.padding(vertical = 16.dp),
             )
 
-            // List
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                sections.forEach { section ->
-                    item(key = "header_${section.dateLabel}") {
-                        DateHeader(section.dateLabel)
-                    }
-                    items(section.items, key = { it.id }) { item ->
-                        UndoItemCard(
-                            item = item,
-                            isSelected = selectedEdit?.key == item.edit?.key,
-                            onClick = {
-                                viewModel.select(item.edit?.key)
-                                onItemClick(item)
-                            },
-                            onDismiss = { viewModel.hideSidebar() },
-                            viewModel,
-                        )
-                        Spacer(Modifier.height(12.dp))
-                    }
-                    item {
-                        Spacer(Modifier.height(8.dp))
+            if (sections.isEmpty()) {
+                NoEditsUI()
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    sections.forEach { section ->
+                        item(key = "header_${section.dateLabel}") {
+                            DateHeader(section.dateLabel)
+                        }
+                        items(section.items, key = { it.id }) { item ->
+                            UndoItemCard(
+                                item = item,
+                                isSelected = selectedEdit?.key == item.edit?.key,
+                                onClick = {
+                                    viewModel.select(item.edit?.key)
+                                    onItemClick(item)
+                                },
+                                onDismiss = { viewModel.hideSidebar() },
+                                viewModel,
+                            )
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        item {
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                 }
             }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .align(Alignment.BottomCenter)
+        ) {
 
             DottedDivider(
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                modifier = Modifier.padding(vertical = 16.dp),
             )
 
             // Bottom button
@@ -241,7 +257,51 @@ fun UndoEditsSection(
     }
 }
 
-// ---------- Pieces ----------
+@Composable
+fun NoEditsUI(modifier: Modifier = Modifier) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(106.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Undo,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(80.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "No Edits Found!",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "New edits will appear here when a quest is answered",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 
 @Composable
 private fun DateHeader(date: String) {
@@ -274,7 +334,7 @@ private fun UndoItemCard(
         element = viewModel.getEditElement(item.edit)
     }
 
-    val label = item.edit?.getTitle(element?.tags) ?: "Unknown Quest"
+    val label = item.edit?.getName() ?: "Unknown"
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -331,7 +391,7 @@ private fun UndoItemCard(
             UndoChangesBottomSheetContent(
                 item.edit,
                 type = label,
-                dateTime = item.timeLabel,
+                dateTime = "${item.dateLabel} ${item.timeLabel}",
                 onRevertClick = {
                     if (item.edit != null) {
                         viewModel.undo(item.edit.key)

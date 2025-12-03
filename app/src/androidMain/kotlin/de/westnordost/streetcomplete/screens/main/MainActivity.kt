@@ -327,20 +327,7 @@ class MainActivity :
                         editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
                     val refreshTrigger = remember { mutableIntStateOf(0) }
 
-                    FollowModeScreen(
-                        mapFragment!!,
-                        refreshTrigger,
-                        onClose = ::hideAccessibilityView,
-                        isUndoAvailable = isUndoAvailable,
-                        onHideQuest = { questKey ->
-                            hiddenQuestsController.hide(questKey)
-                            refreshTrigger.intValue++
-                        },
-                        onUndoEdits = {
-                            showUndoScreen.value = true
-                        }, onBackToMap = {
-                            hideAccessibilityView()
-                        })
+
                     if (showUndoScreen.value) {
                         UndoEditsScreen(
                             modifier = Modifier, koinViewModel(),
@@ -350,6 +337,21 @@ class MainActivity :
                                 refreshTrigger.intValue++
                             }
                         )
+                    } else {
+                        FollowModeScreen(
+                            mapFragment!!,
+                            refreshTrigger,
+                            onClose = ::hideAccessibilityView,
+                            isUndoAvailable = isUndoAvailable,
+                            onHideQuest = { questKey ->
+                                hiddenQuestsController.hide(questKey)
+                                refreshTrigger.intValue++
+                            },
+                            onUndoEdits = {
+                                showUndoScreen.value = true
+                            }, onBackToMap = {
+                                hideAccessibilityView()
+                            })
                     }
                 }
             }

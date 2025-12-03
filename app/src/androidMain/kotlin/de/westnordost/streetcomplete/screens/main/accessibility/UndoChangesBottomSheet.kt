@@ -102,9 +102,10 @@ fun UndoChangesBottomSheetContent(
 
         if (edit != null) {
             SelectionContainer {
-                EditDescription(edit)
+                EditDescription(edit, modifier = Modifier.padding(24.dp))
             }
         }
+        DashedDivider()
         Spacer(Modifier.height(16.dp))
 
         Button(
