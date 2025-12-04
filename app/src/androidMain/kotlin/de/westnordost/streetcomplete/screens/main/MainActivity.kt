@@ -17,6 +17,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.RadioButton
@@ -182,6 +183,8 @@ import kotlin.random.Random
  *  [-] icon next to it.
  *
  */
+private const val NO_HIDE = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+private const val AUTO = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
 class MainActivity :
     BaseActivity(),
     // listeners to child fragments:
@@ -367,6 +370,34 @@ class MainActivity :
         viewModel.undoVisible.value = true
     }
 
+    private fun focusOnAccessibilityView() {
+        binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        binding.accessibilityView.importantForAccessibility = AUTO
+        binding.toolbar.root.importantForAccessibility = NO_HIDE
+        binding.controls.importantForAccessibility = NO_HIDE
+    }
+
+    private fun focusOnMapView() {
+        binding.accessibilityView.importantForAccessibility = NO_HIDE
+        binding.toolbar.root.importantForAccessibility = AUTO
+        binding.controls.importantForAccessibility = AUTO
+    }
+
+    private fun focusOnBottomSheet() {
+        binding.accessibilityView.importantForAccessibility = NO_HIDE
+        binding.toolbar.root.importantForAccessibility = NO_HIDE
+        binding.controls.importantForAccessibility = NO_HIDE
+        binding.mapBottomSheetContainer.importantForAccessibility = AUTO
+    }
+
+    private fun moveFocusFromBottomSheet() {
+        if (viewModel.undoVisible.value || viewModel.followVisible.value) {
+            focusOnAccessibilityView()
+        } else {
+            focusOnMapView()
+        }
+    }
+
     private fun startFollowMode() {
         binding.accessibilityView.visibility = View.VISIBLE
         showFollowMode()
@@ -378,7 +409,6 @@ class MainActivity :
             ) {
                 val isUndoAvailable =
                     editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
-                val refreshTrigger by viewModel.refreshCounter.collectAsState()
 
                 val followVisible by viewModel.followVisible.collectAsState()
                 val undoVisible by viewModel.undoVisible.collectAsState()
@@ -419,12 +449,14 @@ class MainActivity :
                 }
             }
         }
+        focusOnAccessibilityView()
     }
 
     fun hideAccessibilityView() {
         binding.accessibilityView.visibility = View.GONE
         viewModel.followVisible.value = false
         viewModel.undoVisible.value = false
+        focusOnMapView()
     }
 
     override fun onStart() {
@@ -685,6 +717,7 @@ class MainActivity :
         mapFragment?.clearMultiSelect()
         viewModel.selectOverlay(null)
         viewModel.triggerRefresh()
+        moveFocusFromBottomSheet()
     }
 
     override fun onComposeNote(
@@ -1206,7 +1239,15 @@ class MainActivity :
             add(R.id.map_bottom_sheet_container, f, BOTTOM_SHEET)
             addToBackStack(BOTTOM_SHEET)
         }
+
+        supportFragmentManager.executePendingTransactions()
+
+        if (f is AbstractOsmQuestForm<*>){
+            f.bottomSheetBehavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        }
         sheetBackPressedCallback.isEnabled = f is IsCloseableBottomSheet
+        focusOnBottomSheet()
     }
 
     /** Make the map not follow the user's location anymore temporarily */

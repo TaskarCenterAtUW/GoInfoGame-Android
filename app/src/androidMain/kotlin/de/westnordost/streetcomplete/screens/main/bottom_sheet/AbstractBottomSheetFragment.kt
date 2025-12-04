@@ -42,7 +42,7 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
     /** View that floats at the bottom on top of any retracted/expanded bottom sheet */
     protected abstract val floatingBottomView: View?
 
-    private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
+    lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
 
     private var minBottomInset = Int.MAX_VALUE
 

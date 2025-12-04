@@ -1,13 +1,7 @@
 package de.westnordost.streetcomplete.screens.main.map
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.view.View
-import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
-import android.widget.FrameLayout
-import androidx.core.view.children
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
@@ -43,9 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
-import kotlin.math.abs
 
 /** Manages the layer of quest pins in the map view:
  *  Gets told by the QuestsMapFragment when a new area is in view and independently pulls the quests
@@ -58,9 +50,8 @@ class QuestPinsManager(
     private val questTypeOrderSource: QuestTypeOrderSource,
     private val questTypeRegistry: QuestTypeRegistry,
     private val visibleQuestsSource: VisibleQuestsSource,
-    private val accessibilityOverlay: FrameLayout,
     private val mapFragment: MainMapFragment,
-    private val preferences: Preferences
+    private val preferences: Preferences,
 ) : DefaultLifecycleObserver {
     private val overlayPositions: MutableList<Pair<Float, Float>> = mutableListOf()
 
@@ -205,10 +196,16 @@ class QuestPinsManager(
 
     suspend fun getQuestsInViewSnapshot(currentLocation: android.location.Location): List<Quest> {
         val quests = visibleQuestsSourceMutex.withLock {
-            withContext(Dispatchers.IO) { visibleQuestsSource.getQuestAroundPosition(currentLocation.toLatLon(), 200.0) }
+            withContext(Dispatchers.IO) {
+                visibleQuestsSource.getQuestAroundPosition(
+                    currentLocation.toLatLon(),
+                    200.0
+                )
+            }
         }
         return quests
     }
+
     private suspend fun setQuestPins(bbox: BoundingBox) {
         val quests = visibleQuestsSourceMutex.withLock {
             withContext(Dispatchers.IO) { visibleQuestsSource.getAll(bbox) }
@@ -291,44 +288,47 @@ class QuestPinsManager(
     }
 
     private fun addAccessiblePins(pins: List<Pin>) {
-        if (!isTalkBackEnabled(accessibilityOverlay.context)) {
-            return
-        }
-        Handler(Looper.getMainLooper()).post {
-            accessibilityOverlay.removeAllViews()
-            pins.filter { it.enabled }.forEach { pin ->
-                val screenPos = map.projection.toScreenLocation(
-                    LatLng(pin.position.latitude, pin.position.longitude)
-                )
-
-                val widthInDp = 48
-                val widthInPx = (widthInDp * mapFragment.resources.displayMetrics.density).toInt()
-
-                val overlayView = AccessibilityOverlayView(
-                    accessibilityOverlay.context,
-                    pin.position,
-                    screenPos,
-                    pin.position.toKey(),
-                    pin.properties.toMap(),
-                    ::onClick,
-                    ::onLongClick
-                ).apply {
-                    contentDescription = pin.toString()
-                    isFocusable = true
-                    isClickable = true
-                    layoutParams = ViewGroup.LayoutParams(widthInPx, widthInPx)
-                    x = screenPos.x - widthInPx / 2f
-                    y = screenPos.y - widthInPx / 2f
-                }
-
-                accessibilityOverlay.addView(overlayView)
-                overlayPositions.add(Pair(overlayView.x, overlayView.y))
-            }
-        }
+        return
+        // if (!isTalkBackEnabled(accessibilityOverlay.context)) {
+        //     return
+        // }
+        // Handler(Looper.getMainLooper()).post {
+        //     accessibilityOverlay.removeAllViews()
+        //     pins.filter { it.enabled }.forEach { pin ->
+        //         val screenPos = map.projection.toScreenLocation(
+        //             LatLng(pin.position.latitude, pin.position.longitude)
+        //         )
+        //
+        //         val widthInDp = 48
+        //         val widthInPx = (widthInDp * mapFragment.resources.displayMetrics.density).toInt()
+        //
+        //         val overlayView = AccessibilityOverlayView(
+        //             accessibilityOverlay.context,
+        //             pin.position,
+        //             screenPos,
+        //             pin.position.toKey(),
+        //             pin.properties.toMap(),
+        //             ::onClick,
+        //             ::onLongClick
+        //         ).apply {
+        //             contentDescription = pin.toString()
+        //             isFocusable = true
+        //             isClickable = true
+        //             layoutParams = ViewGroup.LayoutParams(widthInPx, widthInPx)
+        //             x = screenPos.x - widthInPx / 2f
+        //             y = screenPos.y - widthInPx / 2f
+        //         }
+        //
+        //         accessibilityOverlay.addView(overlayView)
+        //         overlayPositions.add(Pair(overlayView.x, overlayView.y))
+        //     }
+        // }
     }
+
     private fun onClick(properties: Map<String, String>) {
         mapFragment.onClickPin(properties)
     }
+
     private fun onLongClick(properties: Map<String, String>) {
         mapFragment.onLongClickPin(properties)
     }
@@ -336,47 +336,47 @@ class QuestPinsManager(
     fun LatLon.toKey(): String = "%.6f_%.6f".format(latitude, longitude)
 
     fun updateAccessibilityOverlays() {
-        val selectedPositions = selectedPinsMapComponent?.getPins() // List<LatLng>
-        val pinsSnapshot = pinsMapComponent.getPins()
-        val overlay = accessibilityOverlay
-
-        overlay.post {
-            val density = overlay.resources.displayMetrics.density
-            val halfSize = 24 * density // 48dp / 2
-
-            overlay.children
-                .filterIsInstance<AccessibilityOverlayView>()
-                .sortedBy { it.position.toKey() } // stable traversal order for TalkBack
-                .forEach { view ->
-                    val pin =
-                        pinsSnapshot.find { it.position.toKey() == view.key } ?: return@forEach
-                    val isEnabled = pin.enabled
-                    val screenPos = map.projection.toScreenLocation(
-                        LatLng(pin.position.latitude, pin.position.longitude)
-                    )
-
-                    view.screenPosition = screenPos
-                    view.x = screenPos.x - halfSize
-                    view.y = screenPos.y - halfSize
-
-                    // Use epsilon comparison for selected pins
-                    val isSelected = selectedPositions?.any {
-                        abs(it.latitude - view.position.latitude) < 1e-6 &&
-                            abs(it.longitude - view.position.longitude) < 1e-6
-                    }
-
-                    view.visibility = if (
-                        (pinsMapComponent.isVisible() || isSelected == true) && isEnabled
-                    ) View.VISIBLE else View.GONE
-                }
-
-            // Optional cleanup: remove overlays for pins no longer visible
-            val validKeys = pinsSnapshot.map { it.position.toKey() }
-            overlay.children
-                .filterIsInstance<AccessibilityOverlayView>()
-                .filter { it.key !in validKeys }
-                .forEach { overlay.removeView(it) }
-        }
+        // val selectedPositions = selectedPinsMapComponent?.getPins() // List<LatLng>
+        // val pinsSnapshot = pinsMapComponent.getPins()
+        // val overlay = accessibilityOverlay
+        //
+        // overlay.post {
+        //     val density = overlay.resources.displayMetrics.density
+        //     val halfSize = 24 * density // 48dp / 2
+        //
+        //     overlay.children
+        //         .filterIsInstance<AccessibilityOverlayView>()
+        //         .sortedBy { it.position.toKey() } // stable traversal order for TalkBack
+        //         .forEach { view ->
+        //             val pin =
+        //                 pinsSnapshot.find { it.position.toKey() == view.key } ?: return@forEach
+        //             val isEnabled = pin.enabled
+        //             val screenPos = map.projection.toScreenLocation(
+        //                 LatLng(pin.position.latitude, pin.position.longitude)
+        //             )
+        //
+        //             view.screenPosition = screenPos
+        //             view.x = screenPos.x - halfSize
+        //             view.y = screenPos.y - halfSize
+        //
+        //             // Use epsilon comparison for selected pins
+        //             val isSelected = selectedPositions?.any {
+        //                 abs(it.latitude - view.position.latitude) < 1e-6 &&
+        //                     abs(it.longitude - view.position.longitude) < 1e-6
+        //             }
+        //
+        //             view.visibility = if (
+        //                 (pinsMapComponent.isVisible() || isSelected == true) && isEnabled
+        //             ) View.VISIBLE else View.GONE
+        //         }
+        //
+        //     // Optional cleanup: remove overlays for pins no longer visible
+        //     val validKeys = pinsSnapshot.map { it.position.toKey() }
+        //     overlay.children
+        //         .filterIsInstance<AccessibilityOverlayView>()
+        //         .filter { it.key !in validKeys }
+        //         .forEach { overlay.removeView(it) }
+        // }
     }
 
     companion object {
@@ -408,17 +408,18 @@ private fun QuestKey.toProperties(): List<Pair<String, String>> = when (this) {
     )
 }
 
-private fun Map<String, String>.toQuestKey(workspaceId: Int): QuestKey? = when (get(MARKER_QUEST_GROUP)) {
-    QUEST_GROUP_OSM_NOTE ->
-        OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong())
+private fun Map<String, String>.toQuestKey(workspaceId: Int): QuestKey? =
+    when (get(MARKER_QUEST_GROUP)) {
+        QUEST_GROUP_OSM_NOTE ->
+            OsmNoteQuestKey(getValue(MARKER_NOTE_ID).toLong())
 
-    QUEST_GROUP_OSM ->
-        OsmQuestKey(
-            ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
-            getValue(MARKER_ELEMENT_ID).toLong(),
-            getValue(MARKER_QUEST_TYPE),
-            workspaceId
-        )
+        QUEST_GROUP_OSM ->
+            OsmQuestKey(
+                ElementType.valueOf(getValue(MARKER_ELEMENT_TYPE)),
+                getValue(MARKER_ELEMENT_ID).toLong(),
+                getValue(MARKER_QUEST_TYPE),
+                workspaceId
+            )
 
-    else -> null
-}
+        else -> null
+    }

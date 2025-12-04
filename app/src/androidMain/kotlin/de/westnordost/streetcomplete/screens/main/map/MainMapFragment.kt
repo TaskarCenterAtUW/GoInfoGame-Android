@@ -163,7 +163,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private var previouslyHiddenLayers: List<String> = emptyList()
 
-    private lateinit var accessibilityOverlay: FrameLayout
     private val overlayListener = object : SelectedOverlaySource.Listener {
         override fun onSelectedOverlayChanged() {
             this@MainMapFragment.onSelectedOverlayChanged()
@@ -201,7 +200,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        accessibilityOverlay = view.findViewById(R.id.accessibility_overlay)
     }
 
     override fun onStart() {
@@ -303,7 +301,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             questTypeOrderSource,
             questTypeRegistry,
             visibleQuestsSource,
-            accessibilityOverlay,
             this,
             prefs
         )

@@ -37,7 +37,9 @@
         android:id="@+id/accessibility_view"
         android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:importantForAccessibility="yes"
+        />
 
     <!-- is a RelativeLayout so that the child layout can, if it is not matching parent, use layout_alignParent* -->
     <RelativeLayout
