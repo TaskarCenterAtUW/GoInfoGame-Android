@@ -12,13 +12,11 @@ import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTr
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -193,7 +191,7 @@ class WorkspaceApiService(
             ) {
                 get(url)
             }
-            if (response.status == HttpStatusCode.OK){
+            if (response.status == HttpStatusCode.OK) {
                 preferences.configLastFetchTime = System.currentTimeMillis()
                 preferences.configJson = response.bodyAsText()
             }

@@ -65,7 +65,7 @@ val appModule = module {
             }
         }
     }
-    single{
+    single {
         HttpClient {
             install(ContentNegotiation) {
                 json(Json {
@@ -93,7 +93,7 @@ val appModule = module {
                     sendWithoutRequest { request ->
                         val url = request.url.toString()
                         !url.contains("raw.githubusercontent.com") &&
-                            !url.contains("githubusercontent.com")
+                            !url.contains("githubusercontent.com") && !url.contains("refresh-token")
                     }
 
                     refreshTokens {

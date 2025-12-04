@@ -10,7 +10,7 @@ suspend fun performHttpCallWithFirebaseTracing(
     client: HttpClient,
     url: String,
     method: HttpMethod = HttpMethod.Get,
-    requestBlock: suspend HttpClient.() -> HttpResponse
+    requestBlock: suspend HttpClient.() -> HttpResponse,
 ): HttpResponse {
     val metric: HttpMetric = FirebasePerformance.getInstance()
         .newHttpMetric(url, method.value)
