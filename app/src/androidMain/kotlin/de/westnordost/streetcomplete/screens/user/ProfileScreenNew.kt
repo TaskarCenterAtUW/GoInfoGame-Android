@@ -167,44 +167,13 @@ fun ProfileScreenNewContent(
                     biometricLogin = newValue // trigger LaunchedEffect
                 })
 
-            PreferenceRow(
-                stringResource(R.string.follow_mode),
-                stringResource(R.string.enable_follow_mode),
-                isFollowModeEnabled,
-                onCheckedChange = { newValue ->
-                    followMode = newValue // trigger LaunchedEffect
-                })
-
-            // Row(
-            //     horizontalArrangement = Arrangement.SpaceBetween,
-            //     verticalAlignment = Alignment.CenterVertically,
-            //     modifier = Modifier
-            //         .fillMaxWidth()
-            //         .padding(horizontal = 16.dp)
-            // ) {
-            //     Column(modifier = Modifier.weight(3f)) {
-            //         Text(
-            //             text = stringResource(R.string.diable_biometric_title),
-            //             color = MaterialTheme.colorScheme.onSurface,
-            //             style = MaterialTheme.typography.bodyLarge
-            //         )
-            //         Text(
-            //             text = stringResource(R.string.disable_biometric_message),
-            //             color = MaterialTheme.colorScheme.onSurface,
-            //             style = MaterialTheme.typography.bodySmall
-            //         )
-            //     }
-            //     Switch(
-            //         checked = isChecked,
-            //         onCheckedChange = { newValue ->
-            //             pendingValue = newValue // trigger LaunchedEffect
-            //         },
-            //         colors = SwitchDefaults.colors(
-            //             checkedTrackColor = MaterialTheme.colorScheme.secondary
-            //         ),
-            //         modifier = Modifier.weight(1f)
-            //     )
-            // }
+            // PreferenceRow(
+            //     stringResource(R.string.follow_mode),
+            //     stringResource(R.string.enable_follow_mode),
+            //     isFollowModeEnabled,
+            //     onCheckedChange = { newValue ->
+            //         followMode = newValue // trigger LaunchedEffect
+            //     })
 
             DottedDivider(
                 color = Color.Gray,

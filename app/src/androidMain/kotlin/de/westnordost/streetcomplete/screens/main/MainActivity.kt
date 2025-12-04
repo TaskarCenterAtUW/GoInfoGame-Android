@@ -514,10 +514,10 @@ class MainActivity :
         window.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         )
-        if (prefs.isFollowModeEnabled) {
-            startFollowMode()
-            viewModel.userHasMovedCamera.value = true
-        }
+        // if (prefs.isFollowModeEnabled) {
+        //     startFollowMode()
+        //     viewModel.userHasMovedCamera.value = true
+        // }
     }
 
     //region QuestsMapFragment - Callbacks from the map with its quest pins

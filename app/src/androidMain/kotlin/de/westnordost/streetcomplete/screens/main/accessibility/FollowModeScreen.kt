@@ -513,11 +513,10 @@ private fun BottomButtons(
             onClick = onUndoEdits,
             modifier = Modifier.weight(0.65f),
             shape = RoundedCornerShape(50),
-            enabled = isUndoEnabled,
-            border = if (isUndoEnabled) ButtonDefaults.outlinedButtonBorder(true).copy(
+            border = ButtonDefaults.outlinedButtonBorder(true).copy(
                 width = 1.5.dp,
                 brush = SolidColor(MaterialTheme.colorScheme.primary)
-            ) else ButtonDefaults.outlinedButtonBorder(false),
+            ),
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary
             )
