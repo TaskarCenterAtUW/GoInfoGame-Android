@@ -89,7 +89,7 @@ fun ArrivedBottomSheet(
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close"
+                        contentDescription = "Close dialog"
                     )
                 }
             }

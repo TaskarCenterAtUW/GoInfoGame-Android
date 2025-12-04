@@ -341,7 +341,7 @@ private fun TopBar(onClose: () -> Unit) {
         IconButton(onClick = onClose) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Close"
+                contentDescription = "Close accessibility Mode"
             )
         }
     }
@@ -614,7 +614,7 @@ fun QuestBottomSheet(
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close"
+                        contentDescription = "Close dialog"
                     )
                 }
             }

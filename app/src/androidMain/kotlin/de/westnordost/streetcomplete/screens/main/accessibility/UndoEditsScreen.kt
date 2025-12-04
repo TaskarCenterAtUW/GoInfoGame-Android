@@ -156,7 +156,7 @@ fun UndoEditsSection(
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close"
+                        contentDescription = "Close undo edits screen"
                     )
                 }
             }

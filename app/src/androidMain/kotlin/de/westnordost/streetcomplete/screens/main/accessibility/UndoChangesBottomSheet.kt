@@ -67,7 +67,7 @@ fun UndoChangesBottomSheetContent(
             IconButton(onClick = onCloseClick) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Close"
+                    contentDescription = "Close dialog"
                 )
             }
         }
