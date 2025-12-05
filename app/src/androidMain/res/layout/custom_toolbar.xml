@@ -41,6 +41,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/workspace"
+                android:importantForAccessibility="no"
                 android:textColor="@android:color/darker_gray"
                 android:textSize="12sp" />
 
@@ -49,11 +50,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="?attr/colorOnSurface"
+                android:contentDescription=""
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:ellipsize="end"
-                android:maxLines="2"
-                tools:text="HTH Redmond" />
+                android:maxLines="2" />
         </LinearLayout>
     </LinearLayout>
 
@@ -72,7 +73,7 @@
             style="@style/RoundPurpleButton"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
-            android:contentDescription="@string/action_overlays"
+            android:contentDescription="@string/enable_follow_mode"
             android:elevation="4dp"
             android:scaleType="centerInside"
             android:visibility="visible"

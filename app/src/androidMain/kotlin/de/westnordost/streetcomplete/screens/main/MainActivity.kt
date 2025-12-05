@@ -17,11 +17,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
@@ -42,6 +42,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.core.view.AccessibilityDelegateCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
@@ -1148,10 +1151,27 @@ class MainActivity :
         }
     }
 
+    fun addPrefixForAccessibility(view: TextView, prefix: String) {
+        ViewCompat.setAccessibilityDelegate(view, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfoCompat) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+
+                // original text that TalkBack would read
+                val original = info.text?.toString()
+                    ?: (host as? TextView)?.text?.toString()
+                    ?: ""
+
+                // set combined text (short & natural)
+                info.text = "$prefix $original"
+            }
+        })
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setUpToolbar(toolbar: CustomToolbarBinding) {
         toolbar.apply {
             workspaceTitle.text = viewModel.workspaceTitle.value
+            addPrefixForAccessibility(workspaceTitle, "Current workspace : ")
             mainMenuButton.setOnClickListener { viewModel.showMenu() }
             profileButton.setOnClickListener {
                 startActivity(

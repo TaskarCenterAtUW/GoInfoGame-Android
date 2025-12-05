@@ -45,6 +45,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,6 +72,10 @@ fun WorkSpaceListScreen(
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
+    val screenTitle = "You are on the Workspace list Screen. " +
+        "Below is a list of available workspaces. " +
+        "Select a workspace to continue."
 
     val onClick: (index: Int) -> Unit = { index ->
         viewModel.setSelectedWorkspace(index)
@@ -96,12 +104,13 @@ fun WorkSpaceListScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
+                            .semantics{ contentDescription = screenTitle }
                     ) {
                         val context = LocalContext.current
                         Icon(
                             imageVector = Icons.Default.Person,
                             tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "Star Icon",
+                            contentDescription = "Navigate to profile screen",
                             modifier = Modifier
                                 .padding(16.dp)
                                 .size(36.dp, 36.dp)
@@ -244,10 +253,15 @@ fun WorkspaceList(
                     .padding(bottom = 16.dp)
                     .padding(end = 16.dp)
                     .size(100.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .semantics { hideFromAccessibility() },
                 contentScale = ContentScale.Fit
             )
-            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
+            Row(
+                modifier = Modifier.clearAndSetSemantics{},
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.Bottom
+            ) {
                 Text(
                     text = "AVIV",
                     style = MaterialTheme.typography.displayMedium,
@@ -270,7 +284,7 @@ fun WorkspaceList(
                 text = "Please select a workspace to continue",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = modifier.padding(8.dp)
+                modifier = modifier.padding(8.dp).clearAndSetSemantics{}
             )
             LazyColumn(modifier = modifier) {
                 itemsIndexed(items) { index, workspace ->
