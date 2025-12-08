@@ -188,6 +188,7 @@ import kotlin.random.Random
  */
 private const val NO_HIDE = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
 private const val AUTO = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+
 class MainActivity :
     BaseActivity(),
     // listeners to child fragments:
@@ -1153,7 +1154,10 @@ class MainActivity :
 
     fun addPrefixForAccessibility(view: TextView, prefix: String) {
         ViewCompat.setAccessibilityDelegate(view, object : AccessibilityDelegateCompat() {
-            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfoCompat) {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View,
+                info: AccessibilityNodeInfoCompat,
+            ) {
                 super.onInitializeAccessibilityNodeInfo(host, info)
 
                 // original text that TalkBack would read
@@ -1262,8 +1266,9 @@ class MainActivity :
 
         supportFragmentManager.executePendingTransactions()
 
-        if (f is AbstractOsmQuestForm<*>){
-            f.bottomSheetBehavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        if (f is AbstractOsmQuestForm<*> && viewModel.followVisible.value) {
+            f.bottomSheetBehavior.state =
+                com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
         }
         sheetBackPressedCallback.isEnabled = f is IsCloseableBottomSheet

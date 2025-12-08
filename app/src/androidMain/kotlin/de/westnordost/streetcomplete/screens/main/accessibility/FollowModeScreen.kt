@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.accessibility
 
+import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -64,12 +66,17 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.screens.main.MainViewModel
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
 import de.westnordost.streetcomplete.screens.user.DottedDivider
+import de.westnordost.streetcomplete.screens.workspaces.CircularProgressWithText
 import de.westnordost.streetcomplete.util.ktx.toLatLon
+import kotlinx.coroutines.withContext
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
+
+private const val DISTANCE_FOR_ARRIVED_METERS = 30.0
+private const val DISTANCE_FOR_NEARBY_METERS = 250.0
 
 @Composable
 fun FollowModeScreen(
@@ -86,26 +93,12 @@ fun FollowModeScreen(
     val questsState = remember { mutableStateListOf<QuestUiModel>() }
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
     val refreshTrigger by viewModel.refreshCounter.collectAsState()
-    LaunchedEffect(mapFragment, refreshTrigger, displayedLocation) {
-        val currentLocation = displayedLocation ?: return@LaunchedEffect
-        // Get current quests in view and store in a remembered state so it's accessible
-        val loaded =
-            mapFragment.questPinsManager?.getQuestsInViewSnapshot(currentLocation)?.map { quest ->
-                QuestUiModel(
-                    id = quest.key,
-                    distanceMeters = getDistanceBetweenPoints(
-                        mapFragment.displayedLocation!!.toLatLon(), quest.position
-                    ),
-                    questName = quest.type.name,
-                    direction = getDirectionFromBearing(mapFragment.displayedLocation?.bearing),
-                    onClick = {
-                        mapFragment.listener?.onClickedQuest(quest.key)
-                    }
-                )
-            } ?: emptyList()
-        val nearest = loaded.sortedBy { model -> model.distanceMeters }.take(5)
-        questsState.clear()
-        questsState.addAll(nearest)
+    val showProgress = remember { mutableStateOf(false) }
+
+    LaunchedEffect(refreshTrigger, displayedLocation) {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            getQuests(displayedLocation, mapFragment, questsState, showProgress)
+        }
     }
 
     Box(
@@ -131,6 +124,7 @@ fun FollowModeScreen(
             } else {
                 QuestListUI(
                     questsState,
+                    displayedLocation,
                     triggerRefresh,
                     isUndoAvailable,
                     onUndoEdits,
@@ -139,7 +133,45 @@ fun FollowModeScreen(
                 )
             }
         }
+
+        if (showProgress.value){
+            CircularProgressWithText("Loading quests...")
+        }
     }
+}
+
+private suspend fun getQuests(
+    displayedLocation: Location?,
+    mapFragment: MainMapFragment,
+    questsState: SnapshotStateList<QuestUiModel>,
+    showProgress: MutableState<Boolean>,
+) {
+    if (questsState.isEmpty()) {
+        showProgress.value = true
+    }
+    val currentLocation = displayedLocation ?: return
+    // Get current quests in view and store in a remembered state so it's accessible
+    val displayedLatLon = currentLocation.toLatLon()
+    val bearing = mapFragment.displayedLocation?.bearing
+    val loaded = mapFragment.questPinsManager
+        ?.getQuestsInViewSnapshot(currentLocation, DISTANCE_FOR_NEARBY_METERS)
+        ?.asSequence()
+        ?.map { quest ->
+            QuestUiModel(
+                id = quest.key,
+                distanceMeters = getDistanceBetweenPoints(displayedLatLon, quest.position),
+                questName = quest.type.name,
+                direction = getDirectionFromBearing(bearing),
+                onClick = { mapFragment.listener?.onClickedQuest(quest.key) }
+            )
+        }
+        ?.sortedBy { it.distanceMeters }
+        ?.take(5)
+        ?.toList()
+        ?: emptyList()
+    questsState.clear()
+    questsState.addAll(loaded)
+    showProgress.value = false
 }
 
 @Composable
@@ -232,6 +264,7 @@ fun NoQuestsUI(refreshTrigger: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun QuestListUI(
     questsState: SnapshotStateList<QuestUiModel>,
+    displayedLocation: Location?,
     refreshTrigger: () -> Unit,
     isUndoAvailable: Boolean,
     onUndoEdits: () -> Unit,
@@ -255,6 +288,7 @@ private fun QuestListUI(
 
         QuestList(
             quests = questsState,
+            displayedLocation,
             onHideQuest,
             modifier = Modifier
                 .weight(1f, fill = true)
@@ -398,9 +432,22 @@ private fun HeaderRow(
 @Composable
 private fun QuestList(
     quests: List<QuestUiModel>,
+    location: Location?,
     onHideQuest: (questKey: QuestKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showArrivedBottomSheet by remember { mutableStateOf(false) }
+    var nearestQuest by remember { mutableStateOf<QuestUiModel?>(null) }
+
+    LaunchedEffect(key1 = location) {
+        val quest = quests.minByOrNull { it.distanceMeters } ?: return@LaunchedEffect
+        if (quest.distanceMeters <= DISTANCE_FOR_ARRIVED_METERS) {
+            if (nearestQuest?.id == quest.id) return@LaunchedEffect
+            nearestQuest = quest
+            showArrivedBottomSheet = true
+            return@LaunchedEffect
+        }
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -411,18 +458,27 @@ private fun QuestList(
             QuestCard(quest, onHideQuest)
         }
     }
+
+    if (showArrivedBottomSheet) {
+        nearestQuest?.let {
+            ArrivedBottomSheet(
+                questType = it.questName,
+                onStartAnswering = {
+                    showArrivedBottomSheet = false
+                    it.onClick()
+                },
+                onHide = { onHideQuest(it.id) },
+                onNotNow = { showArrivedBottomSheet = false },
+                onClose = { showArrivedBottomSheet = false }
+            )
+        }
+    }
 }
 
 @Composable
 private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> Unit) {
     var showOnQuestSelectionBottomSheet by remember { mutableStateOf(false) }
-    var showArrivedBottomSheet by remember { mutableStateOf(false) }
-    var showedArrivedBottomSheetOnce by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = quest.distanceMeters, key2 = showOnQuestSelectionBottomSheet) {
-        showArrivedBottomSheet =
-            quest.distanceMeters <= 20 && !showOnQuestSelectionBottomSheet && !showedArrivedBottomSheetOnce
-    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -470,31 +526,15 @@ private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> 
             selectedType = quest.questName,
             onStartAnswering = {
                 showOnQuestSelectionBottomSheet = false
-                showedArrivedBottomSheetOnce = true
                 quest.onClick()
             },
             onHideQuest = { onHideQuest(quest.id) },
             onNotNow = {
                 showOnQuestSelectionBottomSheet = false
-                showedArrivedBottomSheetOnce = true
             },
             onClose = {
                 showOnQuestSelectionBottomSheet = false
-                showedArrivedBottomSheetOnce = true
             }
-        )
-    }
-
-    if (showArrivedBottomSheet) {
-        ArrivedBottomSheet(
-            questType = quest.questName,
-            onStartAnswering = {
-                showArrivedBottomSheet = false
-                quest.onClick()
-            },
-            onHide = { onHideQuest(quest.id) },
-            onNotNow = { showArrivedBottomSheet = false },
-            onClose = { showArrivedBottomSheet = false }
         )
     }
 }
