@@ -19,6 +19,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -1585,6 +1586,10 @@ class MainActivity :
         bottomSheetDialog.setContentView(bottomSheetView)
         bottomSheetDialog.show()
 
+        val closeButton = bottomSheetView.findViewById<ImageView>(R.id.closeButton)
+        closeButton.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
         val radioGroup = bottomSheetView.findViewById<RadioGroup>(R.id.radioGroupImagery)
         val radioButton = MaterialRadioButton(this).apply {
             id = View.generateViewId()

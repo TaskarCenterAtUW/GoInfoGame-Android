@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.accessibility
 
+import android.content.Intent
 import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -65,6 +68,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.screens.main.MainViewModel
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
+import de.westnordost.streetcomplete.screens.settings.SettingsActivity
 import de.westnordost.streetcomplete.screens.user.DottedDivider
 import de.westnordost.streetcomplete.screens.workspaces.CircularProgressWithText
 import de.westnordost.streetcomplete.util.ktx.toLatLon
@@ -358,6 +362,7 @@ data class QuestUiModel(
 
 @Composable
 private fun TopBar(onClose: () -> Unit) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -365,17 +370,32 @@ private fun TopBar(onClose: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Accessibility Mode",
+            text = "Screen Reader Mode",
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.SemiBold
             ),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f).padding(start = 16.dp)
         )
+
+        IconButton(onClick = {
+            context.startActivity(
+                Intent(
+
+                    context,
+                    SettingsActivity::class.java
+                )
+            )
+        }) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Open Settings"
+            )
+        }
 
         IconButton(onClick = onClose) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Close accessibility Mode"
+                contentDescription = "Close Screen Reader Mode"
             )
         }
     }

@@ -32,7 +32,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
     var keepScreenOn: Boolean by prefs.boolean(KEEP_SCREEN_ON, false)
 
-    var showZoomButtons: Boolean by prefs.boolean(SHOW_ZOOM_BUTTONS, false)
+    var showZoomButtons: Boolean by prefs.boolean(SHOW_ZOOM_BUTTONS, true)
 
     var resurveyIntervals: ResurveyIntervals
         set(value) { prefs.putString(RESURVEY_INTERVALS, value.name) }

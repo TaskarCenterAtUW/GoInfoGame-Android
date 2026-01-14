@@ -1868,6 +1868,6 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="map_btn_create_node">Add new feature</string>
 
-    <string name="follow_mode">Accessibility Mode</string>
-    <string name="enable_follow_mode">Enable Accessibility Mode</string>
+    <string name="follow_mode">Screen Reader Mode</string>
+    <string name="enable_follow_mode">Open Screen Reader Mode</string>
 </resources>
