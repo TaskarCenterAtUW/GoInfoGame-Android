@@ -2,6 +2,10 @@ package de.westnordost.streetcomplete.data.osm.mapdata
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.math.PI
+import kotlin.math.absoluteValue
+import kotlin.math.cos
+import kotlin.math.sqrt
 
 @Serializable
 sealed class Element {
@@ -80,6 +84,21 @@ data class LatLon(
                 latitude >= -90.0 && latitude <= +90
                     && longitude >= -180 && longitude <= +180
             ) { "Latitude $latitude, longitude $longitude is not a valid position" }
+        }
+
+        fun metersToLatitudeDegrees(radiusMeters: Double): Double {
+            return (radiusMeters / 6378137.0) * (180.0 / PI)
+        }
+
+        fun metersToLongitudeDegrees(radiusMeters: Double, atLatitude: Double): Double {
+            require(atLatitude.absoluteValue < 90.0) { "Latitude must be less than 90° in absolute value" }
+            return (radiusMeters / (6378137.0 * cos(atLatitude * PI / 180.0))) * (180.0 / PI)
+        }
+
+        fun distanceInMeters(a: LatLon, b: LatLon): Double {
+            val latDistance = metersToLatitudeDegrees(a.latitude - b.latitude)
+            val lonDistance = metersToLongitudeDegrees(a.longitude - b.longitude, (a.latitude + b.latitude) / 2)
+            return sqrt(latDistance * latDistance + lonDistance * lonDistance)
         }
     }
 }

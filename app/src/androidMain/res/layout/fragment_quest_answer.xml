@@ -8,6 +8,7 @@
     tools:layout_width="300dp"
     android:layout_height="match_parent"
     android:id="@+id/bottomSheetContainer"
+    android:importantForAccessibility="yes"
     tools:ignore="RtlHardcoded">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout

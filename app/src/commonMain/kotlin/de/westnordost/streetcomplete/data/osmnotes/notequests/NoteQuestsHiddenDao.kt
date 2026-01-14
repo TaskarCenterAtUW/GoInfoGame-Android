@@ -10,10 +10,10 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 
 /** Persists which note ids should be hidden (because the user selected so) in the note quest */
-class NoteQuestsHiddenDao(private val db: Database, private val preferences: Preferences) {
+class NoteQuestsHiddenDao(private val db: Database, private val preferences: Preferences? = null) {
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun add(noteId: Long) {
         db.insert(

@@ -46,10 +46,10 @@ class OsmQuestController internal constructor(
     private val notesSource: NotesWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
     private val countryBoundaries: Lazy<CountryBoundaries>,
-    private val preferences: Preferences
+    private val preferences: Preferences? = null
 ) : OsmQuestSource {
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
     private val listeners = Listeners<OsmQuestSource.Listener>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

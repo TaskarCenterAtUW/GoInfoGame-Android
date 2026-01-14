@@ -1859,7 +1859,7 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="sync_changes">sync changes</string>
     <string name="no_pending_changes_to_sync">No pending changes to sync</string>
     <string name="enter_value">Enter Value</string>
-    <string name="profile_icon">profile icon</string>
+    <string name="profile_icon">Navigate to profile screen</string>
     <string name="workspace">Workspace</string>
     <string name="enter_text">Enter text</string>
 
@@ -1868,4 +1868,6 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="map_btn_create_node">Add new feature</string>
 
+    <string name="follow_mode">Accessibility Mode</string>
+    <string name="enable_follow_mode">Enable Accessibility Mode</string>
 </resources>

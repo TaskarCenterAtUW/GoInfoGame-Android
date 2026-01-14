@@ -56,3 +56,14 @@ fun BoundingBox.toOsmApiString(): String = listOf(
     max.longitude,
     max.latitude
 ).joinToString(",") { it.format(7) }
+
+fun fromCenterAndRadiusMeters(center: LatLon, radiusMeters: Double): BoundingBox {
+    val latOffset = LatLon.metersToLatitudeDegrees(radiusMeters)
+    val lonOffset = LatLon.metersToLongitudeDegrees(radiusMeters, center.latitude)
+    return BoundingBox(
+        center.latitude - latOffset,
+        center.longitude - lonOffset,
+        center.latitude + latOffset,
+        center.longitude + lonOffset
+    )
+}

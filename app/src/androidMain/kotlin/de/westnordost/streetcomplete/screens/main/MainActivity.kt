@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.screens.main
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,7 +13,6 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -21,21 +21,30 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.AnyThread
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.core.view.AccessibilityDelegateCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
@@ -82,6 +91,7 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
+import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenSource
 import de.westnordost.streetcomplete.databinding.ActivityMainBinding
 import de.westnordost.streetcomplete.databinding.CustomToolbarBinding
@@ -99,6 +109,8 @@ import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.screens.BaseActivity
+import de.westnordost.streetcomplete.screens.main.accessibility.FollowModeScreen
+import de.westnordost.streetcomplete.screens.main.accessibility.UndoEditsScreen
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -148,6 +160,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.qualifier.named
 import java.util.Locale
@@ -173,6 +186,9 @@ import kotlin.random.Random
  *  [-] icon next to it.
  *
  */
+private const val NO_HIDE = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+private const val AUTO = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+
 class MainActivity :
     BaseActivity(),
     // listeners to child fragments:
@@ -229,6 +245,7 @@ class MainActivity :
     private val overlayRegistry by inject<OverlayRegistry>()
 
     private var selectedImagery: Imagery? = null
+    private val hiddenQuestsController: QuestsHiddenController by inject()
 
     private val imageryRepository: ImageryRepository by inject()
     /* +++++++++++++++++++++++++++++++++++++++ CALLBACKS ++++++++++++++++++++++++++++++++++++++++ */
@@ -280,6 +297,8 @@ class MainActivity :
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface
             ) {
+                val showAttribution by remember { mutableStateOf(true) }
+                if (prefs.isFollowModeEnabled) !showAttribution else showAttribution
                 MainScreen(
                     viewModel = viewModel,
                     editHistoryViewModel = editHistoryViewModel,
@@ -291,7 +310,6 @@ class MainActivity :
                     onClickCreate = ::onClickCreateButton,
                     onClickStopTrackRecording = ::onClickTracksStop,
                     onClickDownload = ::onClickDownload,
-                    onExplainedNeedForLocationPermission = ::requestLocation,
                     onClickImageryLayer = ::onClickImageryLayerButton,
                     onSwitchWorkspace = {
                         val activity = this
@@ -303,6 +321,10 @@ class MainActivity :
                     }
                 )
             }
+        }
+
+        binding.toolbar.followModeButton.setOnClickListener {
+            startFollowMode()
         }
 
         onBackPressedDispatcher.addCallback(this, sheetBackPressedCallback)
@@ -340,6 +362,105 @@ class MainActivity :
                 viewModel.isNavigationMode.value = mapFragment?.isNavigationMode ?: false
             }
         }
+    }
+
+    private fun showFollowMode() {
+        viewModel.followVisible.value = true
+        viewModel.undoVisible.value = false
+    }
+
+    private fun showUndoMode() {
+        viewModel.followVisible.value = false
+        viewModel.undoVisible.value = true
+    }
+
+    private fun focusOnAccessibilityView() {
+        binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        binding.accessibilityView.importantForAccessibility = AUTO
+        binding.toolbar.root.importantForAccessibility = NO_HIDE
+        binding.controls.importantForAccessibility = NO_HIDE
+    }
+
+    private fun focusOnMapView() {
+        binding.accessibilityView.importantForAccessibility = NO_HIDE
+        binding.toolbar.root.importantForAccessibility = AUTO
+        binding.controls.importantForAccessibility = AUTO
+    }
+
+    private fun focusOnBottomSheet() {
+        binding.accessibilityView.importantForAccessibility = NO_HIDE
+        binding.toolbar.root.importantForAccessibility = NO_HIDE
+        binding.controls.importantForAccessibility = NO_HIDE
+        binding.mapBottomSheetContainer.importantForAccessibility = AUTO
+    }
+
+    private fun moveFocusFromBottomSheet() {
+        if (viewModel.undoVisible.value || viewModel.followVisible.value) {
+            focusOnAccessibilityView()
+        } else {
+            focusOnMapView()
+        }
+    }
+
+    private fun startFollowMode() {
+        binding.accessibilityView.visibility = View.VISIBLE
+        showFollowMode()
+        binding.accessibilityView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        binding.accessibilityView.content {
+            // color for HUD elements without a background (e.g. scalebar, attribution button)
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                val isUndoAvailable =
+                    editHistoryViewModel.editItems.collectAsState().value.isNotEmpty()
+
+                val followVisible by viewModel.followVisible.collectAsState()
+                val undoVisible by viewModel.undoVisible.collectAsState()
+
+
+                if (followVisible) {
+                    FollowModeScreen(
+                        mapFragment!!,
+                        viewModel,
+                        triggerRefresh = {
+                            viewModel.triggerRefresh()
+                        },
+                        onClose = ::hideAccessibilityView,
+                        isUndoAvailable = isUndoAvailable,
+                        onHideQuest = { questKey ->
+                            hiddenQuestsController.hide(questKey)
+                            viewModel.triggerRefresh()
+                        },
+                        onUndoEdits = {
+                            showUndoMode()
+                        }, onBackToMap = {
+                            hideAccessibilityView()
+                        })
+                    LaunchedEffect(key1 = followVisible) {
+                        viewModel.triggerRefresh()
+                    }
+                }
+
+                if (undoVisible) {
+                    UndoEditsScreen(
+                        modifier = Modifier, koinViewModel(),
+                        onClose = {
+                            showFollowMode()
+                            mapFragment?.clearHighlighting()
+                            viewModel.triggerRefresh()
+                        }
+                    )
+                }
+            }
+        }
+        focusOnAccessibilityView()
+    }
+
+    fun hideAccessibilityView() {
+        binding.accessibilityView.visibility = View.GONE
+        viewModel.followVisible.value = false
+        viewModel.undoVisible.value = false
+        focusOnMapView()
     }
 
     override fun onStart() {
@@ -397,6 +518,10 @@ class MainActivity :
         window.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         )
+        // if (prefs.isFollowModeEnabled) {
+        //     startFollowMode()
+        //     viewModel.userHasMovedCamera.value = true
+        // }
     }
 
     //region QuestsMapFragment - Callbacks from the map with its quest pins
@@ -595,6 +720,8 @@ class MainActivity :
         multiSelectQuests.clear()
         mapFragment?.clearMultiSelect()
         viewModel.selectOverlay(null)
+        viewModel.triggerRefresh()
+        moveFocusFromBottomSheet()
     }
 
     override fun onComposeNote(
@@ -1025,10 +1152,30 @@ class MainActivity :
         }
     }
 
+    fun addPrefixForAccessibility(view: TextView, prefix: String) {
+        ViewCompat.setAccessibilityDelegate(view, object : AccessibilityDelegateCompat() {
+            override fun onInitializeAccessibilityNodeInfo(
+                host: View,
+                info: AccessibilityNodeInfoCompat,
+            ) {
+                super.onInitializeAccessibilityNodeInfo(host, info)
+
+                // original text that TalkBack would read
+                val original = info.text?.toString()
+                    ?: (host as? TextView)?.text?.toString()
+                    ?: ""
+
+                // set combined text (short & natural)
+                info.text = "$prefix $original"
+            }
+        })
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setUpToolbar(toolbar: CustomToolbarBinding) {
         toolbar.apply {
             workspaceTitle.text = viewModel.workspaceTitle.value
+            addPrefixForAccessibility(workspaceTitle, "Current workspace : ")
             mainMenuButton.setOnClickListener { viewModel.showMenu() }
             profileButton.setOnClickListener {
                 startActivity(
@@ -1116,7 +1263,16 @@ class MainActivity :
             add(R.id.map_bottom_sheet_container, f, BOTTOM_SHEET)
             addToBackStack(BOTTOM_SHEET)
         }
+
+        supportFragmentManager.executePendingTransactions()
+
+        if (f is AbstractOsmQuestForm<*> && viewModel.followVisible.value) {
+            f.bottomSheetBehavior.state =
+                com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            f.view?.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+        }
         sheetBackPressedCallback.isEnabled = f is IsCloseableBottomSheet
+        focusOnBottomSheet()
     }
 
     /** Make the map not follow the user's location anymore temporarily */

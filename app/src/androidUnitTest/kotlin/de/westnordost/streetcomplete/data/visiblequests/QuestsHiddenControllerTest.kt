@@ -40,7 +40,7 @@ class QuestsHiddenControllerTest {
         val q3 = OsmNoteQuestKey(3)
         val q4 = OsmNoteQuestKey(4)
         on(osmDb.getAll()).thenReturn(listOf(OsmQuestHiddenAt(q1, 123L)))
-        on(notesDb.getAll()).thenReturn(listOf(NoteQuestHiddenAt(q3.noteId, 124L)))
+        on(notesDb.getAll()).thenReturn(listOf(NoteQuestHiddenAt(q3.noteId, 124L, 0)))
         on(notesDb.getTimestamp(q4.noteId)).thenReturn(null)
 
         assertEquals(ctrl.get(q1), 123L)
@@ -52,8 +52,8 @@ class QuestsHiddenControllerTest {
     @Test fun getAllNewerThan() {
         val h1 = OsmQuestHiddenAt(osmQuestKey(elementId = 1), 250)
         val h2 = OsmQuestHiddenAt(osmQuestKey(elementId = 2), 123)
-        val h3 = NoteQuestHiddenAt(2L, 500)
-        val h4 = NoteQuestHiddenAt(3L, 123)
+        val h3 = NoteQuestHiddenAt(2L, 500, 0)
+        val h4 = NoteQuestHiddenAt(3L, 123, 0)
 
         on(osmDb.getAll()).thenReturn(listOf(h1, h2))
         on(notesDb.getAll()).thenReturn(listOf(h3, h4))
@@ -69,7 +69,7 @@ class QuestsHiddenControllerTest {
 
     @Test fun countAll() {
         val h1 = OsmQuestHiddenAt(osmQuestKey(elementId = 1), 1)
-        val h2 = NoteQuestHiddenAt(1L, 1)
+        val h2 = NoteQuestHiddenAt(1L, 1, 0)
 
         on(osmDb.getAll()).thenReturn(listOf(h1))
         on(notesDb.getAll()).thenReturn(listOf(h2))

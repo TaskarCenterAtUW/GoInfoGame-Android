@@ -9,8 +9,8 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "1.0.4"
-val appVersionCode = 6
+val appVersionName = "1.1.0"
+val appVersionCode = 7
 
 /** Localizations the app should be available in */
 val bcp47ExportLanguages = setOf(
@@ -197,7 +197,7 @@ kotlin {
                 implementation("io.coil-kt:coil-svg:2.7.0")
                 // Compose
                 implementation(compose.preview)
-                implementation("androidx.activity:activity-compose:1.11.0")
+                implementation("androidx.activity:activity-compose:1.12.0")
 
                 // photos
                 implementation("androidx.exifinterface:exifinterface:1.4.1")
@@ -206,12 +206,12 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
                 // scheduling background jobs
-                implementation("androidx.work:work-runtime-ktx:2.10.5")
+                implementation("androidx.work:work-runtime-ktx:2.11.0")
 
                 // HTTP Client
-                implementation("io.ktor:ktor-client-core:3.3.0")
-                implementation("io.ktor:ktor-client-cio:3.3.0")
-                implementation("io.ktor:ktor-client-auth:3.3.0")
+                implementation("io.ktor:ktor-client-core:3.3.3")
+                implementation("io.ktor:ktor-client-cio:3.3.3")
+                implementation("io.ktor:ktor-client-auth:3.3.3")
                 implementation("com.github.chrisbanes:PhotoView:2.3.0")
                 implementation("androidx.biometric:biometric:1.1.0")
                 implementation("androidx.security:security-crypto:1.1.0")
@@ -241,14 +241,14 @@ kotlin {
         iosMain {
             dependencies {
                 // HTTP client
-                implementation("io.ktor:ktor-client-darwin:3.3.0")
+                implementation("io.ktor:ktor-client-darwin:3.3.1")
             }
         }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
 
-                implementation("io.ktor:ktor-client-mock:3.3.0")
+                implementation("io.ktor:ktor-client-mock:3.3.1")
             }
         }
         androidUnitTest {

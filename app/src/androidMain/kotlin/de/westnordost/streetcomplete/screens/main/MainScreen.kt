@@ -110,7 +110,6 @@ fun MainScreen(
     onClickCreate: () -> Unit,
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
-    onExplainedNeedForLocationPermission: () -> Unit,
     onClickImageryLayer: () -> Unit,
     onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
@@ -523,7 +522,6 @@ private fun PreviewMainScreen() {
         onClickCreate = {},
         onClickStopTrackRecording = {},
         onClickDownload = {},
-        onExplainedNeedForLocationPermission = {},
         onClickImageryLayer = {},
         onSwitchWorkspace = {}
     )
@@ -704,13 +702,26 @@ object PreviewMainViewModel : MainViewModel() {
         set(value) {}
 
     override val showMainMenuDialog: MutableStateFlow<Boolean>
-        get() = TODO("Not yet implemented")
+        get() = MutableStateFlow(false)
 
     override fun showMenu() {
         TODO("Not yet implemented")
     }
 
     override fun hideMenu() {
+        TODO("Not yet implemented")
+    }
+
+    override val followVisible: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+
+    override val undoVisible: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+
+    override val refreshCounter: MutableStateFlow<Int>
+        get() = TODO("Not yet implemented")
+
+    override fun triggerRefresh() {
         TODO("Not yet implemented")
     }
 }

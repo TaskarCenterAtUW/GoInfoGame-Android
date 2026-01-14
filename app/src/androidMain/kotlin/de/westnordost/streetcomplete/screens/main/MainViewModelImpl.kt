@@ -415,6 +415,14 @@ class MainViewModelImpl(
     override fun showMenu() { showMainMenuDialog.value = true }
     override fun hideMenu() { showMainMenuDialog.value = false }
 
+    override val followVisible: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override val undoVisible : MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override val refreshCounter : MutableStateFlow<Int> = MutableStateFlow(0)
+
+    override fun triggerRefresh() {
+        refreshCounter.value += 1
+    }
+
     // ---------------------------------------------------------------------------------------
 
     init {

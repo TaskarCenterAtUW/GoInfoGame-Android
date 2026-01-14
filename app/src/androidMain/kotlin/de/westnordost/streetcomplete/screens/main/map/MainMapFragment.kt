@@ -51,6 +51,8 @@ import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
@@ -85,7 +87,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     private var selectedPinsMapComponent: SelectedPinsMapComponent? = null
     private var multiSelectPinMapComponent: MultiSelectPinMapComponent? = null
     private var geometryMapComponent: FocusGeometryMapComponent? = null
-    private var questPinsManager: QuestPinsManager? = null
+    var questPinsManager: QuestPinsManager? = null
     private var editHistoryPinsManager: EditHistoryPinsManager? = null
     private var styleableOverlayMapComponent: StyleableOverlayMapComponent? = null
     private var styleableOverlayManager: StyleableOverlayManager? = null
@@ -113,7 +115,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         fun onDisplayedLocationDidChange()
     }
 
-    private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
+    val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     /** When the view follows the GPS position, whether the view already zoomed to the location once*/
     private var zoomedYet = false
@@ -121,7 +123,8 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     /** The GPS position at which the user is displayed at */
     var displayedLocation: Location? = null
         private set
-
+    private val _displayedLocationFlow = MutableStateFlow<Location?>(null)
+    val displayedLocationFlow: StateFlow<Location?> get() = _displayedLocationFlow
     /** The GPS trackpoints the user has walked */
     private var tracks: ArrayList<ArrayList<Trackpoint>>
 
@@ -160,7 +163,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private var previouslyHiddenLayers: List<String> = emptyList()
 
-    private lateinit var accessibilityOverlay: FrameLayout
     private val overlayListener = object : SelectedOverlaySource.Listener {
         override fun onSelectedOverlayChanged() {
             this@MainMapFragment.onSelectedOverlayChanged()
@@ -190,6 +192,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         super.onCreate(savedInstanceState)
         if (savedInstanceState != null) {
             displayedLocation = savedInstanceState.getParcelable(DISPLAYED_LOCATION)
+            _displayedLocationFlow.value = displayedLocation
             isRecordingTracks = savedInstanceState.getBoolean(TRACKS_IS_RECORDING)
             tracks = Json.decodeFromString(savedInstanceState.getString(TRACKS)!!)
         }
@@ -197,7 +200,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        accessibilityOverlay = view.findViewById(R.id.accessibility_overlay)
     }
 
     override fun onStart() {
@@ -299,7 +301,6 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             questTypeOrderSource,
             questTypeRegistry,
             visibleQuestsSource,
-            accessibilityOverlay,
             this,
             prefs
         )
@@ -447,6 +448,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
 
     private fun onLocationChanged(location: Location) {
         displayedLocation = location
+        _displayedLocationFlow.value = location
         surveyChecker.addRecentLocation(location.toLocation())
         locationMapComponent?.targetLocation = location
         // addTrackLocation(location)

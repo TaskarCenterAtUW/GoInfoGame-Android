@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.osm.edits.upload.changesets
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.user.UserAccessTokenSource
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.testutils.OsmDevApi
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.runBlocking
@@ -40,8 +41,14 @@ class ChangesetApiClientTest {
     private fun client(token: String?) =
         ChangesetApiClient(
             httpClient = HttpClient(),
-            baseUrl = OsmDevApi.URL,
-            userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
+            workspaceConfigProvider = object : WorkspaceConfigProvider{
+                override val osmBaseUrl: String
+                    get() = ""
+                override val workspaceId: Int
+                    get() = 1
+                override val workspaceToken: String?
+                    get() = token
+            },
             serializer = ChangesetApiSerializer()
         )
 }

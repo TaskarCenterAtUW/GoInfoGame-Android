@@ -36,7 +36,7 @@ class VisibleEditTypeControllerTest {
     @BeforeTest fun setUp() {
         visibleEditTypeDao = mock()
         editTypePresetsSource = mock()
-        allEditTypes = AllEditTypes(listOf(
+        allEditTypes = AllEditTypes(mutableListOf(
             QuestTypeRegistry(listOf(0 to quest1, 1 to quest2, 2 to disabledQuest)),
         ))
 

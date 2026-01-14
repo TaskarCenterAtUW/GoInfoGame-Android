@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,11 +56,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -169,7 +175,11 @@ fun LoginScreen(
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it, duration = SnackbarDuration.Indefinite, withDismissAction = true)
+                snackBarHostState.showSnackbar(
+                    it,
+                    duration = SnackbarDuration.Indefinite,
+                    withDismissAction = true
+                )
             }
         }
         SnackbarHost(
@@ -284,6 +294,8 @@ fun LoginCard(
     preferences: Preferences,
     modifier: Modifier = Modifier,
 ) {
+    val screenTitle = "You're in the login page, Please enter your credentials in the edit boxes below"
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -295,6 +307,7 @@ fun LoginCard(
                 modifier = modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.3f)
+                    .clearAndSetSemantics {}
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(modifier = Modifier.padding(all = 32.dp)) {
@@ -332,6 +345,9 @@ fun LoginCard(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(16.dp)
+                    .semantics {
+                        contentDescription = screenTitle
+                    }
             ) {
                 val context = LocalContext.current
                 var visibility by rememberSaveable { mutableStateOf(false) }
@@ -373,7 +389,7 @@ fun LoginCard(
                         val image =
                             if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         IconButton(onClick = { visibility = !visibility }) {
-                            Icon(imageVector = image, contentDescription = null)
+                            Icon(imageVector = image, contentDescription = "Toggle password visibility" )
                         }
                     },
                     modifier = Modifier
@@ -438,7 +454,7 @@ fun LoginCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Fingerprint,
-                                    contentDescription = "Fingerprint Icon",
+                                    contentDescription = null,
                                     modifier = Modifier.padding(end = 16.dp)
                                 )
                                 Text(

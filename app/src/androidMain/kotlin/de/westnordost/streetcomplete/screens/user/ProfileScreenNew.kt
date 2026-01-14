@@ -66,7 +66,8 @@ fun ProfileScreenNewContent(
     onClickBack: () -> Unit,
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>,
 ) {
-    var isChecked by remember { mutableStateOf(preferences.isBiometricEnabled) }
+    var isBiometricEnabled by remember { mutableStateOf(preferences.isBiometricEnabled) }
+    var isFollowModeEnabled by remember { mutableStateOf(preferences.isFollowModeEnabled) }
     val userName by viewModel.userName.collectAsState()
 
     Column(
@@ -120,65 +121,59 @@ fun ProfileScreenNewContent(
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
+            val localContext = LocalContext.current
             Text(
                 "Preferences".uppercase(),
                 color = Color.Gray,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
+            var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
+            var followMode by remember { mutableStateOf<Boolean?>(null) }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                var pendingValue by remember { mutableStateOf<Boolean?>(null) }
-                val context = LocalContext.current
-                Column(modifier = Modifier.weight(3f)) {
-                    Text(
-                        text = stringResource(R.string.diable_biometric_title),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = stringResource(R.string.disable_biometric_message),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Switch(
-                    checked = isChecked,
-                    onCheckedChange = { newValue ->
-                        pendingValue = newValue // trigger LaunchedEffect
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = MaterialTheme.colorScheme.secondary
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-
-                LaunchedEffect(pendingValue) {
-                    pendingValue?.let { newValue ->
-                        val success = onBiometricEnabledChanged(newValue)
-                        if (success) {
-                            preferences.isBiometricEnabled = newValue
-                            isChecked = newValue
-                            if (!newValue) {
-                                SecureCredentialStorage.deleteCredential(
-                                    context,
-                                    preferences.environment
-                                )
-                            }
-                        } else {
-                            // Don't update preference; revert UI
-                            isChecked = !newValue
+            LaunchedEffect(biometricLogin) {
+                biometricLogin?.let { newValue ->
+                    val success = onBiometricEnabledChanged(newValue)
+                    if (success) {
+                        preferences.isBiometricEnabled = newValue
+                        isBiometricEnabled = newValue
+                        if (!newValue) {
+                            SecureCredentialStorage.deleteCredential(
+                                localContext,
+                                preferences.environment
+                            )
                         }
-                        pendingValue = null // reset
+                    } else {
+                        // Don't update preference; revert UI
+                        isBiometricEnabled = !newValue
                     }
+                    biometricLogin = null // reset
                 }
             }
+
+            LaunchedEffect(followMode) {
+                followMode?.let { newValue ->
+                    preferences.isFollowModeEnabled = newValue
+                    followMode = null // reset
+                    isFollowModeEnabled = newValue
+                }
+            }
+
+            PreferenceRow(
+                stringResource(R.string.diable_biometric_title),
+                stringResource(R.string.disable_biometric_message),
+                isBiometricEnabled,
+                onCheckedChange = { newValue ->
+                    biometricLogin = newValue // trigger LaunchedEffect
+                })
+
+            // PreferenceRow(
+            //     stringResource(R.string.follow_mode),
+            //     stringResource(R.string.enable_follow_mode),
+            //     isFollowModeEnabled,
+            //     onCheckedChange = { newValue ->
+            //         followMode = newValue // trigger LaunchedEffect
+            //     })
 
             DottedDivider(
                 color = Color.Gray,
@@ -219,11 +214,49 @@ fun ProfileScreenNewContent(
 }
 
 @Composable
+fun PreferenceRow(
+    text: String,
+    subText: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Column(modifier = Modifier.weight(3f)) {
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = subText,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        Switch(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            ),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
 fun DottedDivider(
+    modifier: Modifier = Modifier,
     color: Color = Color.Gray,
     strokeWidth: Float = 2f,
     dotInterval: Float = 10f, // space between dots
-    modifier: Modifier = Modifier,
 ) {
     Canvas(
         modifier = modifier

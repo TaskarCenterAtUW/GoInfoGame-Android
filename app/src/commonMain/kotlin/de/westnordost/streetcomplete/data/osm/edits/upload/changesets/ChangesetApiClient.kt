@@ -21,7 +21,6 @@ import io.ktor.http.headers
 class ChangesetApiClient(
     private val httpClient: HttpClient,
     private val workspaceConfigProvider: WorkspaceConfigProvider,
-    private val userAccessTokenSource: UserAccessTokenSource,
     private val serializer: ChangesetApiSerializer,
 ) {
     /**

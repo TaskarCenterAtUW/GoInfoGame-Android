@@ -96,6 +96,14 @@ abstract class MainViewModel : ViewModel() {
     abstract var workspaceTitle : MutableStateFlow<String>
 
     abstract val showMainMenuDialog : MutableStateFlow<Boolean>
+
+    abstract val followVisible: MutableStateFlow<Boolean>
+
+    abstract val undoVisible : MutableStateFlow<Boolean>
+
+    abstract val refreshCounter : MutableStateFlow<Int>
+
+    abstract fun triggerRefresh()
 }
 
 data class ShownUrlConfig(val urlConfig: UrlConfig, val alreadyExists: Boolean)

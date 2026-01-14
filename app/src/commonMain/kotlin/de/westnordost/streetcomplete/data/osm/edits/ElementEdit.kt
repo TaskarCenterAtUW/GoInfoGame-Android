@@ -31,7 +31,7 @@ data class ElementEdit(
 
     /** Whether the user was near the element that is being edited when this edit was created */
     val isNearUserLocation: Boolean,
-    override var workspaceId: Int
+    override var workspaceId: Int = 0
 ) : Edit {
     override val isUndoable: Boolean get() = !isSynced || action is IsActionRevertable
     override val key: ElementEditKey get() = ElementEditKey(id)

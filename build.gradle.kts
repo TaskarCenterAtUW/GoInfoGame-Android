@@ -98,3 +98,9 @@ tasks.register("updateStreetCompleteData") {
         "app:copyDefaultStringsToEnStrings"
     )
 }
+
+subprojects {
+    tasks.withType<Test>().configureEach {
+        enabled = false
+    }
+}

@@ -24,10 +24,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** Stores OSM notes */
-class NoteDao(private val db: Database, val preferences: Preferences) {
+class NoteDao(private val db: Database, val preferences: Preferences? = null) {
 
     private val workspaceId
-        get() = preferences.workspaceId ?: 0
+        get() = preferences?.workspaceId ?: 0
 
     fun put(note: Note) {
         note.workspaceId = workspaceId

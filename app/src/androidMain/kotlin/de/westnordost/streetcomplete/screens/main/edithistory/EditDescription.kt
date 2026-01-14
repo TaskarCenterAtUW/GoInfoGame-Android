@@ -88,7 +88,7 @@ private fun TagUpdatesList(
     modifier: Modifier = Modifier
 ) {
     HtmlText(
-        html = changes.toHtml(),
+        html = changes.filter { change -> !listOf("ext:gig_complete", "ext:gig_last_updated").contains(change.key) }.toHtml(),
         modifier = modifier,
     )
 }

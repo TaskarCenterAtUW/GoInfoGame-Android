@@ -17,5 +17,5 @@ data class OsmQuestKey(
     val elementType: ElementType,
     val elementId: Long,
     val questTypeName: String,
-    var workspaceId: Int
+    var workspaceId: Int = 0
 ) : QuestKey()

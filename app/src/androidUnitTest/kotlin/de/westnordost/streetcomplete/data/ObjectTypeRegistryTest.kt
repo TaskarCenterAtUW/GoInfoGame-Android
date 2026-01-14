@@ -9,20 +9,20 @@ internal class ObjectTypeRegistryTest {
     @Test
     fun `throws when one class is added twice`() {
         assertFailsWith<IllegalArgumentException> {
-            ObjectTypeRegistry<Any>(listOf(1 to A, 2 to A))
+            ObjectTypeRegistry<Any>(mutableListOf(1 to A, 2 to A))
         }
     }
 
     @Test
     fun `throws when one ordinal is added twice`() {
         assertFailsWith<IllegalArgumentException> {
-            ObjectTypeRegistry(listOf(1 to A, 1 to B))
+            ObjectTypeRegistry(mutableListOf(1 to A, 1 to B))
         }
     }
 
     @Test
     fun `initialize correctly`() {
-        val registry = ObjectTypeRegistry(listOf(
+        val registry = ObjectTypeRegistry(mutableListOf(
             1 to A,
             0 to B,
             2 to C
@@ -47,7 +47,7 @@ internal class ObjectTypeRegistryTest {
 
     @Test
     fun `holes in ordinals are okay`() {
-        val registry = ObjectTypeRegistry(listOf(
+        val registry = ObjectTypeRegistry(mutableListOf(
             0 to A,
             10 to B
         ))

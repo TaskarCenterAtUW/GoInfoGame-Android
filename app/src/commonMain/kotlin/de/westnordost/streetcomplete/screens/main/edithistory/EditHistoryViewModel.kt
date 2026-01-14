@@ -117,7 +117,7 @@ class EditHistoryViewModelImpl(
         editHistoryController.refresh()
     }
 
-    override val isShowingSidebar = MutableStateFlow<Boolean>(false)
+    override val isShowingSidebar = MutableStateFlow(false)
 
     private val editHistoryListener = object : EditHistorySource.Listener {
         override fun onAdded(added: Edit) {
