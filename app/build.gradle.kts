@@ -9,7 +9,7 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "1.1.1"
+val appVersionName = "1.1.2"
 val appVersionCode = 8
 
 /** Localizations the app should be available in */

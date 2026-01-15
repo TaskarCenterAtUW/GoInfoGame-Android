@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form
 
 import android.content.res.Resources
+import android.util.Log
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
@@ -18,6 +19,8 @@ import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 class AddGenericLong(val item: Elements) :
@@ -81,10 +84,9 @@ class AddGenericLong(val item: Elements) :
         }
         tags["ext:gig_complete"] = "yes"
         //time stamp to date
-        val date = java.time.LocalDate.now(ZoneId.of("UTC"))
-        val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val date = ZonedDateTime.now(ZoneOffset.UTC)
+        val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-ddXXX"))
         tags["ext:gig_last_updated"] = currentDate
-
         item.elementType?.let { FirebaseAnalyticsHelper.logQuestAnswered(it) }
     }
 
