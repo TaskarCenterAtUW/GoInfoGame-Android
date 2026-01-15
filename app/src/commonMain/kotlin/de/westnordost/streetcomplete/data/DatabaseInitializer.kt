@@ -30,7 +30,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 21
+    const val DB_VERSION = 22
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -267,23 +267,27 @@ object DatabaseInitializer {
             db.deleteQuest("AddShoulder")
         }
 
-        if (oldVersion <= 18 && newVersion == 19) {
-            db.exec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
-            db.exec("ALTER TABLE work_spaces ADD COLUMN type varchar(255) DEFAULT ''")
+        if (oldVersion <= 18 && newVersion >= 19) {
+            db.tryExec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
+            db.tryExec("ALTER TABLE work_spaces ADD COLUMN type varchar(255) DEFAULT ''")
         }
 
-        if (oldVersion<= 19 && newVersion == 20){
-            db.exec("ALTER TABLE osm_element_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE quest_statistics ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE quest_statistics_current_week ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE osm_edit_elements ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        if (oldVersion <= 19 && newVersion >= 20) {
+            db.tryExec("ALTER TABLE osm_element_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE quest_statistics ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE quest_statistics_current_week ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_edit_elements ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
 
-        if (oldVersion<= 20 && newVersion == 21){
-            db.exec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        if (oldVersion <= 20 && newVersion >= 21) {
+            db.tryExec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        }
+
+        if (oldVersion <= 21 && newVersion >= 22) {
+            db.tryExec("ALTER TABLE osm_notes_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
     }
 }
