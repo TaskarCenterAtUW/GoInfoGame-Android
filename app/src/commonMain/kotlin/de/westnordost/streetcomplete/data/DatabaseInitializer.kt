@@ -284,7 +284,6 @@ object DatabaseInitializer {
         if (oldVersion<= 20 && newVersion == 21){
             db.exec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.exec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
-            db.exec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
     }
 }
