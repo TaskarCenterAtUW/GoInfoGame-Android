@@ -60,8 +60,6 @@ val appModule = module {
             }
             install(ContentEncoding) {
                 gzip()
-                deflate()
-                identity()
             }
         }
     }
@@ -75,8 +73,6 @@ val appModule = module {
             }
             install(ContentEncoding) {
                 gzip()
-                deflate()
-                identity()
             }
             install(Auth) {
                 bearer {
