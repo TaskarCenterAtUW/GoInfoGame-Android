@@ -18,6 +18,27 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="TextView" />
 
+    <ImageView
+        android:contentDescription="@string/quest_image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintBottom_toTopOf="@id/description"
+        android:id="@+id/imageView"
+        android:layout_width="0dp"
+        app:layout_constraintWidth_percent="0.35"
+        android:layout_height="150dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:adjustViewBounds="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/black_image_border"
+        android:scaleType="centerCrop"
+        tools:src="@drawable/surface_asphalt"
+        android:visibility="gone"
+        app:layout_constraintHorizontal_bias="0.0" />
+
     <TextView
         android:id="@+id/description"
         android:layout_width="0dp"
@@ -25,7 +46,7 @@
         android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/title"
+        app:layout_constraintTop_toBottomOf="@+id/imageView"
         tools:text="TextView" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -54,5 +75,5 @@
         app:layout_constraintTop_toBottomOf="@+id/list"
         android:background="@drawable/gradient_primary_accent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content" />
 </androidx.constraintlayout.widget.ConstraintLayout>

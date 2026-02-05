@@ -29,6 +29,7 @@ import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
+import de.westnordost.streetcomplete.view.setImage
 
 class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     RecyclerView.Adapter<ViewHolder>() {
@@ -131,7 +132,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun updateInputLayout(
             textInputLayout: TextInputLayout,
             minValue: Int? = null,
-            maxValue: Int?
+            maxValue: Int?,
         ) {
             this.textInputLayout = textInputLayout
             this.minValue = minValue
@@ -242,7 +243,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     dialog.show()
                     true
                 }
-
             } else {
                 binding.questImage.visibility = View.GONE
             }
@@ -257,7 +257,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     }
 
     inner class TextEntryViewHolder(
-        val binding: CellLongFormTextEntryItemBinding
+        val binding: CellLongFormTextEntryItemBinding,
     ) : ViewHolder(binding.root) {
 
         init {
@@ -327,7 +327,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     dialog.show()
                     true
                 }
-
             } else {
                 binding.questImage.visibility = View.GONE
             }
@@ -336,7 +335,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     s: CharSequence?,
                     start: Int,
                     count: Int,
-                    after: Int
+                    after: Int,
                 ) {
                 }
 
@@ -356,6 +355,13 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun bind(item: LongFormQuest, position: Int) {
 
             binding.title.text = item.questTitle
+            if (item.questImageUrl != null) {
+                binding.imageView.setImage(ImageUrl(item.questImageUrl))
+                binding.imageView.visibility = View.VISIBLE
+            } else {
+                binding.imageView.visibility = View.GONE
+            }
+
             binding.description.text = item.questDescription
             val imageSelectAdapter =
                 ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
@@ -455,13 +461,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     CharSequenceText("")
                 )
             }!!
-
         }
 
         fun handleDeselection(
             questId: Int,
             userInput: String,
-            imageIndex: Int
+            imageIndex: Int,
         ) {
             val index =
                 givenItems.indexOfFirst { it.questId == questId }

@@ -4,4 +4,5 @@
     <string name="map_quests_overlay">accessibility overlay</string>
     <string name="accessibility_action_long_press">Long press</string>
     <string name="select_imagery_source">Select Imagery Source</string>
+    <string name="quest_image">quest image</string>
 </resources>
