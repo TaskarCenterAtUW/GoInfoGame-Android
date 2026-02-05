@@ -20,14 +20,13 @@ data class ResImage(@DrawableRes val resId: Int) : Image
 data class DrawableImage(val drawable: Drawable) : Image
 data class ImageUrl(val url: String? = "https://picsum.photos/320/480") : Image
 
-fun ImageView.setImage(image: Image?) {
+fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {}) {
 
     val customImageLoader = ImageLoader.Builder(context)
         .okHttpClient {
             OkHttpClient.Builder()
                 .addInterceptor { chain ->
                     val newRequest = chain.request().newBuilder()
-                        .header("User-Agent", "Mozilla/5.0 (Android)") // Mimic browser
                         .build()
                     chain.proceed(newRequest)
                 }
@@ -51,6 +50,7 @@ fun ImageView.setImage(image: Image?) {
             if (url.isNullOrEmpty()) {
                 Log.w("ImageView", "Skipped loading: URL is null or empty")
                 setImageResource(R.drawable.blank_big)
+                imageIsEmptyUpdateTextSize()
             } else {
                 this.load(url) {
                     setImageLoader(customImageLoader)
@@ -58,8 +58,8 @@ fun ImageView.setImage(image: Image?) {
                     error(R.drawable.blank_big)
                     listener(
                         onError = { _, throwable ->
-                            Log.w("ImageView", "Failed to load image from URL: $url", throwable.throwable)
                             setImageResource(R.drawable.blank_big)
+                            imageIsEmptyUpdateTextSize()
                         },
                         onSuccess = { _, _ ->
                             Log.w("ImageView", "Success to load image from URL: $url")

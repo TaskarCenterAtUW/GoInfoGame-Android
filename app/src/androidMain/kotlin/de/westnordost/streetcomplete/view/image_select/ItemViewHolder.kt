@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.view.image_select
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.RecyclerView
@@ -15,6 +16,8 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val imageView: ImageView? = itemView.findViewById(R.id.imageView)
     private val textView: OutlinedTextView? = itemView.findViewById(R.id.textView)
     private val descriptionView: TextView? = itemView.findViewById(R.id.descriptionView)
+
+    private val onlyTextView : TextView? = itemView.findViewById(R.id.textWithoutImage)
     private val dropDownArrowImageView: ImageView? =
         itemView.findViewById(R.id.dropDownArrowImageView)
 
@@ -58,7 +61,15 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         }
 
     fun bind(item: DisplayItem<*>) {
-        imageView?.setImage(item.image)
+        imageView?.setImage(
+            item.image,
+            imageIsEmptyUpdateTextSize = {
+                onlyTextView?.let {
+                    it.visibility = View.VISIBLE
+                    it.setText(item.title)
+                    textView?.visibility = View.GONE
+                }
+            })
         textView?.setText(item.title)
         descriptionView?.setText(item.description)
         descriptionView?.isGone = item.description == null
