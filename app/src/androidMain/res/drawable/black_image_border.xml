@@ -7,6 +7,7 @@
 
     <!-- Border -->
     <stroke
-        android:width="2dp"
-        android:color="@color/text" /> <!-- Change to any color you want -->
+        android:width="1dp"
+        android:color="@color/inverted_background" /> <!-- Change to any color you want -->
+    <corners android:radius="8dp"/>
 </shape>
