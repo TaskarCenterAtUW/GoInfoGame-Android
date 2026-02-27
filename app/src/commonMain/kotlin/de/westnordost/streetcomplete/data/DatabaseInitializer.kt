@@ -30,7 +30,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 22
+    const val DB_VERSION = 23
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -289,6 +289,22 @@ object DatabaseInitializer {
         if (oldVersion <= 21 && newVersion >= 22) {
             db.tryExec("ALTER TABLE osm_notes_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
         }
+
+        if (oldVersion <= 22 && newVersion >= 23) {
+            // Catch-all migration to ensure all workspace_id columns exist
+            // This handles devices that may have had incomplete migrations
+            db.tryExec("ALTER TABLE work_spaces ADD COLUMN externalAppAccess INTEGER DEFAULT 0")
+            db.tryExec("ALTER TABLE work_spaces ADD COLUMN type varchar(255) DEFAULT ''")
+            db.tryExec("ALTER TABLE osm_element_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE quest_statistics ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE quest_statistics_current_week ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_quests ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_quests_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_edit_elements ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+            db.tryExec("ALTER TABLE osm_notes_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        }
     }
 }
 
@@ -297,7 +313,7 @@ object DatabaseInitializer {
    it.
    But then, the upgrade step to version 13 would fail, because at that point, this table already
    has the "is_near" column.
-   So, we don't really care about that and a "IF NOT EXISTS" syntax is not supported for the
+   So, we don't really care about that and an "IF NOT EXISTS" syntax is not supported for the
    ALTER TABLE statement. */
 private fun Database.tryExec(sql: String, args: Array<Any>? = null) = try {
     exec(sql, args)
