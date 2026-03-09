@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.action_back
 import de.westnordost.streetcomplete.resources.action_clear
+import de.westnordost.streetcomplete.resources.action_close
 import de.westnordost.streetcomplete.resources.action_copy
 import de.westnordost.streetcomplete.resources.action_create_new_poi
 import de.westnordost.streetcomplete.resources.action_download
@@ -127,8 +128,9 @@ fun ZoomInIcon() {
 
 @Composable
 fun CloseIcon() {
-    Icon(painterResource(Res.drawable.ic_clear_24), stringResource(Res.string.action_clear))
+    Icon(painterResource(Res.drawable.ic_clear_24), stringResource(Res.string.action_close))
 }
+
 
 @Composable
 fun ZoomOutIcon() {

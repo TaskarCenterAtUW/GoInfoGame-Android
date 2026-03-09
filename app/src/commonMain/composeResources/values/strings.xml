@@ -318,6 +318,7 @@ If you are overwhelmed by the number of quests, you can always fine-tune which q
 
     <string name="action_back">Back</string>
     <string name="action_clear">Clear</string>
+    <string name="action_close">Close</string>
     <string name="action_more">More</string>
     <string name="action_open_in_browser">Open in browser</string>
 

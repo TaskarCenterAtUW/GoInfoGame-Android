@@ -17,6 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
@@ -52,7 +56,18 @@ fun EditHistoryItem(
             .selectable(
                 selected = selected,
                 onClick = onSelect
-            ),
+            )
+            .clearAndSetSemantics {
+                contentDescription = "Item 1"
+                // Since we cleared semantics, we need to manually tell
+                // accessibility services this item is still selectable
+                this.selected = selected
+                onClick(label = "to select this edit") {
+                    onSelect()
+                    true
+                }
+            },
+
     ) {
         Box(
             Modifier

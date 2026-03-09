@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
@@ -107,7 +109,14 @@ fun ProfileScreenNewContent(
                 text = userName.orEmpty(),
                 color = Color.DarkGray,
                 style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.semantics{
+                    val info = userName?.split("\n") ?: emptyList()
+                    val email = info.getOrNull(0) ?: "Unknown"
+                    val name = info.getOrNull(1) ?: "Unknown"
+
+                    contentDescription = "Email: $email, User name: $name"
+                }
             )
         }
 
@@ -199,7 +208,7 @@ fun ProfileScreenNewContent(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_outline_logout_24),
-                        contentDescription = "Email",
+                        contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))

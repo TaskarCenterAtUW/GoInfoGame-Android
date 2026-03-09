@@ -61,21 +61,14 @@ fun MainMenuDialog(
                     onClick = onDismissRequest,
                     modifier = Modifier.padding(8.dp).align(Alignment.End)
                 ) { CloseIcon() }
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    BigMenuButton(
-                        onClick = { onDismissRequest(); onClickSettings() },
-                        icon = { Icon(painterResource(Res.drawable.ic_settings_48), null) },
-                        text = stringResource(Res.string.action_settings),
+                CompactMenuButton(
+                    onClick = { onDismissRequest(); onClickSettings() },
+                    icon = { },
+                    text = stringResource(Res.string.action_settings),
                     )
-
-                }
-                Divider()
                 CompactMenuButton(
                     onClick = { onDismissRequest(); onClickDownload() },
-                    icon = { DownloadIcon() },
+                    icon = {  },
                     text = stringResource(Res.string.action_download),
                 )
                 CompactMenuButton(
