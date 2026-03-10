@@ -9,6 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.data.edithistory.Edit
@@ -32,11 +35,21 @@ fun UndoDialog(
 ) {
     ScrollableAlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(Res.string.undo_confirm_title2)) },
+        title = {
+            Text(
+                stringResource(Res.string.undo_confirm_title2)
+            )
+        },
         content = {
             Box(Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
+                .focusProperties {
+                    canFocus = false
+                }
+                .semantics {
+                    contentDescription = "Edit details"
+                }
             ) {
                 EditDetails(edit, element, featureDictionaryLazy)
             }
@@ -52,3 +65,13 @@ fun UndoDialog(
         height = 360.dp
     )
 }
+
+
+
+
+
+
+
+
+
+

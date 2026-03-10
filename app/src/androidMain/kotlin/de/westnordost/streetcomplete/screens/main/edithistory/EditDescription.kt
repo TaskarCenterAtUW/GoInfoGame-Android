@@ -5,6 +5,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
@@ -75,9 +77,14 @@ private fun TagList(
     tags: Map<String, String>,
     modifier: Modifier = Modifier
 ) {
+    val tagCount = tags.size
+    val tagSummary = tags.entries.joinToString(", ") { "${it.key} = ${it.value}" }
+
     HtmlText(
         html = tags.toHtml(),
-        modifier = modifier,
+        modifier = modifier.clearAndSetSemantics {
+            contentDescription = "$tagCount tags: $tagSummary"
+        },
     )
 }
 
@@ -87,9 +94,21 @@ private fun TagUpdatesList(
     changes: Collection<StringMapEntryChange>,
     modifier: Modifier = Modifier
 ) {
+    val filteredChanges = changes.filter { change -> !listOf("ext:gig_complete", "ext:gig_last_updated").contains(change.key) }
+    val changeCount = filteredChanges.size
+    val changeSummary = filteredChanges.joinToString(", ") { change ->
+        when (change) {
+            is StringMapEntryAdd -> "Added ${change.key} = ${change.value}"
+            is StringMapEntryDelete -> "Removed ${change.key} = ${change.valueBefore}"
+            is StringMapEntryModify -> "Changed ${change.key} from ${change.valueBefore} to ${change.value}"
+        }
+    }
+
     HtmlText(
-        html = changes.filter { change -> !listOf("ext:gig_complete", "ext:gig_last_updated").contains(change.key) }.toHtml(),
-        modifier = modifier,
+        html = filteredChanges.toHtml(),
+        modifier = modifier.clearAndSetSemantics {
+            contentDescription = "$changeCount changes: $changeSummary"
+        },
     )
 }
 

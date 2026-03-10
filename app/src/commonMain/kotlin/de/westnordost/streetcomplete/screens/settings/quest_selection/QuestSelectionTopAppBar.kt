@@ -98,12 +98,12 @@ private fun QuestSelectionTitle(currentPresetName: String) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
-            text = stringResource(Res.string.pref_subtitle_quests_preset_name, currentPresetName),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        // Text(
+        //     text = stringResource(Res.string.pref_subtitle_quests_preset_name, currentPresetName),
+        //     maxLines = 1,
+        //     overflow = TextOverflow.Ellipsis,
+        //     style = MaterialTheme.typography.bodyLarge,
+        // )
     }
 }
 

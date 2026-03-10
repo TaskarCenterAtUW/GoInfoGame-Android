@@ -40,8 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
@@ -73,6 +77,12 @@ fun EditHistorySidebar(
 
     var showUndoDialog by remember { mutableStateOf(false) }
     var editElement by rememberSerializable { mutableStateOf<Element?>(null) }
+
+    // Focus management for accessibility
+    val sidebarFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        sidebarFocusRequester.requestFocus()
+    }
 
     // scrolling to selected item
     val selectedIndex = remember(selectedEdit) {
@@ -110,7 +120,9 @@ fun EditHistorySidebar(
         modifier = modifier
             .fillMaxHeight()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End))
-            .shadow(16.dp),
+            .shadow(16.dp)
+            .focusRequester(sidebarFocusRequester)
+            .semantics { contentDescription = "Edit history sidebar" },
         // not using surface's elevation here because we don't want it to change its background
         // color to gray in dark mode
     ) {

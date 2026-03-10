@@ -27,6 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
@@ -54,17 +57,19 @@ fun QuestSelectionRow(
         modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (item.isInteractionEnabled) {
-            Icon(painterResource(Res.drawable.ic_drag_vertical_24), "Reorder")
-        } else {
-            Spacer(Modifier.size(24.dp))
-        }
+        // if (item.isInteractionEnabled) {
+        //     Icon(painterResource(Res.drawable.ic_drag_vertical_24), "Reorder")
+        // } else {
+        //     Spacer(Modifier.size(24.dp))
+        // }
+        Spacer(Modifier.size(24.dp))
         Image(
             painter = painterResource(item.questType.icon),
-            contentDescription = item.questType.name,
+            contentDescription = null,
             modifier = Modifier
                 .size(48.dp)
-                .alpha(alpha),
+                .alpha(alpha)
+                .semantics { hideFromAccessibility() },
         )
         Column(
             modifier = Modifier
@@ -80,7 +85,9 @@ fun QuestSelectionRow(
             }
             Text(
                 text = title,
-                modifier = Modifier.alpha(alpha),
+                modifier = Modifier.alpha(alpha).semantics{
+                    contentDescription = "Quest type : $title"
+                },
                 style = MaterialTheme.typography.bodyLarge,
             )
             if (!item.enabledInCurrentCountry) {

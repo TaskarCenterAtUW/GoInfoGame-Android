@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -35,7 +36,7 @@ fun EditDetails(
     val context = LocalContext.current
 
     Column(
-        modifier = modifier,
+        modifier = modifier.focusProperties { canFocus = false },
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -55,23 +56,23 @@ fun EditDetails(
                     color = LocalContentColor.current.copy(alpha = 0.6f),
                 )
                 Text(
-                    text = edit.getTitle(element?.tags),
+                    text = edit.getName(),
                     style = MaterialTheme.typography.bodyLarge,
                     color = LocalContentColor.current.copy(alpha = 0.6f),
                 )
-                if (element != null) {
-                    val nameAndLocation = remember(element, context.resources) {
-                        getNameAndLocationHtml(element, context.resources, featureDictionaryLazy.value)
-                            ?.let { parseHtml(it) }
-                    }
-                    if (nameAndLocation != null) {
-                        Text(
-                            text = nameAndLocation.toAnnotatedString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = LocalContentColor.current.copy(alpha = 0.6f),
-                        )
-                    }
-                }
+                // if (element != null) {
+                //     val nameAndLocation = remember(element, context.resources) {
+                //         getNameAndLocationHtml(element, context.resources, featureDictionaryLazy.value)
+                //             ?.let { parseHtml(it) }
+                //     }
+                //     if (nameAndLocation != null) {
+                //         Text(
+                //             text = nameAndLocation.toAnnotatedString(),
+                //             style = MaterialTheme.typography.bodyMedium,
+                //             color = LocalContentColor.current.copy(alpha = 0.6f),
+                //         )
+                //     }
+                // }
             }
         }
         Divider()

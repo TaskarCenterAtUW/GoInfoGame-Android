@@ -104,7 +104,7 @@ fun WorkSpaceListScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
-                            .semantics{ contentDescription = screenTitle }
+                            // .semantics{ contentDescription = screenTitle }
                     ) {
                         val context = LocalContext.current
                         Icon(
@@ -253,8 +253,8 @@ fun WorkspaceList(
                     .padding(bottom = 16.dp)
                     .padding(end = 16.dp)
                     .size(100.dp)
-                    .clip(CircleShape)
-                    .semantics { hideFromAccessibility() },
+                    .clip(CircleShape),
+                    // .semantics { hideFromAccessibility() },
                 contentScale = ContentScale.Fit
             )
             Row(
@@ -284,7 +284,7 @@ fun WorkspaceList(
                 text = "Please select a workspace to continue",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = modifier.padding(8.dp).clearAndSetSemantics{}
+                modifier = modifier.padding(8.dp)
             )
             LazyColumn(modifier = modifier) {
                 itemsIndexed(items) { index, workspace ->
