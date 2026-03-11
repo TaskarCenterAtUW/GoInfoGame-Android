@@ -34,7 +34,6 @@
     </style>
     <style name="RoundPurpleButton">
         <item name="android:background">@drawable/round_purple_button</item>
-        <item name="android:tint">@color/primary</item>
         <item name="android:clickable">true</item>
         <item name="android:elevation">4dp</item>
         <item name="tint">#000</item>

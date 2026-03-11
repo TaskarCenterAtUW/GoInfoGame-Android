@@ -23,7 +23,7 @@
                 <item android:state_enabled="false">
                     <shape android:shape="rectangle">
                         <corners android:radius="@dimen/round_button_radius" />
-                        <solid android:color="#D3959595"/>
+                        <solid android:color="#E7E3EE"/>
                         <padding android:left="@dimen/round_button_padding"
                                  android:top="@dimen/round_button_padding"
                                  android:right="@dimen/round_button_padding"
@@ -33,7 +33,7 @@
                 <item>
                     <shape android:shape="rectangle">
                         <corners android:radius="@dimen/round_button_radius" />
-                        <solid android:color="@color/light_purple_background"/>
+                        <solid android:color="#E7E3EE"/>
                         <padding android:left="@dimen/round_button_padding"
                                  android:top="@dimen/round_button_padding"
                                  android:right="@dimen/round_button_padding"

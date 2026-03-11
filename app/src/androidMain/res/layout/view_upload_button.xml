@@ -11,7 +11,7 @@
         android:layout_centerInParent="true"
         android:contentDescription="@string/sync_changes"
         app:srcCompat="@drawable/ic_outline_sync"
-        app:tint="@color/primary" />
+        app:tint="#2D0369" />
 
     <TextView
         android:id="@+id/textView"

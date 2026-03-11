@@ -133,7 +133,7 @@ fun ProfileScreenNewContent(
             val localContext = LocalContext.current
             Text(
                 "Preferences".uppercase(),
-                color = Color.Gray,
+                color = Color(0xFF42526E),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
@@ -202,8 +202,8 @@ fun ProfileScreenNewContent(
                         finishAndLaunchNewActivity(context)
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary,      // Background
-                        contentColor = MaterialTheme.colorScheme.onSecondary,      // Text/Icon color
+                        containerColor = MaterialTheme.colorScheme.primary,      // Background
+                        contentColor = MaterialTheme.colorScheme.onPrimary,      // Text/Icon color
                     ),
                 ) {
                     Icon(

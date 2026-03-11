@@ -68,13 +68,6 @@ fun QuestSelectionTopAppBar(
                 title = { QuestSelectionTitle(currentPresetName) },
                 windowInsets = TopAppBarDefaults.windowInsets,
                 navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
-                actions = {
-                    QuestSelectionTopBarActions(
-                        onUnselectAll = onUnselectAll,
-                        onReset = onReset,
-                        onClickSearch = { setShowSearch(!showSearch) }
-                    )
-                },
             )
             ExpandableSearchField(
                 expanded = showSearch,

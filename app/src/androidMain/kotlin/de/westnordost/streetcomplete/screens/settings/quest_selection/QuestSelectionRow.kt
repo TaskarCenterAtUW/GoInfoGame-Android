@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
@@ -52,7 +53,12 @@ fun QuestSelectionRow(
     modifier: Modifier = Modifier,
 ) {
     val alpha = if (!item.selected) 0.5f else 1.0f
-
+    var title = ""
+    title = if (item.questType is AddGenericLong){
+        item.questType.item.elementType!!
+    }else{
+        "Create Note"
+    }
     Row(
         modifier = modifier.height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
@@ -77,16 +83,11 @@ fun QuestSelectionRow(
                 .weight(0.1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            var title = ""
-            title = if (item.questType is AddGenericLong){
-                item.questType.item.elementType!!
-            }else{
-                "Create Note"
-            }
+
             Text(
                 text = title,
-                modifier = Modifier.alpha(alpha).semantics{
-                    contentDescription = "Quest type : $title"
+                modifier = Modifier.alpha(alpha).clearAndSetSemantics{
+                    hideFromAccessibility()
                 },
                 style = MaterialTheme.typography.bodyLarge,
             )
@@ -111,7 +112,10 @@ fun QuestSelectionRow(
             Checkbox(
                 checked = item.selected,
                 onCheckedChange = onToggleSelection,
-                enabled = item.isInteractionEnabled
+                enabled = item.isInteractionEnabled,
+                modifier = Modifier.semantics{
+                contentDescription = "Quest type : $title"
+            }
             )
         }
     }

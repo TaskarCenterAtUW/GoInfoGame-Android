@@ -16,11 +16,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -61,6 +64,16 @@ fun QuestSelectionList(
         if (toAfterItem != null) dragItem = item.questType to toAfterItem.questType
         newList.add(to.index, item)
         reorderableItems = newList
+    }
+
+    // Focus requester for the first item
+    val firstItemFocusRequester = remember { FocusRequester() }
+
+    // Request focus on the first item when list loads
+    LaunchedEffect(reorderableItems) {
+        if (reorderableItems.isNotEmpty()) {
+            firstItemFocusRequester.requestFocus()
+        }
     }
 
     fun onDragStopped() {
@@ -105,6 +118,7 @@ fun QuestSelectionList(
 
                     Surface(
                         modifier = Modifier
+                            .then(if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier)
                             .longPressDraggableHandle(
                                 enabled = item.isInteractionEnabled,
                                 onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },

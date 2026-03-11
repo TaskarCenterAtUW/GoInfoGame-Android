@@ -42,7 +42,7 @@ fun PreferenceCategory(
             Text(
                 text = title,
                 modifier = Modifier.padding(top = 12.dp, start = 16.dp, end = 8.dp, bottom = 8.dp),
-                color = MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.titleSmall
             )
         }

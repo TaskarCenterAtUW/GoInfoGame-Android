@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.screens.main.accessibility
 
-import UndoChangesBottomSheetContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +26,7 @@ import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -385,7 +385,9 @@ private fun UndoItemCard(
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
-            dragHandle = null,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(width = 64.dp)
+            },
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             UndoChangesBottomSheetContent(

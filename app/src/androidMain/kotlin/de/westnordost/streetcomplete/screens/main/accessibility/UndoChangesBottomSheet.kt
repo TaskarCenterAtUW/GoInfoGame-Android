@@ -1,5 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
+package de.westnordost.streetcomplete.screens.main.accessibility
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -115,13 +117,13 @@ fun UndoChangesBottomSheetContent(
                 .height(52.dp),
             shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Red // red/pink
+                containerColor = MaterialTheme.colorScheme.primary // red/pink
             )
         ) {
             Text(
                 text = "Revert Changes",
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
+                fontSize = 18.sp,
             )
         }
 
