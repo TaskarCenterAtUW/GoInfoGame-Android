@@ -3,7 +3,10 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,9 +49,6 @@ import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -107,22 +107,34 @@ fun WorkSpaceListScreen(
                             // .semantics{ contentDescription = screenTitle }
                     ) {
                         val context = LocalContext.current
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "Navigate to profile screen",
+                        Surface(
                             modifier = Modifier
-                                .padding(16.dp)
-                                .size(36.dp, 36.dp)
-                                .clickable {
-                                    val intent = Intent(
-                                        context,
-                                        UserActivity::class.java
-                                    )
-                                    context.startActivity(intent)
-                                }
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.onSurface
+                                    ), shape = CircleShape
+                                )
+                                .background(color = MaterialTheme.colorScheme.onSurface)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                tint = MaterialTheme.colorScheme.primary,
+                                contentDescription = "Navigate to profile screen",
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(36.dp, 36.dp)
+                                    .clickable {
+                                        val intent = Intent(
+                                            context,
+                                            UserActivity::class.java
+                                        )
+                                        context.startActivity(intent)
+                                    }
 
-                        )
+                            )
+                        }
+
                         WorkspaceList(
                             onClick,
                             modifier = Modifier,
@@ -254,11 +266,11 @@ fun WorkspaceList(
                     .padding(end = 16.dp)
                     .size(100.dp)
                     .clip(CircleShape),
-                    // .semantics { hideFromAccessibility() },
-                contentScale = ContentScale.Fit
+                // .semantics { hideFromAccessibility() },
+                contentScale = ContentScale.Fit,
             )
             Row(
-                modifier = Modifier.clearAndSetSemantics{},
+                modifier = Modifier.clearAndSetSemantics {},
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.Bottom
             ) {

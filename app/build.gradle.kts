@@ -174,6 +174,8 @@ kotlin {
                 implementation("io.github.alexzhirkevich:qrose:1.0.1")
                 // for encoding information for the URL configuration (QR code)
                 implementation("com.ionspin.kotlin:bignum:0.3.10")
+                implementation(compose.components.resources) // For resources
+                implementation(compose.materialIconsExtended) // The full library
             }
         }
         androidMain {
@@ -192,6 +194,7 @@ kotlin {
                 implementation("androidx.fragment:fragment-ktx:1.8.9")
                 implementation("androidx.recyclerview:recyclerview:1.4.0")
                 implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+                implementation("androidx.compose.material:material-icons-core:1.7.8")
                 implementation("androidx.compose.material:material-icons-extended:1.7.8")
                 implementation("io.coil-kt:coil:2.7.0")
                 implementation("io.coil-kt:coil-svg:2.7.0")

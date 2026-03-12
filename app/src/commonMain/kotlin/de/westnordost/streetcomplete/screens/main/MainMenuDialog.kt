@@ -1,17 +1,22 @@
 package de.westnordost.streetcomplete.screens.main
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,10 +35,6 @@ import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.action_download
 import de.westnordost.streetcomplete.resources.action_settings
 import de.westnordost.streetcomplete.resources.action_switch_workspace
-import de.westnordost.streetcomplete.resources.ic_settings_48
-import de.westnordost.streetcomplete.ui.common.CloseIcon
-import de.westnordost.streetcomplete.ui.common.DownloadIcon
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -53,29 +54,68 @@ fun MainMenuDialog(
         Surface(
             modifier = modifier,
             shape = shape,
-            color = backgroundColor,
+            color = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = contentColor
         ) {
             Column {
                 IconButton(
                     onClick = onDismissRequest,
                     modifier = Modifier.padding(8.dp).align(Alignment.End)
-                ) { CloseIcon() }
-                CompactMenuButton(
-                    onClick = { onDismissRequest(); onClickSettings() },
-                    icon = { },
-                    text = stringResource(Res.string.action_settings),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Cancel,
+                        contentDescription = "Close"
                     )
-                CompactMenuButton(
-                    onClick = { onDismissRequest(); onClickDownload() },
-                    icon = {  },
-                    text = stringResource(Res.string.action_download),
-                )
-                CompactMenuButton(
-                    onClick = { onDismissRequest(); onSwitchWorkspace() },
-                    icon = { },
-                    text = stringResource(Res.string.action_switch_workspace),
-                )
+                }
+                Card(modifier = Modifier.padding(8.dp)) {
+                    CompactMenuButton(
+                        onClick = { onDismissRequest(); onClickSettings() },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = null
+                            )
+                        },
+                        text = stringResource(Res.string.action_settings),
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface) // Force background to match buttons
+                            .padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = Color.LightGray
+                    )
+                    CompactMenuButton(
+                        onClick = { onDismissRequest(); onClickDownload() },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Download,
+                                contentDescription = null
+                            )
+                        },
+                        text = stringResource(Res.string.action_download),
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface) // Force background to match buttons
+                            .padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = Color.LightGray
+                    )
+                    CompactMenuButton(
+                        onClick = { onDismissRequest(); onSwitchWorkspace() },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.SwapHoriz,
+                                contentDescription = "Download"
+                            )
+                        },
+                        text = stringResource(Res.string.action_switch_workspace),
+                    )
+                }
+
                 // if (unsyncedEditsCount != null) {
                 //     CompactMenuButton(
                 //         onClick = { onDismissRequest(); onClickUpload() },
@@ -146,8 +186,8 @@ private fun CompactMenuButton(
             icon()
             Text(
                 text = text,
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.bodyLarge,
             )
         }

@@ -56,8 +56,8 @@ val LightColors = lightColorScheme(
 )
 
 val DarkColors = darkColorScheme(
-    primary = Color(0xFFB7A57A),
-    secondary = Color(0xFFC5B4E3),
+    primary = Color(0xFF846200),
+    secondary = Color(0xFF5B3592),
     onPrimary = Color.White,
     onSecondary = Color.White
 )

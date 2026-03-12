@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/workspace"
                 android:importantForAccessibility="no"
-                android:textColor="@android:color/black"
+                android:textColor="@color/text"
                 android:textSize="12sp" />
 
             <TextView

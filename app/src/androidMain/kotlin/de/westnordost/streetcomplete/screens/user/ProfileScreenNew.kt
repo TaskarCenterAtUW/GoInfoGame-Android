@@ -107,7 +107,7 @@ fun ProfileScreenNewContent(
             )
             Text(
                 text = userName.orEmpty(),
-                color = Color.DarkGray,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.semantics{
@@ -133,7 +133,7 @@ fun ProfileScreenNewContent(
             val localContext = LocalContext.current
             Text(
                 "Preferences".uppercase(),
-                color = Color(0xFF42526E),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(16.dp)
             )
