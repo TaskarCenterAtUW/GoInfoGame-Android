@@ -2,13 +2,13 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,13 +35,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -56,15 +56,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -73,6 +71,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
 import de.westnordost.streetcomplete.BuildConfig
@@ -294,7 +293,9 @@ fun LoginCard(
     preferences: Preferences,
     modifier: Modifier = Modifier,
 ) {
-    val screenTitle = "You're in the login page, Please enter your credentials in the edit boxes below"
+    val screenTitle =
+        "You're in the login page, Please enter your credentials in the edit boxes below"
+    val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
 
     Surface(
         modifier = Modifier
@@ -342,9 +343,10 @@ fun LoginCard(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = 48.dp)
                     .semantics {
                         contentDescription = screenTitle
                     }
@@ -365,9 +367,44 @@ fun LoginCard(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
                     ),
+                    trailingIcon = {
+                        if (preferences.isBiometricEnabled) {
+                            val coroutineScope = rememberCoroutineScope()
+                            val creds = SecureCredentialStorage.getCredential(
+                                LocalContext.current,
+                                selectedEnvironment.value.name
+                            )
+                            if (creds != null) {
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        val authenticated = authenticateWithBiometrics(
+                                            context,
+                                            activity = activity
+                                        )
+                                        if (!authenticated) {
+                                            Toast.makeText(
+                                                context,
+                                                "Failed to authenticate",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                        } else {
+                                            email.value = creds.username
+                                            password.value = creds.password
+                                            viewModel.loginToWorkspace(email.value, password.value)
+                                        }
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Fingerprint,
+                                        contentDescription = "Login with Device Authentication"
+                                    )
+                                }
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(all = 16.dp)
                 )
                 OutlinedTextField(
                     value = password.value,
@@ -389,92 +426,106 @@ fun LoginCard(
                         val image =
                             if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
                         IconButton(onClick = { visibility = !visibility }) {
-                            Icon(imageVector = image, contentDescription = "Toggle password visibility" )
+                            Icon(
+                                imageVector = image,
+                                contentDescription = "Toggle password visibility"
+                            )
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(all = 16.dp)
                 )
-
-                Column(
-                    modifier = Modifier
+                if (isDebugModeEnabled) {
+                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                }
+                Button(
+                    onClick = {
+                        if (email.value.isEmpty() || password.value.isEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Please enter email and password",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+                        viewModel.loginToWorkspace(email.value, password.value)
+                    }, modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            if (email.value.isEmpty() || password.value.isEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "Please enter email and password",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@Button
-                            }
-                            viewModel.loginToWorkspace(email.value, password.value)
-                        }, modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(text = "Login", style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    if (preferences.isBiometricEnabled) {
-                        val coroutineScope = rememberCoroutineScope()
-                        val creds = SecureCredentialStorage.getCredential(
-                            LocalContext.current,
-                            selectedEnvironment.value.name
-                        )
-                        if (creds != null) {
-                            TextButton(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        val authenticated = authenticateWithBiometrics(
-                                            context,
-                                            activity = activity
-                                        )
-                                        if (!authenticated) {
-                                            Toast.makeText(
-                                                context,
-                                                "Failed to authenticate",
-                                                Toast.LENGTH_SHORT
-                                            )
-                                                .show()
-                                        } else {
-                                            email.value = creds.username
-                                            password.value = creds.password
-                                            viewModel.loginToWorkspace(email.value, password.value)
-                                        }
-                                    }
-
-                                }, modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(all = 16.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Fingerprint,
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(end = 16.dp)
-                                )
-                                Text(
-                                    text = "Login with Device Authentication",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
-
-                    DebuggableBuild(
-                        viewModel,
-                        selectedEnvironment,
-                        preferences,
-                        modifier = modifier
+                    Text(
+                        text = "Login",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
-
                 }
+                UserInfoComponent()
+                DebuggableBuild(
+                    viewModel,
+                    selectedEnvironment,
+                    preferences,
+                    modifier = modifier
+                )
+
             }
         }
+    }
+}
+
+@Composable
+fun UserInfoComponent() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val context = LocalContext.current
+        Text(
+            "I'm a new user",
+            modifier = Modifier.clickable {
+                val url = "http://tinyurl.com/OTP2026Walk"
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = url.toUri()
+                context.startActivity(intent)
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+        )
+
+        Text(
+            "Questions? Contact Us",
+            modifier = Modifier
+                .clickable {
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = "mailto:".toUri() // Only email apps should handle this
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("tdei@uw.edu"))
+                    }
+
+                    // Check if there is an app to handle the intent to prevent crashes
+                    if (intent.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(intent)
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "No email app found. Please contact us directly at: tdei@uw.edu ",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                .padding(top = 16.dp),
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+        )
+
+        Text(
+            "Looking for AccessMap Route?",
+            modifier = Modifier.clickable {
+                val url =
+                    "https://www.accessmap.app/dir?wp=-122.3346457_47.6059712%27-122.3310313_47.6062336&region=wa.seattle&lon=-122.3331631&lat=47.6070952&z=15.6&sa=1&mu=0.12&md=0.15&ab=1&aps=0"
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = url.toUri()
+                context.startActivity(intent)
+            },
+            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+        )
     }
 }
 
@@ -500,8 +551,6 @@ fun DebuggableBuild(
             verticalArrangement = Arrangement.Center
         ) {
             if (isDebugModeEnabled) {
-                EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
-                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "Exit debug mode",
                     style = MaterialTheme.typography.bodyMedium,
@@ -584,20 +633,16 @@ fun EnvironmentDropdownMenu(
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
         Row {
-            Text(
-                text = "Select Environment :",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .align(Alignment.CenterVertically)
-            )
-            Button(
+            OutlinedButton(
                 onClick = { expanded = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor =
+                        MaterialTheme.colorScheme.primary
+                )
 
             ) {
-                Text(text = selectedEnvironment.value.name)
+                Text(text = "Environment : ${selectedEnvironment.value.name}")
+                Spacer(modifier = Modifier.padding(horizontal = 8.dp))
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Dropdown Icon"

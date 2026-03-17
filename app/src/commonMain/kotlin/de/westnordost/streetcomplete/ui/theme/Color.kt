@@ -50,16 +50,16 @@ val LeafGreen = Color(0xff006a00)
 
 val LightColors = lightColorScheme(
     primary = Color(0xFF32006E),
-    secondary = Color(0xFFE93CAC),
-    onPrimary = Color.White,
-    onSecondary = Color.White
+    secondary = Color(0xFFB5007A),
+    onPrimary = Color(0xFFFFFFFF),
+    onSecondary = Color(0xFFFFFFFF)
 )
 
 val DarkColors = darkColorScheme(
-    primary = Color(0xFF846200),
-    secondary = Color(0xFF5B3592),
-    onPrimary = Color.White,
-    onSecondary = Color.White
+    primary = Color(0xFFCBBEFF),
+    secondary = Color(0xFFFFADE1),
+    onPrimary = Color(0xFF32006E),
+    onSecondary = Color(0xFF5D003F)
 )
 
 val ColorScheme.isLight

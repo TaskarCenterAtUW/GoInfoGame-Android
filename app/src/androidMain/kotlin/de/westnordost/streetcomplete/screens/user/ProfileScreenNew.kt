@@ -252,9 +252,6 @@ fun PreferenceRow(
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = MaterialTheme.colorScheme.secondary
-            ),
             modifier = Modifier.weight(1f)
         )
     }

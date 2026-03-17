@@ -424,7 +424,6 @@ private fun HeaderRow(
             Text(
                 text = "Select the quest and start answering.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF42526E)
             )
         }
 
@@ -436,7 +435,7 @@ private fun HeaderRow(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
             colors = ButtonDefaults.filledTonalButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
             Icon(
@@ -535,7 +534,7 @@ private fun QuestCard(quest: QuestUiModel, onHideQuest: (questKey: QuestKey) -> 
             Text(
                 text = quest.description,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     lineHeight = 20.sp
                 )
             )
@@ -699,7 +698,7 @@ fun QuestBottomSheet(
                 shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(

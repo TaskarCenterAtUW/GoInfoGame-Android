@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#FFB7A57A</color>
+    <color name="primary">#FFCBBEFF</color>
     <color name="accent">#FFC5B4E3</color>
     <color name="accent_variant">#F44336</color>
     <color name="button_background">#262626</color>
@@ -8,7 +8,7 @@
     <color name="inverted_background">#aaa</color>
     <color name="background">#121212</color>
     <color name="background_transparent">#00121212</color>
-    <color name="text">#fff</color>
+    <color name="text">#FFFFFF</color>
     <color name="text_based_on_main_colors">@color/accent</color>
 
     <color name="hint_text">#999</color>
@@ -21,4 +21,6 @@
     <color name="smoothness_vehicle_tyre">#70808b</color>
     <color name="popup_background_color">#000000</color>
     <color name="light_purple_background">#454549</color>
+    <color name="primary_text">#FF32006E</color>
+    <color name="secondary_text">#FF5D003F</color>
 </resources>

@@ -2,15 +2,15 @@
 <resources>
     <color name="primary">#FF32006E</color>
     <color name="primary_variant">#FFB7A57A</color>
-    <color name="accent">#FFE93CAC</color>
+    <color name="accent">#FFB5007A</color>
     <color name="accent_variant">#FFC5B4E3</color>
     <color name="button_background">#FFFFFF</color>
     <color name="on_primary">#fff</color>
     <color name="on_secondary">#fff</color>
 
-    <color name="text">#000</color>
+    <color name="text">#FF000000</color>
     <color name="text_based_on_main_colors">@color/primary</color>
-    <color name="inverted_background">#666</color>
+    <color name="inverted_background">#FF666666</color>
 
     <color name="selection">#66ff6600</color>
     <color name="selection_frame">#bbff6600</color>
@@ -20,7 +20,7 @@
     <color name="background">#fff</color>
     <color name="background_transparent">#0fff</color>
 
-    <color name="hint_text">#666</color>
+    <color name="hint_text">#1A1A1A</color>
     <color name="label_text_below_image">#000</color>
     <color name="title_text_next_to_image">#000</color>
     <color name="description_text_next_to_image">#000</color>
@@ -54,4 +54,6 @@
     <color name="pressed">#ddd</color>
     <color name="popup_background_color">#FFFFFF</color>
     <color name="light_purple_background">#FFDEDAE4</color>
+    <color name="primary_text">#FFFFFFFF</color>
+    <color name="secondary_text">#FFFFFFFF</color>
 </resources>

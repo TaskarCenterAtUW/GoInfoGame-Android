@@ -19,12 +19,12 @@
         tools:text="TextView" />
 
     <ImageView
-        android:contentDescription="@string/quest_image"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintBottom_toTopOf="@id/description"
         android:id="@+id/imageView"
+        android:importantForAccessibility="no"
         android:layout_width="0dp"
         app:layout_constraintWidth_percent="0.35"
         android:layout_height="150dp"
@@ -33,9 +33,7 @@
         android:adjustViewBounds="true"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@drawable/black_image_border"
         android:scaleType="centerCrop"
-        tools:src="@drawable/surface_asphalt"
         android:visibility="gone"
         app:layout_constraintHorizontal_bias="0.0" />
 
