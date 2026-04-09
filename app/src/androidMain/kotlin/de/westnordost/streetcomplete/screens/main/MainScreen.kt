@@ -15,14 +15,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,6 +38,13 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -56,6 +59,7 @@ import de.westnordost.streetcomplete.data.overlays.Overlay
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
 import de.westnordost.streetcomplete.resources.Res
+import de.westnordost.streetcomplete.resources.ic_undo_24
 import de.westnordost.streetcomplete.resources.location_dot_small
 import de.westnordost.streetcomplete.resources.map_attribution_osm
 import de.westnordost.streetcomplete.screens.main.controls.AttributionButton
@@ -79,11 +83,9 @@ import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
 import de.westnordost.streetcomplete.screens.main.teammode.TeamModeWizard
 import de.westnordost.streetcomplete.screens.main.urlconfig.ApplyUrlConfigEffect
 import de.westnordost.streetcomplete.screens.settings.SettingsActivity
-import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.common.AnimatedScreenVisibility
 import de.westnordost.streetcomplete.ui.common.LargeCreateIcon
 import de.westnordost.streetcomplete.ui.common.StopRecordingIcon
-import de.westnordost.streetcomplete.ui.common.UndoIcon
 import de.westnordost.streetcomplete.ui.ktx.dir
 import de.westnordost.streetcomplete.ui.ktx.pxToDp
 import de.westnordost.streetcomplete.util.ktx.sendErrorReportEmail
@@ -157,7 +159,6 @@ fun MainScreen(
     val hasEdits by remember { derivedStateOf { editItems.isNotEmpty() } }
 
     val showZoomButtons by viewModel.showZoomButtons.collectAsState()
-
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
@@ -313,12 +314,17 @@ fun MainScreen(
                         .fillMaxWidth()
                         .align(Alignment.BottomStart)
                 ) {
-                    Box(Modifier.fillMaxWidth()) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .semantics { isTraversalGroup = true }
+                    ) {
                         // bottom-end controls
                         Column(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .padding(4.dp),
+                                .padding(4.dp)
+                                .semantics { isTraversalGroup = true },
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.End,
                         ) {
@@ -339,7 +345,12 @@ fun MainScreen(
                             if (showZoomButtons) {
                                 ZoomButtons(
                                     onZoomIn = onClickZoomIn,
-                                    onZoomOut = onClickZoomOut
+                                    onZoomOut = onClickZoomOut,
+                                    modifier = Modifier.semantics(mergeDescendants = true) {
+                                        // This provides a "flat" string for TalkBack to read
+                                        // while the visual remains styled.
+                                        traversalIndex = 1f
+                                    }
                                 )
                             }
                             LocationStateButton(
@@ -347,6 +358,11 @@ fun MainScreen(
                                 state = locationState,
                                 isNavigationMode = isNavigationMode,
                                 isFollowing = isFollowingPosition,
+                                modifier = Modifier.semantics(mergeDescendants = true) {
+                                    // This provides a "flat" string for TalkBack to read
+                                    // while the visual remains styled.
+                                    traversalIndex = 2f
+                                }
                             )
                         }
 
@@ -392,8 +408,13 @@ fun MainScreen(
                                     // Don't allow undoing while uploading. Should prevent race conditions.
                                     // (Undoing quest while also uploading it at the same time)
                                     enabled = !isUploadingOrDownloading,
-                                ) {
-                                    UndoIcon()
+                                    modifier = Modifier.semantics(mergeDescendants = true) {
+                                        // This provides a "flat" string for TalkBack to read
+                                        // while the visual remains styled.
+                                        contentDescription = "Undo Edits Button"
+                                        traversalIndex = 0f
+                                    }) {
+                                    Icon(painterResource(Res.drawable.ic_undo_24), null)
                                 }
                             }
                         }
@@ -405,6 +426,9 @@ fun MainScreen(
                         Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
+                            .clearAndSetSemantics {
+
+                            }
                     ) {
                         val attributions = viewModel.attribution
                         attributions.collectAsState().value?.let { it ->
@@ -417,7 +441,8 @@ fun MainScreen(
                         AttributionButton(
                             userHasMovedMap = userHasMovedCamera,
                             attributions = mapAttribution,
-                            modifier = Modifier.align(Alignment.TopStart),
+                            modifier = Modifier
+                                .align(Alignment.TopStart).clearAndSetSemantics{},
                             popupElevation = 4.dp,
                         )
                         ScaleBar(

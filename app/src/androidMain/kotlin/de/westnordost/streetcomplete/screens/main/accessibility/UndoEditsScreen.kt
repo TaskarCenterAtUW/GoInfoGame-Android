@@ -49,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -386,7 +388,15 @@ private fun UndoItemCard(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
             dragHandle = {
-                BottomSheetDefaults.DragHandle(width = 64.dp)
+                Box(
+                    modifier = Modifier
+                        .semantics(mergeDescendants = true) {
+                            // This tells accessibility services to ignore this element
+                            hideFromAccessibility()
+                        }
+                ) {
+                    BottomSheetDefaults.DragHandle(width = 64.dp)
+                }
             },
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {

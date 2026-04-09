@@ -28,6 +28,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -86,7 +88,12 @@ fun UndoChangesBottomSheetContent(
                 }
                 append(type)
             },
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.semantics {
+                // This provides a "flat" string for TalkBack to read
+                // while the visual remains styled.
+                contentDescription = "Type: $type"
+            }
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -96,7 +103,12 @@ fun UndoChangesBottomSheetContent(
                 }
                 append(dateTime)
             },
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.semantics {
+                // This provides a "flat" string for TalkBack to read
+                // while the visual remains styled.
+                contentDescription = "Date & Time: $dateTime"
+            }
         )
 
         Spacer(Modifier.height(16.dp))
