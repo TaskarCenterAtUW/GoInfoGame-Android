@@ -1,7 +1,9 @@
 package de.westnordost.streetcomplete.view
 
 import android.graphics.drawable.Drawable
+import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import androidx.annotation.DrawableRes
 import coil.Coil.setImageLoader
 import coil.ImageLoader
@@ -20,7 +22,7 @@ data class ResImage(@DrawableRes val resId: Int) : Image
 data class DrawableImage(val drawable: Drawable) : Image
 data class ImageUrl(val url: String? = "https://picsum.photos/320/480") : Image
 
-fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {}) {
+fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {}, progressBar: ProgressBar? = null) {
 
     val customImageLoader = ImageLoader.Builder(context)
         .okHttpClient {
@@ -43,32 +45,46 @@ fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {
         .build()
 
     when (image) {
-        is ResImage -> setImageResource(image.resId)
-        is DrawableImage -> setImageDrawable(image.drawable)
+        is ResImage -> {
+            progressBar?.visibility = View.GONE
+            setImageResource(image.resId)
+        }
+        is DrawableImage -> {
+            progressBar?.visibility = View.GONE
+            setImageDrawable(image.drawable)
+        }
         is ImageUrl -> {
             val url = image.url
             if (url.isNullOrEmpty()) {
-                Log.w("ImageView", "Skipped loading: URL is null or empty")
+                progressBar?.visibility = View.GONE
                 setImageResource(R.drawable.blank_big)
                 imageIsEmptyUpdateTextSize()
             } else {
+                // Show progress bar when starting to load from URL
+                progressBar?.visibility = View.VISIBLE
                 this.load(url) {
                     setImageLoader(customImageLoader)
                     placeholder(R.drawable.blank_big)
                     error(R.drawable.blank_big)
                     listener(
-                        onError = { _, throwable ->
+                        onError = { _, _ ->
+                            // Hide progress bar on error
+                            progressBar?.visibility = View.GONE
                             setImageResource(R.drawable.blank_big)
                             imageIsEmptyUpdateTextSize()
                         },
                         onSuccess = { _, _ ->
-                            Log.w("ImageView", "Success to load image from URL: $url")
+                            // Hide progress bar on success
+                            progressBar?.visibility = View.GONE
                         }
                     )
                 }
             }
         }
 
-        null -> setImageDrawable(null)
+        null -> {
+            progressBar?.visibility = View.GONE
+            setImageDrawable(null)
+        }
     }
 }
