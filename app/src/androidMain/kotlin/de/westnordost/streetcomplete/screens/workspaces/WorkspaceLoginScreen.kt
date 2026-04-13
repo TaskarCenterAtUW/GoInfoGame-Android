@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -59,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -296,10 +299,16 @@ fun LoginCard(
     val screenTitle =
         "You're in the login page, Please enter your credentials in the edit boxes below"
     val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     Surface(
         modifier = Modifier
             .fillMaxSize()
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = { focusManager.clearFocus() }
+            )
     ) {
         Column(verticalArrangement = Arrangement.SpaceEvenly) {
             Column(
@@ -403,6 +412,12 @@ fun LoginCard(
                             }
                         }
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                 )
@@ -432,6 +447,12 @@ fun LoginCard(
                             )
                         }
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                 )
@@ -636,8 +657,7 @@ fun EnvironmentDropdownMenu(
             OutlinedButton(
                 onClick = { expanded = true },
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor =
-                        MaterialTheme.colorScheme.primary
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 )
 
             ) {

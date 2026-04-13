@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.view.image_select
 import android.graphics.drawable.Drawable
 import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.view.isGone
@@ -18,6 +19,7 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val descriptionView: TextView? = itemView.findViewById(R.id.descriptionView)
 
     private val onlyTextView : TextView? = itemView.findViewById(R.id.textWithoutImage)
+    private val progressBar : ProgressBar? = itemView.findViewById(R.id.progress_bar)
     private val dropDownArrowImageView: ImageView? =
         itemView.findViewById(R.id.dropDownArrowImageView)
 
@@ -69,7 +71,7 @@ class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
                     it.setText(item.title)
                     textView?.visibility = View.GONE
                 }
-            })
+            }, progressBar)
         textView?.setText(item.title)
         descriptionView?.setText(item.description)
         descriptionView?.isGone = item.description == null
