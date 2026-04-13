@@ -11,8 +11,12 @@ import coil.disk.DiskCache
 import coil.load
 import coil.request.CachePolicy
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.util.logs.Log
 import okhttp3.OkHttpClient
+import org.koin.android.ext.android.inject
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 
 /* Same idea here as the Icon class introduced in min API level 23. If the min API level is
    Build.VERSION_CODES_M, usage of this class can be replaced with Icon */
@@ -23,6 +27,7 @@ data class DrawableImage(val drawable: Drawable) : Image
 data class ImageUrl(val url: String? = "https://picsum.photos/320/480") : Image
 
 fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {}, progressBar: ProgressBar? = null) {
+    val preferences: Preferences by inject(Preferences::class.java)
 
     val customImageLoader = ImageLoader.Builder(context)
         .okHttpClient {
@@ -55,7 +60,7 @@ fun ImageView.setImage(image: Image?, imageIsEmptyUpdateTextSize: () -> Unit = {
         }
         is ImageUrl -> {
             val url = image.url
-            if (url.isNullOrEmpty()) {
+            if (url.isNullOrEmpty() || preferences.isLowBandwidthModeEnabled) {
                 progressBar?.visibility = View.GONE
                 setImageResource(R.drawable.blank_big)
                 imageIsEmptyUpdateTextSize()

@@ -18,9 +18,9 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import coil.load
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
@@ -30,11 +30,13 @@ import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
 import de.westnordost.streetcomplete.view.setImage
+import org.koin.java.KoinJavaComponent.inject
 
 class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     RecyclerView.Adapter<ViewHolder>() {
     var givenItems = emptyList<LongFormQuest>()
     var needRefreshIds = listOf<Int?>()
+    val preferences: Preferences by inject(Preferences::class.java)
     var items: List<LongFormQuest> = emptyList()
         set(value) {
             if (givenItems.isEmpty()) {
@@ -197,7 +199,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
             binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
-            if (!item.questImageUrl.isNullOrBlank()) {
+            if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.questImage.visibility = View.VISIBLE
 
                 binding.questImage.setImage(
@@ -208,7 +210,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                 binding.questImage.setOnLongClickListener {
                     val dialog = Dialog(binding.root.context)
-                    showDialog(dialog,binding.questImage.drawable,item)
+                    showDialog(dialog, binding.questImage.drawable, item)
                 }
             } else {
                 binding.questImage.visibility = View.GONE
@@ -248,7 +250,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
-            if (!item.questImageUrl.isNullOrBlank()) {
+            if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.questImage.visibility = View.VISIBLE
                 binding.questImage.setImage(
                     image =
@@ -258,7 +260,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                 binding.questImage.setOnLongClickListener {
                     val dialog = Dialog(binding.root.context)
-                    showDialog(dialog,binding.questImage.drawable,item)
+                    showDialog(dialog, binding.questImage.drawable, item)
                 }
             } else {
                 binding.questImage.visibility = View.GONE
@@ -330,8 +332,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun bind(item: LongFormQuest, position: Int) {
 
             binding.title.text = item.questTitle
-            if (item.questImageUrl != null) {
-                binding.imageView.setImage(ImageUrl(item.questImageUrl), progressBar = binding.progressBar)
+            if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
+                binding.imageView.setImage(
+                    ImageUrl(item.questImageUrl),
+                    progressBar = binding.progressBar
+                )
                 binding.imageView.visibility = View.VISIBLE
             } else {
                 binding.imageView.visibility = View.GONE
@@ -339,7 +344,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
             binding.imageView.setOnLongClickListener {
                 val dialog = Dialog(binding.root.context)
-                showDialog(dialog,binding.imageView.drawable,item)
+                showDialog(dialog, binding.imageView.drawable, item)
             }
 
             binding.description.text = item.questDescription

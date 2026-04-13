@@ -69,6 +69,7 @@ fun ProfileScreenNewContent(
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>,
 ) {
     var isBiometricEnabled by remember { mutableStateOf(preferences.isBiometricEnabled) }
+    var lowBandwidthModeEnabled by remember { mutableStateOf(preferences.isLowBandwidthModeEnabled) }
     var isFollowModeEnabled by remember { mutableStateOf(preferences.isFollowModeEnabled) }
     val userName by viewModel.userName.collectAsState()
 
@@ -139,6 +140,7 @@ fun ProfileScreenNewContent(
             )
             var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
             var followMode by remember { mutableStateOf<Boolean?>(null) }
+            var lowBandwidth by remember { mutableStateOf<Boolean?>(null) }
 
             LaunchedEffect(biometricLogin) {
                 biometricLogin?.let { newValue ->
@@ -168,12 +170,28 @@ fun ProfileScreenNewContent(
                 }
             }
 
+            LaunchedEffect(lowBandwidth) {
+                lowBandwidth?.let { newValue ->
+                    preferences.isLowBandwidthModeEnabled = newValue
+                    lowBandwidthModeEnabled = newValue
+                    lowBandwidth = null
+                }
+            }
+
             PreferenceRow(
                 stringResource(R.string.diable_biometric_title),
                 stringResource(R.string.disable_biometric_message),
                 isBiometricEnabled,
                 onCheckedChange = { newValue ->
                     biometricLogin = newValue // trigger LaunchedEffect
+                })
+
+            PreferenceRow(
+                stringResource(R.string.low_band_width),
+                stringResource(R.string.low_band_width_message),
+                lowBandwidthModeEnabled,
+                onCheckedChange = { newValue ->
+                    lowBandwidth = newValue // trigger LaunchedEffect
                 })
 
             // PreferenceRow(

@@ -206,6 +206,12 @@ class Preferences(private val prefs: ObservableSettings) {
         }
         get() = prefs.getBoolean("${environment}_$BIOMETRIC_ENABLED", true)
 
+    var isLowBandwidthModeEnabled: Boolean
+        set(value) {
+            prefs.putBoolean("${environment}_$LOW_BANDWIDTH_MODE_ENABLED", value)
+        }
+        get() = prefs.getBoolean("${environment}_$LOW_BANDWIDTH_MODE_ENABLED", false)
+
     var isFollowModeEnabled: Boolean
         set(value) {
             prefs.putBoolean("${environment}_$FOLLOW_MODE_ENABLED", value)
@@ -431,6 +437,7 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val AUTH_TOKEN_EXPIRY_TIME = "auth.token.expiry.time"
         private const val WORKSPACE_USER_ID = "workspace.user.id"
         private const val BIOMETRIC_ENABLED = "biometric.enabled"
+        private const val LOW_BANDWIDTH_MODE_ENABLED = "low.bandwidth.enabled"
         private const val FOLLOW_MODE_ENABLED = "follow.mode.enabled"
         private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
     }

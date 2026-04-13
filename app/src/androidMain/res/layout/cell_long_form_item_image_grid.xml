@@ -27,6 +27,7 @@
         android:importantForAccessibility="no"
         android:layout_width="0dp"
         app:layout_constraintWidth_percent="0.35"
+        android:background="@drawable/black_image_border"
         android:layout_height="150dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
