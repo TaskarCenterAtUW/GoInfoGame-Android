@@ -28,7 +28,7 @@ import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
-import de.westnordost.streetcomplete.data.karta_view.domain.model.ImageUploadResponse
+import de.westnordost.streetcomplete.data.karta_view.domain.model.PhotoLookupResponse
 import de.westnordost.streetcomplete.data.location.SurveyChecker
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
@@ -53,6 +53,7 @@ import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.osm.applyReplacePlaceTo
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
@@ -65,6 +66,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
@@ -92,7 +95,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val surveyChecker: SurveyChecker by inject()
 
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
-    private val httpClient: HttpClient by inject()
+    private val httpClient: HttpClient by inject(named("kartaViewClient"))
+    private val prefs: Preferences by inject()
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
@@ -438,30 +442,42 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     private fun startKartViewFlow(bitmap: Bitmap?, displayedLocation: Location?) {
         viewLifecycleScope.launch {
-            val sequenceId = createSequence()
-            sequenceId?.apply {
-                val isUploaded = uploadImageInSequence(this, bitmap, displayedLocation)
-                if (isUploaded.first) {
-                    //https://storage13.openstreetcam.org/files/photo/2024/11/19/lth/10206921_53966_673c7da2672cf.jpg
-                    //After storage13 add .openstreetcam.org in the url
-                    // FInd where storage13 is in the first
-                    val first = isUploaded.second?.first?.replace(
-                        "storage13",
-                        "storage13.openstreetcam.org"
-                    )
-                    val url = "https://${first}/lth/${isUploaded.second?.second}"
-                    onImageUrlReceived(url)
-                    closeSequence(this)
+            val sequenceId = createSequence() ?: return@launch
+            val uploaded = uploadImageInSequence(sequenceId, bitmap, displayedLocation)
+            if (uploaded) {
+                val lthUrl = getPhotoLthUrl(sequenceId, sequenceIndex = 1)
+                if (lthUrl != null) {
+                    Log.d("KartViewFlow", lthUrl)
+                    onImageUrlReceived(lthUrl)
                 } else {
                     hideProgressbar()
-                    Log.e("KartViewFlow", "Image upload failed")
+                    Log.e("KartViewFlow", "Failed to retrieve photo URL")
                 }
+                closeSequence(sequenceId)
+            } else {
+                hideProgressbar()
+                Log.e("KartViewFlow", "Image upload failed")
             }
         }
     }
 
+    private suspend fun getPhotoLthUrl(sequenceId: String, sequenceIndex: Int): String? {
+        val token = prefs.kartaViewAccessToken
+        val response = httpClient.get("https://api.openstreetcam.org/2.0/photo/") {
+            parameter("access_token", token)
+            parameter("sequenceId", sequenceId)
+            parameter("sequenceIndex", sequenceIndex)
+        }
+        if (response.status == HttpStatusCode.OK) {
+            val photoResponse = response.body<PhotoLookupResponse>()
+            return photoResponse.result.data.firstOrNull()?.imageLthUrl
+        }
+        Log.e("KartViewFlow", "Photo lookup failed: ${response.status}")
+        return null
+    }
+
     private suspend fun closeSequence(sequenceId: String) {
-        val token = "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+        val token = prefs.kartaViewAccessToken
         val response =
             httpClient.post("https://api.openstreetcam.org/1.0/sequence/finished-uploading/") {
                 setBody(MultiPartFormDataContent(formData {
@@ -485,68 +501,47 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         sequenceId: String,
         bitmap: Bitmap?,
         location: Location?,
-    ): Pair<Boolean, Pair<String, String>?> {
+    ): Boolean {
+        val displayedLocation = listener?.displayedMapLocation ?: return false
+        bitmap ?: return false
 
-        val displayedLocation = listener?.displayedMapLocation
-        if (displayedLocation != null) {
-            bitmap?.let {
-                val byteArrayOutputStream = ByteArrayOutputStream()
-                it.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-                val byteArray = byteArrayOutputStream.toByteArray()
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
 
-                val response = httpClient.post("https://api.openstreetcam.org/1.0/photo/") {
-                    setBody(MultiPartFormDataContent(formData {
-                        append(
-                            "access_token",
-                            "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
-                        )
-                        append("sequenceId", sequenceId)
-                        append("sequenceIndex", 1)
-                        append(
-                            "coordinate",
-                            "${displayedLocation.latitude},${displayedLocation.longitude}"
-                        )
-                        var finalBearing = 0.0f
-                        finalBearing =
-                            if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
-                                displayedLocation.bearing
-                            } else {
-                                compassBearing.toFloat()
-                            }
-                        append("headers", finalBearing.toInt().toString())
-                        append("photo", byteArray, Headers.build {
-                            append(HttpHeaders.ContentType, "image/jpeg")
-                            append(
-                                HttpHeaders.ContentDisposition,
-                                "filename=\"wework-kartaview.jpg\""
-                            )
-                        })
-                    }))
-                }
-
-                if (response.status == HttpStatusCode.OK) {
-                    val uploadResponse = response.body<ImageUploadResponse>()
-                    val pair =
-                        Pair(uploadResponse.osv.photo.path, uploadResponse.osv.photo.photoName)
-                    showSnackBar(
-                        "Image Uploaded Successfully",
-                        view,
-                        requireActivity() as ComponentActivity
-                    )
-                    Log.d("UploadImage", "Image uploaded successfully")
-                    return Pair(true, pair)
-                } else {
-                    Log.e("UploadImage", "Image upload failed: ${response.status}")
-                    showSnackBar(
-                        "Failed to upload image to KartaView. Please try again later " + response.status,
-                        view, requireActivity() as ComponentActivity
-                    )
-                    hideProgressbar()
-                    return Pair(false, null)
-                }
-            }
+        val finalBearing = if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
+            displayedLocation.bearing
+        } else {
+            compassBearing.toFloat()
         }
-        return Pair(false, null)
+
+        val response = httpClient.post("https://api.openstreetcam.org/1.0/photo/") {
+            setBody(MultiPartFormDataContent(formData {
+                append("access_token", prefs.kartaViewAccessToken)
+                append("sequenceId", sequenceId)
+                append("sequenceIndex", 1)
+                append("coordinate", "${displayedLocation.latitude},${displayedLocation.longitude}")
+                append("headers", finalBearing.toInt().toString())
+                append("photo", byteArray, Headers.build {
+                    append(HttpHeaders.ContentType, "image/jpeg")
+                    append(HttpHeaders.ContentDisposition, "filename=\"wework-kartaview.jpg\"")
+                })
+            }))
+        }
+
+        return if (response.status == HttpStatusCode.OK) {
+            showSnackBar("Image Uploaded Successfully", view, requireActivity() as ComponentActivity)
+            Log.d("UploadImage", "Image uploaded successfully")
+            true
+        } else {
+            Log.e("UploadImage", "Image upload failed: ${response.status}")
+            showSnackBar(
+                "Failed to upload image to KartaView. Please try again later " + response.status,
+                view, requireActivity() as ComponentActivity
+            )
+            hideProgressbar()
+            false
+        }
     }
 
     private fun showSnackBar(message: String, view: View?, componentActivity: ComponentActivity) {
@@ -556,7 +551,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private suspend fun createSequence(): String? {
-        val token = "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+        val token = prefs.kartaViewAccessToken
         val response = httpClient.post("https://api.openstreetcam.org/1.0/sequence/") {
             setBody(MultiPartFormDataContent(formData {
                 append("access_token", token)

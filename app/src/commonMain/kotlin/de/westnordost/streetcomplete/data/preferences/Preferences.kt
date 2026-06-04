@@ -212,6 +212,10 @@ class Preferences(private val prefs: ObservableSettings) {
         }
         get() = prefs.getBoolean("${environment}_$LOW_BANDWIDTH_MODE_ENABLED", false)
 
+    var kartaViewAccessToken: String
+        set(value) { prefs.putString(KARTAVIEW_ACCESS_TOKEN, value) }
+        get() = prefs.getString(KARTAVIEW_ACCESS_TOKEN, DEFAULT_KARTAVIEW_ACCESS_TOKEN)
+
     var isFollowModeEnabled: Boolean
         set(value) {
             prefs.putBoolean("${environment}_$FOLLOW_MODE_ENABLED", value)
@@ -440,5 +444,8 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val LOW_BANDWIDTH_MODE_ENABLED = "low.bandwidth.enabled"
         private const val FOLLOW_MODE_ENABLED = "follow.mode.enabled"
         private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
+        private const val KARTAVIEW_ACCESS_TOKEN = "kartaview.access_token"
+        private const val DEFAULT_KARTAVIEW_ACCESS_TOKEN =
+            "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
     }
 }
