@@ -155,12 +155,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         override fun afterTextChanged(s: Editable?) {
             val text = s.toString()
             if (text.isNotBlank()) {
-                val number = text.toLongOrNull()
+                val number = text.toFloatOrNull()
                 if (number == null) {
                     textInputLayout?.error = "Invalid number"
-                } else if (number < (minValue?.toLong() ?: 0L)) {
+                } else if (number < (minValue?.toFloat() ?: 0F)) {
                     textInputLayout?.error = "Value should be greater than $minValue"
-                } else if (number > maxValue.toLong()) {
+                } else if (number > maxValue.toFloat()) {
                     textInputLayout?.error = "Value should be less than $maxValue"
                 } else {
                     textInputLayout?.error = null

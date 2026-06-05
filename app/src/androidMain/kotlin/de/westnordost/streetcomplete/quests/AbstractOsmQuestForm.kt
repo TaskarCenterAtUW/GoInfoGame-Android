@@ -445,6 +445,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             val sequenceId = createSequence() ?: return@launch
             val uploaded = uploadImageInSequence(sequenceId, bitmap, displayedLocation)
             if (uploaded) {
+                closeSequence(sequenceId)
                 val lthUrl = getPhotoLthUrl(sequenceId, sequenceIndex = 1)
                 if (lthUrl != null) {
                     Log.d("KartViewFlow", lthUrl)
@@ -452,11 +453,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                 } else {
                     hideProgressbar()
                     Log.e("KartViewFlow", "Failed to retrieve photo URL")
+                    showSnackBar("Failed to retrieve photo URL. Please try again later.", view, requireActivity() as ComponentActivity)
                 }
-                closeSequence(sequenceId)
             } else {
                 hideProgressbar()
                 Log.e("KartViewFlow", "Image upload failed")
+                showSnackBar("Image upload failed. Please try again later.", view, requireActivity() as ComponentActivity)
             }
         }
     }
@@ -470,7 +472,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
         if (response.status == HttpStatusCode.OK) {
             val photoResponse = response.body<PhotoLookupResponse>()
-            return photoResponse.result.data.firstOrNull()?.imageLthUrl
+            return photoResponse.result?.data?.firstOrNull()?.imageLthUrl
         }
         Log.e("KartViewFlow", "Photo lookup failed: ${response.status}")
         return null
