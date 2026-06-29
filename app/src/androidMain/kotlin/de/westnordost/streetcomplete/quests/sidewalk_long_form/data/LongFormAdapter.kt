@@ -329,6 +329,22 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         val binding: CellLongFormItemImageGridBinding,
         val allowMultiChoice: Boolean,
     ) : ViewHolder(binding.root) {
+
+        // Created once and reused across rebinds. Replacing binding.list.adapter on every bind
+        // (which happens whenever this question is in needRefreshIds and any answer changes)
+        // forced the inner RecyclerView to recycle its ImageViews into a brand new adapter
+        // instance, which could let an in-flight image load for the old item land on the
+        // recycled view after it was rebound to a different item.
+        private val imageSelectAdapter =
+            ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
+        private var selectionListener: ImageSelectAdapter.OnItemSelectionListener? = null
+
+        init {
+            binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
+            binding.list.isNestedScrollingEnabled = false
+            binding.list.adapter = imageSelectAdapter
+        }
+
         fun bind(item: LongFormQuest, position: Int) {
 
             binding.title.text = item.questTitle
@@ -348,18 +364,15 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             }
 
             binding.description.text = item.questDescription
-            val imageSelectAdapter =
-                ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
-            binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
-            binding.list.isNestedScrollingEnabled = false
-            binding.list.adapter = imageSelectAdapter
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
 
             imageSelectAdapter.selectedIndices =
                 item.selectedIndex ?: emptyList()
-            imageSelectAdapter.listeners.add(object : ImageSelectAdapter.OnItemSelectionListener {
+
+            selectionListener?.let { imageSelectAdapter.listeners.remove(it) }
+            val listener = object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
                     handleSelection(
@@ -435,8 +448,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                     dialog.show()
                 }
-            })
-
+            }
+            imageSelectAdapter.listeners.add(listener)
+            selectionListener = listener
 
             imageSelectAdapter.items = item.questAnswerChoices?.map {
                 Item2(
