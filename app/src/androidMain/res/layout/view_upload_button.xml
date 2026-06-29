@@ -10,6 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:contentDescription="@string/sync_changes"
+        android:scaleX="-1"
         app:srcCompat="@drawable/ic_outline_sync"
         app:tint="#2D0369" />
 
