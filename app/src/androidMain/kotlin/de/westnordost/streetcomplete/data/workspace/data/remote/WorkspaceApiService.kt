@@ -64,7 +64,7 @@ class WorkspaceApiService(
     }
 
     suspend fun getTDEIUserDetails(emailId: String): UserInfoResponse {
-        val url = environmentManager.currentEnvironment.tdeiApiUrl
+        val url = environmentManager.currentEnvironment.tdeiUserManagementBaseurl
 
         try {
             val response = performHttpCallWithFirebaseTracing(
@@ -107,7 +107,7 @@ class WorkspaceApiService(
     }
 
     suspend fun loginToWorkspace(username: String, password: String): LoginResponse {
-        val url = environmentManager.currentEnvironment.tdeiUserManagementEndpoint + "/authenticate"
+        val url = environmentManager.currentEnvironment.tdeiApiBaseUrl + "/authenticate"
         try {
             val response = performHttpCallWithFirebaseTracing(
                 client = httpClient,
@@ -145,7 +145,7 @@ class WorkspaceApiService(
     }
 
     suspend fun refreshToken(refreshToken: String): LoginResponse {
-        val url = environmentManager.currentEnvironment.tdeiUserManagementEndpoint + "/refresh-token"
+        val url = environmentManager.currentEnvironment.tdeiApiBaseUrl + "/refresh-token"
         try {
 
             val response = performHttpCallWithFirebaseTracing(

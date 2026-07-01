@@ -2,8 +2,8 @@ package de.westnordost.streetcomplete.data.preferences
 
 enum class Environment(
     val baseUrl: String,
-    val tdeiUserManagementEndpoint: String,
-    val tdeiApiUrl: String,
+    val tdeiApiBaseUrl: String,
+    val tdeiUserManagementBaseurl: String,
     val osmUrl: String,
     val tdeiWebUrl: String,
     val appUpdateVersionCheckUrl: String = APP_UPDATE_VERSION_CHECKER_URL,
