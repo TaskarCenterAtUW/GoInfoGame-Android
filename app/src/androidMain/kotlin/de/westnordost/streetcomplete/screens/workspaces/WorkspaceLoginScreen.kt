@@ -621,8 +621,10 @@ fun DebuggableBuild(
     var clickCount by remember { mutableIntStateOf(0) }
 
     Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
