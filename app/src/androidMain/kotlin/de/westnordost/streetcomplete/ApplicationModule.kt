@@ -170,7 +170,7 @@ suspend fun refreshJwtToken(
         }
 
         val response =
-            tempClient.post(environmentManager.currentEnvironment.loginUrl + "/refresh-token") {
+            tempClient.post(environmentManager.currentEnvironment.tdeiApiBaseUrl + "/refresh-token") {
                 setBody(preferences.workspaceRefreshToken)
                 headers {
                     contentType(ContentType.Application.Json)

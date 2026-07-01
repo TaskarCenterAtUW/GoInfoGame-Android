@@ -44,6 +44,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -58,7 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -456,6 +456,20 @@ fun LoginCard(
                     modifier = Modifier
                         .fillMaxWidth()
                 )
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = {
+                        // open URL in browser
+                        val url =
+                            selectedEnvironment.value.tdeiWebUrl + "/ForgotPassword"
+                        val intent = Intent(Intent.ACTION_VIEW)
+                        intent.data = url.toUri()
+                        context.startActivity(intent)
+                    }) {
+                        Text("Forgot password?", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+
                 if (isDebugModeEnabled) {
                     EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
                 }
@@ -497,7 +511,7 @@ fun LoginCard(
 fun UserInfoComponent() {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val context = LocalContext.current
