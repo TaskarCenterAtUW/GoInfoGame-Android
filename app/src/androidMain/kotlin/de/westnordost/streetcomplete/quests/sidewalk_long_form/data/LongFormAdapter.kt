@@ -348,6 +348,11 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun bind(item: LongFormQuest, position: Int) {
 
             binding.title.text = item.questTitle
+            binding.title.contentDescription = if (allowMultiChoice) {
+                "${item.questTitle}. Multiple items can be selected"
+            } else {
+                "${item.questTitle}. Only one item can be selected"
+            }
             if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.imageView.setImage(
                     ImageUrl(item.questImageUrl),
