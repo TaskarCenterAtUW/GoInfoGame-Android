@@ -15,13 +15,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Fingerprint
@@ -310,13 +313,16 @@ fun LoginCard(
                 onClick = { focusManager.clearFocus() }
             )
     ) {
-        Column(verticalArrangement = Arrangement.SpaceEvenly) {
+        Column(
+            verticalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.fillMaxSize()
+        ) {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.3f)
+                    .weight(0.3f)
                     .clearAndSetSemantics {}
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
@@ -352,156 +358,186 @@ fun LoginCard(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(18.dp),
                 modifier = modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 48.dp)
-                    .semantics {
-                        contentDescription = screenTitle
-                    }
+                    .weight(0.7f)
+                    .fillMaxWidth()
+                    .imePadding()
             ) {
-                val context = LocalContext.current
-                var visibility by rememberSaveable { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = email.value, onValueChange = { newText -> email.value = newText },
-                    label = {
-                        Text(
-                            text = stringResource(
-                                id = R.string.email
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    trailingIcon = {
-                        if (preferences.isBiometricEnabled) {
-                            val coroutineScope = rememberCoroutineScope()
-                            val creds = SecureCredentialStorage.getCredential(
-                                LocalContext.current,
-                                selectedEnvironment.value.name
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 48.dp)
+                        .semantics {
+                            contentDescription = screenTitle
+                        }
+                ) {
+                    val context = LocalContext.current
+                    var visibility by rememberSaveable { mutableStateOf(false) }
+                    OutlinedTextField(
+                        value = email.value, onValueChange = { newText -> email.value = newText },
+                        label = {
+                            Text(
+                                text = stringResource(
+                                    id = R.string.email
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
-                            if (creds != null) {
-                                IconButton(onClick = {
-                                    coroutineScope.launch {
-                                        val authenticated = authenticateWithBiometrics(
-                                            context,
-                                            activity = activity
-                                        )
-                                        if (!authenticated) {
-                                            Toast.makeText(
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        trailingIcon = {
+                            if (preferences.isBiometricEnabled) {
+                                val coroutineScope = rememberCoroutineScope()
+                                val creds = SecureCredentialStorage.getCredential(
+                                    LocalContext.current,
+                                    selectedEnvironment.value.name
+                                )
+                                if (creds != null) {
+                                    IconButton(onClick = {
+                                        coroutineScope.launch {
+                                            val authenticated = authenticateWithBiometrics(
                                                 context,
-                                                "Failed to authenticate",
-                                                Toast.LENGTH_SHORT
+                                                activity = activity
                                             )
-                                                .show()
-                                        } else {
-                                            email.value = creds.username
-                                            password.value = creds.password
-                                            viewModel.loginToWorkspace(email.value, password.value)
+                                            if (!authenticated) {
+                                                Toast.makeText(
+                                                    context,
+                                                    "Failed to authenticate",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                    .show()
+                                            } else {
+                                                email.value = creds.username
+                                                password.value = creds.password
+                                                viewModel.loginToWorkspace(
+                                                    email.value,
+                                                    password.value
+                                                )
+                                            }
                                         }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Fingerprint,
+                                            contentDescription = "Login with Device Authentication"
+                                        )
                                     }
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Fingerprint,
-                                        contentDescription = "Login with Device Authentication"
-                                    )
                                 }
                             }
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = password.value,
-                    onValueChange = { newText -> password.value = newText },
-                    label = {
-                        Text(
-                            text = stringResource(
-                                id = R.string.password
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    trailingIcon = {
-                        val image =
-                            if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        IconButton(onClick = { visibility = !visibility }) {
-                            Icon(
-                                imageVector = image,
-                                contentDescription = "Toggle password visibility"
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = password.value,
+                        onValueChange = { newText -> password.value = newText },
+                        label = {
+                            Text(
+                                text = stringResource(
+                                    id = R.string.password
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        trailingIcon = {
+                            val image =
+                                if (visibility) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            IconButton(onClick = { visibility = !visibility }) {
+                                Icon(
+                                    imageVector = image,
+                                    contentDescription = "Toggle password visibility"
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
+
+                    if (isDebugModeEnabled) {
+                        EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(
+                            onClick = {
+                                if (email.value.isEmpty() || password.value.isEmpty()) {
+                                    Toast.makeText(
+                                        context,
+                                        "Please enter email and password",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@Button
+                                }
+                                viewModel.loginToWorkspace(email.value, password.value)
+                            }, modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Login",
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = {
-                        // open URL in browser
-                        val url =
-                            selectedEnvironment.value.tdeiWebUrl + "/ForgotPassword"
-                        val intent = Intent(Intent.ACTION_VIEW)
-                        intent.data = url.toUri()
-                        context.startActivity(intent)
-                    }) {
-                        Text("Forgot password?", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-
-                if (isDebugModeEnabled) {
-                    EnvironmentDropdownMenu(viewModel, selectedEnvironment, modifier = Modifier)
-                }
-                Button(
-                    onClick = {
-                        if (email.value.isEmpty() || password.value.isEmpty()) {
-                            Toast.makeText(
-                                context,
-                                "Please enter email and password",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@Button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            TextButton(onClick = {
+                                // open URL in browser
+                                val url =
+                                    selectedEnvironment.value.tdeiWebUrl + "/ForgotPassword"
+                                val intent = Intent(Intent.ACTION_VIEW)
+                                intent.data = url.toUri()
+                                context.startActivity(intent)
+                            }) {
+                                Text(
+                                    "Forgot password?",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
                         }
-                        viewModel.loginToWorkspace(email.value, password.value)
-                    }, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                ) {
-                    Text(
-                        text = "Login",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    UserInfoComponent()
                 }
-                UserInfoComponent()
+
                 DebuggableBuild(
                     viewModel,
                     selectedEnvironment,
                     preferences,
                     modifier = modifier
                 )
-
             }
         }
     }
@@ -523,7 +559,10 @@ fun UserInfoComponent() {
                 intent.data = url.toUri()
                 context.startActivity(intent)
             },
-            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         )
 
         Text(
@@ -547,7 +586,10 @@ fun UserInfoComponent() {
                     }
                 }
                 .padding(top = 16.dp),
-            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         )
 
         Text(
@@ -559,7 +601,10 @@ fun UserInfoComponent() {
                 intent.data = url.toUri()
                 context.startActivity(intent)
             },
-            style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.primary)
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
@@ -576,10 +621,8 @@ fun DebuggableBuild(
     var clickCount by remember { mutableIntStateOf(0) }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-        contentAlignment = Alignment.BottomCenter
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
