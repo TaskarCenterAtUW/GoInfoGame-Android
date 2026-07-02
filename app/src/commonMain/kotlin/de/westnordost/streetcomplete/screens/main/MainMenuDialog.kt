@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Download
@@ -94,7 +95,8 @@ fun MainMenuDialog(
                                 contentDescription = null
                             )
                         },
-                        text = stringResource(Res.string.action_download),
+                        text = "Fetch map data",
+                        description = "Fetch the latest quests from the server for this area"
                     )
                     HorizontalDivider(
                         modifier = Modifier
@@ -168,6 +170,7 @@ private fun CompactMenuButton(
     icon: @Composable () -> Unit,
     text: String,
     modifier: Modifier = Modifier,
+    description: String = "",
     enabled: Boolean = true,
     colors: ButtonColors = ButtonDefaults.buttonColors(
         containerColor = MaterialTheme.colorScheme.surface,
@@ -184,12 +187,22 @@ private fun CompactMenuButton(
             verticalAlignment = Alignment.CenterVertically
         ) {
             icon()
-            Text(
-                text = text,
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Column {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    textAlign = TextAlign.Start,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                if (description.isNotEmpty()){
+                    Text(
+                        text = description,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
         }
     }
 }
