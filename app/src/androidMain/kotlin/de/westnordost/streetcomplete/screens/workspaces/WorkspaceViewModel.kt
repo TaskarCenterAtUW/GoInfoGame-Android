@@ -4,6 +4,7 @@ import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.westnordost.streetcomplete.BuildConfig
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
 import de.westnordost.streetcomplete.data.elementfilter.ParseException
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.preferences.Environment
@@ -56,6 +57,7 @@ abstract class WorkspaceViewModel : ViewModel() {
 class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
     private val preferences: Preferences,
+    private val downloadedTilesController: DownloadedTilesController,
 ) :
     WorkspaceViewModel() {
     val isLoggedIn: Boolean = preferences.workspaceLogin
@@ -74,6 +76,10 @@ class WorkspaceViewModelImpl(
         _selectedWorkspace.value = (showWorkspaces.value as WorkspaceListState.Success).workspaces
             .filter { it.externalAppAccess == 1 && it.type == "osw" }[index]
         preferences.workspaceId = _selectedWorkspace.value?.id
+        // the "has this area already been downloaded" bookkeeping isn't scoped per workspace, so
+        // without this, switching workspaces while looking at the same map area makes auto-download
+        // wrongly think the new workspace's data is already fresh and skip fetching it
+        downloadedTilesController.invalidateAll()
     }
 
     private var userLocation: Location? = null
