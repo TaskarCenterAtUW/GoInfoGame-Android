@@ -158,6 +158,7 @@ import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
@@ -1192,8 +1193,19 @@ class MainActivity :
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    // badge shows unsynced edits plus tag conflicts still awaiting the user's
+                    // decision, so the toolbar reflects everything that still needs attention
+                    combine(viewModel.unsyncedEditsCount, viewModel.pendingConflictsCount) { edits, conflicts ->
+                        edits + conflicts
+                    }.collect { totalPendingCount ->
+                        uploadButton.uploadableCount = totalPendingCount
+                    }
+                }
+            }
+
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.unsyncedEditsCount.collect { count ->
-                        uploadButton.uploadableCount = count
                         uploadButton.setOnClickListener {
                             if (count > 0) {
                                 if (viewModel.isConnected) {

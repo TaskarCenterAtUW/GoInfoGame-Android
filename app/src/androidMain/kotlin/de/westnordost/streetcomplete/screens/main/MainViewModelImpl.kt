@@ -11,6 +11,8 @@ import de.westnordost.streetcomplete.data.messages.MessagesSource
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
@@ -72,6 +74,7 @@ class MainViewModelImpl(
     private val elementEditsSource: ElementEditsSource,
     private val noteEditsSource: NoteEditsSource,
     private val prefs: Preferences,
+    private val pendingTagConflictsController: PendingTagConflictsController,
 ) : MainViewModel() {
 
     /* error handling */
@@ -262,9 +265,14 @@ class MainViewModelImpl(
         awaitClose { downloadProgressSource.removeListener(listener) }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, downloadProgressSource.isDownloadInProgress)
 
+    // drives the same upload/download progress indicator (isUploadingOrDownloading below) while a
+    // conflict resolution is in flight, instead of adding a separate spinner for it
+    private val isResolvingConflict = MutableStateFlow(false)
+
     override val isUploadingOrDownloading: StateFlow<Boolean> =
-        combine(isUploading, isDownloading) { it1, it2 -> it1 || it2 }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        combine(isUploading, isDownloading, isResolvingConflict) { uploading, downloading, resolving ->
+            uploading || downloading || resolving
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = downloadProgressSource.isUserInitiatedDownloadInProgress
@@ -286,6 +294,40 @@ class MainViewModelImpl(
             uploadController.upload(isUserInitiated = true)
         } else {
             isRequestingLogin.value = true
+        }
+    }
+
+    /* tag conflicts held back instead of being discarded */
+
+    override val pendingConflictsCount: StateFlow<Int> = callbackFlow {
+        send(pendingTagConflictsController.getCount())
+        val listener = object : PendingTagConflictsController.Listener {
+            override fun onAdded(conflict: PendingTagConflict) { trySend(pendingTagConflictsController.getCount()) }
+            override fun onRemoved(conflict: PendingTagConflict) { trySend(pendingTagConflictsController.getCount()) }
+        }
+        pendingTagConflictsController.addListener(listener)
+        awaitClose { pendingTagConflictsController.removeListener(listener) }
+    }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
+
+    override suspend fun popNextConflict(): PendingTagConflict? = withContext(IO) {
+        pendingTagConflictsController.getOldest()
+    }
+
+    override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {
+        isResolvingConflict.value = true
+        try {
+            pendingTagConflictsController.resolveKeepMine(conflict)
+        } finally {
+            isResolvingConflict.value = false
+        }
+    }
+
+    override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {
+        isResolvingConflict.value = true
+        try {
+            pendingTagConflictsController.resolveKeepTheirs(conflict)
+        } finally {
+            isResolvingConflict.value = false
         }
     }
 

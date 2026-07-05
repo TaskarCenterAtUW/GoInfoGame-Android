@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.osm.created_elements.CreatedElementsTa
 import de.westnordost.streetcomplete.data.osm.edits.EditElementsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProviderTable
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsTable
 import de.westnordost.streetcomplete.data.osm.geometry.RelationGeometryTable
 import de.westnordost.streetcomplete.data.osm.geometry.WayGeometryTable
@@ -30,7 +31,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 23
+    const val DB_VERSION = 24
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -69,6 +70,9 @@ object DatabaseInitializer {
         db.exec(EditElementsTable.INDEX_CREATE)
 
         db.exec(CreatedElementsTable.CREATE)
+
+        // tag conflicts held back for the user to resolve instead of being discarded
+        db.exec(PendingTagConflictsTable.CREATE)
 
         // quests
         db.exec(VisibleEditTypeTable.CREATE)
@@ -304,6 +308,10 @@ object DatabaseInitializer {
             db.tryExec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.tryExec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.tryExec("ALTER TABLE osm_notes_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        }
+
+        if (oldVersion <= 23 && newVersion >= 24) {
+            db.exec(PendingTagConflictsTable.CREATE)
         }
     }
 }

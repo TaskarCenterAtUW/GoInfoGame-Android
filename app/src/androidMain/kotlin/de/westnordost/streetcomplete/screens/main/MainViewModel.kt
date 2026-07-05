@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.screens.main
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.overlays.Overlay
 import de.westnordost.streetcomplete.data.quest.QuestType
@@ -57,6 +58,12 @@ abstract class MainViewModel : ViewModel() {
 
     abstract val isUploading: StateFlow<Boolean>
     abstract val isUploadingOrDownloading: StateFlow<Boolean>
+
+    /* tag conflicts held back instead of being discarded, to be resolved one at a time */
+    abstract val pendingConflictsCount: StateFlow<Int>
+    abstract suspend fun popNextConflict(): PendingTagConflict?
+    abstract suspend fun resolveConflictKeepMine(conflict: PendingTagConflict)
+    abstract suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict)
 
     abstract val isUserInitiatedDownloadInProgress: Boolean
     abstract val isLoggedIn: StateFlow<Boolean>
