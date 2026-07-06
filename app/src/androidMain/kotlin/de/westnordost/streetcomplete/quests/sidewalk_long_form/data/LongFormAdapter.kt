@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -49,8 +50,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 }.flatten()
             }
 
-            field = manageVisibility(value).filter { it.visible }
-            notifyDataSetChanged()
+            // snapshot each item rather than keeping the live (mutated-in-place) instances, so the
+            // diff below compares genuinely independent before/after values - see LongFormQuest.snapshot()
+            val newList = manageVisibility(value).filter { it.visible }.map { it.snapshot() }
+            val diff = DiffUtil.calculateDiff(LongFormQuestDiffCallback(field, newList))
+            field = newList
+            diff.dispatchUpdatesTo(this)
         }
 
     enum class ViewType(val value: Int) {
@@ -66,6 +71,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     }
 
     private fun manageVisibility(itemCopy: List<LongFormQuest>): List<LongFormQuest> {
+        val byQuestId = itemCopy.associateBy { it.questId }
+
         for (quest in itemCopy) {
             val dependencies = quest.questAnswerDependency ?: emptyList()
             var isVisible = true
@@ -76,7 +83,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
                 if (requiredUserInput == null || requiredQuestId == null) continue
 
-                val filteredQuest = itemCopy.find { it.questId == requiredQuestId }
+                val filteredQuest = byQuestId[requiredQuestId]
                 if (filteredQuest != null) {
                     when (filteredQuest.userInput) {
                         is UserInput.Single -> {
@@ -101,7 +108,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     }
                 }
             }
-            itemCopy[itemCopy.indexOf(quest)].visible = isVisible
+            quest.visible = isVisible
         }
 
         itemCopy.forEach {
@@ -110,6 +117,22 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             }
         }
         return itemCopy
+    }
+
+    /** Diffs two snapshots of the visible question list so only rows that actually appeared,
+     *  disappeared, moved or changed content get rebound - not the whole list every time. */
+    private class LongFormQuestDiffCallback(
+        private val oldList: List<LongFormQuest>,
+        private val newList: List<LongFormQuest>,
+    ) : DiffUtil.Callback() {
+        override fun getOldListSize() = oldList.size
+        override fun getNewListSize() = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+            oldList[oldItemPosition].questId == newList[newItemPosition].questId
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+            oldList[oldItemPosition] == newList[newItemPosition]
     }
 
     class DefaultViewHolder(val binding: CellLongFormItemBinding) : ViewHolder(binding.root) {
@@ -339,6 +362,12 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             ImageSelectAdapter<LongFormQuest>(if (allowMultiChoice) -1 else 1)
         private var selectionListener: ImageSelectAdapter.OnItemSelectionListener? = null
 
+        // the choices for a given question never change once loaded, so this lets bind() skip
+        // rebuilding imageSelectAdapter.items (and the image reloads that would trigger) when this
+        // row was rebound for a reason unrelated to its own choices, e.g. another question's answer
+        // changing this row's position or an unrelated selection elsewhere in the form
+        private var boundQuestId: Int? = null
+
         init {
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
@@ -457,14 +486,21 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             imageSelectAdapter.listeners.add(listener)
             selectionListener = listener
 
-            imageSelectAdapter.items = item.questAnswerChoices?.map {
-                Item2(
-                    item,
-                    ImageUrl(it?.imageUrl),
-                    CharSequenceText(it?.choiceText!!),
-                    CharSequenceText("")
-                )
-            }!!
+            if (item.questId != boundQuestId) {
+                boundQuestId = item.questId
+                imageSelectAdapter.items = item.questAnswerChoices?.map {
+                    Item2(
+                        item,
+                        ImageUrl(it?.imageUrl),
+                        CharSequenceText(it?.choiceText!!),
+                        CharSequenceText("")
+                    )
+                }!!
+            } else {
+                // choices are unchanged, so the items setter above (and its own notifyDataSetChanged)
+                // was skipped - refresh explicitly so the selected/deselected highlight still updates
+                imageSelectAdapter.notifyDataSetChanged()
+            }
         }
 
         fun handleDeselection(
