@@ -52,6 +52,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -74,6 +75,7 @@ import de.westnordost.streetcomplete.screens.main.controls.PointerPinButton
 import de.westnordost.streetcomplete.screens.main.controls.ScaleBar
 import de.westnordost.streetcomplete.screens.main.controls.ZoomButtons
 import de.westnordost.streetcomplete.screens.main.controls.findEllipsisIntersection
+import de.westnordost.streetcomplete.screens.main.conflicts.DiscardedEditNoticeEffect
 import de.westnordost.streetcomplete.screens.main.conflicts.TagConflictResolutionEffect
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistorySidebar
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
@@ -162,6 +164,7 @@ fun MainScreen(
 
     val showZoomButtons by viewModel.showZoomButtons.collectAsState()
     val pendingConflictsCount by viewModel.pendingConflictsCount.collectAsState()
+    val discardedNoticesCount by viewModel.discardedNoticesCount.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
@@ -514,6 +517,11 @@ fun MainScreen(
         onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
         onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) }
     )
+    DiscardedEditNoticeEffect(
+        discardedNoticesCount = discardedNoticesCount,
+        onPopNextDiscardedNotice = { viewModel.popNextDiscardedNotice() },
+        onDismissDiscardedNotice = { viewModel.dismissDiscardedNotice(it) }
+    )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
     }
@@ -682,6 +690,10 @@ object PreviewMainViewModel : MainViewModel() {
     override suspend fun popNextConflict(): PendingTagConflict? = null
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {}
     override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {}
+    override val discardedNoticesCount: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = null
+    override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) {}
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = TODO("Not yet implemented")
     override val isLoggedIn: StateFlow<Boolean>

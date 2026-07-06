@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesTable
 import de.westnordost.streetcomplete.data.logs.LogsTable
 import de.westnordost.streetcomplete.data.osm.created_elements.CreatedElementsTable
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesTable
 import de.westnordost.streetcomplete.data.osm.edits.EditElementsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProviderTable
@@ -31,7 +32,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 24
+    const val DB_VERSION = 25
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -73,6 +74,9 @@ object DatabaseInitializer {
 
         // tag conflicts held back for the user to resolve instead of being discarded
         db.exec(PendingTagConflictsTable.CREATE)
+
+        // notices about edits that had to be discarded (unsalvageable structural conflicts)
+        db.exec(DiscardedEditNoticesTable.CREATE)
 
         // quests
         db.exec(VisibleEditTypeTable.CREATE)
@@ -312,6 +316,10 @@ object DatabaseInitializer {
 
         if (oldVersion <= 23 && newVersion >= 24) {
             db.exec(PendingTagConflictsTable.CREATE)
+        }
+
+        if (oldVersion <= 24 && newVersion >= 25) {
+            db.exec(DiscardedEditNoticesTable.CREATE)
         }
     }
 }

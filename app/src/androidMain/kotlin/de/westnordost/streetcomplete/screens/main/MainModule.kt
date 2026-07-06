@@ -15,7 +15,7 @@ val mainModule = module {
 
     viewModel<MainViewModel> { MainViewModelImpl(
         get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
-        get(), get(), get(), get(), get(), get(), get(), get()
+        get(), get(), get(), get(), get(), get(), get(), get(), get()
     ) }
     viewModel<MultiSelectViewModel> { MultiSelectViewModel() }
     viewModel<EditHistoryViewModel> { EditHistoryViewModelImpl(get(), get(), get(named("FeatureDictionaryLazy"))) }

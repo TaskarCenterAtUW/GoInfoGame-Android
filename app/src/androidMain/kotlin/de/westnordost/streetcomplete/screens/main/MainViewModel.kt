@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.screens.main
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.overlays.Overlay
@@ -64,6 +65,11 @@ abstract class MainViewModel : ViewModel() {
     abstract suspend fun popNextConflict(): PendingTagConflict?
     abstract suspend fun resolveConflictKeepMine(conflict: PendingTagConflict)
     abstract suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict)
+
+    /* notices about edits discarded due to an unsalvageable conflict, to be acknowledged one at a time */
+    abstract val discardedNoticesCount: StateFlow<Int>
+    abstract suspend fun popNextDiscardedNotice(): DiscardedEditNotice?
+    abstract suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice)
 
     abstract val isUserInitiatedDownloadInProgress: Boolean
     abstract val isLoggedIn: StateFlow<Boolean>

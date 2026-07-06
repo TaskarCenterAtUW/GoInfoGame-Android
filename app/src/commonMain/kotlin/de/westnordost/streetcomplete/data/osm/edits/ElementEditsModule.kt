@@ -16,10 +16,11 @@ val elementEditsModule = module {
     factory { OpenChangesetsDao(get()) }
     factory { EditElementsDao(get()) }
     factory { PendingTagConflictsDao(get(), get(), get()) }
+    factory { DiscardedEditNoticesDao(get(), get(), get()) }
 
     single { OpenChangesetsManager(get(), get(), get(), get()) }
 
-    single { ElementEditsUploader(get(), get(), get(), get(), get(), get()) }
+    single { ElementEditsUploader(get(), get(), get(), get(), get(), get(), get()) }
 
     single<ElementEditsSource> { get<ElementEditsController>() }
     single { ElementEditsController(get(), get(), get(), get()) }
@@ -28,4 +29,5 @@ val elementEditsModule = module {
     /* must be a singleton because there is a listener that should respond to a change in the
      * underlying database table */
     single { PendingTagConflictsController(get(), get(), get(), get()) }
+    single { DiscardedEditNoticesController(get()) }
 }

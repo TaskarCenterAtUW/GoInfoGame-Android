@@ -1193,10 +1193,15 @@ class MainActivity :
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    // badge shows unsynced edits plus tag conflicts still awaiting the user's
-                    // decision, so the toolbar reflects everything that still needs attention
-                    combine(viewModel.unsyncedEditsCount, viewModel.pendingConflictsCount) { edits, conflicts ->
-                        edits + conflicts
+                    // badge shows unsynced edits, tag conflicts still awaiting the user's decision,
+                    // and notices about discarded edits still to be acknowledged - everything that
+                    // still needs attention
+                    combine(
+                        viewModel.unsyncedEditsCount,
+                        viewModel.pendingConflictsCount,
+                        viewModel.discardedNoticesCount
+                    ) { edits, conflicts, discarded ->
+                        edits + conflicts + discarded
                     }.collect { totalPendingCount ->
                         uploadButton.uploadableCount = totalPendingCount
                     }

@@ -8,6 +8,8 @@ import de.westnordost.streetcomplete.data.download.DownloadController
 import de.westnordost.streetcomplete.data.download.DownloadProgressSource
 import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.messages.MessagesSource
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
@@ -75,6 +77,7 @@ class MainViewModelImpl(
     private val noteEditsSource: NoteEditsSource,
     private val prefs: Preferences,
     private val pendingTagConflictsController: PendingTagConflictsController,
+    private val discardedEditNoticesController: DiscardedEditNoticesController,
 ) : MainViewModel() {
 
     /* error handling */
@@ -329,6 +332,26 @@ class MainViewModelImpl(
         } finally {
             isResolvingConflict.value = false
         }
+    }
+
+    /* notices about edits discarded due to an unsalvageable conflict */
+
+    override val discardedNoticesCount: StateFlow<Int> = callbackFlow {
+        send(discardedEditNoticesController.getCount())
+        val listener = object : DiscardedEditNoticesController.Listener {
+            override fun onAdded(notice: DiscardedEditNotice) { trySend(discardedEditNoticesController.getCount()) }
+            override fun onRemoved(notice: DiscardedEditNotice) { trySend(discardedEditNoticesController.getCount()) }
+        }
+        discardedEditNoticesController.addListener(listener)
+        awaitClose { discardedEditNoticesController.removeListener(listener) }
+    }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
+
+    override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = withContext(IO) {
+        discardedEditNoticesController.getOldest()
+    }
+
+    override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) = withContext(IO) {
+        discardedEditNoticesController.dismiss(notice)
     }
 
     private val elementEditsListener = object : ElementEditsSource.Listener {
