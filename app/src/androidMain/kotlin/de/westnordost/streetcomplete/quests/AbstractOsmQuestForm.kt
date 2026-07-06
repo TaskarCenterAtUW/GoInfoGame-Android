@@ -332,7 +332,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             solve(
                                 UpdateElementTagsAction(
                                     element.first,
-                                    createQuestChanges(answer, extraTagList)
+                                    createQuestChanges(answer, extraTagList, element.first, element.second)
                                 ), element.second
                             )
                         }
@@ -352,10 +352,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private fun createQuestChanges(
         answer: T,
         extraTagList: MutableList<Pair<String, String>> = mutableListOf(),
+        forElement: Element = element,
+        forGeometry: ElementGeometry = geometry,
     ): StringMapChanges {
-        val changesBuilder = StringMapChangesBuilder(element.tags)
+        val changesBuilder = StringMapChangesBuilder(forElement.tags)
         extraTagList.forEach { changesBuilder[it.first] = it.second }
-        osmElementQuestType.applyAnswerTo(answer, changesBuilder, geometry, element.timestampEdited)
+        osmElementQuestType.applyAnswerTo(answer, changesBuilder, forGeometry, forElement.timestampEdited)
         val changes = changesBuilder.create()
         require(!changes.isEmpty()) {
             "${osmElementQuestType.name} was answered by the user but there are no changes!"
