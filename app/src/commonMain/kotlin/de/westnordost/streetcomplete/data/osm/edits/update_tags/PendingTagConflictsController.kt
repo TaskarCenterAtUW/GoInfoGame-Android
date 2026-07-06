@@ -44,11 +44,22 @@ class PendingTagConflictsController(
 
     fun getAll(): List<PendingTagConflict> = dao.getAll()
 
-    fun getCount(): Int = dao.getCount()
+    /** Number of elements with at least one pending conflict, not the number of conflicting tags -
+     *  matches the grouped-by-element dialog (see TagConflictResolutionEffect), where several
+     *  conflicting tags on the same element are shown and resolved together as one */
+    fun getCount(): Int = dao.getAll().distinctBy { it.elementType to it.elementId }.size
 
     /** Returns the oldest pending conflict without removing it - it stays queryable/re-showable
      *  until actually resolved, so it survives the app being killed mid-decision */
     fun getOldest(): PendingTagConflict? = dao.getAll().firstOrNull()
+
+    /** All pending conflicts for the same element as the oldest one, so they can be shown - and
+     *  decided on - together in a single dialog instead of one at a time */
+    fun getOldestGroup(): List<PendingTagConflict> {
+        val all = dao.getAll()
+        val oldest = all.firstOrNull() ?: return emptyList()
+        return all.filter { it.elementType == oldest.elementType && it.elementId == oldest.elementId }
+    }
 
     /** Re-assert the user's own answer for this tag, re-fetching the element fresh first so we
      *  don't race against a third edit that may have landed since the conflict was detected.

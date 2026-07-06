@@ -62,7 +62,7 @@ abstract class MainViewModel : ViewModel() {
 
     /* tag conflicts held back instead of being discarded, to be resolved one at a time */
     abstract val pendingConflictsCount: StateFlow<Int>
-    abstract suspend fun popNextConflict(): PendingTagConflict?
+    abstract suspend fun popNextConflictGroup(): List<PendingTagConflict>
     abstract suspend fun resolveConflictKeepMine(conflict: PendingTagConflict)
     abstract suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict)
 

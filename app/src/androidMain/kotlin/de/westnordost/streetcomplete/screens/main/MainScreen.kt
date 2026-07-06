@@ -513,7 +513,7 @@ fun MainScreen(
     }
     TagConflictResolutionEffect(
         pendingConflictsCount = pendingConflictsCount,
-        onPopNextConflict = { viewModel.popNextConflict() },
+        onPopNextConflictGroup = { viewModel.popNextConflictGroup() },
         onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
         onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) }
     )
@@ -687,7 +687,7 @@ object PreviewMainViewModel : MainViewModel() {
         get() = MutableStateFlow(true)
     override val pendingConflictsCount: StateFlow<Int>
         get() = MutableStateFlow(0)
-    override suspend fun popNextConflict(): PendingTagConflict? = null
+    override suspend fun popNextConflictGroup(): List<PendingTagConflict> = emptyList()
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {}
     override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {}
     override val discardedNoticesCount: StateFlow<Int>

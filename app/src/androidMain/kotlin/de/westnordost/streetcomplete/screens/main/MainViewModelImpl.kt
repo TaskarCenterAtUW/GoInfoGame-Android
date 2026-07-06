@@ -312,8 +312,8 @@ class MainViewModelImpl(
         awaitClose { pendingTagConflictsController.removeListener(listener) }
     }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
 
-    override suspend fun popNextConflict(): PendingTagConflict? = withContext(IO) {
-        pendingTagConflictsController.getOldest()
+    override suspend fun popNextConflictGroup(): List<PendingTagConflict> = withContext(IO) {
+        pendingTagConflictsController.getOldestGroup()
     }
 
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {
