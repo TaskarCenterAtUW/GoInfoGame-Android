@@ -16,6 +16,7 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
@@ -353,6 +354,9 @@ class MainViewModelImpl(
     override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) = withContext(IO) {
         discardedEditNoticesController.dismiss(notice)
     }
+
+    override suspend fun getElementLabel(type: ElementType, id: Long): String? =
+        "${type.name.lowercase().replaceFirstChar { it.uppercase() }} #$id"
 
     private val elementEditsListener = object : ElementEditsSource.Listener {
         override fun onAddedEdit(edit: ElementEdit) { launch { ensureLoggedIn() } }

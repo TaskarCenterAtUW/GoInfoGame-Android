@@ -57,6 +57,7 @@ import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConfli
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.overlays.Overlay
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
@@ -515,12 +516,14 @@ fun MainScreen(
         pendingConflictsCount = pendingConflictsCount,
         onPopNextConflictGroup = { viewModel.popNextConflictGroup() },
         onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
-        onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) }
+        onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) },
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
     )
     DiscardedEditNoticeEffect(
         discardedNoticesCount = discardedNoticesCount,
         onPopNextDiscardedNotice = { viewModel.popNextDiscardedNotice() },
-        onDismissDiscardedNotice = { viewModel.dismissDiscardedNotice(it) }
+        onDismissDiscardedNotice = { viewModel.dismissDiscardedNotice(it) },
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
     )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
@@ -694,6 +697,7 @@ object PreviewMainViewModel : MainViewModel() {
         get() = MutableStateFlow(0)
     override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = null
     override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) {}
+    override suspend fun getElementLabel(type: ElementType, id: Long): String? = null
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = TODO("Not yet implemented")
     override val isLoggedIn: StateFlow<Boolean>

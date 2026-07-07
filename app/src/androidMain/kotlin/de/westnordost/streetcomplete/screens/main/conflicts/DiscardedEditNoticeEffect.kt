@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import kotlinx.coroutines.launch
 
 /**
@@ -28,14 +29,20 @@ fun DiscardedEditNoticeEffect(
     discardedNoticesCount: Int,
     onPopNextDiscardedNotice: suspend () -> DiscardedEditNotice?,
     onDismissDiscardedNotice: suspend (DiscardedEditNotice) -> Unit,
+    onGetElementLabel: suspend (ElementType, Long) -> String?,
 ) {
     val scope = rememberCoroutineScope()
     var current by remember { mutableStateOf<DiscardedEditNotice?>(null) }
+    var elementLabel by remember { mutableStateOf<String?>(null) }
     var isDismissing by remember { mutableStateOf(false) }
 
     LaunchedEffect(discardedNoticesCount, current) {
         if (current == null && discardedNoticesCount > 0) {
-            current = onPopNextDiscardedNotice()
+            val notice = onPopNextDiscardedNotice()
+            elementLabel = if (notice?.elementType != null && notice.elementId != null) {
+                onGetElementLabel(notice.elementType, notice.elementId)
+            } else null
+            current = notice
         }
     }
 
@@ -55,8 +62,9 @@ fun DiscardedEditNoticeEffect(
         onDismissRequest = ::dismiss,
         title = { Text("Answer could not be saved") },
         text = {
+            val where = elementLabel ?: "near here"
             Text(
-                "Your answer for ${notice.editType.name} near here could not be saved: " +
+                "Your answer for ${notice.editType.name} on $where could not be saved: " +
                 "${notice.reason}. The quest may show up again."
             )
         },

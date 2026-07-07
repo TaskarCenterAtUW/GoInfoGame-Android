@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import kotlinx.coroutines.launch
 
 /**
@@ -41,9 +42,11 @@ fun TagConflictResolutionEffect(
     onPopNextConflictGroup: suspend () -> List<PendingTagConflict>,
     onResolveKeepMine: suspend (PendingTagConflict) -> Unit,
     onResolveKeepTheirs: suspend (PendingTagConflict) -> Unit,
+    onGetElementLabel: suspend (ElementType, Long) -> String?,
 ) {
     val scope = rememberCoroutineScope()
     var currentGroup by remember { mutableStateOf<List<PendingTagConflict>>(emptyList()) }
+    var elementLabel by remember { mutableStateOf<String?>(null) }
     var isApplying by remember { mutableStateOf(false) }
     val keepMine = remember { mutableStateMapOf<Long, Boolean>() }
 
@@ -54,6 +57,7 @@ fun TagConflictResolutionEffect(
             // default to keeping the user's own answer - they answered these, assume they still
             // want them unless they uncheck one
             group.forEach { keepMine[it.id] = true }
+            elementLabel = group.firstOrNull()?.let { onGetElementLabel(it.elementType, it.elementId) }
             currentGroup = group
         }
     }
@@ -81,9 +85,10 @@ fun TagConflictResolutionEffect(
         title = { Text("Someone else edited this too") },
         text = {
             Column {
+                val where = elementLabel ?: "${group.first().elementType.name.lowercase()} #${group.first().elementId}"
                 Text(
-                    "While you were answering, someone else changed the following on the same " +
-                    "${group.first().elementType.name.lowercase()}. Keep your answer for each?"
+                    "While you were answering, someone else changed the following on $where. " +
+                    "Keep your answer for each?"
                 )
                 group.forEach { conflict ->
                     val mine = conflict.mineValue ?: "(removed)"

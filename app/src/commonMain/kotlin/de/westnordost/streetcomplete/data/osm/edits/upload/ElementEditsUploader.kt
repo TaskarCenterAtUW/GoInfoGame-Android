@@ -77,10 +77,13 @@ class ElementEditsUploader(
             uploadedChangeListener?.onDiscarded(edit.type.name, edit.position)
 
             elementEditsController.markSyncFailed(edit)
+            val elementKey = edit.action.elementKeys.firstOrNull()
             discardedEditNoticesController.add(
                 DiscardedEditNotice(
                     id = 0,
                     editType = edit.type,
+                    elementType = elementKey?.type,
+                    elementId = elementKey?.id,
                     position = edit.position,
                     reason = e.message ?: "Could not be applied to the current state of the map",
                     createdTimestamp = nowAsEpochMilliseconds()

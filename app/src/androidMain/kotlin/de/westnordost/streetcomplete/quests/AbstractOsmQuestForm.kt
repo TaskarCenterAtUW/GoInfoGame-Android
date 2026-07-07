@@ -192,7 +192,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         super.onViewCreated(view, savedInstanceState)
 
         if (osmElementQuestType is AddGenericLong) {
-            setTitle((osmElementQuestType as AddGenericLong).item.elementType)
+            val category = (osmElementQuestType as AddGenericLong).item.elementType
+            // the category alone ("Sidewalk", "Kerb"...) doesn't distinguish between several
+            // queued quests of the same type - add the OSM element type and id
+            val typeAndId = "${element.type.name.lowercase().replaceFirstChar { it.uppercase() }} #${element.id}"
+            setTitle("$category — $typeAndId")
         }
 
         setHideQuestOnClick { hideQuest() }
