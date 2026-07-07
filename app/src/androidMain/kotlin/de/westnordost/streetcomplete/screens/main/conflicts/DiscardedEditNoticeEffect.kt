@@ -64,8 +64,8 @@ fun DiscardedEditNoticeEffect(
         text = {
             val where = elementLabel ?: "near here"
             Text(
-                "Your answer for ${notice.editType.name} on $where could not be saved: " +
-                "${notice.reason}. The quest may show up again."
+                "Your answer for ${notice.editType.name} on $where could not be saved \n Reason: " +
+                "${notice.reason}."
             )
         },
         confirmButton = {

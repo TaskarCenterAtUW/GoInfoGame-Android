@@ -86,7 +86,8 @@ class ElementEditsUploader(
                     elementId = elementKey?.id,
                     position = edit.position,
                     reason = e.message ?: "Could not be applied to the current state of the map",
-                    createdTimestamp = nowAsEpochMilliseconds()
+                    createdTimestamp = nowAsEpochMilliseconds(),
+                    workspaceId = edit.workspaceId
                 )
             )
 
