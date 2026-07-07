@@ -165,6 +165,7 @@ fun MainScreen(
 
     val showZoomButtons by viewModel.showZoomButtons.collectAsState()
     val pendingConflictsCount by viewModel.pendingConflictsCount.collectAsState()
+    val conflictReviewRequests by viewModel.conflictReviewRequests.collectAsState()
     val discardedNoticesCount by viewModel.discardedNoticesCount.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
@@ -514,6 +515,7 @@ fun MainScreen(
     }
     TagConflictResolutionEffect(
         pendingConflictsCount = pendingConflictsCount,
+        reviewRequests = conflictReviewRequests,
         onPopNextConflictGroup = { viewModel.popNextConflictGroup() },
         onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
         onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) },
@@ -690,6 +692,9 @@ object PreviewMainViewModel : MainViewModel() {
         get() = MutableStateFlow(true)
     override val pendingConflictsCount: StateFlow<Int>
         get() = MutableStateFlow(0)
+    override val conflictReviewRequests: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override fun requestConflictReview() {}
     override suspend fun popNextConflictGroup(): List<PendingTagConflict> = emptyList()
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {}
     override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {}

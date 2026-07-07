@@ -63,6 +63,10 @@ abstract class MainViewModel : ViewModel() {
 
     /* tag conflicts held back instead of being discarded, to be resolved one at a time */
     abstract val pendingConflictsCount: StateFlow<Int>
+    /** Bumped each time the user explicitly asks to review pending conflicts (tapping the toolbar
+     *  upload button), so a conflict sheet postponed via Cancel re-opens without an app restart */
+    abstract val conflictReviewRequests: StateFlow<Int>
+    abstract fun requestConflictReview()
     abstract suspend fun popNextConflictGroup(): List<PendingTagConflict>
     abstract suspend fun resolveConflictKeepMine(conflict: PendingTagConflict)
     abstract suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict)

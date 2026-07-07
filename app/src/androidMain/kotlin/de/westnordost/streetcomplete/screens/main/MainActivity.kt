@@ -1212,6 +1212,9 @@ class MainActivity :
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.unsyncedEditsCount.collect { count ->
                         uploadButton.setOnClickListener {
+                            // an explicit tap also re-opens the conflict sheet if the user
+                            // postponed it with Cancel earlier
+                            viewModel.requestConflictReview()
                             if (count > 0) {
                                 if (viewModel.isConnected) {
                                     viewModel.upload()

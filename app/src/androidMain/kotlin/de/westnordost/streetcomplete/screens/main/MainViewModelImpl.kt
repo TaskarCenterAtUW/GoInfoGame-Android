@@ -313,6 +313,12 @@ class MainViewModelImpl(
         awaitClose { pendingTagConflictsController.removeListener(listener) }
     }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
 
+    override val conflictReviewRequests = MutableStateFlow(0)
+
+    override fun requestConflictReview() {
+        conflictReviewRequests.value++
+    }
+
     override suspend fun popNextConflictGroup(): List<PendingTagConflict> = withContext(IO) {
         pendingTagConflictsController.getOldestGroup()
     }
