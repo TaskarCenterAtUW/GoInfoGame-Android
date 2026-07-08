@@ -446,6 +446,6 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
         private const val KARTAVIEW_ACCESS_TOKEN = "kartaview.access_token"
         private const val DEFAULT_KARTAVIEW_ACCESS_TOKEN =
-            "96aca5c4b80709fc6d9aced613b51905c0fbc37870640d7bdabede269165bde7"
+            "5b7bfc9104ad198bdba4108ed3048f380f118cfb528d750a2bf31041b7266a99"
     }
 }

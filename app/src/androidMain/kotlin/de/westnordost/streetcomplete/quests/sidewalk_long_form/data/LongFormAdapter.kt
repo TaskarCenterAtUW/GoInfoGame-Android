@@ -401,6 +401,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
+            // apply from current state, not just on selection events - the follow-up must also
+            // survive rebinds and holders recycled from other questions
+            updateChoiceFollowUp(item)
 
             imageSelectAdapter.selectedIndices =
                 item.selectedIndex ?: emptyList()
@@ -428,15 +431,10 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 }
 
                 fun handleChoiceFollowUp() {
-                    item.selectedIndex?.forEach { index ->
-                        if (!item.questAnswerChoices?.get(index)?.choiceFollowUp.isNullOrBlank()) {
-                            binding.choiceFollowUp.visibility = View.VISIBLE
-                            binding.choiceFollowUp.text =
-                                item.questAnswerChoices[index]?.choiceFollowUp
-                            return
-                        }
-                    }
-                    binding.choiceFollowUp.visibility = View.GONE
+                    // item is a snapshot taken at bind time - the selection that was just made
+                    // lives in givenItems, so read the follow-up state from there
+                    val live = givenItems.firstOrNull { it.questId == item.questId } ?: item
+                    updateChoiceFollowUp(live)
                 }
 
                 override fun onLongPress(index: Int, drawable: Drawable?) {
@@ -501,6 +499,20 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                 // was skipped - refresh explicitly so the selected/deselected highlight still updates
                 imageSelectAdapter.notifyDataSetChanged()
             }
+        }
+
+        /** Show the follow-up prompt (e.g. "Please take a photo of the obstruction.") of the
+         *  first selected choice that has one, hide it if none of the selected choices do */
+        private fun updateChoiceFollowUp(quest: LongFormQuest) {
+            quest.selectedIndex?.forEach { index ->
+                val followUp = quest.questAnswerChoices?.get(index)?.choiceFollowUp
+                if (!followUp.isNullOrBlank()) {
+                    binding.choiceFollowUp.visibility = View.VISIBLE
+                    binding.choiceFollowUp.text = followUp
+                    return
+                }
+            }
+            binding.choiceFollowUp.visibility = View.GONE
         }
 
         fun handleDeselection(
