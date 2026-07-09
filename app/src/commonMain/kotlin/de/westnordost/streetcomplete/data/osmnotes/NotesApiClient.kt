@@ -100,6 +100,7 @@ class NotesApiClient(
         try {
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes/$id") { expectSuccess = true
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                userAccessTokenSource.accessToken?.let { bearerAuth(it) }
             }
             val source = response.bodyAsChannel().asSource().buffered()
             return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId).singleOrNull()
