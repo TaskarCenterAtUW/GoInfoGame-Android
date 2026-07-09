@@ -27,8 +27,7 @@ import com.google.android.material.snackbar.Snackbar
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
-import de.westnordost.streetcomplete.data.karta_view.domain.model.PhotoLookupResponse
+import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.location.SurveyChecker
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
@@ -43,6 +42,7 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
@@ -53,7 +53,6 @@ import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
-import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.osm.applyReplacePlaceTo
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
@@ -62,17 +61,6 @@ import de.westnordost.streetcomplete.util.ktx.isSplittable
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.add
 import de.westnordost.streetcomplete.view.confirmIsSurvey
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.get
-import io.ktor.client.request.parameter
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -95,8 +83,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val surveyChecker: SurveyChecker by inject()
 
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
-    private val httpClient: HttpClient by inject(named("kartaViewClient"))
-    private val prefs: Preferences by inject()
+    private val kartaViewApiClient: KartaViewApiClient by inject()
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
@@ -169,14 +156,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         if (getElement != null) {
             element = getElement
         }
-        val displayedLocation = args.getParcelable<Location>(ARG_DISPLAYED_LOCATION)
         cameraLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == Activity.RESULT_OK) {
                     showProgressbar()
                     // Handle the image capture result here
                     val bitmap = result.data?.extras?.getParcelable<Bitmap>("data")
-                    startKartViewFlow(bitmap, displayedLocation)
+                    startKartViewFlow(bitmap)
                 } else {
 
                     // Handle the error state here
@@ -446,137 +432,43 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
     }
 
-    private fun startKartViewFlow(bitmap: Bitmap?, displayedLocation: Location?) {
+    private fun startKartViewFlow(bitmap: Bitmap?) {
         viewLifecycleScope.launch {
-            val sequenceId = createSequence() ?: return@launch
-            val uploaded = uploadImageInSequence(sequenceId, bitmap, displayedLocation)
-            if (uploaded) {
-                closeSequence(sequenceId)
-                val lthUrl = getPhotoLthUrl(sequenceId, sequenceIndex = 1)
-                if (lthUrl != null) {
-                    Log.d("KartViewFlow", lthUrl)
-                    onImageUrlReceived(lthUrl)
-                } else {
-                    hideProgressbar()
-                    Log.e("KartViewFlow", "Failed to retrieve photo URL")
-                    showSnackBar("Failed to retrieve photo URL. Please try again later.", view, requireActivity() as ComponentActivity)
-                }
-            } else {
+            val displayedLocation = listener?.displayedMapLocation
+            if (bitmap == null || displayedLocation == null) {
                 hideProgressbar()
-                Log.e("KartViewFlow", "Image upload failed")
-                showSnackBar("Image upload failed. Please try again later.", view, requireActivity() as ComponentActivity)
+                return@launch
             }
-        }
-    }
-
-    private suspend fun getPhotoLthUrl(sequenceId: String, sequenceIndex: Int): String? {
-        val token = prefs.kartaViewAccessToken
-        val response = httpClient.get("https://api.openstreetcam.org/2.0/photo/") {
-            parameter("access_token", token)
-            parameter("sequenceId", sequenceId)
-            parameter("sequenceIndex", sequenceIndex)
-        }
-        if (response.status == HttpStatusCode.OK) {
-            val photoResponse = response.body<PhotoLookupResponse>()
-            return photoResponse.result?.data?.firstOrNull()?.imageLthUrl
-        }
-        Log.e("KartViewFlow", "Photo lookup failed: ${response.status}")
-        return null
-    }
-
-    private suspend fun closeSequence(sequenceId: String) {
-        val token = prefs.kartaViewAccessToken
-        val response =
-            httpClient.post("https://api.openstreetcam.org/1.0/sequence/finished-uploading/") {
-                setBody(MultiPartFormDataContent(formData {
-                    append("access_token", token)
-                    append("sequenceId", sequenceId)
-                }))
+            val bearing = if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
+                displayedLocation.bearing
+            } else {
+                compassBearing.toFloat()
             }
-        if (response.status == HttpStatusCode.OK) {
-            val sequence = response.body<CreateSequenceResponse>()
-            Log.d("KartViewSequence", sequence.status.httpMessage)
-        } else {
-            showSnackBar(
-                "Failed to close KartaView Sequence. Please try again later " + response.status,
-                view, requireActivity() as ComponentActivity
-            )
-        }
-        hideProgressbar()
-    }
-
-    private suspend fun uploadImageInSequence(
-        sequenceId: String,
-        bitmap: Bitmap?,
-        location: Location?,
-    ): Boolean {
-        val displayedLocation = listener?.displayedMapLocation ?: return false
-        bitmap ?: return false
-
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-        val byteArray = byteArrayOutputStream.toByteArray()
-
-        val finalBearing = if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
-            displayedLocation.bearing
-        } else {
-            compassBearing.toFloat()
-        }
-
-        val response = httpClient.post("https://api.openstreetcam.org/1.0/photo/") {
-            setBody(MultiPartFormDataContent(formData {
-                append("access_token", prefs.kartaViewAccessToken)
-                append("sequenceId", sequenceId)
-                append("sequenceIndex", 1)
-                append("coordinate", "${displayedLocation.latitude},${displayedLocation.longitude}")
-                append("headers", finalBearing.toInt().toString())
-                append("photo", byteArray, Headers.build {
-                    append(HttpHeaders.ContentType, "image/jpeg")
-                    append(HttpHeaders.ContentDisposition, "filename=\"wework-kartaview.jpg\"")
-                })
-            }))
-        }
-
-        return if (response.status == HttpStatusCode.OK) {
-            showSnackBar("Image Uploaded Successfully", view, requireActivity() as ComponentActivity)
-            Log.d("UploadImage", "Image uploaded successfully")
-            true
-        } else {
-            Log.e("UploadImage", "Image upload failed: ${response.status}")
-            showSnackBar(
-                "Failed to upload image to KartaView. Please try again later " + response.status,
-                view, requireActivity() as ComponentActivity
-            )
-            hideProgressbar()
-            false
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+            try {
+                val urls = kartaViewApiClient.uploadImages(
+                    listOf(byteArrayOutputStream.toByteArray()),
+                    LatLon(displayedLocation.latitude, displayedLocation.longitude),
+                    bearing
+                )
+                showSnackBar("Image Uploaded Successfully", view, requireActivity() as ComponentActivity)
+                onImageUrlReceived(urls.first())
+            } catch (e: Exception) {
+                Log.e("KartViewFlow", "KartaView upload failed", e)
+                showSnackBar(
+                    e.message ?: "Image upload failed. Please try again later.",
+                    view, requireActivity() as ComponentActivity
+                )
+            } finally {
+                hideProgressbar()
+            }
         }
     }
 
     private fun showSnackBar(message: String, view: View?, componentActivity: ComponentActivity) {
         if (view != null) {
             Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show()
-        }
-    }
-
-    private suspend fun createSequence(): String? {
-        val token = prefs.kartaViewAccessToken
-        val response = httpClient.post("https://api.openstreetcam.org/1.0/sequence/") {
-            setBody(MultiPartFormDataContent(formData {
-                append("access_token", token)
-            }))
-        }
-        if (response.status == HttpStatusCode.OK) {
-            val sequence = response.body<CreateSequenceResponse>()
-            sequence.osv.sequence?.id?.let { Log.d("KartViewSequence", it) }
-            Log.d("KartViewStatus", sequence.status.httpMessage)
-            return sequence.osv.sequence?.id
-        } else {
-            hideProgressbar()
-            showSnackBar(
-                "Failed to create KartaView sequence. Image upload failed. Please try again later " + response.status,
-                view, requireActivity() as ComponentActivity
-            )
-            return null
         }
     }
 

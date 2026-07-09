@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete
 import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Resources
+import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
@@ -146,6 +147,8 @@ val appModule = module {
             }
         }
     }
+
+    single { KartaViewApiClient(get(), get(named("kartaViewClient")), get()) }
 
     single<Res> { Res }
     single<FileSystem> { SystemFileSystem }

@@ -2,9 +2,10 @@ package de.westnordost.streetcomplete.data.osmnotes.edits
 
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
+import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
-import de.westnordost.streetcomplete.data.osmnotes.PhotoServiceApiClient
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.COMMENT
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.CREATE
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
@@ -30,7 +31,7 @@ class NoteEditsUploader(
     private val userDataSource: UserDataSource,
     private val notesApi: NotesApiClient,
     private val tracksApi: TracksApiClient,
-    private val imageUploader: PhotoServiceApiClient,
+    private val imageUploader: KartaViewApiClient,
     private val fileSystem: FileSystem,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
@@ -51,13 +52,11 @@ class NoteEditsUploader(
     } }
 
     private suspend fun uploadMissedImageActivations() {
+        // KartaView photos need no activation step (their URLs are embedded in the note text at
+        // upload) - just clear any flags still set, e.g. from before the switch to KartaView
         while (true) {
             val edit = noteEditsController.getOldestNeedingImagesActivation() ?: break
-            // see uploadEdits
-            withContext(scope.coroutineContext) {
-                imageUploader.activate(edit.noteId)
-                noteEditsController.markImagesActivated(edit.id)
-            }
+            noteEditsController.markImagesActivated(edit.id)
         }
     }
 
@@ -73,7 +72,7 @@ class NoteEditsUploader(
 
     private suspend fun uploadEdit(edit: NoteEdit) {
         // try to upload the image and track if we have them
-        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths)
+        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths, edit.position)
         val trackText = uploadAndGetAttachedTrackText(edit.track, edit.text)
         val text = edit.text.orEmpty() + imageText + trackText
 
@@ -94,7 +93,6 @@ class NoteEditsUploader(
             noteController.put(note)
 
             if (edit.imagePaths.isNotEmpty()) {
-                imageUploader.activate(note.id)
                 noteEditsController.markImagesActivated(note.id)
             }
 
@@ -124,9 +122,9 @@ class NoteEditsUploader(
         }
     }
 
-    private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>): String {
+    private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>, position: LatLon): String {
         if (imagePaths.isNotEmpty()) {
-            val urls = imageUploader.upload(imagePaths)
+            val urls = imageUploader.upload(imagePaths, position)
             if (urls.isNotEmpty()) {
                 return "\n\nAttached photo(s):\n" + urls.joinToString("\n")
             }
