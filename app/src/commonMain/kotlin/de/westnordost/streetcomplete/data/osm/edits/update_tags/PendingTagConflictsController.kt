@@ -1,26 +1,23 @@
 package de.westnordost.streetcomplete.data.osm.edits.update_tags
 
-import de.westnordost.streetcomplete.data.ConflictException
-import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
-import de.westnordost.streetcomplete.data.osm.mapdata.Element
-import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
-import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
-import de.westnordost.streetcomplete.data.osm.mapdata.MapDataChanges
-import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
+import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
+import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
+import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
 import de.westnordost.streetcomplete.util.Listeners
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 
-/** Holds tag-level edit conflicts that were held back instead of being discarded (see
- *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditUploader]), and lets the user
- *  resolve them one at a time - either by re-asserting their own answer or by accepting the
- *  concurrent remote edit's value. */
+/** Holds tag-level conflicts of edits that are blocked from uploading (see
+ *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditUploader]): while any of these
+ *  exist for an edit, nothing of that edit is uploaded. The user resolves them per tag - keep
+ *  their own answer or accept the concurrent remote edit's value - and each decision is folded
+ *  into the blocked edit's stored action. Once the last conflict of an edit is resolved, the edit
+ *  is unblocked and uploads through the normal sync path as one unit, so the edit history shows
+ *  exactly what was pushed. */
 class PendingTagConflictsController(
     private val dao: PendingTagConflictsDao,
-    private val mapDataApi: MapDataApiClient,
-    private val mapDataController: MapDataController,
-    private val openChangesetsManager: OpenChangesetsManager,
+    private val elementEditsController: ElementEditsController,
 ) {
     interface Listener {
         fun onAdded(conflict: PendingTagConflict)
@@ -28,6 +25,21 @@ class PendingTagConflictsController(
     }
 
     private val listeners = Listeners<Listener>()
+
+    init {
+        // an edit deleted while blocked (e.g. undone from the edit history) takes its pending
+        // conflicts with it
+        elementEditsController.addListener(object : ElementEditsSource.Listener {
+            override fun onAddedEdit(edit: ElementEdit) {}
+            override fun onSyncedEdit(edit: ElementEdit) {}
+            override fun onDeletedEdits(edits: List<ElementEdit>) {
+                val editIds = edits.mapTo(HashSet()) { it.id }
+                for (conflict in dao.getAll().filter { it.editId in editIds }) {
+                    remove(conflict)
+                }
+            }
+        })
+    }
 
     fun addListener(listener: Listener) {
         listeners.add(listener)
@@ -44,117 +56,83 @@ class PendingTagConflictsController(
 
     fun getAll(): List<PendingTagConflict> = dao.getAll()
 
-    /** Number of elements with at least one pending conflict, not the number of conflicting tags -
-     *  matches the grouped-by-element dialog (see TagConflictResolutionEffect), where several
-     *  conflicting tags on the same element are shown and resolved together as one */
-    fun getCount(): Int = dao.getAll().distinctBy { it.elementType to it.elementId }.size
+    /** Number of blocked edits with at least one pending conflict, not the number of conflicting
+     *  tags - matches the grouped dialog (see TagConflictResolutionEffect), where all conflicting
+     *  tags of the same edit are shown and resolved together as one */
+    fun getCount(): Int = dao.getAll().distinctBy { it.editId }.size
 
     /** Returns the oldest pending conflict without removing it - it stays queryable/re-showable
      *  until actually resolved, so it survives the app being killed mid-decision */
     fun getOldest(): PendingTagConflict? = dao.getAll().firstOrNull()
 
-    /** All pending conflicts for the same element as the oldest one, so they can be shown - and
-     *  decided on - together in a single dialog instead of one at a time */
+    /** All pending conflicts of the same (blocked) edit as the oldest one, so they can be shown -
+     *  and decided on - together in a single dialog instead of one at a time */
     fun getOldestGroup(): List<PendingTagConflict> {
         val all = dao.getAll()
         val oldest = all.firstOrNull() ?: return emptyList()
-        return all.filter { it.elementType == oldest.elementType && it.elementId == oldest.elementId }
+        return all.filter { it.editId == oldest.editId }
     }
 
-    /** Re-assert the user's own answer for this tag, re-fetching the element fresh first so we
-     *  don't race against a third edit that may have landed since the conflict was detected.
-     *  Returns null if resolved (applied, or turned out to be a no-op), or an updated
-     *  [PendingTagConflict] (with a fresh "theirs" value) if the value changed *again* in the
-     *  meantime and the user should be asked again with up-to-date information. */
-    suspend fun resolveKeepMine(conflict: PendingTagConflict): PendingTagConflict? = withContext(
-        Dispatchers.IO
-    ) {
-        val currentElement = fetchElement(conflict.elementType, conflict.elementId)
-        if (currentElement == null) {
-            remove(conflict)
-            return@withContext null
-        }
-        val currentValue = currentElement.tags[conflict.tagKey]
-        val change = buildChange(conflict.tagKey, conflict.mineValue, currentValue)
-        if (change == null) {
-            // already matches what the user wants (or both sides agree it should be absent)
-            remove(conflict)
-            return@withContext null
-        }
-        val updatedElement = currentElement.changesApplied(StringMapChanges(setOf(change)))
-        val changes = MapDataChanges(modifications = listOf(updatedElement))
-
-        try {
-            val updates = uploadWithChangesetRetry(conflict, changes)
-            mapDataController.updateAll(updates)
-            remove(conflict)
-            null
-        } catch (e: ConflictException) {
-            // someone changed this tag yet again while we were resolving - re-fetch and let the
-            // user decide again with current data rather than silently failing
-            val refetched = fetchElement(conflict.elementType, conflict.elementId)
-            if (refetched == null) {
-                remove(conflict)
-                null
-            } else {
-                remove(conflict)
-                val refreshed =
-                    dao.add(conflict.copy(theirsValueAtDetection = refetched.tags[conflict.tagKey]))
-                listeners.forEach { it.onAdded(refreshed) }
-                refreshed
-            }
-        }
-    }
-
-    /** Accept the concurrent remote edit's value - no network call needed, the server already
-     *  has the value being kept */
-    suspend fun resolveKeepTheirs(conflict: PendingTagConflict) = withContext(Dispatchers.IO) {
+    /** Re-assert the user's own answer for this tag: rebuild the kept change in the blocked
+     *  edit's action against the value the conflict was detected against, so the re-upload's
+     *  conflict check doesn't re-flag it for the very collision the user just decided on. (If a
+     *  *third* value lands before the re-upload, upload-time detection catches it and the edit
+     *  is held again with fresh data.) */
+    suspend fun resolveKeepMine(conflict: PendingTagConflict) = withContext(Dispatchers.IO) {
+        updateBlockedEdit(conflict) { change -> change.rebuiltAgainst(conflict.theirsValueAtDetection) }
         remove(conflict)
+        unblockIfFullyResolved(conflict.editId)
     }
 
-    private suspend fun uploadWithChangesetRetry(
-        conflict: PendingTagConflict,
-        changes: MapDataChanges,
-    ) =
-        try {
-            val changesetId = openChangesetsManager.getOrCreateChangeset(
-                conflict.editType, conflict.source, conflict.position, false
-            )
-            mapDataApi.uploadChanges(changesetId, changes)
-        } catch (e: ConflictException) {
-            // could be a stale changeset that's been closed in the meantime - try once more with
-            // a fresh one before giving up and treating it as a real data conflict
-            val newChangesetId = openChangesetsManager.createChangeset(
-                conflict.editType,
-                conflict.source,
-                conflict.position
-            )
-            mapDataApi.uploadChanges(newChangesetId, changes)
-        }
+    /** Accept the concurrent remote edit's value: drop this tag's change from the blocked edit's
+     *  action - the server already has the value being kept */
+    suspend fun resolveKeepTheirs(conflict: PendingTagConflict) = withContext(Dispatchers.IO) {
+        updateBlockedEdit(conflict) { null }
+        remove(conflict)
+        unblockIfFullyResolved(conflict.editId)
+    }
 
-    private suspend fun fetchElement(type: ElementType, id: Long): Element? = when (type) {
-        ElementType.NODE -> mapDataApi.getNode(id)
-        ElementType.WAY -> mapDataApi.getWay(id)
-        ElementType.RELATION -> mapDataApi.getRelation(id)
+    /** Rewrite the conflict's tag change within its blocked edit's action; a null result from
+     *  [rewrite] drops the change */
+    private fun updateBlockedEdit(
+        conflict: PendingTagConflict,
+        rewrite: (StringMapEntryChange) -> StringMapEntryChange?,
+    ) {
+        val edit = elementEditsController.get(conflict.editId) ?: return
+        val action = edit.action as? UpdateElementTagsAction ?: return
+        val newChanges = action.changes.changes.mapNotNull { change ->
+            if (change.key == conflict.tagKey) rewrite(change) else change
+        }.toSet()
+        if (newChanges != action.changes.changes) {
+            elementEditsController.updateAction(edit.copy(action = action.copy(changes = StringMapChanges(newChanges))))
+        }
+    }
+
+    private fun unblockIfFullyResolved(editId: Long) {
+        if (dao.getAll().any { it.editId == editId }) return
+        val edit = elementEditsController.get(editId) ?: return
+        if (edit.isBlockedOnConflict) elementEditsController.markUnblocked(edit)
     }
 
     private fun remove(conflict: PendingTagConflict) {
         if (dao.delete(conflict.id)) listeners.forEach { it.onRemoved(conflict) }
     }
+}
 
-    private fun buildChange(
-        key: String,
-        mineValue: String?,
-        currentValue: String?,
-    ): StringMapEntryChange? = when {
-        mineValue != null && currentValue != null -> StringMapEntryModify(
-            key,
-            currentValue,
-            mineValue
-        )
+internal fun StringMapEntryChange.mineValue(): String? = when (this) {
+    is StringMapEntryAdd -> value
+    is StringMapEntryModify -> value
+    is StringMapEntryDelete -> null
+}
 
-        mineValue != null && currentValue == null -> StringMapEntryAdd(key, mineValue)
-        mineValue == null && currentValue != null -> StringMapEntryDelete(key, currentValue)
-        else -> null
+/** The same intended end value (or deletion), but expressed as a diff from [currentValue] instead
+ *  of from whatever this change's original baseline was */
+internal fun StringMapEntryChange.rebuiltAgainst(currentValue: String?): StringMapEntryChange {
+    val mine = mineValue()
+    return when {
+        mine != null && currentValue != null -> StringMapEntryModify(key, currentValue, mine)
+        mine != null && currentValue == null -> StringMapEntryAdd(key, mine)
+        mine == null && currentValue != null -> StringMapEntryDelete(key, currentValue)
+        else -> this
     }
 }

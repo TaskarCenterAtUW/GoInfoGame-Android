@@ -46,27 +46,26 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import kotlinx.coroutines.launch
 
 /**
- * Shows all pending tag conflicts *for one element* together, in a single "Resolve Conflicts"
- * bottom sheet: while answering a quest, a concurrent remote edit changed some of the same OSM
- * tags on the same element. Rather than silently discarding the whole answer (the old behavior),
- * the non-conflicting part already went through - this only asks about the specific tag(s) that
- * collided. Each conflict is shown as the long-form question it came from (falling back to the
- * raw tag key for non-long-form edits) with two tappable rows - the user's own answer (selected
- * by default) and the value someone else set - and a single Confirm applying the per-row choices.
+ * Shows all pending tag conflicts *of one held-back edit* together, in a single "Resolve
+ * Conflicts" bottom sheet: while answering a quest, a concurrent remote edit changed some of the
+ * same OSM tags on the same element. The whole answer is held back from uploading - nothing has
+ * been submitted yet. Each conflict is shown as the long-form question it came from (falling back
+ * to the raw tag key for non-long-form edits) with two tappable rows - the user's own answer
+ * (selected by default) and the value someone else set. Confirm folds the per-row choices into
+ * the held edit and it then uploads as one unit through the normal sync path.
  *
- * Cancel (or swiping the sheet away) postpones instead of resolving: nothing is uploaded or
- * dropped, the conflicts stay pending (and counted in the toolbar badge), and the sheet comes
- * back when the pending count changes (new conflict, sync), when the user taps the toolbar
- * upload button ([reviewRequests] bumps), or on app restart.
+ * Cancel (or swiping the sheet away) postpones instead of resolving: the answer stays held (and
+ * counted in the toolbar badge as an unsynced edit), and the sheet comes back when the pending
+ * count changes (new conflict, sync), when the user taps the toolbar upload button
+ * ([reviewRequests] bumps), or on app restart.
  *
- * Confirm dismisses the sheet immediately and resolves the choices in the background - progress
- * is visible through the toolbar spinner/badge, and if resolution fails partway (e.g. network
- * dropped), the unresolved conflicts simply stay pending and the sheet comes back on the next
- * trigger.
+ * Confirm dismisses the sheet immediately; the decisions are applied locally in the background
+ * and [onResolutionFinished] then triggers the upload, whose progress shows in the toolbar
+ * spinner as usual.
  *
  * Driven by [pendingConflictsCount] rather than a one-shot event so it naturally re-triggers
- * (fetching the next element's group of conflicts) whenever the current one is applied, giving a
- * strictly one-sheet-at-a-time queue even if several elements' conflicts piled up while the app
+ * (fetching the next edit's group of conflicts) whenever the current one is applied, giving a
+ * strictly one-sheet-at-a-time queue even if several edits' conflicts piled up while the app
  * was backgrounded.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +77,7 @@ fun TagConflictResolutionEffect(
     onResolveKeepMine: suspend (PendingTagConflict) -> Unit,
     onResolveKeepTheirs: suspend (PendingTagConflict) -> Unit,
     onGetElementLabel: suspend (ElementType, Long) -> String?,
+    onResolutionFinished: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var currentGroup by remember { mutableStateOf<List<PendingTagConflict>>(emptyList()) }
@@ -130,6 +130,9 @@ fun TagConflictResolutionEffect(
                 for ((conflict, keep) in choices) {
                     if (keep) onResolveKeepMine(conflict) else onResolveKeepTheirs(conflict)
                 }
+                // the edit is unblocked now - push it right away instead of waiting for the
+                // next auto-sync
+                onResolutionFinished()
             } catch (e: Exception) {
                 Log.w(
                     "TagConflictResolution",
@@ -212,8 +215,9 @@ fun TagConflictResolutionEffect(
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                     Text(
-                        "This element was changed by someone else while you were answering. " +
-                        "Choose which value to keep for each question below.",
+                        "This element was changed by someone else while you were answering, so " +
+                        "your answer has not been submitted yet. Choose which value to keep for " +
+                        "each question below - everything is submitted together once you confirm.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

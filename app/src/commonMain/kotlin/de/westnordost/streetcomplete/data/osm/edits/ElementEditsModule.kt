@@ -28,6 +28,6 @@ val elementEditsModule = module {
 
     /* must be a singleton because there is a listener that should respond to a change in the
      * underlying database table */
-    single { PendingTagConflictsController(get(), get(), get(), get()) }
+    single { PendingTagConflictsController(get(), get()) }
     single { DiscardedEditNoticesController(get()) }
 }

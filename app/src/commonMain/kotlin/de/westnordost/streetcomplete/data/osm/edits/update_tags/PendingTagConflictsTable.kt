@@ -5,6 +5,7 @@ object PendingTagConflictsTable {
 
     object Columns {
         const val ID = "id"
+        const val EDIT_ID = "edit_id"
         const val ELEMENT_TYPE = "element_type"
         const val ELEMENT_ID = "element_id"
         const val TAG_KEY = "tag_key"
@@ -21,6 +22,7 @@ object PendingTagConflictsTable {
     const val CREATE = """
         CREATE TABLE $NAME (
             ${Columns.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+            ${Columns.EDIT_ID} int NOT NULL,
             ${Columns.ELEMENT_TYPE} varchar(255) NOT NULL,
             ${Columns.ELEMENT_ID} int NOT NULL,
             ${Columns.TAG_KEY} varchar(255) NOT NULL,

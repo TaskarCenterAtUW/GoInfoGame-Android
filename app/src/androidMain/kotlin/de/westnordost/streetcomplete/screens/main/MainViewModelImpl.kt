@@ -269,13 +269,9 @@ class MainViewModelImpl(
         awaitClose { downloadProgressSource.removeListener(listener) }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, downloadProgressSource.isDownloadInProgress)
 
-    // drives the same upload/download progress indicator (isUploadingOrDownloading below) while a
-    // conflict resolution is in flight, instead of adding a separate spinner for it
-    private val isResolvingConflict = MutableStateFlow(false)
-
     override val isUploadingOrDownloading: StateFlow<Boolean> =
-        combine(isUploading, isDownloading, isResolvingConflict) { uploading, downloading, resolving ->
-            uploading || downloading || resolving
+        combine(isUploading, isDownloading) { uploading, downloading ->
+            uploading || downloading
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     override val isUserInitiatedDownloadInProgress: Boolean
@@ -301,7 +297,7 @@ class MainViewModelImpl(
         }
     }
 
-    /* tag conflicts held back instead of being discarded */
+    /* tag conflicts blocking their edit from uploading until the user resolves them */
 
     override val pendingConflictsCount: StateFlow<Int> = callbackFlow {
         send(pendingTagConflictsController.getCount())
@@ -323,22 +319,15 @@ class MainViewModelImpl(
         pendingTagConflictsController.getOldestGroup()
     }
 
+    // resolving is a local DB operation - the actual upload of the unblocked edit happens through
+    // the normal sync path (triggered by the conflict sheet once the whole group is resolved) and
+    // is what drives the progress spinner
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {
-        isResolvingConflict.value = true
-        try {
-            pendingTagConflictsController.resolveKeepMine(conflict)
-        } finally {
-            isResolvingConflict.value = false
-        }
+        pendingTagConflictsController.resolveKeepMine(conflict)
     }
 
     override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {
-        isResolvingConflict.value = true
-        try {
-            pendingTagConflictsController.resolveKeepTheirs(conflict)
-        } finally {
-            isResolvingConflict.value = false
-        }
+        pendingTagConflictsController.resolveKeepTheirs(conflict)
     }
 
     /* notices about edits discarded due to an unsalvageable conflict */

@@ -15,6 +15,9 @@ object ElementEditsTable {
         const val ACTION = "action"
         const val IS_NEAR_USER_LOCATION = "is_near"
         const val WORKSPACE_ID = "workspace_id"
+        /** whether this (unsynced) edit is excluded from uploading until the user has resolved
+         *  its pending tag conflicts */
+        const val IS_BLOCKED = "blocked_on_conflict"
     }
 
     const val CREATE = """
@@ -29,7 +32,8 @@ object ElementEditsTable {
             ${Columns.IS_SYNCED} int NOT NULL,
             ${Columns.ACTION} text,
             ${Columns.IS_NEAR_USER_LOCATION} int NOT NULL,
-            ${Columns.WORKSPACE_ID} int NOT NULL
+            ${Columns.WORKSPACE_ID} int NOT NULL,
+            ${Columns.IS_BLOCKED} int NOT NULL DEFAULT 0
         );
     """
 }

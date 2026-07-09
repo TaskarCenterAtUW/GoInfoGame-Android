@@ -32,7 +32,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 26
+    const val DB_VERSION = 24
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -315,19 +315,11 @@ object DatabaseInitializer {
         }
 
         if (oldVersion <= 23 && newVersion >= 24) {
+            // both tables of the conflict-resolution feature (developed together, released together)
             db.exec(PendingTagConflictsTable.CREATE)
-        }
-
-        if (oldVersion <= 24 && newVersion >= 25) {
             db.exec(DiscardedEditNoticesTable.CREATE)
-        }
-
-        if (oldVersion <= 25 && newVersion >= 26) {
-            // element_type/element_id were added to DiscardedEditNoticesTable.CREATE after some
-            // devices had already created the table at v25 in its original shape. tryExec because
-            // installs that first created the table at v25 *with* the columns would fail the ALTER
-            db.tryExec("ALTER TABLE ${DiscardedEditNoticesTable.NAME} ADD COLUMN ${DiscardedEditNoticesTable.Columns.ELEMENT_TYPE} varchar(255)")
-            db.tryExec("ALTER TABLE ${DiscardedEditNoticesTable.NAME} ADD COLUMN ${DiscardedEditNoticesTable.Columns.ELEMENT_ID} int")
+            // edits with unresolved tag conflicts are held back from uploading via this flag
+            db.tryExec("ALTER TABLE osm_element_edits ADD COLUMN blocked_on_conflict int NOT NULL DEFAULT 0")
         }
     }
 }

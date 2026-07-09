@@ -519,7 +519,9 @@ fun MainScreen(
         onPopNextConflictGroup = { viewModel.popNextConflictGroup() },
         onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
         onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) },
-        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) },
+        // resolving unblocked the held edit - upload it right away
+        onResolutionFinished = { viewModel.upload() }
     )
     DiscardedEditNoticeEffect(
         discardedNoticesCount = discardedNoticesCount,

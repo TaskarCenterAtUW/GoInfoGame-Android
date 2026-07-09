@@ -8,13 +8,11 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryChange
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryDelete
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryModify
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.changesApplied
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.isGeometrySubstantiallyDifferent
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.mineValue
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.rebuiltAgainst
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ChangesetTooLargeException
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -36,6 +34,9 @@ class ElementEditUploader(
     /** Apply the given change to the given element and upload it
      *
      *  @throws ConflictException if element has been changed server-side in an incompatible way
+     *  @throws HeldForConflictResolutionException if some of the edit's tag changes collided with
+     *          a concurrent remote edit - nothing was uploaded, the edit should be blocked until
+     *          the user has resolved the pending conflicts
      */
     suspend fun upload(edit: ElementEdit, getIdProvider: () -> ElementIdProvider): MapDataUpdates {
         // certain edit types don't allow building changes on top of cached map data
@@ -101,11 +102,13 @@ class ElementEditUploader(
     /**
      * Applies a tag-update edit onto the element's current (freshly fetched) remote state, but
      * unlike other edit types, a per-key value collision does not discard the whole edit:
-     * - keys that don't collide with the current remote tags are merged and uploaded right away
      * - the two bookkeeping keys are always force-overwritten with the local value, never treated
      *   as a conflict
-     * - any other genuinely colliding key is held back as a [PendingTagConflict] for the user to
-     *   resolve later, instead of losing the whole batch of answers
+     * - if any other key genuinely collides, the *whole edit* is held back: nothing is uploaded,
+     *   a [PendingTagConflict] is recorded per colliding key, and
+     *   [HeldForConflictResolutionException] is thrown so the caller blocks the edit until the
+     *   user has decided per tag. The decisions are folded into the edit and it then uploads
+     *   normally, as one unit - so the edit history always shows exactly what was pushed.
      *
      * Structural issues (element deleted, geometry changed substantially) are still a hard,
      * all-or-nothing failure - there's no sensible per-tag override for those.
@@ -131,45 +134,42 @@ class ElementEditUploader(
         }.toSet()
 
         val realConflicts = StringMapChanges(reconciledChanges).getConflictsTo(currentElement.tags).toSet()
-        val safeChanges = StringMapChanges(reconciledChanges - realConflicts)
 
-        val updates = if (safeChanges.isEmpty()) {
-            // nothing could be merged - just refresh the local cache to the current server state
-            MapDataUpdates(updated = listOf(currentElement))
-        } else {
-            val updatedElement = currentElement.changesApplied(safeChanges)
-            val changes = MapDataChanges(modifications = listOf(updatedElement))
-            try {
-                uploadChanges(edit, changes, false)
-            }
-            // probably changeset was closed -> try again once with new changeset
-            catch (e: ConflictException) {
-                uploadChanges(edit, changes, true)
-            }
-            catch (e: ChangesetTooLargeException) {
-                uploadChanges(edit, changes, true)
-            }
-        }
-
-        for (conflict in realConflicts) {
-            pendingTagConflictsController.add(
-                PendingTagConflict(
-                    id = 0,
-                    elementType = currentElement.type,
-                    elementId = currentElement.id,
-                    tagKey = conflict.key,
-                    mineValue = conflict.mineValue(),
-                    theirsValueAtDetection = currentElement.tags[conflict.key],
-                    editType = edit.type,
-                    source = edit.source,
-                    position = edit.position,
-                    createdTimestamp = nowAsEpochMilliseconds(),
-                    workspaceId = edit.workspaceId
+        if (realConflicts.isNotEmpty()) {
+            for (conflict in realConflicts) {
+                pendingTagConflictsController.add(
+                    PendingTagConflict(
+                        id = 0,
+                        editId = edit.id,
+                        elementType = currentElement.type,
+                        elementId = currentElement.id,
+                        tagKey = conflict.key,
+                        mineValue = conflict.mineValue(),
+                        theirsValueAtDetection = currentElement.tags[conflict.key],
+                        editType = edit.type,
+                        source = edit.source,
+                        position = edit.position,
+                        createdTimestamp = nowAsEpochMilliseconds(),
+                        workspaceId = edit.workspaceId
+                    )
                 )
-            )
+            }
+            throw HeldForConflictResolutionException(currentElement)
         }
 
-        return updates
+        val changes = MapDataChanges(
+            modifications = listOf(currentElement.changesApplied(StringMapChanges(reconciledChanges)))
+        )
+        return try {
+            uploadChanges(edit, changes, false)
+        }
+        // probably changeset was closed -> try again once with new changeset
+        catch (e: ConflictException) {
+            uploadChanges(edit, changes, true)
+        }
+        catch (e: ChangesetTooLargeException) {
+            uploadChanges(edit, changes, true)
+        }
     }
 
     private suspend fun fetchElement(type: ElementType, id: Long): Element? = when (type) {
@@ -199,18 +199,9 @@ class ElementEditUploader(
     }
 }
 
-private fun StringMapEntryChange.mineValue(): String? = when (this) {
-    is StringMapEntryAdd -> value
-    is StringMapEntryModify -> value
-    is StringMapEntryDelete -> null
-}
-
-private fun StringMapEntryChange.rebuiltAgainst(currentValue: String?): StringMapEntryChange {
-    val mine = mineValue()
-    return when {
-        mine != null && currentValue != null -> StringMapEntryModify(key, currentValue, mine)
-        mine != null && currentValue == null -> StringMapEntryAdd(key, mine)
-        mine == null && currentValue != null -> StringMapEntryDelete(key, currentValue)
-        else -> this
-    }
-}
+/** Thrown when an edit's tag changes collided with a concurrent remote edit: nothing was
+ *  uploaded, [PendingTagConflict]s were recorded, and the edit should be blocked from uploading
+ *  until the user has resolved them. Carries the freshly fetched [currentElement] so the caller
+ *  can refresh the local cache to the state the conflicts were detected against. */
+class HeldForConflictResolutionException(val currentElement: Element) :
+    RuntimeException("Edit held back until its tag conflicts are resolved")

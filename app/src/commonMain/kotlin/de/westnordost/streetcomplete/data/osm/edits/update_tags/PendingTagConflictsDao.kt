@@ -5,6 +5,7 @@ import de.westnordost.streetcomplete.data.CursorPosition
 import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable.Columns.CREATED_TIMESTAMP
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable.Columns.ELEMENT_ID
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable.Columns.ELEMENT_TYPE
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable.Columns.ID
@@ -51,6 +52,7 @@ class PendingTagConflictsDao(
         db.delete(NAME, "$WORKSPACE_ID = $workspaceId AND $ID = $id") == 1
 
     private fun PendingTagConflict.toPairs(): List<Pair<String, Any?>> = listOf(
+        EDIT_ID to editId,
         ELEMENT_TYPE to elementType.name,
         ELEMENT_ID to elementId,
         PendingTagConflictsTable.Columns.TAG_KEY to tagKey,
@@ -66,6 +68,7 @@ class PendingTagConflictsDao(
 
     private fun CursorPosition.toPendingTagConflict() = PendingTagConflict(
         id = getLong(ID),
+        editId = getLong(EDIT_ID),
         elementType = ElementType.valueOf(getString(ELEMENT_TYPE)),
         elementId = getLong(ELEMENT_ID),
         tagKey = getString(PendingTagConflictsTable.Columns.TAG_KEY),

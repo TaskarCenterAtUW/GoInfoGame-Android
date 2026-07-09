@@ -72,6 +72,13 @@ class ElementEditsUploader(
             } else {
                 statisticsController.addOne(edit.type.name, edit.position)
             }
+        } catch (e: HeldForConflictResolutionException) {
+            // nothing was uploaded and nothing is discarded: the edit is excluded from uploading
+            // until the user has resolved its pending tag conflicts, then re-enters this queue
+            Log.d(TAG, "Held a $editActionClassName for conflict resolution")
+            elementEditsController.markBlockedOnConflict(edit)
+            // refresh the local cache to the remote state the conflicts were detected against
+            mapDataController.updateAll(MapDataUpdates(updated = listOf(e.currentElement)))
         } catch (e: ConflictException) {
             Log.d(TAG, "Dropped a $editActionClassName: ${e.message}")
             uploadedChangeListener?.onDiscarded(edit.type.name, edit.position)

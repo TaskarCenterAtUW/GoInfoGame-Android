@@ -5,11 +5,13 @@ import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 
 /** A single OSM tag on a specific element where the user's local edit collided with a concurrent
- *  remote edit on the same key. Held here instead of being discarded together with the rest of
- *  the edit, so the user can decide - next time the app is in the foreground - whether to keep
- *  their own answer or the other edit's value. */
+ *  remote edit on the same key. The whole edit is held back from uploading (blocked) while any of
+ *  these exist for it; once the user has decided per tag - keep their own answer or accept the
+ *  other edit's value - the decisions are folded into the edit and it uploads as one unit. */
 data class PendingTagConflict(
     var id: Long,
+    /** id of the [de.westnordost.streetcomplete.data.osm.edits.ElementEdit] held back by this conflict */
+    val editId: Long,
     val elementType: ElementType,
     val elementId: Long,
     val tagKey: String,

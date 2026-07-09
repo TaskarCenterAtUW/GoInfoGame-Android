@@ -1193,15 +1193,15 @@ class MainActivity :
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    // badge shows unsynced edits, tag conflicts still awaiting the user's decision,
-                    // and notices about discarded edits still to be acknowledged - everything that
-                    // still needs attention
+                    // badge shows unsynced edits (which already includes edits blocked on
+                    // unresolved tag conflicts) and notices about discarded edits still to be
+                    // acknowledged - everything that still needs attention. Conflicts are not
+                    // added separately, that would double-count their blocked edit
                     combine(
                         viewModel.unsyncedEditsCount,
-                        viewModel.pendingConflictsCount,
                         viewModel.discardedNoticesCount
-                    ) { edits, conflicts, discarded ->
-                        edits + conflicts + discarded
+                    ) { edits, discarded ->
+                        edits + discarded
                     }.collect { totalPendingCount ->
                         uploadButton.uploadableCount = totalPendingCount
                     }
