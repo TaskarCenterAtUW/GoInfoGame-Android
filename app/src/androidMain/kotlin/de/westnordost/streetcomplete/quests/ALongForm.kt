@@ -9,6 +9,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
@@ -74,6 +75,13 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         super.onViewCreated(view, savedInstanceState)
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(activity)
+            // DiffUtil-driven partial updates (see LongFormAdapter.items) now issue targeted
+            // notifyItemChanged() calls instead of notifyDataSetChanged(). The default item
+            // animator runs a cross-fade "change" animation on those, which reads as flicker on
+            // image content - notifyDataSetChanged() never triggered that. Keep insert/remove/move
+            // animations (questions appearing/disappearing still animates nicely), just drop the
+            // content-change cross-fade.
+            (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         }
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter

@@ -1,6 +1,8 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload
 
 import de.westnordost.streetcomplete.data.ConflictException
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
@@ -16,6 +18,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MutableMapData
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsController
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -32,7 +35,8 @@ class ElementEditsUploader(
     private val mapDataController: MapDataController,
     private val singleUploader: ElementEditUploader,
     private val mapDataApi: MapDataApiClient,
-    private val statisticsController: StatisticsController
+    private val statisticsController: StatisticsController,
+    private val discardedEditNoticesController: DiscardedEditNoticesController,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
 
@@ -68,11 +72,31 @@ class ElementEditsUploader(
             } else {
                 statisticsController.addOne(edit.type.name, edit.position)
             }
+        } catch (e: HeldForConflictResolutionException) {
+            // nothing was uploaded and nothing is discarded: the edit is excluded from uploading
+            // until the user has resolved its pending tag conflicts, then re-enters this queue
+            Log.d(TAG, "Held a $editActionClassName for conflict resolution")
+            elementEditsController.markBlockedOnConflict(edit)
+            // refresh the local cache to the remote state the conflicts were detected against
+            mapDataController.updateAll(MapDataUpdates(updated = listOf(e.currentElement)))
         } catch (e: ConflictException) {
             Log.d(TAG, "Dropped a $editActionClassName: ${e.message}")
             uploadedChangeListener?.onDiscarded(edit.type.name, edit.position)
 
             elementEditsController.markSyncFailed(edit)
+            val elementKey = edit.action.elementKeys.firstOrNull()
+            discardedEditNoticesController.add(
+                DiscardedEditNotice(
+                    id = 0,
+                    editType = edit.type,
+                    elementType = elementKey?.type,
+                    elementId = elementKey?.id,
+                    position = edit.position,
+                    reason = e.message ?: "Could not be applied to the current state of the map",
+                    createdTimestamp = nowAsEpochMilliseconds(),
+                    workspaceId = edit.workspaceId
+                )
+            )
 
             /* fetching the current version of the element(s) edited on conflict and persisting
                them is not really optional, as when the edit has been deleted due to the conflict,

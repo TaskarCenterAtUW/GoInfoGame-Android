@@ -31,7 +31,13 @@ data class ElementEdit(
 
     /** Whether the user was near the element that is being edited when this edit was created */
     val isNearUserLocation: Boolean,
-    override var workspaceId: Int = 0
+    override var workspaceId: Int = 0,
+
+    /** Whether this (unsynced) edit is excluded from uploading because some of its tag changes
+     *  collided with a concurrent remote edit - nothing of it is uploaded until the user has
+     *  resolved all its pending tag conflicts. The edit still counts as unsynced and is still
+     *  applied to the local map view in the meantime. */
+    val isBlockedOnConflict: Boolean = false,
 ) : Edit {
     override val isUndoable: Boolean get() = !isSynced || action is IsActionRevertable
     override val key: ElementEditKey get() = ElementEditKey(id)

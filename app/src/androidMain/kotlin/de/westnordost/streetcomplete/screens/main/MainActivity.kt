@@ -158,6 +158,7 @@ import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
@@ -1192,9 +1193,28 @@ class MainActivity :
 
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    // badge shows unsynced edits (which already includes edits blocked on
+                    // unresolved tag conflicts) and notices about discarded edits still to be
+                    // acknowledged - everything that still needs attention. Conflicts are not
+                    // added separately, that would double-count their blocked edit
+                    combine(
+                        viewModel.unsyncedEditsCount,
+                        viewModel.discardedNoticesCount
+                    ) { edits, discarded ->
+                        edits + discarded
+                    }.collect { totalPendingCount ->
+                        uploadButton.uploadableCount = totalPendingCount
+                    }
+                }
+            }
+
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
                     viewModel.unsyncedEditsCount.collect { count ->
-                        uploadButton.uploadableCount = count
                         uploadButton.setOnClickListener {
+                            // an explicit tap also re-opens the conflict sheet if the user
+                            // postponed it with Cancel earlier
+                            viewModel.requestConflictReview()
                             if (count > 0) {
                                 if (viewModel.isConnected) {
                                     viewModel.upload()

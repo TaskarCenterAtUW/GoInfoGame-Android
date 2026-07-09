@@ -52,9 +52,12 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.overlays.Overlay
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
@@ -73,6 +76,8 @@ import de.westnordost.streetcomplete.screens.main.controls.PointerPinButton
 import de.westnordost.streetcomplete.screens.main.controls.ScaleBar
 import de.westnordost.streetcomplete.screens.main.controls.ZoomButtons
 import de.westnordost.streetcomplete.screens.main.controls.findEllipsisIntersection
+import de.westnordost.streetcomplete.screens.main.conflicts.DiscardedEditNoticeEffect
+import de.westnordost.streetcomplete.screens.main.conflicts.TagConflictResolutionEffect
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistorySidebar
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.main.edithistory.EditItem
@@ -159,6 +164,9 @@ fun MainScreen(
     val hasEdits by remember { derivedStateOf { editItems.isNotEmpty() } }
 
     val showZoomButtons by viewModel.showZoomButtons.collectAsState()
+    val pendingConflictsCount by viewModel.pendingConflictsCount.collectAsState()
+    val conflictReviewRequests by viewModel.conflictReviewRequests.collectAsState()
+    val discardedNoticesCount by viewModel.discardedNoticesCount.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
@@ -505,6 +513,22 @@ fun MainScreen(
     lastUploadError?.let { error ->
         LastUploadErrorEffect(lastError = error, onReportError = ::sendErrorReport)
     }
+    TagConflictResolutionEffect(
+        pendingConflictsCount = pendingConflictsCount,
+        reviewRequests = conflictReviewRequests,
+        onPopNextConflictGroup = { viewModel.popNextConflictGroup() },
+        onResolveKeepMine = { viewModel.resolveConflictKeepMine(it) },
+        onResolveKeepTheirs = { viewModel.resolveConflictKeepTheirs(it) },
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) },
+        // resolving unblocked the held edit - upload it right away
+        onResolutionFinished = { viewModel.upload() }
+    )
+    DiscardedEditNoticeEffect(
+        discardedNoticesCount = discardedNoticesCount,
+        onPopNextDiscardedNotice = { viewModel.popNextDiscardedNotice() },
+        onDismissDiscardedNotice = { viewModel.dismissDiscardedNotice(it) },
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
+    )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
     }
@@ -668,6 +692,19 @@ object PreviewMainViewModel : MainViewModel() {
         get() = TODO("Not yet implemented")
     override val isUploadingOrDownloading: StateFlow<Boolean>
         get() = MutableStateFlow(true)
+    override val pendingConflictsCount: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override val conflictReviewRequests: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override fun requestConflictReview() {}
+    override suspend fun popNextConflictGroup(): List<PendingTagConflict> = emptyList()
+    override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {}
+    override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {}
+    override val discardedNoticesCount: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = null
+    override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) {}
+    override suspend fun getElementLabel(type: ElementType, id: Long): String? = null
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = TODO("Not yet implemented")
     override val isLoggedIn: StateFlow<Boolean>

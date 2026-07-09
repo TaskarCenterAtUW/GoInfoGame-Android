@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.AC
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.CREATED_TIMESTAMP
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.GEOMETRY
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.ID
+import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.IS_BLOCKED
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.IS_NEAR_USER_LOCATION
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.IS_SYNCED
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable.Columns.LATITUDE
@@ -72,7 +73,9 @@ class ElementEditsDao(
     fun getOldestUnsynced(): ElementEdit? =
         db.queryOne(
             NAME,
-            where = "$IS_SYNCED = 0  AND $WORKSPACE_ID = $workspaceId",
+            // edits blocked on unresolved tag conflicts are skipped by the upload queue but stay
+            // unsynced (still counted, still applied to the local map view)
+            where = "$IS_SYNCED = 0 AND $IS_BLOCKED = 0 AND $WORKSPACE_ID = $workspaceId",
             orderBy = CREATED_TIMESTAMP
         ) { it.toElementEdit() }
 
@@ -125,7 +128,8 @@ class ElementEditsDao(
         IS_SYNCED to if (isSynced) 1 else 0,
         ACTION to json.encodeToString(action),
         IS_NEAR_USER_LOCATION to if (isNearUserLocation) 1 else 0,
-        WORKSPACE_ID to workspaceId
+        WORKSPACE_ID to workspaceId,
+        IS_BLOCKED to if (isBlockedOnConflict) 1 else 0
     )
 
     private fun CursorPosition.toElementEdit() = ElementEdit(
@@ -137,6 +141,7 @@ class ElementEditsDao(
         getInt(IS_SYNCED) == 1,
         json.decodeFromString(getString(ACTION)),
         getInt(IS_NEAR_USER_LOCATION) == 1,
-        getInt(WORKSPACE_ID)
+        getInt(WORKSPACE_ID),
+        getInt(IS_BLOCKED) == 1
     )
 }

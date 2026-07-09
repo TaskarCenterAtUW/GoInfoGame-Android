@@ -103,6 +103,24 @@ class ElementEditsController(
         elementIdProviderDB.updateIds(elementUpdates.idUpdates)
     }
 
+    /** Replace the stored version of the given edit, e.g. when a pending tag conflict resolution
+     *  changed which tag changes it should upload. Must not change which elements the edit
+     *  concerns. */
+    fun updateAction(edit: ElementEdit) {
+        lock.withLock { editsDB.put(edit) }
+    }
+
+    /** Exclude the given (unsynced) edit from uploading until its pending tag conflicts are
+     *  resolved. It stays unsynced, applied to the local map view, and undoable. */
+    fun markBlockedOnConflict(edit: ElementEdit) {
+        lock.withLock { editsDB.put(edit.copy(isBlockedOnConflict = true)) }
+    }
+
+    /** Re-include the given edit in uploading, all its pending tag conflicts being resolved */
+    fun markUnblocked(edit: ElementEdit) {
+        lock.withLock { editsDB.put(edit.copy(isBlockedOnConflict = false)) }
+    }
+
     fun markSyncFailed(edit: ElementEdit) {
         delete(edit)
     }

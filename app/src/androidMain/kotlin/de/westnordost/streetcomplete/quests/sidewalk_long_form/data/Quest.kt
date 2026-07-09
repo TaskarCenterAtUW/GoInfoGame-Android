@@ -46,3 +46,18 @@ sealed class UserInput : Parcelable {
         }
     }
 }
+
+/** A frozen copy of this quest's current state, safe to keep around and compare against later -
+ *  [LongFormQuest.selectedIndex] and [UserInput.Multiple.answers] are mutated in place elsewhere
+ *  (`.add()`/`.remove()`), so a shallow `.copy()` alone would still share those mutable lists with
+ *  the live, later-mutated instance. Used to give DiffUtil genuinely independent before/after
+ *  values to compare (see LongFormAdapter). */
+fun LongFormQuest.snapshot(): LongFormQuest = copy(
+    selectedIndex = selectedIndex?.toMutableList(),
+    userInput = userInput?.snapshot()
+)
+
+fun UserInput.snapshot(): UserInput = when (this) {
+    is UserInput.Single -> copy()
+    is UserInput.Multiple -> copy(answers = answers.toMutableList())
+}

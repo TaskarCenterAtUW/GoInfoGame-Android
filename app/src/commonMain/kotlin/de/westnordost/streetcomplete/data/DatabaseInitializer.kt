@@ -3,9 +3,11 @@ package de.westnordost.streetcomplete.data
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesTable
 import de.westnordost.streetcomplete.data.logs.LogsTable
 import de.westnordost.streetcomplete.data.osm.created_elements.CreatedElementsTable
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesTable
 import de.westnordost.streetcomplete.data.osm.edits.EditElementsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProviderTable
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsTable
 import de.westnordost.streetcomplete.data.osm.geometry.RelationGeometryTable
 import de.westnordost.streetcomplete.data.osm.geometry.WayGeometryTable
@@ -30,7 +32,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 23
+    const val DB_VERSION = 24
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -69,6 +71,12 @@ object DatabaseInitializer {
         db.exec(EditElementsTable.INDEX_CREATE)
 
         db.exec(CreatedElementsTable.CREATE)
+
+        // tag conflicts held back for the user to resolve instead of being discarded
+        db.exec(PendingTagConflictsTable.CREATE)
+
+        // notices about edits that had to be discarded (unsalvageable structural conflicts)
+        db.exec(DiscardedEditNoticesTable.CREATE)
 
         // quests
         db.exec(VisibleEditTypeTable.CREATE)
@@ -304,6 +312,14 @@ object DatabaseInitializer {
             db.tryExec("ALTER TABLE osm_notes ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.tryExec("ALTER TABLE osm_note_edits ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
             db.tryExec("ALTER TABLE osm_notes_hidden ADD COLUMN workspace_id INTEGER DEFAULT 0 NOT NULL")
+        }
+
+        if (oldVersion <= 23 && newVersion >= 24) {
+            // both tables of the conflict-resolution feature (developed together, released together)
+            db.exec(PendingTagConflictsTable.CREATE)
+            db.exec(DiscardedEditNoticesTable.CREATE)
+            // edits with unresolved tag conflicts are held back from uploading via this flag
+            db.tryExec("ALTER TABLE osm_element_edits ADD COLUMN blocked_on_conflict int NOT NULL DEFAULT 0")
         }
     }
 }

@@ -122,6 +122,7 @@ class MapDataApiClient(
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "map") {
                 parameter("bbox", bounds.toOsmApiString())
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                 expectSuccess = true
             }
             val source = response.bodyAsChannel().asSource().buffered()
@@ -212,6 +213,7 @@ class MapDataApiClient(
         try {
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + query) {
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                 expectSuccess = true
             }
             val source = response.bodyAsChannel().asSource().buffered()

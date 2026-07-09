@@ -8,10 +8,15 @@ import de.westnordost.streetcomplete.data.download.DownloadController
 import de.westnordost.streetcomplete.data.download.DownloadProgressSource
 import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.messages.MessagesSource
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
@@ -72,6 +77,8 @@ class MainViewModelImpl(
     private val elementEditsSource: ElementEditsSource,
     private val noteEditsSource: NoteEditsSource,
     private val prefs: Preferences,
+    private val pendingTagConflictsController: PendingTagConflictsController,
+    private val discardedEditNoticesController: DiscardedEditNoticesController,
 ) : MainViewModel() {
 
     /* error handling */
@@ -263,8 +270,9 @@ class MainViewModelImpl(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, downloadProgressSource.isDownloadInProgress)
 
     override val isUploadingOrDownloading: StateFlow<Boolean> =
-        combine(isUploading, isDownloading) { it1, it2 -> it1 || it2 }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        combine(isUploading, isDownloading) { uploading, downloading ->
+            uploading || downloading
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = downloadProgressSource.isUserInitiatedDownloadInProgress
@@ -288,6 +296,62 @@ class MainViewModelImpl(
             isRequestingLogin.value = true
         }
     }
+
+    /* tag conflicts blocking their edit from uploading until the user resolves them */
+
+    override val pendingConflictsCount: StateFlow<Int> = callbackFlow {
+        send(pendingTagConflictsController.getCount())
+        val listener = object : PendingTagConflictsController.Listener {
+            override fun onAdded(conflict: PendingTagConflict) { trySend(pendingTagConflictsController.getCount()) }
+            override fun onRemoved(conflict: PendingTagConflict) { trySend(pendingTagConflictsController.getCount()) }
+        }
+        pendingTagConflictsController.addListener(listener)
+        awaitClose { pendingTagConflictsController.removeListener(listener) }
+    }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
+
+    override val conflictReviewRequests = MutableStateFlow(0)
+
+    override fun requestConflictReview() {
+        conflictReviewRequests.value++
+    }
+
+    override suspend fun popNextConflictGroup(): List<PendingTagConflict> = withContext(IO) {
+        pendingTagConflictsController.getOldestGroup()
+    }
+
+    // resolving is a local DB operation - the actual upload of the unblocked edit happens through
+    // the normal sync path (triggered by the conflict sheet once the whole group is resolved) and
+    // is what drives the progress spinner
+    override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {
+        pendingTagConflictsController.resolveKeepMine(conflict)
+    }
+
+    override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {
+        pendingTagConflictsController.resolveKeepTheirs(conflict)
+    }
+
+    /* notices about edits discarded due to an unsalvageable conflict */
+
+    override val discardedNoticesCount: StateFlow<Int> = callbackFlow {
+        send(discardedEditNoticesController.getCount())
+        val listener = object : DiscardedEditNoticesController.Listener {
+            override fun onAdded(notice: DiscardedEditNotice) { trySend(discardedEditNoticesController.getCount()) }
+            override fun onRemoved(notice: DiscardedEditNotice) { trySend(discardedEditNoticesController.getCount()) }
+        }
+        discardedEditNoticesController.addListener(listener)
+        awaitClose { discardedEditNoticesController.removeListener(listener) }
+    }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
+
+    override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = withContext(IO) {
+        discardedEditNoticesController.getOldest()
+    }
+
+    override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) = withContext(IO) {
+        discardedEditNoticesController.dismiss(notice)
+    }
+
+    override suspend fun getElementLabel(type: ElementType, id: Long): String? =
+        "${type.name.lowercase().replaceFirstChar { it.uppercase() }} #$id"
 
     private val elementEditsListener = object : ElementEditsSource.Listener {
         override fun onAddedEdit(edit: ElementEdit) { launch { ensureLoggedIn() } }

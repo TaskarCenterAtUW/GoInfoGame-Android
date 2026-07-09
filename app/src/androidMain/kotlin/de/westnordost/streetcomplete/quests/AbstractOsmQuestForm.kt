@@ -192,7 +192,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         super.onViewCreated(view, savedInstanceState)
 
         if (osmElementQuestType is AddGenericLong) {
-            setTitle((osmElementQuestType as AddGenericLong).item.elementType)
+            val category = (osmElementQuestType as AddGenericLong).item.elementType
+            // the category alone ("Sidewalk", "Kerb"...) doesn't distinguish between several
+            // queued quests of the same type - add the OSM element type and id
+            val typeAndId = "${element.type.name.lowercase().replaceFirstChar { it.uppercase() }} #${element.id}"
+            setTitle("$category — $typeAndId")
         }
 
         setHideQuestOnClick { hideQuest() }
@@ -332,7 +336,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             solve(
                                 UpdateElementTagsAction(
                                     element.first,
-                                    createQuestChanges(answer, extraTagList)
+                                    createQuestChanges(answer, extraTagList, element.first, element.second)
                                 ), element.second
                             )
                         }
@@ -352,10 +356,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private fun createQuestChanges(
         answer: T,
         extraTagList: MutableList<Pair<String, String>> = mutableListOf(),
+        forElement: Element = element,
+        forGeometry: ElementGeometry = geometry,
     ): StringMapChanges {
-        val changesBuilder = StringMapChangesBuilder(element.tags)
+        val changesBuilder = StringMapChangesBuilder(forElement.tags)
         extraTagList.forEach { changesBuilder[it.first] = it.second }
-        osmElementQuestType.applyAnswerTo(answer, changesBuilder, geometry, element.timestampEdited)
+        osmElementQuestType.applyAnswerTo(answer, changesBuilder, forGeometry, forElement.timestampEdited)
         val changes = changesBuilder.create()
         require(!changes.isEmpty()) {
             "${osmElementQuestType.name} was answered by the user but there are no changes!"

@@ -3,7 +3,10 @@ package de.westnordost.streetcomplete.screens.main
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import de.westnordost.streetcomplete.data.messages.Message
+import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.overlays.Overlay
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfig
@@ -57,6 +60,25 @@ abstract class MainViewModel : ViewModel() {
 
     abstract val isUploading: StateFlow<Boolean>
     abstract val isUploadingOrDownloading: StateFlow<Boolean>
+
+    /* tag conflicts held back instead of being discarded, to be resolved one at a time */
+    abstract val pendingConflictsCount: StateFlow<Int>
+    /** Bumped each time the user explicitly asks to review pending conflicts (tapping the toolbar
+     *  upload button), so a conflict sheet postponed via Cancel re-opens without an app restart */
+    abstract val conflictReviewRequests: StateFlow<Int>
+    abstract fun requestConflictReview()
+    abstract suspend fun popNextConflictGroup(): List<PendingTagConflict>
+    abstract suspend fun resolveConflictKeepMine(conflict: PendingTagConflict)
+    abstract suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict)
+
+    /* notices about edits discarded due to an unsalvageable conflict, to be acknowledged one at a time */
+    abstract val discardedNoticesCount: StateFlow<Int>
+    abstract suspend fun popNextDiscardedNotice(): DiscardedEditNotice?
+    abstract suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice)
+
+    /** A short, human-readable label identifying an element (id, and name/ref if it has one), for
+     *  display in the conflict/discard dialogs so the user can recognize which feature they're about */
+    abstract suspend fun getElementLabel(type: ElementType, id: Long): String?
 
     abstract val isUserInitiatedDownloadInProgress: Boolean
     abstract val isLoggedIn: StateFlow<Boolean>
