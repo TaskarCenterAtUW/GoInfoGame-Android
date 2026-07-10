@@ -47,8 +47,8 @@ class NotesApiClient(
      */
     suspend fun create(pos: LatLon, text: String): Note = wrapApiClientExceptions {
         val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes") {
-            userAccessTokenSource.accessToken?.let { bearerAuth(it) }
             header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+            workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
             parameter("lat", pos.latitude.format(7))
             parameter("lon", pos.longitude.format(7))
             parameter("text", text)
@@ -72,7 +72,7 @@ class NotesApiClient(
     suspend fun comment(id: Long, text: String): Note = wrapApiClientExceptions {
         try {
             val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes/$id/comment") {
-                userAccessTokenSource.accessToken?.let { bearerAuth(it) }
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                 parameter("text", text)
                 expectSuccess = true
             }
@@ -100,6 +100,7 @@ class NotesApiClient(
         try {
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes/$id") { expectSuccess = true
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
             }
             val source = response.bodyAsChannel().asSource().buffered()
             return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId).singleOrNull()
@@ -133,8 +134,7 @@ class NotesApiClient(
         try {
             val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes") {
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-
-                userAccessTokenSource.accessToken?.let { bearerAuth(it) }
+                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                 parameter("bbox", bounds.toOsmApiString())
                 parameter("limit", limit)
                 parameter("closed", 0)
