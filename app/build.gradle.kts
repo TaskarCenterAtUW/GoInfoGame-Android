@@ -54,6 +54,14 @@ repositories {
     maven { url = uri("https://www.jitpack.io") }
 }
 
+/** KartaView access token: from env var, else root secrets.properties (git-ignored), else empty
+ *  (build succeeds but KartaView photo uploads fail auth at runtime). Never commit the token. */
+val kartaViewAccessToken: String = System.getenv("KARTAVIEW_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("kartaViewAccessToken")
+    }
+    ?: ""
+
 buildkonfig {
     packageName = "de.westnordost.streetcomplete"
     objectName = "BuildConfig"
@@ -62,6 +70,7 @@ buildkonfig {
         buildConfigField(BOOLEAN, "IS_FROM_MONOPOLISTIC_APP_STORE", properties["app.streetcomplete.monopolistic_app_store"]!!.toString())
         buildConfigField(STRING, "VERSION_NAME", appVersionName)
         buildConfigField(BOOLEAN, "DEBUG", "true")
+        buildConfigField(STRING, "KARTAVIEW_ACCESS_TOKEN", kartaViewAccessToken)
     }
 
     targetConfigs {
