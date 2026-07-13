@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ic_pin with a soft ground-shadow ellipse at the pin's tip (bottom center), same radial
+     gradient idiom as location_shadow.xml. The ellipse is centered on the bottom edge via the
+     negative inset; the half below gets clipped, leaving a half-ellipse under the tip. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="24dp"
+        android:height="12dp"
+        android:gravity="center_horizontal|bottom"
+        android:bottom="-6dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="12dp"
+                android:startColor="#4000"
+                android:centerColor="#4000"
+                android:endColor="#0000" />
+        </shape>
+    </item>
+    <item>
+        <bitmap android:src="@drawable/ic_pin" />
+    </item>
+</layer-list>

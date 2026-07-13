@@ -1,6 +1,5 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
@@ -37,7 +36,7 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
-    id("com.android.application") version "8.13.0"
+    id("com.android.application") version "9.2.1"
     id("org.jetbrains.compose") version "1.9.2"
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
