@@ -365,7 +365,7 @@ fun LoginCard(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -482,7 +482,7 @@ fun LoginCard(
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Button(
@@ -527,8 +527,6 @@ fun LoginCard(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     UserInfoComponent()
                 }
 
@@ -621,10 +619,8 @@ fun DebuggableBuild(
     var clickCount by remember { mutableIntStateOf(0) }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-        contentAlignment = Alignment.BottomCenter
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -636,7 +632,7 @@ fun DebuggableBuild(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier
-                        .padding(8.dp)
+                        .padding(4.dp)
                         .clickable {
                             showDialog = true
                         },
@@ -650,7 +646,7 @@ fun DebuggableBuild(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .padding(8.dp)
+                    .padding(4.dp)
                     .clickable {
                         clickCount++
                         if (clickCount == 7) {
@@ -769,5 +765,4 @@ suspend fun authenticateWithBiometrics(
 
     biometricHelper.authenticate()
 }
-
 
