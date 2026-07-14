@@ -8,6 +8,7 @@ import com.russhwolf.settings.int
 import com.russhwolf.settings.long
 import com.russhwolf.settings.nullableString
 import com.russhwolf.settings.set
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.ktx.putStringOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -214,7 +215,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
     var kartaViewAccessToken: String
         set(value) { prefs.putString(KARTAVIEW_ACCESS_TOKEN, value) }
-        get() = prefs.getString(KARTAVIEW_ACCESS_TOKEN, DEFAULT_KARTAVIEW_ACCESS_TOKEN)
+        get() = prefs.getString(KARTAVIEW_ACCESS_TOKEN, BuildConfig.KARTAVIEW_ACCESS_TOKEN)
 
     var isFollowModeEnabled: Boolean
         set(value) {
@@ -445,7 +446,5 @@ class Preferences(private val prefs: ObservableSettings) {
         private const val FOLLOW_MODE_ENABLED = "follow.mode.enabled"
         private const val DEBUG_MODE_ENABLED = "debug.mode.enabled"
         private const val KARTAVIEW_ACCESS_TOKEN = "kartaview.access_token"
-        private const val DEFAULT_KARTAVIEW_ACCESS_TOKEN =
-            "5b7bfc9104ad198bdba4108ed3048f380f118cfb528d750a2bf31041b7266a99"
     }
 }

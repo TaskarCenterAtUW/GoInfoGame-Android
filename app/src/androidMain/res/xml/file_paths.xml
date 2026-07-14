@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-path name="images" path="Android/data/de.westnordost.streetcomplete/files/Pictures" />
+    <!-- resolves to getExternalFilesDir(DIRECTORY_PICTURES) of whatever package/build this is,
+         no hardcoded applicationId needed (see AttachPhotoFragment.createImageFile) -->
+    <external-files-path name="images" path="Pictures" />
 </paths>

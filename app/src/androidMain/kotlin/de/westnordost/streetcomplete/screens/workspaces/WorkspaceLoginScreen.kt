@@ -365,7 +365,7 @@ fun LoginCard(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -482,7 +482,7 @@ fun LoginCard(
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Button(
@@ -527,9 +527,10 @@ fun LoginCard(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                    Spacer(modifier = Modifier.weight(1f))
                     UserInfoComponent()
+                    Spacer(modifier = Modifier.weight(1f))
+
                 }
 
                 DebuggableBuild(
@@ -767,5 +768,4 @@ suspend fun authenticateWithBiometrics(
 
     biometricHelper.authenticate()
 }
-
 

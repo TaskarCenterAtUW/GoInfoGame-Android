@@ -1,6 +1,5 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.BOOLEAN
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
@@ -9,8 +8,8 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "1.2.6"
-val appVersionCode = 15
+val appVersionName = "1.2.7"
+val appVersionCode = 16
 
 /** Localizations the app should be available in */
 val bcp47ExportLanguages = setOf(
@@ -37,7 +36,7 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
-    id("com.android.application") version "8.13.0"
+    id("com.android.application") version "9.2.1"
     id("org.jetbrains.compose") version "1.9.2"
     id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
     id("com.codingfeline.buildkonfig") version "0.17.1"
@@ -54,6 +53,14 @@ repositories {
     maven { url = uri("https://www.jitpack.io") }
 }
 
+/** KartaView access token: from env var, else root secrets.properties (git-ignored), else empty
+ *  (build succeeds but KartaView photo uploads fail auth at runtime). Never commit the token. */
+val kartaViewAccessToken: String = System.getenv("KARTAVIEW_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("kartaViewAccessToken")
+    }
+    ?: ""
+
 buildkonfig {
     packageName = "de.westnordost.streetcomplete"
     objectName = "BuildConfig"
@@ -62,6 +69,7 @@ buildkonfig {
         buildConfigField(BOOLEAN, "IS_FROM_MONOPOLISTIC_APP_STORE", properties["app.streetcomplete.monopolistic_app_store"]!!.toString())
         buildConfigField(STRING, "VERSION_NAME", appVersionName)
         buildConfigField(BOOLEAN, "DEBUG", "true")
+        buildConfigField(STRING, "KARTAVIEW_ACCESS_TOKEN", kartaViewAccessToken)
     }
 
     targetConfigs {

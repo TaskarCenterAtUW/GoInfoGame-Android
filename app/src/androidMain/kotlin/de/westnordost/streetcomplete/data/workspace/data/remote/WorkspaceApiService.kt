@@ -64,7 +64,7 @@ class WorkspaceApiService(
     }
 
     suspend fun getTDEIUserDetails(emailId: String): UserInfoResponse {
-        val url = environmentManager.currentEnvironment.tdeiUserManagementBaseurl
+        val url = environmentManager.currentEnvironment.tdeiApiBaseUrl
 
         try {
             val response = performHttpCallWithFirebaseTracing(

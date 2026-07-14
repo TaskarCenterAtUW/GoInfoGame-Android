@@ -45,6 +45,8 @@ import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -572,6 +574,7 @@ class MainActivity :
         binding.contextMenuView.translationX = point.x
         binding.contextMenuView.translationY = point.y
 
+        showTemporaryMarker(point)
         showMapContextMenu(position)
     }
 
@@ -1103,7 +1106,22 @@ class MainActivity :
             }
             true
         }
+        // fires on both item selection and cancel, after the click listener ran
+        popupMenu.setOnDismissListener { hideTemporaryMarker() }
         popupMenu.show()
+    }
+
+    /** Shows the pin overlay with its tip at the long-pressed screen point. The map can't be
+     *  panned while the context menu popup is open, so a static view overlay stays accurate. */
+    private fun showTemporaryMarker(point: PointF) {
+        val markerView = binding.longPressMarkerView
+        markerView.translationX = point.x - markerView.layoutParams.width / 2f
+        markerView.translationY = point.y - markerView.layoutParams.height
+        markerView.isVisible = true
+    }
+
+    private fun hideTemporaryMarker() {
+        binding.longPressMarkerView.isGone = true
     }
 
     private fun showOverlaysMenu(position1: LatLon) {
@@ -1457,7 +1475,7 @@ class MainActivity :
             val osmArgs =
                 AbstractOsmQuestForm.createArguments(element, mapFragment.displayedLocation)
             f.requireArguments().putAll(osmArgs)
-            showHighlightedElements(quest, element)
+            //showHighlightedElements(quest, element)
         }
 
         showInBottomSheet(f)

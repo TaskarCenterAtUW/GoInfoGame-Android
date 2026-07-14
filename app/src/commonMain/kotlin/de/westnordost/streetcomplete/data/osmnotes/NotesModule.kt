@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.data.osmnotes
 
-import de.westnordost.streetcomplete.ApplicationConstants
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -9,7 +8,6 @@ val notesModule = module {
     factory { AvatarsInNotesUpdater(get()) }
     factory { NoteDao(get(), get()) }
     factory { NotesDownloader(get(), get()) }
-    factory { PhotoServiceApiClient(get(), get(), ApplicationConstants.SC_PHOTO_SERVICE_URL) }
 
     single {
         NoteController(get()).apply {
