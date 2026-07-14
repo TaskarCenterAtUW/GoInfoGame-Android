@@ -527,7 +527,10 @@ fun LoginCard(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.weight(1f))
                     UserInfoComponent()
+                    Spacer(modifier = Modifier.weight(1f))
+
                 }
 
                 DebuggableBuild(
@@ -632,7 +635,7 @@ fun DebuggableBuild(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier
-                        .padding(4.dp)
+                        .padding(8.dp)
                         .clickable {
                             showDialog = true
                         },
@@ -646,7 +649,7 @@ fun DebuggableBuild(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .padding(4.dp)
+                    .padding(8.dp)
                     .clickable {
                         clickCount++
                         if (clickCount == 7) {
