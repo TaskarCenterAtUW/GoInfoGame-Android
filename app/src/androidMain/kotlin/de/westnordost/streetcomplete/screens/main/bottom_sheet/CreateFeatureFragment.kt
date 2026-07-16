@@ -18,6 +18,8 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.ImageLoader
+import coil.decode.SvgDecoder
 import coil.load
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
@@ -29,6 +31,7 @@ import de.westnordost.streetcomplete.databinding.CellFeaturePresetBinding
 import de.westnordost.streetcomplete.databinding.FormCreateFeatureBinding
 import de.westnordost.streetcomplete.databinding.FragmentCreateFeatureBinding
 import de.westnordost.streetcomplete.quests.create_feature.AddFeaturePreset
+import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
 import de.westnordost.streetcomplete.quests.note_discussion.AttachPhotoFragment
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
@@ -50,6 +53,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
 
     private val elementEditsController: ElementEditsController by inject()
     private val featurePhotosController: FeaturePhotosController by inject()
+    private val customIconCache: CustomIconCache by inject()
 
     private var _binding: FragmentCreateFeatureBinding? = null
     private val binding: FragmentCreateFeatureBinding get() = _binding!!
@@ -72,6 +76,13 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
 
     private val attachPhotoFragment: AttachPhotoFragment?
         get() = childFragmentManager.findFragmentById(R.id.attachPhotoFragment) as? AttachPhotoFragment
+
+    // the default Coil loader has no SVG support; custom icons may be SVGs
+    private val iconImageLoader by lazy {
+        ImageLoader.Builder(requireContext())
+            .components { add(SvgDecoder.Factory()) }
+            .build()
+    }
 
     interface Listener {
         fun getMapPositionAt(screenPos: PointF): LatLon?
@@ -161,7 +172,8 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
 
     /** Resolves a preset's icon: a built-in preset icon (either by its iD-style name or its
      *  drawable resource name, which is what the schema's enum uses), else a workspace-defined
-     *  custom icon loaded from its URL (Coil caches it on disk), else a generic marker. */
+     *  custom icon downloaded once into [CustomIconCache] and served from disk from then on,
+     *  else a generic marker. */
     private fun bindPresetIcon(imageView: ImageView, iconName: String?) {
         val resId = iconName?.let { name ->
             presetIconIndex[name]
@@ -175,13 +187,29 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
         val url = iconName?.let { name ->
             customIcons.firstOrNull { it.name == name && it.type == "feature-preset" }?.url
         }
-        if (url != null) {
-            imageView.load(url) {
-                placeholder(R.drawable.preset_maki_marker_stroked)
+        if (url == null) {
+            imageView.setImageResource(R.drawable.preset_maki_marker_stroked)
+            return
+        }
+
+        val cached = customIconCache.getCached(url)
+        if (cached != null) {
+            imageView.load(cached, iconImageLoader) {
                 error(R.drawable.preset_maki_marker_stroked)
             }
-        } else {
-            imageView.setImageResource(R.drawable.preset_maki_marker_stroked)
+            return
+        }
+        // not downloaded yet: show the fallback while fetching; the tag guards against the view
+        // having been recycled and re-bound to another preset by the time the download finishes
+        imageView.setImageResource(R.drawable.preset_maki_marker_stroked)
+        imageView.tag = url
+        viewLifecycleScope.launch {
+            val file = customIconCache.getOrDownload(url)
+            if (file != null && imageView.tag == url) {
+                imageView.load(file, iconImageLoader) {
+                    error(R.drawable.preset_maki_marker_stroked)
+                }
+            }
         }
     }
 
