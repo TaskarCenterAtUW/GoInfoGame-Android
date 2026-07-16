@@ -1,12 +1,15 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload
 
 import de.westnordost.streetcomplete.data.ConflictException
+import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.IsRevertAction
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -37,6 +40,8 @@ class ElementEditsUploader(
     private val mapDataApi: MapDataApiClient,
     private val statisticsController: StatisticsController,
     private val discardedEditNoticesController: DiscardedEditNoticesController,
+    private val imageUploader: KartaViewApiClient,
+    private val featurePhotosController: FeaturePhotosController,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
 
@@ -55,6 +60,11 @@ class ElementEditsUploader(
     } }
 
     private suspend fun uploadEdit(edit: ElementEdit, getIdProvider: () -> ElementIdProvider) {
+        /* photos attached to a create-feature edit are uploaded first, OUTSIDE the conflict
+           try/catch: a photo upload failure is a plain network failure (the edit stays unsynced
+           and is retried on the next sync), never a reason to discard the edit */
+        @Suppress("NAME_SHADOWING")
+        val edit = uploadPendingPhotos(edit)
         val editActionClassName = edit.action::class.simpleName!!
 
         try {
@@ -117,6 +127,28 @@ class ElementEditsUploader(
                 mapDataController.updateAll(MapDataUpdates(updated = updated, deleted = deleted))
             }
         }
+    }
+
+    /** If the edit is a node creation with photos still awaiting upload, uploads them to
+     *  KartaView and folds the resulting URLs into the action's tags as ext:image_url1,
+     *  ext:image_url2, ... (one per image, in attach order). The rewritten action is persisted
+     *  BEFORE the photo records/files are deleted, so a crash in between cannot lose the URLs or
+     *  upload the photos twice. Returns the edit whose action carries the URL tags. */
+    private suspend fun uploadPendingPhotos(edit: ElementEdit): ElementEdit {
+        val action = edit.action
+        if (action !is CreateNodeAction) return edit
+        val photoPaths = featurePhotosController.get(edit.id)
+        if (photoPaths.isEmpty()) return edit
+
+        val urls = imageUploader.upload(photoPaths, edit.position)
+        var uploadedEdit = edit
+        if (urls.isNotEmpty()) {
+            val urlTags = urls.mapIndexed { i, url -> "ext:image_url${i + 1}" to url }
+            uploadedEdit = edit.copy(action = action.copy(tags = action.tags + urlTags))
+            elementEditsController.updateAction(uploadedEdit)
+        }
+        featurePhotosController.markUploaded(edit.id)
+        return uploadedEdit
     }
 
     private suspend fun fetchElementComplete(elementType: ElementType, elementId: Long): MapData? =

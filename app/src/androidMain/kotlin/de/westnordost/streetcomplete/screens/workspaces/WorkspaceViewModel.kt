@@ -14,6 +14,8 @@ import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
@@ -160,13 +162,17 @@ class WorkspaceViewModelImpl(
             val json = Json {
                 ignoreUnknownKeys = true
             }
-            val jsonElement = workspaceDetails.longFormQuestDef
+            val jsonElement = Json.parseToJsonElement("{\"version\":\"3.2.0\",\"recency_period\":90,\"feature-presets\":[{\"name\":\"Street light\",\"icon\":\"street_light\",\"tags\":{\"amenity\":\"street_light\"}},{\"name\":\"Bench\",\"icon\":\"preset_temaki_bench\",\"tags\":{\"amenity\":\"bench\"}},{\"name\":\"Subway\",\"icon\":\"subway\",\"tags\":{\"public_transport\":\"platform\",\"subway\":\"yes\"}}],\"elements\":[{\"element_type\":\"Sidewalks\",\"element_type_icon\":\"sidewalk\",\"quest_query\":\"ways with (highway=footway and footway=sidewalk)\",\"quests\":[{\"quest_id\":101,\"quest_title\":\"What is this sidewalk's surface type?\",\"quest_description\":\"Choose the primary surface material of the sidewalk.\",\"quest_type\":\"ExclusiveChoice\",\"quest_tag\":\"ext:surface\",\"quest_answer_choices\":[{\"value\":\"asphalt\",\"choice_text\":\"Asphalt\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/surface/asphalt_landscape.png\"},{\"value\":\"concrete\",\"choice_text\":\"Concrete\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/surface/concrete_landscape.png\"},{\"value\":\"paving_stones\",\"choice_text\":\"Brick\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/surface/brick_landscape.png\"},{\"value\":\"gravel\",\"choice_text\":\"Gravel\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/surface/compacted_gravel_landscape.png\"},{\"value\":\"other\",\"choice_text\":\"Other\"}]},{\"quest_id\":102,\"quest_title\":\"Please describe this sidewalk's surface material.\",\"quest_description\":\"Enter a brief description of this sidewalk's surface material.\",\"quest_type\":\"TextEntry\",\"quest_tag\":\"ext:surface:description\",\"quest_image_url\":\"https://provisodevstorage.blob.core.windows.net/projects/gig-element-icons/icons2/sidewalk_surface.png\",\"quest_answer_dependency\":{\"question_id\":101,\"required_value\":\"other\"}},{\"quest_id\":103,\"quest_title\":\"How wide is this sidewalk, in inches?\",\"quest_description\":\"Specify the width of this sidewalk, in inches.\",\"quest_image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/dimension/width_square.png\",\"quest_type\":\"Numeric\",\"quest_tag\":\"width\",\"quest_answer_validation\":{\"min\":12,\"max\":240}},{\"quest_id\":104,\"quest_title\":\"Are there any obstructions along this sidewalk?\",\"quest_description\":\"Check if there are any obstructions blocking this sidewalk.\",\"quest_image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/obstruction/street_furniture_square.png\",\"quest_type\":\"ExclusiveChoice\",\"quest_tag\":\"ext:obstruction\",\"quest_answer_choices\":[{\"value\":\"yes\",\"choice_text\":\"Yes\"},{\"value\":\"no\",\"choice_text\":\"No\"}]},{\"quest_id\":105,\"quest_title\":\"What types of obstructions are present along this sidewalk?\",\"quest_description\":\"Select all applicable types of obstructions that are present along this sidewalk.\",\"quest_type\":\"MultipleChoice\",\"quest_tag\":\"ext:obstruction:type\",\"quest_answer_dependency\":{\"question_id\":104,\"required_value\":\"yes\"},\"quest_answer_choices\":[{\"value\":\"bollard\",\"choice_text\":\"Bollard\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/obstruction/bollard_2_square.png\"},{\"value\":\"mailbox\",\"choice_text\":\"Mailbox\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/obstruction/mailbox_landscape.png\"},{\"value\":\"pole\",\"choice_text\":\"Utility Pole\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/obstruction/utility_2_square.png\"},{\"value\":\"waste_bin\",\"choice_text\":\"Trash Can\",\"image_url\":\"https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/main/images/sidewalk/obstruction/waste_bin_square.png\"},{\"value\":\"other\",\"choice_text\":\"Other obstruction\",\"choice_follow_up\":\"Please take a photo of the obstruction.\"}]}]}],\"custom-icons\":[{\"name\":\"street_light\",\"url\":\"https://tmpfiles.org/wvwy1Qp3tizq/image3.png\",\"type\":\"feature-preset\"},{\"name\":\"subway\",\"url\":\"https://tmpfiles.org/wQwX1TpXb59N/932-34x34.jpg\",\"type\":\"feature-preset\"}]}")
+            var featurePresets: List<FeaturePreset> = emptyList()
+            var customIcons: List<CustomIcon> = emptyList()
             val longFormResponse = when {
                 jsonElement is JsonObject && "version" in jsonElement -> {
                     val wrapper = json.decodeFromJsonElement<LongFormResponse>(jsonElement)
                     if (wrapper.elements.isEmpty()) {
                         return WorkspaceLongFormState.error("No long form quests available for this workspace")
                     }
+                    featurePresets = wrapper.featurePresets
+                    customIcons = wrapper.customIcons
                     wrapper.elements
                 }
 
@@ -184,7 +190,7 @@ class WorkspaceViewModelImpl(
             for (item in longFormResponse) {
                 item.questQuery?.toElementFilterExpression()
             }
-            return WorkspaceLongFormState.success(longFormResponse, workspaceDetails.imageryListDef)
+            return WorkspaceLongFormState.success(longFormResponse, workspaceDetails.imageryListDef, featurePresets, customIcons)
         } catch (parseException: ParseException) {
             return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }

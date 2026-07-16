@@ -25,5 +25,31 @@ data class LongFormResponse(
     @SerialName("version")
     val version: String? = null,
     @SerialName("elements")
-    val elements: List<Elements> = emptyList()
+    val elements: List<Elements> = emptyList(),
+    @SerialName("feature-presets")
+    val featurePresets: List<FeaturePreset> = emptyList(),
+    @SerialName("custom-icons")
+    val customIcons: List<CustomIcon> = emptyList()
+) : Parcelable
+
+@Parcelize
+@Serializable
+data class FeaturePreset(
+    @SerialName("name")
+    val name: String,
+    @SerialName("icon")
+    val icon: String? = null,
+    @SerialName("tags")
+    val tags: Map<String, String> = emptyMap()
+) : Parcelable
+
+@Parcelize
+@Serializable
+data class CustomIcon(
+    @SerialName("name")
+    val name: String,
+    @SerialName("url")
+    val url: String,
+    @SerialName("type")
+    val type: String? = null
 ) : Parcelable

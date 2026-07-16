@@ -103,17 +103,20 @@ import de.westnordost.streetcomplete.osm.level.levelsIntersect
 import de.westnordost.streetcomplete.osm.level.parseLevelsOrNull
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
 import de.westnordost.streetcomplete.overlays.IsShowingElement
-import de.westnordost.streetcomplete.overlays.things.ThingsOverlay
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeatureRegistry
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
 import de.westnordost.streetcomplete.screens.BaseActivity
 import de.westnordost.streetcomplete.screens.main.accessibility.FollowModeScreen
 import de.westnordost.streetcomplete.screens.main.accessibility.UndoEditsScreen
+import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateFeatureFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.CreateNoteFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationAware
@@ -204,6 +207,7 @@ class MainActivity :
     NoteDiscussionForm.Listener,
     LeaveNoteInsteadFragment.Listener,
     CreateNoteFragment.Listener,
+    CreateFeatureFragment.Listener,
     MoveNodeFragment.Listener,
     // listeners to changes to data:
     VisibleQuestsSource.Listener,
@@ -247,6 +251,10 @@ class MainActivity :
     private val questTypeRegistry: QuestTypeRegistry by inject()
     private val allEditTypes: AllEditTypes by inject()
     private val overlayRegistry by inject<OverlayRegistry>()
+    private val createFeatureRegistry: CreateFeatureRegistry by inject()
+
+    private var featurePresets: List<FeaturePreset> = emptyList()
+    private var customIcons: List<CustomIcon> = emptyList()
 
     private var selectedImagery: Imagery? = null
     private val hiddenQuestsController: QuestsHiddenController by inject()
@@ -1099,10 +1107,12 @@ class MainActivity :
     private fun showMapContextMenu(position: LatLon) {
         val popupMenu = PopupMenu(this, binding.contextMenuView)
         popupMenu.inflate(R.menu.menu_map_context)
+        // only offered when the workspace's long-form definition declares feature presets
+        popupMenu.menu.findItem(R.id.action_create_node).isVisible = featurePresets.isNotEmpty()
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_note -> onClickCreateNote(position)
-                R.id.action_create_node -> showOverlaysMenu(position)
+                R.id.action_create_node -> onClickCreateFeature(position)
             }
             true
         }
@@ -1122,17 +1132,6 @@ class MainActivity :
 
     private fun hideTemporaryMarker() {
         binding.longPressMarkerView.isGone = true
-    }
-
-    private fun showOverlaysMenu(position1: LatLon) {
-        val overlay = overlayRegistry[Random.nextInt(overlayRegistry.size)]
-        (overlay as ThingsOverlay).position = position1
-        viewModel.selectOverlay(overlay)
-
-        mapFragment?.updateCameraPosition(300) {
-            position = position1
-            padding = getQuestFormInsets().toPadding()
-        }
     }
 
     private fun onClickOpenLocationInOtherApp(pos: LatLon) {
@@ -1170,6 +1169,36 @@ class MainActivity :
             position = pos
             padding = getQuestFormInsets().toPadding()
         }
+    }
+
+    private fun onClickCreateFeature(pos: LatLon) {
+        if ((mapFragment?.cameraPosition?.zoom ?: 0.0) < ApplicationConstants.NOTE_MIN_ZOOM) {
+            toast(R.string.create_new_note_unprecise)
+            return
+        }
+
+        val f = bottomSheetFragment
+        if (f is IsCloseableBottomSheet) {
+            f.onClickClose { showCreateFeature(pos) }
+        } else {
+            showCreateFeature(pos)
+        }
+    }
+
+    private fun showCreateFeature(pos: LatLon) {
+        showInBottomSheet(CreateFeatureFragment.create(featurePresets, customIcons))
+        mapFragment?.updateCameraPosition(300) {
+            position = pos
+            padding = getQuestFormInsets().toPadding()
+        }
+    }
+
+    override fun onCreatedFeature(position: LatLon) {
+        closeBottomSheet()
+    }
+
+    override fun closeCreateFeature() {
+        closeBottomSheet()
     }
 
     fun addPrefixForAccessibility(view: TextView, prefix: String) {
@@ -1598,6 +1627,19 @@ class MainActivity :
                 intent?.getParcelableArrayListExtra("LONG_FORM")
             }
 
+        featurePresets =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableArrayListExtra("FEATURE_PRESETS", FeaturePreset::class.java)
+            } else {
+                intent?.getParcelableArrayListExtra("FEATURE_PRESETS")
+            } ?: emptyList()
+        customIcons =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableArrayListExtra("CUSTOM_ICONS", CustomIcon::class.java)
+            } else {
+                intent?.getParcelableArrayListExtra("CUSTOM_ICONS")
+            } ?: emptyList()
+
         val questTypes: MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {
             questTypes.add(index to AddGenericLong(item))
@@ -1607,6 +1649,7 @@ class MainActivity :
         allEditTypes.registries.clear()
         allEditTypes.registries.addAll(listOf(questTypeRegistry))
         allEditTypes.registries.addAll(listOf(overlayRegistry))
+        allEditTypes.registries.addAll(listOf(createFeatureRegistry))
         allEditTypes.updateByName()
 
         editHistoryViewModel.refreshForNewWorkspace()

@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.data.osm.edits
 
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosDao
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsDao
 import de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditUploader
@@ -17,10 +19,11 @@ val elementEditsModule = module {
     factory { EditElementsDao(get()) }
     factory { PendingTagConflictsDao(get(), get(), get()) }
     factory { DiscardedEditNoticesDao(get(), get(), get()) }
+    factory { FeaturePhotosDao(get(), get()) }
 
     single { OpenChangesetsManager(get(), get(), get(), get()) }
 
-    single { ElementEditsUploader(get(), get(), get(), get(), get(), get(), get()) }
+    single { ElementEditsUploader(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     single<ElementEditsSource> { get<ElementEditsController>() }
     single { ElementEditsController(get(), get(), get(), get()) }
@@ -30,4 +33,5 @@ val elementEditsModule = module {
      * underlying database table */
     single { PendingTagConflictsController(get(), get()) }
     single { DiscardedEditNoticesController(get()) }
+    single { FeaturePhotosController(get(), get(), get()) }
 }

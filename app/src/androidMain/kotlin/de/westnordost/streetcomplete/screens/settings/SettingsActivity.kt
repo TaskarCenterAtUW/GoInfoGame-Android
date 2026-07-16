@@ -161,7 +161,7 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
                     source: String,
                     action: ElementEditAction,
                     isNearUserLocation: Boolean
-                ) {
+                ): Long {
                     when (action) {
                         is DeletePoiNodeAction -> {
                             message("Deleted node")
@@ -171,6 +171,7 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
                             message("Tagging\n$tagging")
                         }
                     }
+                    return 0
                 }
             }
         }

@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesTable
 import de.westnordost.streetcomplete.data.osm.edits.EditElementsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProviderTable
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsTable
 import de.westnordost.streetcomplete.data.osm.geometry.RelationGeometryTable
@@ -32,7 +33,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 24
+    const val DB_VERSION = 25
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -77,6 +78,9 @@ object DatabaseInitializer {
 
         // notices about edits that had to be discarded (unsalvageable structural conflicts)
         db.exec(DiscardedEditNoticesTable.CREATE)
+
+        // photos attached to not-yet-synced create-feature edits
+        db.exec(FeaturePhotosTable.CREATE)
 
         // quests
         db.exec(VisibleEditTypeTable.CREATE)
@@ -320,6 +324,11 @@ object DatabaseInitializer {
             db.exec(DiscardedEditNoticesTable.CREATE)
             // edits with unresolved tag conflicts are held back from uploading via this flag
             db.tryExec("ALTER TABLE osm_element_edits ADD COLUMN blocked_on_conflict int NOT NULL DEFAULT 0")
+        }
+
+        if (oldVersion <= 24 && newVersion >= 25) {
+            // photos attached to not-yet-synced create-feature edits
+            db.exec(FeaturePhotosTable.CREATE)
         }
     }
 }

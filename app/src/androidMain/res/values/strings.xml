@@ -1869,6 +1869,9 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="confirmation_hide_quest">"Are you sure you want to hide this quest?"</string>
     <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="map_btn_create_node">Add new feature</string>
+    <string name="create_feature_new_title">New feature: %s</string>
+    <string name="create_feature_add_photos">Add photos of this feature (optional)</string>
+    <string name="create_feature_confirm">Add feature</string>
 
     <string name="follow_mode">Screen Reader Mode</string>
     <string name="enable_follow_mode">Open Screen Reader Mode</string>

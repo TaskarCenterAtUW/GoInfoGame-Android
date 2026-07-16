@@ -6,8 +6,7 @@
     <item
         android:width="24dp"
         android:height="12dp"
-        android:gravity="center_horizontal|bottom"
-        android:bottom="-6dp">
+        android:gravity="center_horizontal|bottom">
         <shape android:shape="oval">
             <gradient
                 android:type="radial"
@@ -18,6 +17,6 @@
         </shape>
     </item>
     <item>
-        <bitmap android:src="@drawable/ic_pin" />
+        <bitmap android:src="@drawable/ic_pin_new" />
     </item>
 </layer-list>
