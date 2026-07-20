@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.workspace.data.remote
 import android.location.Location
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
@@ -11,6 +12,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDet
 import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -31,7 +33,8 @@ class WorkspaceApiService(
     private val httpClient: HttpClient,
     private val preferences: Preferences,
     private val environmentManager: EnvironmentManager,
-) {
+    private val workspaceConfigProvider: WorkspaceConfigProvider,
+    ) {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
@@ -46,7 +49,9 @@ class WorkspaceApiService(
                 url = url,
                 method = HttpMethod.Get
             ) {
+
                 get(url) {
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                     parameter("lat", location.latitude)
                     parameter("lon", location.longitude)
                     parameter("radius", 20000)
@@ -73,6 +78,7 @@ class WorkspaceApiService(
                 method = HttpMethod.Get
             ) {
                 get(url) {
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                     parameter("user_name", emailId)
                 }
             }
@@ -91,7 +97,10 @@ class WorkspaceApiService(
                 url = url,
                 method = HttpMethod.Get
             ) {
-                get(url)
+
+                get(url){
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+                }
             }
 
             if (response.status == HttpStatusCode.NotFound) {

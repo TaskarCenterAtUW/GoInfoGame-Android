@@ -32,7 +32,7 @@
                 android:layout_height="64dp"
                 android:layout_gravity="top|center_horizontal"
                 android:importantForAccessibility="no"
-                app:srcCompat="@drawable/ic_pin_new"/>
+                app:srcCompat="@drawable/ic_pin_with_shadow"/>
 
         </FrameLayout>
 

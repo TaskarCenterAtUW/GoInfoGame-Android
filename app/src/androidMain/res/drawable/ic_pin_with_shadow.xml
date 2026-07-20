@@ -16,7 +16,6 @@
                 android:endColor="#0000" />
         </shape>
     </item>
-    <item>
-        <bitmap android:src="@drawable/ic_pin_new" />
-    </item>
+    <!-- direct drawable reference (not <bitmap>): ic_pin_new is a vector, which <bitmap> can't inflate -->
+    <item android:drawable="@drawable/ic_pin_new" />
 </layer-list>

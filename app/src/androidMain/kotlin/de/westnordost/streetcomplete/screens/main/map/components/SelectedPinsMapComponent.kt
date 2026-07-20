@@ -72,8 +72,14 @@ class SelectedPinsMapComponent(
      *  highlighted/selected. */
     suspend fun set(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
         mapImages.addOnce(iconResId) { createPinBitmap(context, it) to false }
+        set(context.resources.getResourceEntryName(iconResId), pinPositions)
+    }
+
+    /** Same, but with an already-registered style image (e.g. one added via
+     *  [PinsMapComponent.addCustomPinIcon]) */
+    suspend fun set(iconImageName: String, pinPositions: Collection<LatLon>) {
         val p = JsonObject()
-        p.addProperty("icon-image", context.resources.getResourceEntryName(iconResId))
+        p.addProperty("icon-image", iconImageName)
         val points = pinPositions.map { Feature.fromGeometry(it.toPoint(), p) }
         synchronized(this.pins) {
             this.pins.addAll(pinPositions)

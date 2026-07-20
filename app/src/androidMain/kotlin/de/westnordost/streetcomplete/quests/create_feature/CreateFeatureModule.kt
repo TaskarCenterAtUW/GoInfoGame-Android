@@ -7,4 +7,5 @@ import org.koin.dsl.module
 val createFeatureModule = module {
     single { CreateFeatureRegistry(listOf(0 to AddFeaturePreset)) }
     single { CustomIconCache(androidContext(), get()) }
+    single { FeaturePresetCatalog() }
 }

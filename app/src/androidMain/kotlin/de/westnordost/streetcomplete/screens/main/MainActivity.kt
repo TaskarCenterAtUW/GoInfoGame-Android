@@ -109,6 +109,11 @@ import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
 import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeatureRegistry
+import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
+import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
+import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
+import de.westnordost.streetcomplete.quests.create_feature.featurePresetCustomIconFileOf
+import de.westnordost.streetcomplete.quests.create_feature.featurePresetIconOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
@@ -252,6 +257,8 @@ class MainActivity :
     private val allEditTypes: AllEditTypes by inject()
     private val overlayRegistry by inject<OverlayRegistry>()
     private val createFeatureRegistry: CreateFeatureRegistry by inject()
+    private val featurePresetCatalog: FeaturePresetCatalog by inject()
+    private val customIconCache: CustomIconCache by inject()
 
     private var featurePresets: List<FeaturePreset> = emptyList()
     private var customIcons: List<CustomIcon> = emptyList()
@@ -347,7 +354,15 @@ class MainActivity :
                 val geometry = editHistoryViewModel.getEditGeometry(edit)
                 mapFragment?.startFocus(geometry, Insets.NONE)
                 mapFragment?.highlightGeometry(geometry)
-                mapFragment?.highlightPins(edit.icon, listOf(edit.position))
+                // created features show the added feature's own icon inside the pin bubble
+                val customIconFile = featurePresetCatalog.featurePresetCustomIconFileOf(edit, customIconCache)
+                if (customIconFile != null) {
+                    // registered as a style image when the edit history pins were shown
+                    mapFragment?.highlightPins(customPinIconName(customIconFile), listOf(edit.position))
+                } else {
+                    val pinIcon = featurePresetCatalog.featurePresetIconOf(edit) ?: edit.icon
+                    mapFragment?.highlightPins(pinIcon, listOf(edit.position))
+                }
                 mapFragment?.hideOverlay()
             } else if (editHistoryViewModel.isShowingSidebar.value) {
                 mapFragment?.clearFocus()
@@ -1639,6 +1654,7 @@ class MainActivity :
             } else {
                 intent?.getParcelableArrayListExtra("CUSTOM_ICONS")
             } ?: emptyList()
+        featurePresetCatalog.update(featurePresets, customIcons)
 
         val questTypes: MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {

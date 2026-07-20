@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 /** Persistent store for workspace-defined custom icons (see the "custom-icons" key of the
  *  long-form schema). Each icon URL is downloaded at most once and kept in the app's files
@@ -30,16 +31,72 @@ class CustomIconCache(
     private val dir: File
         get() = File(context.filesDir, "custom_icons").apply { mkdirs() }
 
+    /* ------------------------------- index table (url -> file) ------------------------------- */
+
+    private val indexFile: File get() = File(dir, INDEX_FILE_NAME)
+    private var index: MutableMap<String, String>? = null
+
+    /** Table of what is cached, keyed by URL, persisted as index.json in the cache dir */
+    private fun loadIndex(): MutableMap<String, String> = synchronized(this) {
+        index ?: run {
+            val loaded: MutableMap<String, String> = try {
+                if (indexFile.exists()) Json.decodeFromString(indexFile.readText()) else mutableMapOf()
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not read custom icon index, starting fresh", e)
+                mutableMapOf()
+            }
+            index = loaded
+            loaded
+        }
+    }
+
+    private fun recordInIndex(url: String, file: File) = synchronized(this) {
+        val table = loadIndex()
+        if (table[url] != file.name) {
+            table[url] = file.name
+            saveIndex(table)
+        }
+    }
+
+    private fun removeFromIndex(url: String) = synchronized(this) {
+        val table = loadIndex()
+        if (table.remove(url) != null) saveIndex(table)
+    }
+
+    private fun saveIndex(table: Map<String, String>) {
+        try {
+            val tmp = File(dir, "$INDEX_FILE_NAME.tmp")
+            tmp.writeText(Json.encodeToString(table))
+            if (!tmp.renameTo(indexFile)) tmp.delete()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not persist custom icon index", e)
+        }
+    }
+
+    /* -------------------------------------- lookup ------------------------------------------- */
+
     /** Returns the already-downloaded icon file for the given URL, or null if not cached yet.
-     *  A cached file that turns out not to be a decodable image (e.g. an HTML error page an
-     *  earlier version cached from a dead link) is deleted, so it gets re-downloaded. */
+     *  Consults the index table first; on a table miss, falls back to the URL-hash file mapping
+     *  (covers icons cached before the table existed) and backfills the table. A cached file
+     *  that turns out not to be a decodable image (e.g. an HTML error page an earlier version
+     *  cached from a dead link) is deleted, so it gets re-downloaded. */
     fun getCached(url: String): File? {
-        val file = fileFor(url).takeIf { it.exists() && it.length() > 0 } ?: return null
+        val fromTable = loadIndex()[url]
+            ?.let { File(dir, it) }
+            ?.takeIf { it.exists() && it.length() > 0 }
+        val file = fromTable
+            ?: fileFor(url).takeIf { it.exists() && it.length() > 0 }
+            ?: run {
+                removeFromIndex(url) // table pointed at a file that no longer exists
+                return null
+            }
         if (!isImage(file.readBytes())) {
             Log.w(TAG, "Deleting cached custom icon that is not a decodable image: $url")
             file.delete()
+            removeFromIndex(url)
             return null
         }
+        if (fromTable == null) recordInIndex(url, file)
         return file
     }
 
@@ -89,6 +146,7 @@ class CustomIconCache(
                 tmp.delete()
                 return@withContext null
             }
+            recordInIndex(url, file)
             file
         } catch (e: Exception) {
             Log.w(TAG, "Downloading custom icon failed: $url", e)
@@ -120,5 +178,6 @@ class CustomIconCache(
 
     companion object {
         private const val TAG = "CustomIconCache"
+        private const val INDEX_FILE_NAME = "index.json"
     }
 }
