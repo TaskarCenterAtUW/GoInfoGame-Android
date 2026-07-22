@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
+import de.westnordost.streetcomplete.data.workspace.UserProjectGroupItem
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
@@ -41,6 +42,18 @@ sealed class WorkspaceLongFormState {
         ) = Success(workspaces, imageryList, featurePresets, customIcons)
 
         fun error(errorMessage: String?) = Error(errorMessage ?: "")
+    }
+}
+
+sealed class WorkspaceProjectGroupsState {
+    data object Loading : WorkspaceProjectGroupsState()
+    data class Success(val groups: List<UserProjectGroupItem>) : WorkspaceProjectGroupsState()
+    data class Error(val error: String?) : WorkspaceProjectGroupsState()
+
+    companion object {
+        fun loading() = Loading
+        fun success(groups: List<UserProjectGroupItem>) = Success(groups)
+        fun error(errorMessage: String?) = Error(errorMessage)
     }
 }
 

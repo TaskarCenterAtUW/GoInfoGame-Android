@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Circular avatar showing a person's initials (e.g. "Rajesh Kumar" -> "RK"), falling back to a
@@ -42,7 +43,9 @@ fun UserInitialsAvatar(
                 text = initials,
                 color = contentColor,
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleSmall,
+                // proportional to size rather than a fixed style, so this stays legible whether
+                // it's a small toolbar avatar or the large one on the profile screen
+                fontSize = (size.value * 0.4f).sp,
             )
         } else {
             Icon(

@@ -10,7 +10,6 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
-import de.westnordost.streetcomplete.data.workspace.UserProjectGroupItem
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
@@ -39,7 +38,7 @@ import java.io.File
 
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
-    abstract val userProjectGroups: StateFlow<List<UserProjectGroupItem>>
+    abstract val projectGroupsState: StateFlow<WorkspaceProjectGroupsState>
     abstract fun fetchWorkspaces(location: Location)
     abstract fun refreshWorkspaces()
     abstract fun loginToWorkspace(
@@ -95,8 +94,9 @@ class WorkspaceViewModelImpl(
     private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
     override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
 
-    private val _userProjectGroups = MutableStateFlow<List<UserProjectGroupItem>>(emptyList())
-    override val userProjectGroups: StateFlow<List<UserProjectGroupItem>> get() = _userProjectGroups
+    private val _projectGroupsState =
+        MutableStateFlow<WorkspaceProjectGroupsState>(WorkspaceProjectGroupsState.Loading)
+    override val projectGroupsState: StateFlow<WorkspaceProjectGroupsState> get() = _projectGroupsState
 
     // override val showWorkspaces: StateFlow<WorkspaceListState> = flow {
     //     workspaceRepository.getWorkspaces()
@@ -122,6 +122,15 @@ class WorkspaceViewModelImpl(
     override fun refreshWorkspaces() {
         userLocation?.apply {
             viewModelScope.launch {
+                _projectGroupsState.value = WorkspaceProjectGroupsState.loading()
+                workspaceRepository.getUserProjectGroups()
+                    .catch { e ->
+                        _projectGroupsState.value =
+                            WorkspaceProjectGroupsState.error(e.message ?: "Failed to load project groups")
+                    }
+                    .collect { groups -> _projectGroupsState.value = WorkspaceProjectGroupsState.success(groups) }
+
+
                 _showWorkspaces.value = WorkspaceListState.Loading
                 workspaceRepository.getWorkspaces(this@apply)
                     .distinctUntilChanged()
@@ -130,14 +139,6 @@ class WorkspaceViewModelImpl(
                         _showWorkspaces.value = WorkspaceListState.success(workspaces)
                     }
             }
-        }
-        // used only to resolve tdeiProjectGroupId -> a human-readable name for the workspace-list
-        // filter spinner; not location-scoped, and a failure here shouldn't block the workspace
-        // list itself - the filter just falls back to showing the raw id.
-        viewModelScope.launch {
-            workspaceRepository.getUserProjectGroups()
-                .catch { }
-                .collect { groups -> _userProjectGroups.value = groups }
         }
     }
 

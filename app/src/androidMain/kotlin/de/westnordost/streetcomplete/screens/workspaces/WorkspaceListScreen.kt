@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,6 +67,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -87,7 +90,8 @@ fun WorkSpaceListScreen(
     modifier: Modifier = Modifier,
 ) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
-    val userProjectGroups by viewModel.userProjectGroups.collectAsState()
+    val projectGroupsState by viewModel.projectGroupsState.collectAsState()
+    val userProjectGroups = (projectGroupsState as? WorkspaceProjectGroupsState.Success)?.groups ?: emptyList()
     val projectGroupNames = remember(userProjectGroups) {
         userProjectGroups.associate { it.tdeiProjectGroupId to it.projectGroupName }
     }
@@ -95,63 +99,63 @@ fun WorkSpaceListScreen(
     var isLongFormLoading by remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
+    // what "Refresh" on the snackbar actually retries - set alongside snackBarMessage by
+    // whichever of the three error sources below fired, so it retries the thing that actually
+    // failed instead of always just refetching the workspace list
+    var retryAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val context = LocalContext.current
-
-    val screenTitle = "You are on the Workspace list Screen. " +
-        "Below is a list of available workspaces. " +
-        "Select a workspace to continue."
 
     val onClick: (workspace: Workspace) -> Unit = { workspace ->
         viewModel.setSelectedWorkspace(workspace)
     }
 
+    val eligibleWorkspaces = (workspaceListState as? WorkspaceListState.Success)?.workspaces
+        ?.filter { it.externalAppAccess == 1 && it.type == "osw" } ?: emptyList()
+    val hasWorkspaces = eligibleWorkspaces.isNotEmpty()
+
+    var selectedProjectGroup by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    val projectGroups = remember(eligibleWorkspaces) {
+        eligibleWorkspaces.mapNotNull { it.tdeiProjectGroupId }.distinct().sorted()
+    }
+    val visibleWorkspaces = remember(eligibleWorkspaces, selectedProjectGroup, searchQuery) {
+        eligibleWorkspaces
+            .filter { selectedProjectGroup == null || it.tdeiProjectGroupId == selectedProjectGroup }
+            .filter { searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true) }
+            .sortedByDescending { it.createdAt ?: "" }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
-        when (workspaceListState) {
-            is WorkspaceListState.Loading -> {
-                // Show a loading indicator in the center of screen
-                isLoading = true
-            }
+        // toolbar (and its profile avatar -> logout path) stays visible in every state -
+        // loading, empty, or error - so the user always has somewhere to go; search only makes
+        // sense once there's something to search through
+        Column(modifier = Modifier.fillMaxSize()) {
+            WorkspaceToolbar(
+                onProfileClick = {
+                    context.startActivity(Intent(context, UserActivity::class.java))
+                },
+                userName = preferences.workspaceUserName?.split("\n")?.getOrNull(1)?.trim(),
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it },
+                showSearch = hasWorkspaces,
+            )
 
-            is WorkspaceListState.Success -> {
-                isLoading = false
-                // Display the list of workspaces
-                val eligibleWorkspaces = (workspaceListState as WorkspaceListState.Success).workspaces
-                    .filter { it.externalAppAccess == 1 && it.type == "osw" }
-                if (eligibleWorkspaces.isEmpty()) {
-                    Text(
-                        text = "No workspaces available in your area",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            // .semantics{ contentDescription = screenTitle }
-                    ) {
-                        val context = LocalContext.current
-                        var selectedProjectGroup by remember { mutableStateOf<String?>(null) }
-                        var searchQuery by remember { mutableStateOf("") }
-                        val projectGroups = remember(eligibleWorkspaces) {
-                            eligibleWorkspaces.mapNotNull { it.tdeiProjectGroupId }.distinct().sorted()
+            when (workspaceListState) {
+                is WorkspaceListState.Loading -> {
+                    isLoading = true
+                }
+
+                is WorkspaceListState.Success -> {
+                    isLoading = false
+                    if (!hasWorkspaces) {
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "No workspaces available in your area",
+                                style = MaterialTheme.typography.titleMedium
+                            )
                         }
-                        val visibleWorkspaces = remember(eligibleWorkspaces, selectedProjectGroup, searchQuery) {
-                            eligibleWorkspaces
-                                .filter { selectedProjectGroup == null || it.tdeiProjectGroupId == selectedProjectGroup }
-                                .filter { searchQuery.isBlank() || it.title.contains(searchQuery, ignoreCase = true) }
-                                .sortedByDescending { it.createdAt ?: "" }
-                        }
-
-                        WorkspaceToolbar(
-                            onProfileClick = {
-                                context.startActivity(Intent(context, UserActivity::class.java))
-                            },
-                            userName = preferences.workspaceUserName?.split("\n")?.getOrNull(1)?.trim(),
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = { searchQuery = it },
-                        )
-
-                        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    } else {
+                        Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp)) {
                             WorkspaceList(
                                 onClick,
                                 modifier = Modifier,
@@ -165,12 +169,41 @@ fun WorkSpaceListScreen(
                         }
                     }
                 }
-            }
 
-            is WorkspaceListState.Error -> {
-                isLoading = false
-                // Show an error message
-                snackBarMessage = "Error: ${(workspaceListState as WorkspaceListState.Error).error}"
+                is WorkspaceListState.Error -> {
+                    isLoading = false
+                    val error = (workspaceListState as WorkspaceListState.Error).error
+                    snackBarMessage = "Error: $error"
+                    retryAction = { viewModel.refreshWorkspaces() }
+                    // persistent, not just the (dismissable/timed-out) snackbar - otherwise once
+                    // that's gone the user is looking at a blank screen with no indication
+                    // anything failed, only the toolbar to fall back on
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = error ?: "Something went wrong",
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 32.dp)
+                            )
+                            Button(
+                                onClick = { viewModel.refreshWorkspaces() },
+                                modifier = Modifier.padding(top = 16.dp)
+                            ) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // project-group-roles failing doesn't block the workspace list itself (see
+        // WorkspaceViewModelImpl.refreshWorkspaces) - just surfaced the same way as the other two
+        LaunchedEffect(projectGroupsState) {
+            (projectGroupsState as? WorkspaceProjectGroupsState.Error)?.let {
+                snackBarMessage = "Error: ${it.error}"
+                retryAction = { viewModel.refreshWorkspaces() }
             }
         }
 
@@ -178,8 +211,7 @@ fun WorkSpaceListScreen(
             LaunchedEffect(snackBarHostState) {
                 snackBarHostState.showSnackbar(it, actionLabel = "Refresh").let {
                     if (it == SnackbarResult.ActionPerformed) {
-                        // Retry the action that caused the error
-                        viewModel.refreshWorkspaces()
+                        retryAction?.invoke()
                     }
                 }
                 snackBarMessage = null
@@ -187,14 +219,23 @@ fun WorkSpaceListScreen(
         }
 
 
-        if (isLoading || isLongFormLoading) {
-            CircularProgressWithText(
-                text = "Loading workspaces..."
-            )
+        if (isLongFormLoading) {
+            CircularProgressWithText(text = "Loading workspace details...")
+        } else if (projectGroupsState is WorkspaceProjectGroupsState.Loading) {
+            // checked before isLoading to match the fetch order in refreshWorkspaces() (project
+            // groups first, then workspaces) - isLoading defaults to true before either fetch
+            // even starts and doesn't change until the workspaces call begins, so if this were
+            // checked second it would never win while project groups is the one actually running
+            CircularProgressWithText(text = "Loading project groups...")
+        } else if (isLoading) {
+            CircularProgressWithText(text = "Loading workspaces...")
         }
 
         val selectedWorkspaceState by viewModel.selectedWorkspace.collectAsState()
-        LaunchedEffect(selectedWorkspaceState) {
+        // bumped by the long-form error's retry action to force LaunchedEffect to re-run without
+        // needing selectedWorkspaceState's identity to change
+        var longFormRetryTrigger by remember { mutableIntStateOf(0) }
+        LaunchedEffect(selectedWorkspaceState, longFormRetryTrigger) {
             selectedWorkspaceState?.let { workspace ->
                 viewModel.getWorkspaceDetails(workspace.id).collect { longFormState ->
                     when (longFormState) {
@@ -224,6 +265,7 @@ fun WorkSpaceListScreen(
                             // Handle error state
                             //Show snack bar
                             snackBarMessage = "Error: ${longFormState.error}"
+                            retryAction = { longFormRetryTrigger++ }
                         }
                     }
                 }
@@ -266,11 +308,16 @@ fun WorkspaceToolbar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    showSearch: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(expanded) {
         if (expanded) focusRequester.requestFocus()
+    }
+    // nothing to search (empty/loading/error state) - collapse back to the plain wordmark
+    LaunchedEffect(showSearch) {
+        if (!showSearch) expanded = false
     }
 
     Surface(
@@ -282,22 +329,23 @@ fun WorkspaceToolbar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 16.dp)
+                .height(72.dp)
+                .padding(horizontal = 20.dp)
         ) {
             UserInitialsAvatar(
                 name = userName,
-                size = 36.dp,
+                size = 48.dp,
                 modifier = Modifier
                     .clickable { onProfileClick() }
                     .semantics { contentDescription = "Navigate to profile screen" }
             )
 
-            if (expanded) {
+            if (showSearch && expanded) {
                 TextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Search workspaces") },
+                    placeholder = { Text("Search workspaces", style = MaterialTheme.typography.titleMedium) },
+                    textStyle = MaterialTheme.typography.titleMedium,
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color.Transparent,
@@ -308,20 +356,20 @@ fun WorkspaceToolbar(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .padding(start = 12.dp)
+                        .padding(start = 16.dp)
                         .focusRequester(focusRequester)
                 )
             } else {
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 12.dp)
+                        .padding(start = 16.dp)
                         .clearAndSetSemantics {},
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
                         text = "AVIV",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         fontFamily = ProximaNovaFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -329,7 +377,7 @@ fun WorkspaceToolbar(
                     )
                     Text(
                         text = " ScoutRoute",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         fontFamily = ProximaNovaFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -338,21 +386,25 @@ fun WorkspaceToolbar(
                 }
             }
 
-            IconButton(
-                onClick = {
-                    if (expanded) {
-                        expanded = false
-                        onSearchQueryChange("")
-                    } else {
-                        expanded = true
-                    }
+            if (showSearch) {
+                IconButton(
+                    onClick = {
+                        if (expanded) {
+                            expanded = false
+                            onSearchQueryChange("")
+                        } else {
+                            expanded = true
+                        }
+                    },
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.Search,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        contentDescription = if (expanded) "Close search" else "Search workspaces",
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.Close else Icons.Default.Search,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    contentDescription = if (expanded) "Close search" else "Search workspaces"
-                )
             }
         }
     }
