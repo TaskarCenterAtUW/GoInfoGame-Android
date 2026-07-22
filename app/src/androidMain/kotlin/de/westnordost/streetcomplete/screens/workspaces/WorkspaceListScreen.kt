@@ -3,9 +3,6 @@ package de.westnordost.streetcomplete.screens.workspaces
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -59,10 +55,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -71,7 +65,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
@@ -91,7 +84,8 @@ fun WorkSpaceListScreen(
 ) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
     val projectGroupsState by viewModel.projectGroupsState.collectAsState()
-    val userProjectGroups = (projectGroupsState as? WorkspaceProjectGroupsState.Success)?.groups ?: emptyList()
+    val userProjectGroups =
+        (projectGroupsState as? WorkspaceProjectGroupsState.Success)?.groups ?: emptyList()
     val projectGroupNames = remember(userProjectGroups) {
         userProjectGroups.associate { it.tdeiProjectGroupId to it.projectGroupName }
     }
@@ -148,14 +142,22 @@ fun WorkSpaceListScreen(
                 is WorkspaceListState.Success -> {
                     isLoading = false
                     if (!hasWorkspaces) {
-                        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
                                 text = "No workspaces available in your area",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
                     } else {
-                        Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp)) {
+                        Column(modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(16.dp)) {
                             WorkspaceList(
                                 onClick,
                                 modifier = Modifier,
@@ -178,7 +180,12 @@ fun WorkSpaceListScreen(
                     // persistent, not just the (dismissable/timed-out) snackbar - otherwise once
                     // that's gone the user is looking at a blank screen with no indication
                     // anything failed, only the toolbar to fall back on
-                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = error ?: "Something went wrong",
@@ -344,7 +351,12 @@ fun WorkspaceToolbar(
                 TextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Search workspaces", style = MaterialTheme.typography.titleMedium) },
+                    placeholder = {
+                        Text(
+                            "Search workspaces",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
                     textStyle = MaterialTheme.typography.titleMedium,
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
@@ -466,7 +478,11 @@ fun WorkspaceList(
             } else {
                 LazyColumn(modifier = modifier) {
                     items(items = items, key = { it.id }) { workspace ->
-                        WorkSpaceListItem(workspace = workspace, modifier = Modifier, onClick = onClick)
+                        WorkSpaceListItem(
+                            workspace = workspace,
+                            modifier = Modifier,
+                            onClick = onClick
+                        )
                     }
                 }
             }
@@ -504,7 +520,11 @@ fun ProjectGroupFilter(
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth()
                     .clip(OutlinedTextFieldDefaults.shape)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, OutlinedTextFieldDefaults.shape)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline,
+                        OutlinedTextFieldDefaults.shape
+                    )
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Text(
@@ -582,12 +602,22 @@ private fun formatWorkspaceCreatedAt(rawCreatedAt: String?): String {
     if (rawCreatedAt.isNullOrBlank()) return "date unknown"
     return try {
         java.time.OffsetDateTime.parse(rawCreatedAt)
-            .format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.getDefault()))
+            .format(
+                java.time.format.DateTimeFormatter.ofPattern(
+                    "MMM d, yyyy",
+                    java.util.Locale.getDefault()
+                )
+            )
     } catch (e: Exception) {
         try {
             java.time.Instant.parse(rawCreatedAt)
                 .atZone(java.time.ZoneId.systemDefault())
-                .format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.getDefault()))
+                .format(
+                    java.time.format.DateTimeFormatter.ofPattern(
+                        "MMM d, yyyy",
+                        java.util.Locale.getDefault()
+                    )
+                )
         } catch (e: Exception) {
             rawCreatedAt
         }

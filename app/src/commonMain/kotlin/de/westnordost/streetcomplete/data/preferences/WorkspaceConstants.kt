@@ -7,7 +7,7 @@ enum class Environment(
     val osmUrl: String,
     val tdeiWebUrl: String,
     val appUpdateVersionCheckUrl: String = APP_UPDATE_VERSION_CHECKER_URL,
-    val firebaseUpdateUrl: String = FIREBASE_UPDATE_URL
+    val firebaseUpdateUrl: String = FIREBASE_UPDATE_URL,
 ) {
     STAGE(
         "https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces",
@@ -36,7 +36,6 @@ enum class Environment(
             "https://raw.githubusercontent.com/TaskarCenterAtUW/asr-config/refs/heads/main/force-update/app-force-update.json"
         const val FIREBASE_UPDATE_URL =
             "https://appdistribution.firebase.google.com/testerapps"
-
     }
 }
 

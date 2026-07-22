@@ -19,7 +19,9 @@ class Preferences(private val prefs: ObservableSettings) {
     var language: String? by prefs.nullableString(LANGUAGE_SELECT)
 
     var theme: Theme
-        set(value) { prefs.putString(THEME_SELECT, value.name) }
+        set(value) {
+            prefs.putString(THEME_SELECT, value.name)
+        }
         get() {
             val value = prefs.getStringOrNull(THEME_SELECT)
             // AUTO setting was removed because as of June 2024, 95% of active installs from
@@ -28,7 +30,9 @@ class Preferences(private val prefs: ObservableSettings) {
         }
 
     var autosync: Autosync
-        set(value) { prefs.putString(AUTOSYNC, value.name) }
+        set(value) {
+            prefs.putString(AUTOSYNC, value.name)
+        }
         get() = prefs.getStringOrNull(AUTOSYNC)?.let { Autosync.valueOf(it) } ?: DEFAULT_AUTOSYNC
 
     var keepScreenOn: Boolean by prefs.boolean(KEEP_SCREEN_ON, false)
@@ -36,7 +40,9 @@ class Preferences(private val prefs: ObservableSettings) {
     var showZoomButtons: Boolean by prefs.boolean(SHOW_ZOOM_BUTTONS, true)
 
     var resurveyIntervals: ResurveyIntervals
-        set(value) { prefs.putString(RESURVEY_INTERVALS, value.name) }
+        set(value) {
+            prefs.putString(RESURVEY_INTERVALS, value.name)
+        }
         get() = prefs.getStringOrNull(RESURVEY_INTERVALS)?.let { ResurveyIntervals.valueOf(it) }
             ?: DEFAULT_RESURVEY_INTERVALS
 
@@ -77,21 +83,21 @@ class Preferences(private val prefs: ObservableSettings) {
     var oAuth2AccessToken: String? by prefs.nullableString(OAUTH2_ACCESS_TOKEN)
     val hasOAuth1AccessToken: Boolean get() = prefs.hasKey(OAUTH1_ACCESS_TOKEN)
 
-    var showLongForm : Boolean
+    var showLongForm: Boolean
         set(value) {
             prefs[WORKSPACE_SHOW_LONG_FORM] = value
         }
         get() =
             prefs.getBoolean(WORKSPACE_SHOW_LONG_FORM, false)
 
-    var workspaceUserId : String?
+    var workspaceUserId: String?
         set(value) {
             prefs.putStringOrNull(WORKSPACE_USER_ID, value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_USER_ID)
 
-    var workspaceLogin : Boolean
+    var workspaceLogin: Boolean
         set(value) {
             prefs[WORKSPACE_LOGIN] = value
             setWorkspaceLoginState(value)
@@ -106,97 +112,97 @@ class Preferences(private val prefs: ObservableSettings) {
         _workspaceLoginState.value = value
     }
 
-    var workspaceId : Int?
+    var workspaceId: Int?
         set(value) {
             prefs[WORKSPACE_ID] = value
         }
         get() =
             prefs.getIntOrNull(WORKSPACE_ID)
 
-    var workspaceToken : String?
+    var workspaceToken: String?
         set(value) {
-            prefs.putStringOrNull(WORKSPACE_ACCESS_TOKEN,value)
+            prefs.putStringOrNull(WORKSPACE_ACCESS_TOKEN, value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_ACCESS_TOKEN)
 
-    var configLastFetchTime : Long?
+    var configLastFetchTime: Long?
         set(value) {
             value?.let {
-                prefs.putLong(CONFIG_LAST_FETCHED_TIME,value)
+                prefs.putLong(CONFIG_LAST_FETCHED_TIME, value)
             }
         }
         get() =
             prefs.getLongOrNull(CONFIG_LAST_FETCHED_TIME)
 
-    var configJson : String?
+    var configJson: String?
         set(value) {
             value?.let {
-                prefs.putString(CONFIG_JSON,value)
+                prefs.putString(CONFIG_JSON, value)
             }
         }
         get() =
             prefs.getStringOrNull(CONFIG_JSON)
 
-    var workspaceUserName : String?
+    var workspaceUserName: String?
         set(value) {
-            prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME,value)
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_NAME, value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_NAME)
 
-    var environment : String
+    var environment: String
         set(value) {
-            prefs.putStringOrNull(ENVIRONMENT,value)
+            prefs.putStringOrNull(ENVIRONMENT, value)
         }
         get() =
-            prefs.getString(ENVIRONMENT,Environment.PROD.name)
+            prefs.getString(ENVIRONMENT, Environment.PROD.name)
 
-    var workspaceRefreshToken : String?
+    var workspaceRefreshToken: String?
         set(value) {
-            prefs.putStringOrNull(WORKSPACE_TOKEN_REFRESH,value)
+            prefs.putStringOrNull(WORKSPACE_TOKEN_REFRESH, value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_TOKEN_REFRESH)
 
-    var accessTokenExpiryInterval : Long
+    var accessTokenExpiryInterval: Long
         set(value) {
-            prefs.putLong(WORKSPACE_TOKEN_EXPIRES,value)
+            prefs.putLong(WORKSPACE_TOKEN_EXPIRES, value)
         }
         get() =
-            prefs.getLong(WORKSPACE_TOKEN_EXPIRES,0)
+            prefs.getLong(WORKSPACE_TOKEN_EXPIRES, 0)
 
-    var refreshTokenExpiryInterval : Long
+    var refreshTokenExpiryInterval: Long
         set(value) {
-            prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,value)
+            prefs.putLong(WORKSPACE_REFRESH_TOKEN_EXPIRES, value)
         }
         get() =
-            prefs.getLong(WORKSPACE_REFRESH_TOKEN_EXPIRES,0)
+            prefs.getLong(WORKSPACE_REFRESH_TOKEN_EXPIRES, 0)
 
-    var refreshTokenExpiryTime : Long
+    var refreshTokenExpiryTime: Long
         set(value) {
-            prefs.putLong(REFRESH_TOKEN_EXPIRY_TIME,value)
+            prefs.putLong(REFRESH_TOKEN_EXPIRY_TIME, value)
         }
         get() =
-            prefs.getLong(REFRESH_TOKEN_EXPIRY_TIME,0)
+            prefs.getLong(REFRESH_TOKEN_EXPIRY_TIME, 0)
 
-    var accessTokenExpiryTime : Long
+    var accessTokenExpiryTime: Long
         set(value) {
-            prefs.putLong(AUTH_TOKEN_EXPIRY_TIME,value)
+            prefs.putLong(AUTH_TOKEN_EXPIRY_TIME, value)
         }
         get() =
-            prefs.getLong(AUTH_TOKEN_EXPIRY_TIME,0)
+            prefs.getLong(AUTH_TOKEN_EXPIRY_TIME, 0)
 
-    var workspaceLastLogin : Long
+    var workspaceLastLogin: Long
         set(value) {
-            prefs.putLong(WORKSPACE_LAST_LOGIN,value)
+            prefs.putLong(WORKSPACE_LAST_LOGIN, value)
         }
         get() =
-            prefs.getLong(WORKSPACE_LAST_LOGIN,0)
+            prefs.getLong(WORKSPACE_LAST_LOGIN, 0)
 
-    var workspaceUserEmail : String?
+    var workspaceUserEmail: String?
         set(value) {
-            prefs.putStringOrNull(WORKSPACE_TDEI_USER_EMAIL,value)
+            prefs.putStringOrNull(WORKSPACE_TDEI_USER_EMAIL, value)
         }
         get() =
             prefs.getStringOrNull(WORKSPACE_TDEI_USER_EMAIL)
@@ -214,7 +220,9 @@ class Preferences(private val prefs: ObservableSettings) {
         get() = prefs.getBoolean("${environment}_$LOW_BANDWIDTH_MODE_ENABLED", false)
 
     var kartaViewAccessToken: String
-        set(value) { prefs.putString(KARTAVIEW_ACCESS_TOKEN, value) }
+        set(value) {
+            prefs.putString(KARTAVIEW_ACCESS_TOKEN, value)
+        }
         get() = prefs.getString(KARTAVIEW_ACCESS_TOKEN, BuildConfig.KARTAVIEW_ACCESS_TOKEN)
 
     var isFollowModeEnabled: Boolean
@@ -229,6 +237,7 @@ class Preferences(private val prefs: ObservableSettings) {
         prefs.putBoolean(DEBUG_MODE_ENABLED, value)
         _isDebugModeEnabled.value = value
     }
+
     fun clearUserData() {
         prefs.remove(OSM_USER_ID)
         prefs.remove(OSM_USER_NAME)
@@ -271,13 +280,17 @@ class Preferences(private val prefs: ObservableSettings) {
     var hasShownTutorial: Boolean by prefs.boolean(HAS_SHOWN_TUTORIAL, false)
     var hasShownOverlaysTutorial: Boolean by prefs.boolean(HAS_SHOWN_OVERLAYS_TUTORIAL, false)
     var questSelectionHintState: QuestSelectionHintState
-        set(value) { prefs.putString(QUEST_SELECTION_HINT_STATE, value.name) }
-        get() = prefs.getStringOrNull(QUEST_SELECTION_HINT_STATE)?.let { QuestSelectionHintState.valueOf(it) }
+        set(value) {
+            prefs.putString(QUEST_SELECTION_HINT_STATE, value.name)
+        }
+        get() = prefs.getStringOrNull(QUEST_SELECTION_HINT_STATE)
+            ?.let { QuestSelectionHintState.valueOf(it) }
             ?: QuestSelectionHintState.NOT_SHOWN
 
     fun onQuestSelectionHintStateChanged(callback: (QuestSelectionHintState) -> Unit): SettingsListener =
         prefs.addStringOrNullListener(QUEST_SELECTION_HINT_STATE) {
-            callback(it?.let { QuestSelectionHintState.valueOf(it) } ?: QuestSelectionHintState.NOT_SHOWN)
+            callback(it?.let { QuestSelectionHintState.valueOf(it) }
+                ?: QuestSelectionHintState.NOT_SHOWN)
         }
 
     // quest & overlay UI
@@ -342,6 +355,7 @@ class Preferences(private val prefs: ObservableSettings) {
 
     // default true because if it is not set yet, the first thing that is done is to synchronize it
     var isSynchronizingStatistics: Boolean by prefs.boolean(IS_SYNCHRONIZING_STATISTICS, true)
+
     // default true because it is set to false on login, so that for old users for which the value
     // is not set yet it is also true
     var statisticsSynchronizedOnce: Boolean by prefs.boolean(STATISTICS_SYNCED_ONCE, true)
