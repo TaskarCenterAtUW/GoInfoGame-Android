@@ -2,6 +2,8 @@ package de.westnordost.streetcomplete.screens.main.map.components
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import androidx.annotation.UiThread
 import androidx.core.graphics.Insets
 import com.google.gson.JsonObject
@@ -61,6 +63,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
+import java.io.File
 import java.util.Collections
 import kotlin.math.abs
 import kotlin.math.max
@@ -162,9 +165,28 @@ class PinsMapComponent(
 
     private val pins = Collections.synchronizedSet(mutableSetOf<Pin>())
 
+    private val customPinIconNames = Collections.synchronizedSet(mutableSetOf<String>())
+
+    /** Registers a pin-bubble style image under [name] with the given image file (e.g. a cached
+     *  workspace custom icon) drawn inside the bubble. Returns false if the file could not be
+     *  decoded. Pins reference it via [Pin.iconImageName]. */
+    suspend fun addCustomPinIcon(name: String, iconFile: File): Boolean {
+        if (name in customPinIconNames) return true
+        val iconBitmap = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(iconFile.path) }
+            ?: return false
+        val pinBitmap = createPinBitmap(
+            context,
+            icon = BitmapDrawable(context.resources, iconBitmap),
+            insetIcon = true // image files are full-bleed, like the preset_* glyphs
+        )
+        withContext(Dispatchers.Main) { map.style?.addImage(name, pinBitmap) }
+        customPinIconNames.add(name)
+        return true
+    }
+
     /** Show given pins. Previously shown pins are replaced with these.  */
     suspend fun set(pins: Collection<Pin>) {
-        val icons = pins.map { it.icon }
+        val icons = pins.filter { it.iconImageName == null }.map { it.icon }
         mapImages.addOnce(icons) { createPinBitmap(context, it) to false }
         val features = pins.map { it.toFeature() }
         val mapLibreFeatures = FeatureCollection.fromFeatures(features)
@@ -237,7 +259,7 @@ class PinsMapComponent(
 
     private fun Pin.toFeature(): Feature {
         val p = JsonObject()
-        p.addProperty("icon-image", context.resources.getResourceEntryName(icon))
+        p.addProperty("icon-image", iconImageName ?: context.resources.getResourceEntryName(icon))
         p.addProperty("icon-order", order + 50)
         p.addProperty("enabled", enabled)
         properties.forEach { p.addProperty(it.first, it.second) }
@@ -256,6 +278,9 @@ data class Pin(
     val properties: Collection<Pair<String, String>> = emptyList(),
     val order: Int = 0,
     var enabled: Boolean = true,
+    /** Name of a style image to use for this pin instead of [icon] - must have been registered
+     *  beforehand via [PinsMapComponent.addCustomPinIcon] */
+    val iconImageName: String? = null,
 )
 
 fun JsonObject.toMap(): Map<String, String> =

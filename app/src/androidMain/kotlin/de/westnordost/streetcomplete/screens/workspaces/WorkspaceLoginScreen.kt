@@ -119,7 +119,11 @@ fun LoginScreen(
             viewModel.fetchWorkspaces(location)
         }
         fineLocationManager.getCurrentLocation()
-        navController.navigate("workspace-list")
+        navController.navigate("workspace-list") {
+            popUpTo(0) {
+                inclusive = true
+            }
+        }
     }
     Box(modifier = Modifier.fillMaxSize()) {
         when (loginState) {
@@ -142,7 +146,10 @@ fun LoginScreen(
                 isLoading = false
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
-                viewModel.setLoginState(true, state.loginResponse, state.email)
+
+                LaunchedEffect(state) {
+                    viewModel.setLoginState(true, state.loginResponse, state.email)
+                }
 
                 if (preferences.isBiometricEnabled && !state.expediteLogin) {
                     val creds = SecureCredentialStorage.getCredential(
@@ -260,7 +267,7 @@ fun ShowSaveCredsDialog(
                             activity = activity
                         )
                         if (!authenticated) {
-                            Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT)
+                            Toast.makeText(context, "Logging in without saving credentials", Toast.LENGTH_SHORT)
                                 .show()
                         } else {
                             val credsMap = SecureCredentialStorage.loadCredentials(context)
@@ -269,8 +276,8 @@ fun ShowSaveCredsDialog(
                                 context,
                                 credsMap
                             )
-                            navToNextPage()
                         }
+                        navToNextPage()
                     }
                     openDialog.value = false
                 }) {
@@ -755,14 +762,13 @@ suspend fun authenticateWithBiometrics(
         activity = activity,
         onSuccess = {
             if (continuation.isActive) {
-                continuation.resume(true) { cause, _, _ -> }
+                continuation.resume(true) { _, _, _ -> }
             }
         },
         onFailure = {
             if (continuation.isActive) {
                 continuation.resume(false) { cause, _, _ -> }
             }
-            Toast.makeText(context, "Failed to authenticate", Toast.LENGTH_SHORT).show()
         }
     )
 

@@ -50,6 +50,7 @@ import de.westnordost.streetcomplete.data.user.userModule
 import de.westnordost.streetcomplete.data.visiblequests.visibleQuestsModule
 import de.westnordost.streetcomplete.data.workspace.workspaceModule
 import de.westnordost.streetcomplete.overlays.overlaysModule
+import de.westnordost.streetcomplete.quests.create_feature.createFeatureModule
 import de.westnordost.streetcomplete.quests.questsModule
 import de.westnordost.streetcomplete.screens.main.mainModule
 import de.westnordost.streetcomplete.screens.measure.arModule
@@ -135,6 +136,7 @@ class StreetCompleteApplication : Application() {
                 uploadModule,
                 userModule,
                 arModule,
+                createFeatureModule,
                 overlaysModule,
                 overlayModule,
                 urlConfigModule,

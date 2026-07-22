@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/markerLayoutContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:background="#999"
+    >
+
+    <RelativeLayout
+        android:id="@+id/centeredMarkerLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="@dimen/quest_form_topOffset"
+        android:paddingBottom="@dimen/quest_form_bottomOffset"
+        android:paddingLeft="@dimen/quest_form_leftOffset"
+        android:paddingRight="@dimen/quest_form_rightOffset"
+        android:layout_centerInParent="true"
+        tools:ignore="RtlHardcoded,RtlSymmetry,UselessParent">
+
+        <!-- the pin image occupies the top half of this anchor view, so that the pin's TIP sits
+             exactly at the anchor's center - the point whose map position is read at submit -->
+        <FrameLayout
+            android:id="@+id/pin"
+            android:layout_width="64dp"
+            android:layout_height="128dp">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_gravity="top|center_horizontal"
+                android:importantForAccessibility="no"
+                app:srcCompat="@drawable/ic_pin_with_shadow"/>
+
+        </FrameLayout>
+
+    </RelativeLayout>
+
+</RelativeLayout>

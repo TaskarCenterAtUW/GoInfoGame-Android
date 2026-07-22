@@ -140,8 +140,9 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
 
-            binding.title.text = item.questTitle
-            binding.description.text = item.questDescription
+            binding.container.visibility = View.GONE
+            // binding.title.text = item.questTitle
+            // binding.description.text = item.questDescription
         }
     }
 

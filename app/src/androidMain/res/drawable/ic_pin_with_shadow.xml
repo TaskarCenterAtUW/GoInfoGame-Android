@@ -4,20 +4,18 @@
      negative inset; the half below gets clipped, leaving a half-ellipse under the tip. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:width="24dp"
-        android:height="12dp"
-        android:gravity="center_horizontal|bottom"
-        android:bottom="-6dp">
+        android:width="16dp"
+        android:height="8dp"
+        android:gravity="center_horizontal|bottom">
         <shape android:shape="oval">
             <gradient
                 android:type="radial"
-                android:gradientRadius="12dp"
-                android:startColor="#4000"
-                android:centerColor="#4000"
-                android:endColor="#0000" />
+                android:gradientRadius="8dp"
+                android:startColor="#000000"
+                android:centerColor="#00000000"
+                android:endColor="#00000000" />
         </shape>
     </item>
-    <item>
-        <bitmap android:src="@drawable/ic_pin" />
-    </item>
+    <!-- direct drawable reference (not <bitmap>): ic_pin_new is a vector, which <bitmap> can't inflate -->
+    <item android:drawable="@drawable/ic_pin_new" />
 </layer-list>

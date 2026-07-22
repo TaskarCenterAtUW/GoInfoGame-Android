@@ -26,6 +26,8 @@ import de.westnordost.streetcomplete.data.overlays.SelectedOverlaySource
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
+import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
+import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
 import de.westnordost.streetcomplete.screens.main.map.components.CurrentLocationMapComponent
@@ -77,6 +79,8 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     private val locationAvailabilityReceiver: LocationAvailabilityReceiver by inject()
     private val surveyChecker: SurveyChecker by inject()
     private val prefs: Preferences by inject()
+    private val featurePresetCatalog: FeaturePresetCatalog by inject()
+    private val customIconCache: CustomIconCache by inject()
 
     private lateinit var compass: Compass
     private lateinit var locationManager: FineLocationManager
@@ -307,7 +311,7 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
 
-        editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, prefs)
+        editHistoryPinsManager = EditHistoryPinsManager(pinsMapComponent!!, editHistorySource, prefs, featurePresetCatalog, customIconCache)
         editHistoryPinsManager!!.isVisible = pinMode == PinMode.EDITS
         viewLifecycleOwner.lifecycle.addObserver(editHistoryPinsManager!!)
 
@@ -556,6 +560,14 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     fun highlightPins(@DrawableRes iconResId: Int, pinPositions: Collection<LatLon>) {
         viewLifecycleScope.launch(Dispatchers.Default) {
             selectedPinsMapComponent?.set(iconResId, pinPositions)
+        }
+    }
+
+    /** Like [highlightPins], but with an already-registered style image name (e.g. a custom
+     *  feature-preset icon registered when the edit history pins were shown) */
+    fun highlightPins(iconImageName: String, pinPositions: Collection<LatLon>) {
+        viewLifecycleScope.launch(Dispatchers.Default) {
+            selectedPinsMapComponent?.set(iconImageName, pinPositions)
         }
     }
 

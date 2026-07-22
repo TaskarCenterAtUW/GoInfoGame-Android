@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.RectF
+import android.graphics.drawable.Drawable
 import androidx.annotation.DrawableRes
 import androidx.core.graphics.toRect
 import de.westnordost.streetcomplete.R
@@ -15,6 +16,21 @@ import kotlin.math.ceil
 fun createPinBitmap(
     context: Context,
     @DrawableRes iconResId: Int,
+    @DrawableRes tickMarkResId: Int? = null
+): Bitmap = createPinBitmap(
+    context,
+    icon = context.getDrawable(iconResId)!!,
+    /* quest icons (ic_quest_*) have padding built into their viewport, but the preset_* feature
+       icons are full-bleed glyphs - drawn at full slot size they poke out of the pin bubble,
+       so they get an inset instead */
+    insetIcon = context.resources.getResourceEntryName(iconResId).startsWith("preset_"),
+    tickMarkResId = tickMarkResId
+)
+
+fun createPinBitmap(
+    context: Context,
+    icon: Drawable,
+    insetIcon: Boolean,
     @DrawableRes tickMarkResId: Int? = null
 ): Bitmap {
     val scale = 1f
@@ -41,12 +57,13 @@ fun createPinBitmap(
         size
     ).toRect()
     pin.draw(canvas)
-    val questIcon = context.getDrawable(iconResId)!!
+    val questIcon = icon
+    val iconInset = if (insetIcon) iconSize * 0.22f else 0f
     questIcon.bounds = RectF(
-        pinXOffset + iconPinOffset,
-        pinTopRightPadding + iconPinOffset,
-        pinXOffset + iconPinOffset + iconSize,
-        pinTopRightPadding + iconPinOffset + iconSize
+        pinXOffset + iconPinOffset + iconInset,
+        pinTopRightPadding + iconPinOffset + iconInset,
+        pinXOffset + iconPinOffset + iconSize - iconInset,
+        pinTopRightPadding + iconPinOffset + iconSize - iconInset
     ).toRect()
     questIcon.draw(canvas)
 

@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data
 
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeatureRegistry
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import org.koin.dsl.module
@@ -8,7 +9,8 @@ val allEditTypesModule = module {
     single {
         AllEditTypes(mutableListOf(
             get<QuestTypeRegistry>(),
-            get<OverlayRegistry>()
+            get<OverlayRegistry>(),
+            get<CreateFeatureRegistry>()
         ))
     }
 }

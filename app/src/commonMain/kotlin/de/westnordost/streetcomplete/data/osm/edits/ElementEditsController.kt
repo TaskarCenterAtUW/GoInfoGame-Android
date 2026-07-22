@@ -33,9 +33,11 @@ class ElementEditsController(
         source: String,
         action: ElementEditAction,
         isNearUserLocation: Boolean
-    ) {
+    ): Long {
         Log.d(TAG, "Add ${type.name} for ${action.elementKeys.joinToString()}")
-        add(ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation, workspaceId))
+        val edit = ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation, workspaceId)
+        add(edit)
+        return edit.id
     }
 
     override fun get(id: Long): ElementEdit? =

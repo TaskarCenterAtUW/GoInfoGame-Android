@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Classic red drawing pin (pushpin), per the add-new-feature mocks. The needle tip is exactly
+     at the bottom-center of the viewport - anchor code positions this drawable so that point
+     lands on the pressed/selected map location. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+
+    <!-- needle, tapering to a point at (32,64) -->
+    <path
+        android:pathData="M30.8,31 L33.2,31 L32,64 Z"
+        android:fillColor="#8E8E93"/>
+
+    <!-- neck between head and flange (slightly trapezoid) -->
+    <path
+        android:pathData="M29.8,18 L34.2,18 L35.2,29 L28.8,29 Z"
+        android:fillColor="#D32F2F"/>
+
+    <!-- flange (base disc), seen edge-on as an ellipse -->
+    <path
+        android:pathData="M20.5,29.5 a11.5,4.2 0 1,0 23,0 a11.5,4.2 0 1,0 -23,0"
+        android:fillColor="#B71C1C"/>
+
+    <!-- subtle top light on the flange -->
+    <path
+        android:pathData="M21.8,28.6 a10.2,3 0 1,0 20.4,0 a10.2,3 0 1,0 -20.4,0"
+        android:fillColor="#C62828"/>
+
+    <!-- cylindrical cap head (rounded rectangle, per the mocks) -->
+    <path
+        android:pathData="M27,1 h10 a3,3 0 0 1 3,3 v12 a3,3 0 0 1 -3,3 h-10 a3,3 0 0 1 -3,-3 v-12 a3,3 0 0 1 3,-3 Z"
+        android:fillColor="#E53935"/>
+
+    <!-- vertical highlight on the cap -->
+    <path
+        android:pathData="M25.9,10 a1.6,5 0 1,0 3.2,0 a1.6,5 0 1,0 -3.2,0"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.4"/>
+</vector>

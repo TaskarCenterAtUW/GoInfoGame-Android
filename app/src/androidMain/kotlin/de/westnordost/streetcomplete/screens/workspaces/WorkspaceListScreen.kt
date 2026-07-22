@@ -55,7 +55,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
 import de.westnordost.streetcomplete.screens.main.MainActivity
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.ui.theme.ProximaNovaFontFamily
@@ -192,7 +194,9 @@ fun WorkSpaceListScreen(
                                 context,
                                 longFormState.longFormItems,
                                 longFormState.imageryList,
-                                workspace
+                                workspace,
+                                longFormState.featurePresets,
+                                longFormState.customIcons
                             )
                         }
 
@@ -218,6 +222,8 @@ fun finishAndLaunchNewActivity(
     addLongFormResponseItems: List<Elements>,
     imageryList: List<Imagery>?,
     workspace: Workspace,
+    featurePresets: List<FeaturePreset> = emptyList(),
+    customIcons: List<CustomIcon> = emptyList(),
 ) {
     val activity = context as? Activity
     activity?.let {
@@ -226,6 +232,8 @@ fun finishAndLaunchNewActivity(
             putParcelableArrayListExtra("LONG_FORM", ArrayList(addLongFormResponseItems))
             putExtra("WORKSPACE_TITLE", workspace.title)
             putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(imageryList ?: emptyList()))
+            putParcelableArrayListExtra("FEATURE_PRESETS", ArrayList(featurePresets))
+            putParcelableArrayListExtra("CUSTOM_ICONS", ArrayList(customIcons))
         }
         it.startActivity(intent)
         it.finish()

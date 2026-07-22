@@ -16,6 +16,11 @@ import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.OsmNoteQuestKey
 import de.westnordost.streetcomplete.data.quest.OsmQuestKey
+import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
+import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
+import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
+import de.westnordost.streetcomplete.quests.create_feature.featurePresetCustomIconFileOf
+import de.westnordost.streetcomplete.quests.create_feature.featurePresetIconOf
 import de.westnordost.streetcomplete.screens.main.edithistory.icon
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
@@ -30,7 +35,9 @@ import kotlinx.coroutines.withContext
 class EditHistoryPinsManager(
     private val pinsMapComponent: PinsMapComponent,
     private val editHistorySource: EditHistorySource,
-    private val preferences: Preferences
+    private val preferences: Preferences,
+    private val featurePresetCatalog: FeaturePresetCatalog,
+    private val customIconCache: CustomIconCache
 ) : DefaultLifecycleObserver {
 
     private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
@@ -92,13 +99,20 @@ class EditHistoryPinsManager(
         }
     }
 
-    private fun createEditPins(edits: List<Edit>): List<Pin> =
+    private suspend fun createEditPins(edits: List<Edit>): List<Pin> =
         edits.mapIndexed { index, edit ->
+            // created features show the added feature's own icon inside the pin bubble; for
+            // URL-based custom icons the cached file is registered as a custom style image
+            val customIconFile = featurePresetCatalog.featurePresetCustomIconFileOf(edit, customIconCache)
+            val customIconName = customIconFile
+                ?.let { customPinIconName(it) }
+                ?.takeIf { pinsMapComponent.addCustomPinIcon(it, customIconFile) }
             Pin(
                 edit.position,
-                edit.icon,
+                featurePresetCatalog.featurePresetIconOf(edit) ?: edit.icon,
                 edit.toProperties(),
-                index // most recent first
+                index, // most recent first
+                iconImageName = customIconName
             )
         }
 }

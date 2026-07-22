@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.delete.DeletePoiNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.move.MoveNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitWayAction
@@ -14,6 +15,8 @@ import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.COMMENT
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction.CREATE
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestHidden
 import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.quests.create_feature.AddFeaturePreset
+import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
 import de.westnordost.streetcomplete.quests.getTitle
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.commented_note_action_title
@@ -25,6 +28,7 @@ import de.westnordost.streetcomplete.resources.undo_split
 import de.westnordost.streetcomplete.resources.undo_visibility
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 
 val Edit.icon: Int
     get() = when (this) {
@@ -61,7 +65,16 @@ val Edit.overlayIcon: DrawableResource?
 fun Edit.getName(): String =
     when (this) {
         is ElementEdit -> {
-            type.name
+            // the static create-feature edit type's name is its DB key ("AddFeaturePreset") -
+            // show the preset the node was created from, or the generic "Add new feature"
+            if (type is AddFeaturePreset) {
+                val presetName = (action as? CreateNodeAction)
+                    ?.let { koinInject<FeaturePresetCatalog>().findPresetFor(it.tags)?.name }
+                presetName?.let { "${stringResource(type.title)}: $it" }
+                    ?: stringResource(type.title)
+            } else {
+                type.name
+            }
         }
 
         is NoteEdit -> {

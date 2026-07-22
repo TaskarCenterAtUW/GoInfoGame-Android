@@ -34,8 +34,6 @@ import de.westnordost.streetcomplete.data.preferences.Autosync
 import de.westnordost.streetcomplete.data.preferences.ResurveyIntervals
 import de.westnordost.streetcomplete.data.preferences.Theme
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.resources.action_manage_presets
-import de.westnordost.streetcomplete.resources.action_manage_presets_summary
 import de.westnordost.streetcomplete.resources.action_settings
 import de.westnordost.streetcomplete.resources.autosync_off
 import de.westnordost.streetcomplete.resources.autosync_on
@@ -50,19 +48,14 @@ import de.westnordost.streetcomplete.resources.pref_category_communication
 import de.westnordost.streetcomplete.resources.pref_category_display
 import de.westnordost.streetcomplete.resources.pref_category_quests
 import de.westnordost.streetcomplete.resources.pref_subtitle_quests
-import de.westnordost.streetcomplete.resources.pref_summaryOff_show_notes_not_phrased_as_questions
-import de.westnordost.streetcomplete.resources.pref_summaryOn_show_notes_not_phrased_as_questions
 import de.westnordost.streetcomplete.resources.pref_title_delete_cache
 import de.westnordost.streetcomplete.resources.pref_title_delete_cache_summary
 import de.westnordost.streetcomplete.resources.pref_title_keep_screen_on
 import de.westnordost.streetcomplete.resources.pref_title_language_select2
-import de.westnordost.streetcomplete.resources.pref_title_overlays
 import de.westnordost.streetcomplete.resources.pref_title_quests2
 import de.westnordost.streetcomplete.resources.pref_title_quests_restore_hidden
 import de.westnordost.streetcomplete.resources.pref_title_quests_restore_hidden_summary
 import de.westnordost.streetcomplete.resources.pref_title_resurvey_intervals
-import de.westnordost.streetcomplete.resources.pref_title_resurvey_intervals_summary
-import de.westnordost.streetcomplete.resources.pref_title_show_notes_not_phrased_as_questions
 import de.westnordost.streetcomplete.resources.pref_title_sync2
 import de.westnordost.streetcomplete.resources.pref_title_theme_select
 import de.westnordost.streetcomplete.resources.pref_title_zoom_buttons
@@ -122,7 +115,8 @@ fun SettingsScreen(
     var showAutosyncSelect by remember { mutableStateOf(false) }
     var showResurveyIntervalsSelect by remember { mutableStateOf(false) }
 
-    val presetNameOrDefault = selectedPresetName ?: stringResource(Res.string.quest_presets_default_name)
+    val presetNameOrDefault =
+        selectedPresetName ?: stringResource(Res.string.quest_presets_default_name)
 
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -130,11 +124,14 @@ fun SettingsScreen(
             windowInsets = TopAppBarDefaults.windowInsets,
             navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
         )
-        Column(Modifier
-            .verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-            ))
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+                    )
+                )
         ) {
             PreferenceCategory(stringResource(Res.string.pref_category_quests)) {
 
@@ -246,7 +243,10 @@ fun SettingsScreen(
                 Preference(
                     name = stringResource(Res.string.pref_title_quests_restore_hidden),
                     onClick = { showRestoreHiddenQuestsConfirmation = true },
-                    description = stringResource(Res.string.pref_title_quests_restore_hidden_summary, hiddenQuestCount)
+                    description = stringResource(
+                        Res.string.pref_title_quests_restore_hidden_summary,
+                        hiddenQuestCount
+                    )
                 )
             }
 
@@ -267,11 +267,13 @@ fun SettingsScreen(
             onConfirmed = { viewModel.deleteCache() },
             text = {
                 val numberFormatter = NumberFormatter(Locale.current, maxFractionDigits = 1)
-                Text(stringResource(
-                    Res.string.delete_cache_dialog_message,
-                    numberFormatter.format(1.0 * REFRESH_DATA_AFTER / (24 * 60 * 60 * 1000)),
-                    numberFormatter.format(1.0 * DELETE_OLD_DATA_AFTER / (24 * 60 * 60 * 1000))
-                ))
+                Text(
+                    stringResource(
+                        Res.string.delete_cache_dialog_message,
+                        numberFormatter.format(1.0 * REFRESH_DATA_AFTER / (24 * 60 * 60 * 1000)),
+                        numberFormatter.format(1.0 * DELETE_OLD_DATA_AFTER / (24 * 60 * 60 * 1000))
+                    )
+                )
             },
             confirmButtonText = stringResource(Res.string.delete_confirmation)
         )
@@ -348,23 +350,26 @@ fun SettingsScreen(
     }
 }
 
-private val Autosync.title: StringResource get() = when (this) {
-    Autosync.ON -> Res.string.autosync_on
-    Autosync.WIFI -> Res.string.autosync_only_on_wifi
-    Autosync.OFF -> Res.string.autosync_off
-}
+private val Autosync.title: StringResource
+    get() = when (this) {
+        Autosync.ON -> Res.string.autosync_on
+        Autosync.WIFI -> Res.string.autosync_only_on_wifi
+        Autosync.OFF -> Res.string.autosync_off
+    }
 
-private val ResurveyIntervals.title: StringResource get() = when (this) {
-    ResurveyIntervals.LESS_OFTEN -> Res.string.resurvey_intervals_less_often
-    ResurveyIntervals.DEFAULT -> Res.string.resurvey_intervals_default
-    ResurveyIntervals.MORE_OFTEN -> Res.string.resurvey_intervals_more_often
-}
+private val ResurveyIntervals.title: StringResource
+    get() = when (this) {
+        ResurveyIntervals.LESS_OFTEN -> Res.string.resurvey_intervals_less_often
+        ResurveyIntervals.DEFAULT -> Res.string.resurvey_intervals_default
+        ResurveyIntervals.MORE_OFTEN -> Res.string.resurvey_intervals_more_often
+    }
 
-private val Theme.title: StringResource get() = when (this) {
-    Theme.LIGHT -> Res.string.theme_light
-    Theme.DARK -> Res.string.theme_dark
-    Theme.SYSTEM -> Res.string.theme_system_default
-}
+private val Theme.title: StringResource
+    get() = when (this) {
+        Theme.LIGHT -> Res.string.theme_light
+        Theme.DARK -> Res.string.theme_dark
+        Theme.SYSTEM -> Res.string.theme_system_default
+    }
 
 private fun getLanguageDisplayName(languageTag: String): String? {
     if (languageTag.isEmpty()) return null

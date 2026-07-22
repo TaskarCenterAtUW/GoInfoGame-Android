@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.screens.settings.quest_selection
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,8 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.quest.QuestType
@@ -37,7 +34,6 @@ import de.westnordost.streetcomplete.resources.quest_type
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 /** List of quest types to individually enable or disable or reorder them */
@@ -107,40 +103,26 @@ fun QuestSelectionList(
                 reorderableItems,
                 key = { _, it -> it.questType.name },
             ) { index, item ->
+                Surface(
+                    modifier = Modifier
+                        .then(if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier)
 
-                ReorderableItem(
-                    state = dragDropState,
-                    key = item.questType.name,
-                    enabled = item.isInteractionEnabled
-                ) { isDragging ->
-                    val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
-                    val haptic = LocalHapticFeedback.current
-
-                    Surface(
-                        modifier = Modifier
-                            .then(if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier)
-                            .longPressDraggableHandle(
-                                enabled = item.isInteractionEnabled,
-                                onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                                onDragStopped = ::onDragStopped,
-                            )
-                    ) {
-                        Column {
-                            if (index > 0) Divider()
-                            QuestSelectionRow(
-                                item = item,
-                                onToggleSelection = { isSelected ->
-                                    // when enabling quest that is disabled by default, require confirmation
-                                    if (isSelected && item.questType.defaultDisabledMessage != null) {
-                                        showEnableQuestDialog = item.questType
-                                    } else {
-                                        onSelect(item.questType, isSelected)
-                                    }
-                                },
-                                displayCountry = displayCountry,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
+                ) {
+                    Column {
+                        if (index > 0) Divider()
+                        QuestSelectionRow(
+                            item = item,
+                            onToggleSelection = { isSelected ->
+                                // when enabling quest that is disabled by default, require confirmation
+                                if (isSelected && item.questType.defaultDisabledMessage != null) {
+                                    showEnableQuestDialog = item.questType
+                                } else {
+                                    onSelect(item.questType, isSelected)
+                                }
+                            },
+                            displayCountry = displayCountry,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
                     }
                 }
             }

@@ -3,7 +3,9 @@ package de.westnordost.streetcomplete.screens.workspaces
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
 import de.westnordost.streetcomplete.util.satellite_layers.Imagery
 
 sealed class WorkspaceListState {
@@ -20,15 +22,23 @@ sealed class WorkspaceListState {
 
 sealed class WorkspaceLongFormState {
     data object Loading : WorkspaceLongFormState()
-    data class Success(val longFormItems: List<Elements>, val imageryList: List<Imagery>?) :
-        WorkspaceLongFormState()
+    data class Success(
+        val longFormItems: List<Elements>,
+        val imageryList: List<Imagery>?,
+        val featurePresets: List<FeaturePreset> = emptyList(),
+        val customIcons: List<CustomIcon> = emptyList(),
+    ) : WorkspaceLongFormState()
 
     data class Error(val error: String?) : WorkspaceLongFormState()
 
     companion object {
         fun loading() = Loading
-        fun success(workspaces: List<Elements>, imageryList: List<Imagery>?) =
-            Success(workspaces, imageryList)
+        fun success(
+            workspaces: List<Elements>,
+            imageryList: List<Imagery>?,
+            featurePresets: List<FeaturePreset> = emptyList(),
+            customIcons: List<CustomIcon> = emptyList(),
+        ) = Success(workspaces, imageryList, featurePresets, customIcons)
 
         fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }
