@@ -288,6 +288,7 @@ fun AppNavigator(
             }
             WorkSpaceListScreen(
                 viewModel = koinViewModel(),
+                preferences = preferences,
                 modifier = modifier.padding(innerPadding)
             )
         }

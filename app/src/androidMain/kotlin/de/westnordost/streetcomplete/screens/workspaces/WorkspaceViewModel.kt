@@ -51,7 +51,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState>
     abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
     abstract fun setIsLongForm(isLongForm: Boolean)
-    abstract fun setSelectedWorkspace(index: Int)
+    abstract fun setSelectedWorkspace(workspace: Workspace)
     abstract fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
     abstract fun refreshToken(expediteLogin: Boolean = false)
@@ -80,9 +80,8 @@ class WorkspaceViewModelImpl(
         MutableStateFlow<AppVersionUpdateState>(AppVersionUpdateState.Loading)
     override val updateState: StateFlow<AppVersionUpdateState> get() = _updateState
 
-    override fun setSelectedWorkspace(index: Int) {
-        _selectedWorkspace.value = (showWorkspaces.value as WorkspaceListState.Success).workspaces
-            .filter { it.externalAppAccess == 1 && it.type == "osw" }[index]
+    override fun setSelectedWorkspace(workspace: Workspace) {
+        _selectedWorkspace.value = workspace
         preferences.workspaceId = _selectedWorkspace.value?.id
         // the "has this area already been downloaded" bookkeeping isn't scoped per workspace, so
         // without this, switching workspaces while looking at the same map area makes auto-download

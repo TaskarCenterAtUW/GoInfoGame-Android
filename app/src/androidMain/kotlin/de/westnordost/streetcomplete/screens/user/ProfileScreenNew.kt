@@ -15,10 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,6 +53,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.common.BackIcon
+import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
 import kotlin.reflect.KSuspendFunction1
 
@@ -97,14 +95,9 @@ fun ProfileScreenNewContent(
                 navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
             )
 
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .size(75.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
+            UserInitialsAvatar(
+                name = userName?.split("\n")?.getOrNull(1)?.trim(),
+                size = 75.dp,
             )
             Text(
                 text = userName.orEmpty(),
