@@ -10,6 +10,7 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.workspace.UserProjectGroupItem
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
@@ -38,6 +39,7 @@ import java.io.File
 
 abstract class WorkspaceViewModel : ViewModel() {
     abstract val showWorkspaces: StateFlow<WorkspaceListState>
+    abstract val userProjectGroups: StateFlow<List<UserProjectGroupItem>>
     abstract fun fetchWorkspaces(location: Location)
     abstract fun refreshWorkspaces()
     abstract fun loginToWorkspace(
@@ -49,10 +51,10 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract val updateState: StateFlow<AppVersionUpdateState>
     abstract val selectedWorkspace: StateFlow<Workspace?>
     abstract fun getWorkspaceDetails(workspaceId: Int): StateFlow<WorkspaceLongFormState>
-    abstract fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
+    abstract suspend fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String)
     abstract fun setIsLongForm(isLongForm: Boolean)
     abstract fun setSelectedWorkspace(workspace: Workspace)
-    abstract fun getUserInfo(email: String)
+    abstract suspend fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
     abstract fun refreshToken(expediteLogin: Boolean = false)
     abstract fun getAppUpdateInfo()
@@ -93,6 +95,9 @@ class WorkspaceViewModelImpl(
     private val _showWorkspaces = MutableStateFlow<WorkspaceListState>(WorkspaceListState.Loading)
     override val showWorkspaces: StateFlow<WorkspaceListState> get() = _showWorkspaces
 
+    private val _userProjectGroups = MutableStateFlow<List<UserProjectGroupItem>>(emptyList())
+    override val userProjectGroups: StateFlow<List<UserProjectGroupItem>> get() = _userProjectGroups
+
     // override val showWorkspaces: StateFlow<WorkspaceListState> = flow {
     //     workspaceRepository.getWorkspaces()
     //         .catch { e -> emit(WorkspaceListState.error(e.message)) } // Handle errors
@@ -125,6 +130,14 @@ class WorkspaceViewModelImpl(
                         _showWorkspaces.value = WorkspaceListState.success(workspaces)
                     }
             }
+        }
+        // used only to resolve tdeiProjectGroupId -> a human-readable name for the workspace-list
+        // filter spinner; not location-scoped, and a failure here shouldn't block the workspace
+        // list itself - the filter just falls back to showing the raw id.
+        viewModelScope.launch {
+            workspaceRepository.getUserProjectGroups()
+                .catch { }
+                .collect { groups -> _userProjectGroups.value = groups }
         }
     }
 
@@ -214,19 +227,23 @@ class WorkspaceViewModelImpl(
         }
     }
 
-    override fun getUserInfo(email: String) {
-        viewModelScope.launch {
-            workspaceRepository.getUserInfo(email)
-                .catch { }
-                .collect { response ->
-                    preferences.workspaceUserName =
-                        "${response.username} \n ${response.firstName} ${response.lastName}"
-                    preferences.workspaceUserId = response.id
-                    preferences.workspaceUserId?.let {
-                        FirebaseAnalyticsHelper.setUserId(it)
-                    }
+    // suspend (not viewModelScope.launch) so callers - specifically setLoginState() - can await
+    // this actually finishing writing preferences.workspaceUserId before doing anything that
+    // depends on it (e.g. navigating to a screen that fetches project-group-roles/{userId});
+    // previously this fired-and-forgot, racing against whatever ran right after setLoginState().
+    // No .catch{} here (deliberately, unlike most other flows in this file) - a failure must
+    // propagate to the caller so the login screen can show it instead of silently proceeding
+    // with a missing/stale workspaceUserId.
+    override suspend fun getUserInfo(email: String) {
+        workspaceRepository.getUserInfo(email)
+            .collect { response ->
+                preferences.workspaceUserName =
+                    "${response.username} \n ${response.firstName} ${response.lastName}"
+                preferences.workspaceUserId = response.id
+                preferences.workspaceUserId?.let {
+                    FirebaseAnalyticsHelper.setUserId(it)
                 }
-        }
+            }
     }
 
     override fun refreshToken(expediteLogin: Boolean) {
@@ -270,7 +287,7 @@ class WorkspaceViewModelImpl(
         environmentManager.currentEnvironment = environment
     }
 
-    override fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {
+    override suspend fun setLoginState(isLoggedIn: Boolean, loginResponse: LoginResponse, email: String) {
         preferences.workspaceLogin = isLoggedIn
         preferences.workspaceToken = loginResponse.access_token
         preferences.workspaceRefreshToken = loginResponse.refresh_token

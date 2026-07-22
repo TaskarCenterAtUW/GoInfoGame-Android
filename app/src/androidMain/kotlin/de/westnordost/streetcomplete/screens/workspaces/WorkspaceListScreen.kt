@@ -87,6 +87,10 @@ fun WorkSpaceListScreen(
     modifier: Modifier = Modifier,
 ) {
     val workspaceListState by viewModel.showWorkspaces.collectAsState()
+    val userProjectGroups by viewModel.userProjectGroups.collectAsState()
+    val projectGroupNames = remember(userProjectGroups) {
+        userProjectGroups.associate { it.tdeiProjectGroupId to it.projectGroupName }
+    }
     var isLoading by remember { mutableStateOf(false) }
     var isLongFormLoading by remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
@@ -154,6 +158,7 @@ fun WorkSpaceListScreen(
                                 items = visibleWorkspaces,
                                 viewModel = viewModel,
                                 projectGroups = projectGroups,
+                                projectGroupNames = projectGroupNames,
                                 selectedProjectGroup = selectedProjectGroup,
                                 onProjectGroupSelected = { selectedProjectGroup = it },
                             )
@@ -361,6 +366,7 @@ fun WorkspaceList(
     items: List<Workspace> = emptyList(),
     viewModel: WorkspaceViewModel? = null,
     projectGroups: List<String> = emptyList(),
+    projectGroupNames: Map<String, String> = emptyMap(),
     selectedProjectGroup: String? = null,
     onProjectGroupSelected: (String?) -> Unit = {},
 ) {
@@ -391,6 +397,7 @@ fun WorkspaceList(
             if (projectGroups.isNotEmpty()) {
                 ProjectGroupFilter(
                     projectGroups = projectGroups,
+                    projectGroupNames = projectGroupNames,
                     selectedProjectGroup = selectedProjectGroup,
                     onProjectGroupSelected = onProjectGroupSelected,
                     modifier = modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -421,6 +428,7 @@ fun ProjectGroupFilter(
     projectGroups: List<String>,
     selectedProjectGroup: String?,
     onProjectGroupSelected: (String?) -> Unit,
+    projectGroupNames: Map<String, String> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -448,7 +456,7 @@ fun ProjectGroupFilter(
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Text(
-                    text = selectedProjectGroup ?: "All",
+                    text = selectedProjectGroup?.let { projectGroupNames[it] ?: it } ?: "All",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -471,7 +479,7 @@ fun ProjectGroupFilter(
                 )
                 projectGroups.forEach { group ->
                     DropdownMenuItem(
-                        text = { Text(group) },
+                        text = { Text(projectGroupNames[group] ?: group) },
                         onClick = {
                             onProjectGroupSelected(group)
                             expanded = false

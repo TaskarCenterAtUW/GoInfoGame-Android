@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.UserProjectGroupItem
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,10 @@ class WorkspaceRepositoryImpl(
         }
         dao.put(workspaces)
         emit(workspaces)
+    }
+
+    override fun getUserProjectGroups(): Flow<List<UserProjectGroupItem>> = flow {
+        emit(apiService.getUserProjectGroups())
     }
 
     override fun getWorkspaceDetails(workspaceId: Int): Flow<WorkspaceDetailsResponse> {

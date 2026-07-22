@@ -12,21 +12,21 @@ enum class Environment(
     STAGE(
         "https://api.workspaces-stage.sidewalks.washington.edu/api/v1/workspaces",
         "https://tdei-gateway-stage.azurewebsites.net/api/v1",
-        "https://tdei-usermanagement-stage.azurewebsites.net/api/v1/user-profile",
+        "https://portal-api-stage.tdei.us/api/v1",
         "https://osm-workspaces-proxy.azurewebsites.net/stage/api/0.6/",
         "https://portal-stage.tdei.us"
     ),
     DEV(
         "https://api.workspaces-dev.sidewalks.washington.edu/api/v1/workspaces",
         "https://tdei-api-dev.azurewebsites.net/api/v1",
-        "https://tdei-usermanagement-be-dev.azurewebsites.net/api/v1/user-profile",
+        "https://portal-api-dev.tdei.us/api/v1",
         "https://osm-workspaces-proxy.azurewebsites.net/dev/api/0.6/",
         "https://portal-dev.tdei.us"
     ),
     PROD(
         "https://api.workspaces.sidewalks.washington.edu/api/v1/workspaces",
         "https://tdei-gateway-prod.azurewebsites.net/api/v1",
-        "https://tdei-usermanagement-prod.azurewebsites.net/api/v1/user-profile",
+        "https://portal-api.tdei.us/api/v1",
         "https://osm-workspaces-proxy.azurewebsites.net/prod/api/0.6/",
         "https://portal.tdei.us"
     );
