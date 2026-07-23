@@ -16,6 +16,9 @@ class UserLoginController(
     override val accessToken: String? get() =
         prefs.workspaceToken
 
+    override val userId: String?
+        get() = prefs.workspaceUserId
+
     fun logIn(accessToken: String) {
         prefs.workspaceToken = accessToken
         listeners.forEach { it.onLoggedIn() }

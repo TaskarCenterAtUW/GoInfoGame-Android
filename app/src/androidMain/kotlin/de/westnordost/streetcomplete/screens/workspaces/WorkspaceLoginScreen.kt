@@ -143,22 +143,44 @@ fun LoginScreen(
             }
 
             is WorkspaceLoginState.Success -> {
-                isLoading = false
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
 
+                // gates the navigation/dialog logic below until setLoginState() (which now
+                // suspends on getUserInfo()) actually finishes writing preferences.workspaceUserId
+                // - previously navToNextPage() ran immediately, racing the fire-and-forget
+                // getUserInfo() call, so the workspace-list screen could fetch project-group-roles
+                // using a stale/previous-session user id. isLoading stays true across this phase
+                // (no flicker between "logging in" and "loading user details"); on failure this
+                // shows the error instead of silently proceeding with a missing/stale user id.
+                var userInfoReady by remember(state) { mutableStateOf(false) }
                 LaunchedEffect(state) {
-                    viewModel.setLoginState(true, state.loginResponse, state.email)
+                    isLoading = true
+                    try {
+                        viewModel.setLoginState(true, state.loginResponse, state.email)
+                        userInfoReady = true
+                    } catch (e: Exception) {
+                        snackBarMessage = "Error: ${e.message}"
+                    } finally {
+                        isLoading = false
+                    }
                 }
 
-                if (preferences.isBiometricEnabled && !state.expediteLogin) {
-                    val creds = SecureCredentialStorage.getCredential(
-                        context,
-                        selectedEnvironment.value.name
-                    )
-                    if (creds != null) {
-                        if (creds.username == email.value && creds.password == password.value) {
-                            navToNextPage()
+                if (userInfoReady) {
+                    if (preferences.isBiometricEnabled && !state.expediteLogin) {
+                        val creds = SecureCredentialStorage.getCredential(
+                            context,
+                            selectedEnvironment.value.name
+                        )
+                        if (creds != null) {
+                            if (creds.username == email.value && creds.password == password.value) {
+                                navToNextPage()
+                            } else {
+                                ShowSaveCredsDialog(
+                                    email.value, password.value,
+                                    selectedEnvironment.value.name, activity, navToNextPage
+                                )
+                            }
                         } else {
                             ShowSaveCredsDialog(
                                 email.value, password.value,
@@ -166,13 +188,8 @@ fun LoginScreen(
                             )
                         }
                     } else {
-                        ShowSaveCredsDialog(
-                            email.value, password.value,
-                            selectedEnvironment.value.name, activity, navToNextPage
-                        )
+                        navToNextPage()
                     }
-                } else {
-                    navToNextPage()
                 }
             }
         }

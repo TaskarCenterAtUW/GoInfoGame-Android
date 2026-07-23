@@ -29,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -268,9 +269,27 @@ fun AppNavigator(
         }
         composable("workspace-list") {
             val viewModel = koinViewModel<WorkspaceViewModel>()
-            if (doTokenRefresh)
-                viewModel.refreshToken()
             val context = LocalContext.current
+
+            LaunchedEffect(Unit) {
+                if (doTokenRefresh) viewModel.refreshToken()
+            }
+
+            // proactive refresh failed (distinct from the Ktor Auth plugin's own 401-triggered
+            // refresh in ApplicationModule.kt, which already force-logs-out on its own failure) -
+            // without this, a failed refresh here left the user stranded on this screen with a
+            // stale token and no path back to login until some other request happened to 401
+            val loginState by viewModel.loginState.collectAsState()
+            LaunchedEffect(loginState) {
+                if (loginState is WorkspaceLoginState.Error) {
+                    preferences.workspaceLogin = false
+                    val intent = Intent(context, WorkSpaceActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        putExtra(WorkSpaceActivity.SHOW_LOGGED_OUT_ALERT, true)
+                    }
+                    context.startActivity(intent)
+                }
+            }
 
             LaunchedEffect(Unit) {
                 if (ActivityCompat.checkSelfPermission(
@@ -288,6 +307,7 @@ fun AppNavigator(
             }
             WorkSpaceListScreen(
                 viewModel = koinViewModel(),
+                preferences = preferences,
                 modifier = modifier.padding(innerPadding)
             )
         }

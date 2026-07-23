@@ -4,4 +4,5 @@ interface WorkspaceConfigProvider {
     val osmBaseUrl : String
     val workspaceToken: String?
     val workspaceId : Int?
+    val userId : String?
 }
