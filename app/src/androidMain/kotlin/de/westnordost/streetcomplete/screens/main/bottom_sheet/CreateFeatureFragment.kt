@@ -66,6 +66,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
     override val bottomSheetTitle get() = bottomSheetBinding.speechBubbleTitleContainer
     override val bottomSheetContent get() = bottomSheetBinding.speechbubbleContentContainer
     override val floatingBottomView: View? get() = null
+    override val defaultExpanded = false
 
     private val contentBinding by viewBinding(FormCreateFeatureBinding::bind, R.id.content)
 

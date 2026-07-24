@@ -29,6 +29,14 @@ class AddGenericLong(val item: Elements) :
     val resources: Resources = getKoin().get()
     override val changesetComment = "Changes to ${item.elementType}"
     override val wikiLink = "Key:${item.elementType?.lowercase()}"
+    private val localIconResId: Int? = item.elementTypeIcon?.let { name ->
+        resources.getIdentifier(
+            "ic_quest_$name",
+            "drawable",
+            resources.getResourcePackageName(R.drawable.ic_quest_notes)
+        ).takeIf { it != 0 }
+    }
+
     override val icon = when (item.elementTypeIcon) {
         null -> when(item.elementType?.lowercase()){
             "kerb" -> R.drawable.ic_quest_kerb_type
@@ -36,16 +44,14 @@ class AddGenericLong(val item: Elements) :
             "sidewalks" -> R.drawable.ic_quest_sidewalk
             else -> R.drawable.ic_quest_notes
         }
-        else -> {
-            val iconResId = resources.getIdentifier(
-                "ic_quest_${item.elementTypeIcon}",
-                "drawable",
-                resources.getResourcePackageName(R.drawable.ic_quest_notes)
-            )
-            if (iconResId != 0) iconResId
-            else  R.drawable.ic_quest_notes // Fallback to default icon if not found
-        }
+        else -> localIconResId ?: R.drawable.ic_quest_notes // Fallback to default icon if not found
     }
+
+    // non-null only when element_type_icon is set but didn't resolve to a local ic_quest_*
+    // drawable - lets map-pin code check the workspace's custom-icons list (type="quest") for a
+    // URL override, see FeaturePresetCatalog.questCustomIconFileOrNull
+    val unresolvedIconName: String? =
+        if (item.elementTypeIcon != null && localIconResId == null) item.elementTypeIcon else null
     override val achievements = listOf(PEDESTRIAN)
 
     override val name: String

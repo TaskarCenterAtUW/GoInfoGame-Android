@@ -3,6 +3,8 @@ package de.westnordost.streetcomplete.quests.create_feature
 import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
+import de.westnordost.streetcomplete.data.quest.QuestType
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.FeaturePreset
 import de.westnordost.streetcomplete.view.presetIconIndex
@@ -33,6 +35,9 @@ class FeaturePresetCatalog {
     fun findCustomIconUrl(iconName: String): String? =
         customIcons.firstOrNull { it.name == iconName && it.type == "feature-preset" }?.url
 
+    fun findQuestIconUrl(iconName: String): String? =
+        customIcons.firstOrNull { it.name == iconName && it.type == "quest" }?.url
+
     /** Built-in drawable of the preset matching [tags], or null. The schema uses drawable-style
      *  icon names ("preset_temaki_bench"), presetIconIndex iD-style names ("temaki-bench") -
      *  accept both. */
@@ -61,6 +66,25 @@ fun FeaturePresetCatalog.featurePresetCustomIconFileOf(edit: Edit, iconCache: Cu
     if (findPresetIconResId(action.tags) != null) return null // built-in icon takes precedence
     val iconName = findPresetFor(action.tags)?.icon ?: return null
     val url = findCustomIconUrl(iconName) ?: return null
+    return iconCache.getCached(url)
+}
+
+/** For a long-form quest (element type) whose element_type_icon is a URL-based custom icon and
+ *  isn't a built-in drawable: the icon's cached file (downloading it first if needed - quests have
+ *  no picker step to have triggered a download earlier, unlike feature presets), or null. */
+suspend fun FeaturePresetCatalog.questCustomIconFileOrNull(questType: QuestType, iconCache: CustomIconCache): File? {
+    val iconName = (questType as? AddGenericLong)?.unresolvedIconName ?: return null
+    val url = findQuestIconUrl(iconName) ?: return null
+    return iconCache.getOrDownload(url)
+}
+
+/** Same as [questCustomIconFileOrNull] but never triggers a download - only returns the file if
+ *  already cached. Safe to call from non-suspend contexts (e.g. the multi-select long-press
+ *  highlight); the quest's base pin normally already triggered caching via
+ *  [questCustomIconFileOrNull] by the time this is needed. */
+fun FeaturePresetCatalog.cachedQuestCustomIconFileOf(questType: QuestType, iconCache: CustomIconCache): File? {
+    val iconName = (questType as? AddGenericLong)?.unresolvedIconName ?: return null
+    val url = findQuestIconUrl(iconName) ?: return null
     return iconCache.getCached(url)
 }
 

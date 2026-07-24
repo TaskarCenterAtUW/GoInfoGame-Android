@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
 import androidx.annotation.DrawableRes
+import java.io.File
 import androidx.annotation.UiThread
 import androidx.core.content.getSystemService
 import androidx.core.graphics.Insets
@@ -306,7 +307,9 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
             questTypeRegistry,
             visibleQuestsSource,
             this,
-            prefs
+            prefs,
+            featurePresetCatalog,
+            customIconCache
         )
         questPinsManager!!.isVisible = pinMode == PinMode.QUESTS
         viewLifecycleOwner.lifecycle.addObserver(questPinsManager!!)
@@ -578,13 +581,33 @@ class MainMapFragment : MapFragment(), ShowsGeometryMarkers {
     ) {
         viewLifecycleScope.launch(Dispatchers.Default) {
             multiSelectPinMapComponent?.set(iconResId, pinPositions)
-            if (pinPositions.isEmpty()) {
-                questPinsManager?.multiSelectQuestType = null
-                questPinsManager?.onNewScreenPosition()
-            } else if (pinPositions.size == 1) {
-                questPinsManager?.multiSelectQuestType = title
-                questPinsManager?.onNewScreenPosition(true)
-            }
+            onMultiSelectPinsUpdated(title, pinPositions)
+        }
+    }
+
+    /** Like [highlightForMultiSelect], but with an already-cached custom icon file (e.g. a
+     *  workspace's URL-based quest icon) */
+    fun highlightForMultiSelect(
+        iconFile: File,
+        title: String,
+        pinPositions: Collection<Pair<LatLon, Map<String, String>>>,
+    ) {
+        viewLifecycleScope.launch(Dispatchers.Default) {
+            multiSelectPinMapComponent?.set(iconFile, pinPositions)
+            onMultiSelectPinsUpdated(title, pinPositions)
+        }
+    }
+
+    private fun onMultiSelectPinsUpdated(
+        title: String,
+        pinPositions: Collection<Pair<LatLon, Map<String, String>>>,
+    ) {
+        if (pinPositions.isEmpty()) {
+            questPinsManager?.multiSelectQuestType = null
+            questPinsManager?.onNewScreenPosition()
+        } else if (pinPositions.size == 1) {
+            questPinsManager?.multiSelectQuestType = title
+            questPinsManager?.onNewScreenPosition(true)
         }
     }
 

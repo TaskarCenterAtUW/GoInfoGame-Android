@@ -232,6 +232,14 @@ class WorkspaceViewModelImpl(
     // debug-only: lets test-data JSON be edited on-device (`adb push` to testLongFormJsonFile's
     // path, no rebuild needed) instead of only via the hardcoded DEFAULT_TEST_LONG_FORM_JSON.
     // Falls back to the default on any read/parse problem so a bad edit can't crash the flow.
+    //
+    // adb push command (path = getExternalFilesDir(null), applicationId has no debug suffix):
+    //   adb shell mkdir -p /storage/emulated/0/Android/data/net.opentoall.aviv.scoutroute/files
+    //   adb push test_workspace_longform.json \
+    //     /storage/emulated/0/Android/data/net.opentoall.aviv.scoutroute/files/test_workspace_longform.json
+    // The mkdir step is required if the app was just installed/reinstalled and hasn't launched
+    // yet - getExternalFilesDir() normally creates that directory lazily on first app launch, so
+    // pushing before the first launch would otherwise fail with "No such file or directory".
     private fun readTestLongFormJson(): String {
         if (!BuildConfig.DEBUG || !testLongFormJsonFile.exists()) return DEFAULT_TEST_LONG_FORM_JSON
         return try {

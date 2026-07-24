@@ -114,8 +114,10 @@ import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeature
 import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
 import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
 import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
+import de.westnordost.streetcomplete.quests.create_feature.cachedQuestCustomIconFileOf
 import de.westnordost.streetcomplete.quests.create_feature.featurePresetCustomIconFileOf
 import de.westnordost.streetcomplete.quests.create_feature.featurePresetIconOf
+import de.westnordost.streetcomplete.quests.create_feature.questCustomIconFileOrNull
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
@@ -697,7 +699,12 @@ class MainActivity :
         }
         multiSelectViewModel.dynamicText.postValue(getFragmentTitle(quest))
 
-        mapFragment.highlightForMultiSelect(quest.type.icon, quest.type.name, multiSelectPoints)
+        val customIconFile = featurePresetCatalog.cachedQuestCustomIconFileOf(quest.type, customIconCache)
+        if (customIconFile != null) {
+            mapFragment.highlightForMultiSelect(customIconFile, quest.type.name, multiSelectPoints)
+        } else {
+            mapFragment.highlightForMultiSelect(quest.type.icon, quest.type.name, multiSelectPoints)
+        }
     }
 
     private fun getFragmentTitle(quest: Quest?): String? {
@@ -1535,7 +1542,13 @@ class MainActivity :
 
         mapFragment.startFocus(quest.geometry, getQuestFormInsets())
         mapFragment.highlightGeometry(quest.geometry)
-        mapFragment.highlightPins(quest.type.icon, quest.markerLocations)
+        val questCustomIconFile = featurePresetCatalog.questCustomIconFileOrNull(quest.type, customIconCache)
+        if (questCustomIconFile != null) {
+            // already registered as a style image by QuestPinsManager when the base pin was shown
+            mapFragment.highlightPins(customPinIconName(questCustomIconFile), quest.markerLocations)
+        } else {
+            mapFragment.highlightPins(quest.type.icon, quest.markerLocations)
+        }
         mapFragment.hideNonHighlightedPins(quest.key)
         mapFragment.hideOverlay()
     }
