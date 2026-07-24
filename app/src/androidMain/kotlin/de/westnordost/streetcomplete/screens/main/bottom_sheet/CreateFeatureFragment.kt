@@ -233,7 +233,9 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
         super.onClickClose { listener?.closeCreateFeature() }
     }
 
-    override fun isRejectingClose() = attachPhotoFragment?.imagePaths?.isNotEmpty() == true
+    override fun isRejectingClose() =
+        attachPhotoFragment?.imagePaths?.isNotEmpty() == true ||
+            contentBinding.notesInput.text.isNotBlank()
 
     override fun onDiscard() {
         super.onDiscard()
@@ -258,6 +260,8 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
 
         val position = listener?.getMapPositionAt(screenPos.toPointF()) ?: return
         val imagePaths = attachPhotoFragment?.imagePaths.orEmpty()
+        val notes = contentBinding.notesInput.text.toString().trim()
+        val tags = if (notes.isNotEmpty()) preset.tags + ("ext:notes" to notes) else preset.tags
 
         isSubmitting = true
         binding.markerCreateLayout.markerLayoutContainer.visibility = View.INVISIBLE
@@ -268,7 +272,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
                     AddFeaturePreset,
                     ElementPointGeometry(position),
                     "survey",
-                    CreateNodeAction(position, preset.tags),
+                    CreateNodeAction(position, tags),
                     isNearUserLocation = true
                 )
                 // photos are NOT deleted here - they live on disk until the edit syncs, at which
