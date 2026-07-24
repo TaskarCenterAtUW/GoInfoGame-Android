@@ -18,16 +18,11 @@
         android:orientation="horizontal">
 
         <!-- Profile Circle Icon -->
-        <com.google.android.material.imageview.ShapeableImageView
+        <androidx.compose.ui.platform.ComposeView
             android:id="@+id/profileButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="@color/primary"
-            android:contentDescription="@string/profile_icon"
-            android:padding="8dp"
-            android:src="@drawable/ic_profile_48dp"
-            android:tint="@color/button_white"
-            app:shapeAppearanceOverlay="@style/CircleImageView" />
+            android:contentDescription="@string/profile_icon" />
 
         <!-- Two lines of text -->
         <LinearLayout

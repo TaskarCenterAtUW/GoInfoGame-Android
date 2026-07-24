@@ -31,12 +31,18 @@ import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
 import de.westnordost.streetcomplete.view.image_select.Item2
 import de.westnordost.streetcomplete.view.setImage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.koin.java.KoinJavaComponent.inject
 
 class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     RecyclerView.Adapter<ViewHolder>() {
     var givenItems = emptyList<LongFormQuest>()
     var needRefreshIds = listOf<Int?>()
+    private val erroredQuestionIds = mutableSetOf<Int>()
+    private val _isErrorFree = MutableStateFlow(true)
+    val isErrorFree: StateFlow<Boolean> = _isErrorFree.asStateFlow()
     val preferences: Preferences by inject(Preferences::class.java)
     var items: List<LongFormQuest> = emptyList()
         set(value) {
@@ -56,7 +62,18 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             val diff = DiffUtil.calculateDiff(LongFormQuestDiffCallback(field, newList))
             field = newList
             diff.dispatchUpdatesTo(this)
+
+            // a numeric field that had an error but got hidden by questAnswerDependency must not
+            // permanently block submit - drop errors for questions no longer visible
+            if (erroredQuestionIds.retainAll(newList.mapNotNull { it.questId }.toSet())) {
+                _isErrorFree.value = erroredQuestionIds.isEmpty()
+            }
         }
+
+    private fun setFieldError(questId: Int, hasError: Boolean) {
+        if (hasError) erroredQuestionIds.add(questId) else erroredQuestionIds.remove(questId)
+        _isErrorFree.value = erroredQuestionIds.isEmpty()
+    }
 
     enum class ViewType(val value: Int) {
         EXCLUSIVE(1),
@@ -178,20 +195,25 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
         override fun afterTextChanged(s: Editable?) {
             val text = s.toString()
+            var hasError = false
             if (text.isNotBlank()) {
                 val number = text.toFloatOrNull()
                 if (number == null) {
                     textInputLayout?.error = "Invalid number"
+                    hasError = true
                 } else if (number < (minValue?.toFloat() ?: 0F)) {
                     textInputLayout?.error = "Value should be greater than $minValue"
+                    hasError = true
                 } else if (number > maxValue.toFloat()) {
                     textInputLayout?.error = "Value should be less than $maxValue"
+                    hasError = true
                 } else {
                     textInputLayout?.error = null
                 }
             } else {
                 textInputLayout?.error = null
             }
+            items.getOrNull(position)?.questId?.let { setFieldError(it, hasError) }
         }
     }
 

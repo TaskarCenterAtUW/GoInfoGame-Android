@@ -7,6 +7,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
@@ -14,6 +17,8 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.util.ktx.toast
+import kotlinx.coroutines.launch
 
 abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     final override val contentLayoutResId = R.layout.quest_long_form_list
@@ -86,8 +91,23 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
         setupRecyclerViewTouchListener(binding.recyclerView, R.id.editText)
-        binding.submitButton.setOnClickListener {
-            onClickOk()
+        binding.submitButton.apply {
+            setOnClickListener {
+                if (adapter.isErrorFree.value) {
+                    onClickOk()
+                } else {
+                    context?.toast("Please correct the errors before submitting.")
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                adapter.isErrorFree.collect { isErrorFree ->
+                    // stays clickable either way - isClickable = false would swallow the tap
+                    // entirely, so there'd be no chance to show the user why nothing happened
+                    binding.submitButton.alpha = if (isErrorFree) 1f else 0.5f
+                }
+            }
         }
     }
 

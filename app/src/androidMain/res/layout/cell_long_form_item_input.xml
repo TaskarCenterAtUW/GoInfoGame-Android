@@ -40,6 +40,8 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:textColorHint="@color/background"
+        app:hintTextColor="@color/background"
+        app:cursorColor="@color/background"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/quest_image"
         app:layout_constraintHorizontal_bias="1.0"
@@ -52,7 +54,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/enter_value"
-            android:inputType="numberDecimal" />
+            android:textColorHint="@color/background"
+            android:textColor="@color/background"
+            android:inputType="numberSigned|numberDecimal" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <ImageView

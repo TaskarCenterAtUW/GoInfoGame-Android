@@ -30,6 +30,7 @@ import androidx.annotation.AnyThread
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.appcompat.widget.PopupMenu
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -143,6 +145,7 @@ import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
 import de.westnordost.streetcomplete.screens.main.map.maplibre.toPadding
 import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
+import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
 import de.westnordost.streetcomplete.ui.util.content
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.buildGeoUri
@@ -1241,12 +1244,18 @@ class MainActivity :
             workspaceTitle.text = viewModel.workspaceTitle.value
             addPrefixForAccessibility(workspaceTitle, "Current workspace : ")
             mainMenuButton.setOnClickListener { viewModel.showMenu() }
-            profileButton.setOnClickListener {
-                startActivity(
-                    Intent(
-                        this@MainActivity,
-                        UserActivity::class.java
-                    )
+            profileButton.content {
+                UserInitialsAvatar(
+                    name = prefs.workspaceUserName?.split("\n")?.getOrNull(1)?.trim(),
+                    size = 48.dp,
+                    modifier = Modifier.clickable {
+                        startActivity(
+                            Intent(
+                                this@MainActivity,
+                                UserActivity::class.java
+                            )
+                        )
+                    }
                 )
             }
             overlaysButton.setOnClickListener {
