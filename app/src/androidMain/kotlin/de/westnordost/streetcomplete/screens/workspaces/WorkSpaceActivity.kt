@@ -280,18 +280,28 @@ fun AppNavigator(
             // without this, a failed refresh here left the user stranded on this screen with a
             // stale token and no path back to login until some other request happened to 401
             val loginState by viewModel.loginState.collectAsState()
+            // while a proactive refresh is in flight, the location-triggered fetch below must
+            // wait for it - otherwise it races refreshToken() and calls project-group-roles/
+            // getWorkspaces with the still-stale (possibly already-expired) token, hitting a 401
+            // even though the refresh may still succeed a moment later
+            var tokenRefreshInFlight by remember { mutableStateOf(doTokenRefresh) }
             LaunchedEffect(loginState) {
-                if (loginState is WorkspaceLoginState.Error) {
-                    preferences.workspaceLogin = false
-                    val intent = Intent(context, WorkSpaceActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        putExtra(WorkSpaceActivity.SHOW_LOGGED_OUT_ALERT, true)
+                when (loginState) {
+                    is WorkspaceLoginState.Error -> {
+                        preferences.workspaceLogin = false
+                        val intent = Intent(context, WorkSpaceActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            putExtra(WorkSpaceActivity.SHOW_LOGGED_OUT_ALERT, true)
+                        }
+                        context.startActivity(intent)
                     }
-                    context.startActivity(intent)
+                    is WorkspaceLoginState.Success -> tokenRefreshInFlight = false
+                    else -> {}
                 }
             }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(tokenRefreshInFlight) {
+                if (tokenRefreshInFlight) return@LaunchedEffect
                 if (ActivityCompat.checkSelfPermission(
                         context,
                         Manifest.permission.ACCESS_FINE_LOCATION
