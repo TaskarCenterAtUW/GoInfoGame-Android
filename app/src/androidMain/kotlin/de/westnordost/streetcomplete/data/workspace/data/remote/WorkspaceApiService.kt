@@ -196,6 +196,7 @@ class WorkspaceApiService(
                 method = HttpMethod.Get
             ) {
                 post(url) {
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
                     setBody(refreshToken)
                     contentType(ContentType.Application.Json)
                 }

@@ -1864,13 +1864,13 @@ Alternatively, you can leave a note (with a photo).</string>
     <string name="profile_icon">Navigate to profile screen</string>
     <string name="workspace">Workspace</string>
     <string name="enter_text">Enter text</string>
+    <string name="add_feature_notes_hint">Add a note (optional)</string>
 
     <string name="close_image">Close image</string>
     <string name="confirmation_hide_quest">"Are you sure you want to hide this quest?"</string>
     <string name="confirmation_hide_quest_yes">"Yes"</string>
     <string name="map_btn_create_node">Add new feature</string>
     <string name="create_feature_new_title">New feature: %s</string>
-    <string name="create_feature_add_photos">Add photos of this feature (optional)</string>
     <string name="create_feature_confirm">Add feature</string>
 
     <string name="follow_mode">Screen Reader Mode</string>

@@ -18,6 +18,10 @@ import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
+import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
+import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
+import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
+import de.westnordost.streetcomplete.quests.create_feature.questCustomIconFileOrNull
 import de.westnordost.streetcomplete.screens.main.map.components.MultiSelectPinMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
@@ -52,6 +56,8 @@ class QuestPinsManager(
     private val visibleQuestsSource: VisibleQuestsSource,
     private val mapFragment: MainMapFragment,
     private val preferences: Preferences,
+    private val featurePresetCatalog: FeaturePresetCatalog,
+    private val customIconCache: CustomIconCache,
 ) : DefaultLifecycleObserver {
     private val overlayPositions: MutableList<Pair<Float, Float>> = mutableListOf()
 
@@ -272,11 +278,19 @@ class QuestPinsManager(
         }
     }
 
-    private fun createQuestPins(quest: Quest): List<Pin> {
+    private suspend fun createQuestPins(quest: Quest): List<Pin> {
         val props = quest.key.toProperties()
         val order = questTypeOrdersLock.withLock { questTypeOrders[quest.type] ?: 0 }
         val isEnabled = multiSelectQuestType?.let { quest.type.name == it } ?: true
-        return quest.markerLocations.map { Pin(it, quest.type.icon, props, order, isEnabled) }
+        // workspace-configured custom icon (element_type_icon) for quest types with no matching
+        // local ic_quest_* drawable - falls back to the built-in resource id when absent/uncached
+        val customIconFile = featurePresetCatalog.questCustomIconFileOrNull(quest.type, customIconCache)
+        val customIconName = customIconFile
+            ?.let { customPinIconName(it) }
+            ?.takeIf { pinsMapComponent.addCustomPinIcon(it, customIconFile) }
+        return quest.markerLocations.map {
+            Pin(it, quest.type.icon, props, order, isEnabled, iconImageName = customIconName)
+        }
     }
 
     private fun reinitializeQuestTypeOrders() {

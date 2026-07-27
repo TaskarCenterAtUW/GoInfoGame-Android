@@ -1,12 +1,15 @@
 package de.westnordost.streetcomplete.screens.main.map.components
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import androidx.annotation.DrawableRes
 import androidx.annotation.UiThread
 import androidx.lifecycle.DefaultLifecycleObserver
 import com.google.gson.JsonObject
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
 import de.westnordost.streetcomplete.screens.main.map.createPinBitmap
 import de.westnordost.streetcomplete.screens.main.map.maplibre.MapImages
 import de.westnordost.streetcomplete.screens.main.map.maplibre.clear
@@ -15,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
+import java.io.File
 import org.maplibre.android.style.expressions.Expression.get
 import org.maplibre.android.style.layers.Layer
 import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
@@ -39,6 +43,7 @@ class MultiSelectPinMapComponent(
 ) : DefaultLifecycleObserver {
 
     private val selectedPinsSource = GeoJsonSource("multi-selected-pins-source")
+    private val customPinIconNames = HashSet<String>()
 
     val layers: List<Layer> = listOf(
         SymbolLayer("multi-selected-pins-layer", "multi-selected-pins-source")
@@ -79,6 +84,37 @@ class MultiSelectPinMapComponent(
                 R.drawable.checkbox
             ) to false
         }
+        showPins(iconName, pinPositions)
+    }
+
+    /** Like [set], but with an already-cached custom icon file (e.g. a workspace's URL-based
+     *  quest icon) instead of a drawable resource - combined with the checkbox tick mark the
+     *  same way as the resId version. */
+    suspend fun set(
+        iconFile: File,
+        pinPositions: Collection<Pair<LatLon, Map<String, String>>>,
+    ) {
+        val combinedName = "pin_with_tick_" + customPinIconName(iconFile)
+        if (combinedName !in customPinIconNames) {
+            val iconBitmap = withContext(Dispatchers.IO) { BitmapFactory.decodeFile(iconFile.path) }
+            if (iconBitmap != null) {
+                val pinBitmap = createPinBitmap(
+                    context,
+                    icon = BitmapDrawable(context.resources, iconBitmap),
+                    insetIcon = true, // custom icon files are full-bleed, like the preset_* glyphs
+                    tickMarkResId = R.drawable.checkbox
+                )
+                withContext(Dispatchers.Main) { map.style?.addImage(combinedName, pinBitmap) }
+                customPinIconNames.add(combinedName)
+            }
+        }
+        showPins(combinedName, pinPositions)
+    }
+
+    private suspend fun showPins(
+        iconName: String,
+        pinPositions: Collection<Pair<LatLon, Map<String, String>>>,
+    ) {
         val points = pinPositions.map { (latLon, properties) ->
             val p = JsonObject()
             properties.forEach { (key, value) ->

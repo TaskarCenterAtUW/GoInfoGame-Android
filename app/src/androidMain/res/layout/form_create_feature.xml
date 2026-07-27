@@ -62,12 +62,17 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/addPhotosLabel"
+        <EditText
+            android:id="@+id/notesInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/create_feature_add_photos"/>
+            android:inputType="textMultiLine|textCapSentences"
+            android:gravity="top|start"
+            android:minLines="3"
+            android:maxLength="255"
+            android:hint="@string/add_feature_notes_hint"
+            android:background="@drawable/background_edittext_outline"/>
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/attachPhotoFragment"
