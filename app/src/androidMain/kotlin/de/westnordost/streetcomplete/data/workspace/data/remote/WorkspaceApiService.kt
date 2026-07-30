@@ -196,7 +196,11 @@ class WorkspaceApiService(
                 method = HttpMethod.Get
             ) {
                 post(url) {
-                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+                    // deliberately no bearerAuth here - this call fires precisely when the access
+                    // token is expired/near-expiry, so attaching it as Authorization risks the
+                    // server rejecting the request before it even looks at the refresh token in
+                    // the body. The reactive refresh path (refreshJwtToken() in
+                    // ApplicationModule.kt) hits the same endpoint the same way, unauthenticated.
                     setBody(refreshToken)
                     contentType(ContentType.Application.Json)
                 }
