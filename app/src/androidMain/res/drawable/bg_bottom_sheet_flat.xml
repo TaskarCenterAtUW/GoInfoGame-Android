@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flat, single-surface bottom sheet background (replaces the speech_bubble_top/none 9-patches
+     for fragment_quest_answer.xml only - those originals stay untouched since speech_bubble_none
+     also backs Theme.Bubble.Popup/Dialog elsewhere in the app). Rounded top corners only, matching
+     the app's existing speech_bubble_rounded_corner_radius so the roundness looks consistent. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/background" />
+    <corners
+        android:topLeftRadius="@dimen/speech_bubble_rounded_corner_radius"
+        android:topRightRadius="@dimen/speech_bubble_rounded_corner_radius" />
+</shape>

@@ -90,16 +90,22 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
         fun onCreatedFeature(position: LatLon)
         fun closeCreateFeature()
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         presets = Json.decodeFromString(requireArguments().getString(ARG_PRESETS)!!)
         customIcons = Json.decodeFromString(requireArguments().getString(ARG_CUSTOM_ICONS)!!)
-        selectedPreset = savedInstanceState?.getString(STATE_SELECTED_PRESET)?.let { Json.decodeFromString(it) }
+        selectedPreset =
+            savedInstanceState?.getString(STATE_SELECTED_PRESET)?.let { Json.decodeFromString(it) }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
         _binding = FragmentCreateFeatureBinding.inflate(inflater, container, false)
         inflater.inflate(R.layout.form_create_feature, bottomSheetBinding.content)
         return binding.root
@@ -165,7 +171,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
         } else {
             contentBinding.root.displayedChild = 1
             val title = getString(R.string.create_feature_new_title, preset.name)
-            bottomSheetBinding.titleLabel.text = title
+            bottomSheetBinding.titleLabel.text = getString(R.string.map_btn_create_node)
             contentBinding.selectedPresetName.text = title
             bindPresetIcon(contentBinding.selectedPresetIcon, preset.icon)
         }

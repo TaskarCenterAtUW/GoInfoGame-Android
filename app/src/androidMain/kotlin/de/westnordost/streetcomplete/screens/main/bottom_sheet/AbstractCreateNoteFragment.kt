@@ -20,7 +20,7 @@ abstract class AbstractCreateNoteFragment : AbstractBottomSheetFragment() {
     private val attachPhotoFragment: AttachPhotoFragment?
         get() = childFragmentManager.findFragmentById(R.id.attachPhotoFragment) as AttachPhotoFragment?
 
-    private val noteText get() = noteInput.nonBlankTextOrNull
+    protected val noteText get() = noteInput.nonBlankTextOrNull
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -31,7 +31,7 @@ abstract class AbstractCreateNoteFragment : AbstractBottomSheetFragment() {
         updateOkButtonEnablement()
     }
 
-    private fun onClickOk() {
+    protected fun onClickOk() {
         onComposedNote(noteText!!, attachPhotoFragment?.imagePaths.orEmpty())
     }
 
@@ -42,7 +42,10 @@ abstract class AbstractCreateNoteFragment : AbstractBottomSheetFragment() {
     override fun isRejectingClose() =
         noteText != null || attachPhotoFragment?.imagePaths?.isNotEmpty() == true
 
-    private fun updateOkButtonEnablement() {
+    // open so a subclass can drive its own submit button instead of the shared floating round
+    // tick (okButtonContainer) - see CreateNoteFragment, which uses a full-width button instead
+    // to match Add Feature / Long Form
+    protected open fun updateOkButtonEnablement() {
         if (noteText != null) {
             okButtonContainer.popIn()
         } else {
