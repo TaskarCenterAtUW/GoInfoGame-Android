@@ -7,12 +7,14 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.google.android.material.button.MaterialButton
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
@@ -91,7 +93,10 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         setVisibilityOfItems()
         binding.recyclerView.adapter = adapter
         setupRecyclerViewTouchListener(binding.recyclerView, R.id.editText)
-        binding.submitButton.apply {
+        val submitButton: MaterialButton? =
+            bottomSheetContainer.findViewById<CoordinatorLayout>(R.id.coordinatorLayout)
+                .findViewById(R.id.submitButton)
+        submitButton?.apply {
             setOnClickListener {
                 if (adapter.isErrorFree.value) {
                     onClickOk()
@@ -105,7 +110,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
                 adapter.isErrorFree.collect { isErrorFree ->
                     // stays clickable either way - isClickable = false would swallow the tap
                     // entirely, so there'd be no chance to show the user why nothing happened
-                    binding.submitButton.alpha = if (isErrorFree) 1f else 0.5f
+                    submitButton?.alpha = if (isErrorFree) 1f else 0.5f
                 }
             }
         }

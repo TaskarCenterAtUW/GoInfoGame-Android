@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<de.westnordost.streetcomplete.view.SlidingRelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<de.westnordost.streetcomplete.view.SlidingRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_alignParentLeft="true"
@@ -12,6 +11,7 @@
     tools:ignore="RtlHardcoded">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/coordinatorLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="@dimen/bottom_sheet_top_margin"
@@ -40,8 +40,7 @@
                 android:paddingStart="22dp"
                 android:paddingEnd="22dp"
                 android:paddingTop="16dp"
-                android:paddingBottom="16dp"
-                android:divider="@drawable/space_16dp">
+                android:paddingBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -62,7 +61,7 @@
                             android:layout_height="wrap_content"
                             android:visibility="visible"
                             android:textColor="@color/primary"
-                            android:textAppearance="@style/TextAppearance.TitleLarge"/>
+                            android:textAppearance="@style/TextAppearance.TitleLarge" />
 
                         <TextView
                             android:id="@+id/smallLabel"
@@ -72,7 +71,7 @@
                             android:ellipsize="end"
                             android:maxLines="2"
                             android:textColor="@color/primary"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"/>
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized" />
 
                     </LinearLayout>
 
@@ -80,25 +79,25 @@
                         android:id="@+id/hide_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat = "@drawable/baseline_visibility_off_24"
+                        app:srcCompat="@drawable/baseline_visibility_off_24"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
                         app:tint="@color/accent"
                         android:visibility="visible"
                         android:focusable="true"
                         android:contentDescription="@string/hide"
-                        android:padding="16dp"/>
+                        android:padding="16dp" />
 
                     <ImageView
                         android:id="@+id/close_button"
                         android:focusable="true"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat = "@drawable/ic_close_24dp"
+                        app:srcCompat="@drawable/ic_close_24dp"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
                         app:tint="@color/accent"
                         android:visibility="visible"
                         android:contentDescription="@string/close_button"
-                        android:padding="16dp"/>
+                        android:padding="16dp" />
 
                 </LinearLayout>
 
@@ -157,8 +156,7 @@
                                 app:showDividerHorizontal="middle"
                                 app:showDividerVertical="middle"
                                 app:dividerDrawableVertical="@drawable/button_bar_divider_with_vertical_padding"
-                                app:dividerDrawableHorizontal="@drawable/button_bar_divider_with_horizontal_padding"
-                                />
+                                app:dividerDrawableHorizontal="@drawable/button_bar_divider_with_horizontal_padding" />
 
                         </LinearLayout>
 
@@ -175,7 +173,25 @@
             android:layout_gravity="center"
             android:visibility="gone"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_gravity="bottom"
+            android:background="@color/button_white"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/submitButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="8dp"
+                android:text="@string/submit"
+                android:textColor="@color/primary_text"
+                app:cornerRadius="16dp" />
+        </LinearLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
@@ -207,7 +223,7 @@
             style="@style/RoundAccentButton"
             android:layout_width="@dimen/ok_button_size"
             android:layout_height="@dimen/ok_button_size"
-            android:padding="20dp"/>
+            android:padding="20dp" />
 
     </RelativeLayout>
 
@@ -218,8 +234,7 @@
         android:elevation="@dimen/speech_bubble_elevation"
         android:clickable="true"
         android:focusable="true"
-        android:visibility="gone"
-        />
+        android:visibility="gone" />
 
 </de.westnordost.streetcomplete.view.SlidingRelativeLayout>
 
