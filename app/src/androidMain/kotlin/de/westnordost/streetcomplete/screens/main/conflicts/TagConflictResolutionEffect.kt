@@ -38,7 +38,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -105,7 +108,8 @@ fun TagConflictResolutionEffect(
             // default to keeping the user's own answer - they answered these, assume they still
             // want them unless they pick the existing value
             group.forEach { keepMine[it.id] = true }
-            elementLabel = group.firstOrNull()?.let { onGetElementLabel(it.elementType, it.elementId) }
+            elementLabel =
+                group.firstOrNull()?.let { onGetElementLabel(it.elementType, it.elementId) }
             currentGroup = group
         }
     }
@@ -216,8 +220,8 @@ fun TagConflictResolutionEffect(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                     Text(
                         "This element was changed by someone else while you were answering, so " +
-                        "your answer has not been submitted yet. Choose which value to keep for " +
-                        "each question below - everything is submitted together once you confirm.",
+                            "your answer has not been submitted yet. Choose which value to keep for " +
+                            "each tag below - everything is submitted together once you confirm.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -253,13 +257,15 @@ fun TagConflictResolutionEffect(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ConflictChoiceRow(
-                        text = "Your answer: ${conflict.mineValue ?: "(removed)"}",
+                        label = "Your answer:",
+                        value = conflict.mineValue ?: "(removed)",
                         selected = mine,
                         onClick = { keepMine[conflict.id] = true }
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
                     ConflictChoiceRow(
-                        text = "Existing value: ${conflict.theirsValueAtDetection ?: "(removed)"}",
+                        label = "Existing value:",
+                        value = conflict.theirsValueAtDetection ?: "(removed)",
                         selected = !mine,
                         onClick = { keepMine[conflict.id] = false }
                     )
@@ -271,7 +277,8 @@ fun TagConflictResolutionEffect(
 
 @Composable
 private fun ConflictChoiceRow(
-    text: String,
+    label: String,
+    value: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -283,7 +290,20 @@ private fun ConflictChoiceRow(
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Text(
-            text,
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    append(label)
+                    append(" ")
+                }
+                withStyle(
+                    SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                ) {
+                    append(value)
+                }
+            },
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )

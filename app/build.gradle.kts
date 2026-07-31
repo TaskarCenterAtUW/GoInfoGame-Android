@@ -316,13 +316,14 @@ android {
     buildTypes {
         all {
             isMinifyEnabled = true
-            isShrinkResources = true
+            isShrinkResources = false
             // don't use proguard-android-optimize.txt, it is too aggressive, it is more trouble than it is worth
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             testProguardFile("test-proguard-rules.pro")
         }
         getByName("debug") {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("release") {
