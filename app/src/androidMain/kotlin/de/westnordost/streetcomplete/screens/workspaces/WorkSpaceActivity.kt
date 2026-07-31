@@ -272,7 +272,7 @@ fun AppNavigator(
             val context = LocalContext.current
 
             LaunchedEffect(Unit) {
-                viewModel.refreshToken()
+                if (doTokenRefresh) viewModel.refreshToken()
             }
 
             // proactive refresh failed (distinct from the Ktor Auth plugin's own 401-triggered
