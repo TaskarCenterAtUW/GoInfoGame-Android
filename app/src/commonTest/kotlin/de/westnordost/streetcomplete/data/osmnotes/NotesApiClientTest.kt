@@ -126,6 +126,8 @@ class NotesApiClientTest {
                     get() = 1
                 override val workspaceToken: String?
                     get() = token
+                override val userId: String?
+                    get() = null
             },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
             notesApiParser = NotesApiParser()

@@ -191,6 +191,8 @@ class MapDataApiClientTest {
                     get() = 1
                 override val workspaceToken: String?
                     get() = token
+                override val userId: String?
+                    get() = null
             },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = token.orEmpty() },
             parser = MapDataApiParser(),
@@ -207,6 +209,8 @@ class MapDataApiClientTest {
                     get() = 1
                 override val workspaceToken: String?
                     get() = token
+                override val userId: String?
+                    get() = null
             },
             serializer = ChangesetApiSerializer()
         )
@@ -220,6 +224,8 @@ class MapDataApiClientTest {
                 override val workspaceId: Int
                     get() = 1
                 override val workspaceToken: String?
+                    get() = null
+                override val userId: String?
                     get() = null
             },
             userAccessTokenSource = object : UserAccessTokenSource { override val accessToken = null },

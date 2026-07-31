@@ -3,6 +3,8 @@ package de.westnordost.streetcomplete.data.osm.edits.upload
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ChangesetTooLargeException
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
@@ -28,13 +30,14 @@ class ElementEditUploaderTest {
     private lateinit var mapDataApi: MapDataApiClient
     private lateinit var mapDataController: MapDataController
     private lateinit var uploader: ElementEditUploader
+    private lateinit var pendingTagConflict: PendingTagConflictsController
 
     @BeforeTest fun setUp() {
         changesetManager = mock()
         mapDataApi = mock()
         mapDataController = mock()
-
-        uploader = ElementEditUploader(changesetManager, mapDataApi, mapDataController)
+        pendingTagConflict = mock()
+        uploader = ElementEditUploader(changesetManager, mapDataApi, mapDataController, pendingTagConflict)
     }
 
     @Test fun `create new changeset when changeset is too large`(): Unit = runBlocking {

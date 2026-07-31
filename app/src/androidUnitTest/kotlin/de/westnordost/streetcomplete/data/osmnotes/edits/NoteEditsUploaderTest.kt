@@ -2,10 +2,10 @@ package de.westnordost.streetcomplete.data.osmnotes.edits
 
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
+import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
-import de.westnordost.streetcomplete.data.osmnotes.PhotoServiceApiClient
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
 import de.westnordost.streetcomplete.data.osmtracks.TracksApiClient
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
@@ -20,6 +20,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.SystemFileSystem
+import org.mockito.ArgumentMatchers.anyFloat
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -33,7 +34,7 @@ class NoteEditsUploaderTest {
     private lateinit var noteEditsController: NoteEditsController
     private lateinit var notesApi: NotesApiClient
     private lateinit var tracksApi: TracksApiClient
-    private lateinit var imageUploader: PhotoServiceApiClient
+    private lateinit var imageUploader: KartaViewApiClient
     private lateinit var userDataSource: UserDataSource
 
     private lateinit var uploader: NoteEditsUploader
@@ -162,7 +163,7 @@ class NoteEditsUploaderTest {
 
         on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
         on(notesApi.comment(anyLong(), any())).thenReturn(note)
-        on(imageUploader.upload(any())).thenReturn(listOf("x", "y", "z"))
+        on(imageUploader.upload(any(), any(), anyFloat())).thenReturn(listOf("x", "y", "z"))
 
         upload()
 
@@ -170,8 +171,7 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a", "b", "c"))
-        verify(imageUploader).activate(1L)
+        verify(imageUploader).upload(listOf("a", "b", "c"), pos, 0f)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
@@ -188,7 +188,7 @@ class NoteEditsUploaderTest {
 
         on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
         on(notesApi.create(any(), any())).thenReturn(note)
-        on(imageUploader.upload(any())).thenReturn(listOf("x", "y", "z"))
+        on(imageUploader.upload(any(), any(), anyFloat())).thenReturn(listOf("x", "y", "z"))
 
         upload()
 
@@ -196,8 +196,7 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a", "b", "c"))
-        verify(imageUploader).activate(1L)
+        verify(imageUploader).upload(listOf("a", "b", "c"), pos, 0f)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
@@ -231,13 +230,15 @@ class NoteEditsUploaderTest {
     }
 
     @Test fun `upload missed image activations`(): Unit = runBlocking {
+        // KartaView photos need no activation step (unlike the old PhotoServiceApiClient) - this
+        // just clears any leftover flags from before the switch, with no imageUploader call at all
         val edit = noteEdit(noteId = 3)
 
         on(noteEditsController.getOldestNeedingImagesActivation()).thenReturn(edit).thenReturn(null)
 
         upload()
 
-        verify(imageUploader).activate(3)
+        verifyNoInteractions(imageUploader)
         verify(noteEditsController).markImagesActivated(1L)
     }
 
