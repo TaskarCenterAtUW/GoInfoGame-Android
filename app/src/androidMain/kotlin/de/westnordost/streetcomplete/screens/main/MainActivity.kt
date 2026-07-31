@@ -1663,7 +1663,7 @@ class MainActivity :
             } else {
                 intent?.getParcelableArrayListExtra("LONG_FORM")
             }
-
+        val recencyPeriodInDays = intent?.getIntExtra("RECENCY_PERIOD_IN_DAYS", 90) ?: 90
         featurePresets =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent?.getParcelableArrayListExtra("FEATURE_PRESETS", FeaturePreset::class.java)
@@ -1680,7 +1680,7 @@ class MainActivity :
 
         val questTypes: MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {
-            questTypes.add(index to AddGenericLong(item))
+            questTypes.add(index to AddGenericLong(item, recencyPeriodInDays))
         }
         questTypeRegistry.addItem(questTypes)
 

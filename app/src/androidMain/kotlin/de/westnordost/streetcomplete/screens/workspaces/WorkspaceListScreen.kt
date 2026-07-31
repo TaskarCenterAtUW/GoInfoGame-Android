@@ -263,7 +263,8 @@ fun WorkSpaceListScreen(
                                 longFormState.imageryList,
                                 workspace,
                                 longFormState.featurePresets,
-                                longFormState.customIcons
+                                longFormState.customIcons,
+                                longFormState.recencyPeriodInDays
                             )
                         }
 
@@ -292,6 +293,7 @@ fun finishAndLaunchNewActivity(
     workspace: Workspace,
     featurePresets: List<FeaturePreset> = emptyList(),
     customIcons: List<CustomIcon> = emptyList(),
+    recencyPeriodInDays : Int
 ) {
     val activity = context as? Activity
     activity?.let {
@@ -302,6 +304,7 @@ fun finishAndLaunchNewActivity(
             putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(imageryList ?: emptyList()))
             putParcelableArrayListExtra("FEATURE_PRESETS", ArrayList(featurePresets))
             putParcelableArrayListExtra("CUSTOM_ICONS", ArrayList(customIcons))
+            putExtra("RECENCY_PERIOD_IN_DAYS", recencyPeriodInDays)
         }
         it.startActivity(intent)
         it.finish()

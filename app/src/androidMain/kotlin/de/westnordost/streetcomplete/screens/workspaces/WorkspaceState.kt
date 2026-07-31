@@ -26,6 +26,7 @@ sealed class WorkspaceLongFormState {
     data class Success(
         val longFormItems: List<Elements>,
         val imageryList: List<Imagery>?,
+        val recencyPeriodInDays: Int,
         val featurePresets: List<FeaturePreset> = emptyList(),
         val customIcons: List<CustomIcon> = emptyList(),
     ) : WorkspaceLongFormState()
@@ -37,9 +38,10 @@ sealed class WorkspaceLongFormState {
         fun success(
             workspaces: List<Elements>,
             imageryList: List<Imagery>?,
+            recencyPeriodInDays : Int,
             featurePresets: List<FeaturePreset> = emptyList(),
             customIcons: List<CustomIcon> = emptyList(),
-        ) = Success(workspaces, imageryList, featurePresets, customIcons)
+        ) = Success(workspaces, imageryList,recencyPeriodInDays, featurePresets, customIcons)
 
         fun error(errorMessage: String?) = Error(errorMessage ?: "")
     }

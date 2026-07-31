@@ -101,8 +101,12 @@ fun Tags.removeCheckDates() {
 }
 
 /** Date format of the tags used for recording the date at which the element or tag with the given
- *  key should be checked again. Accepted date formats: 2000-11-11 but also 2000-11 */
-private val OSM_CHECK_DATE_REGEX = Regex("([0-9]{4})-([0-9]{2})(?:-([0-9]{2}))?")
+ *  key should be checked again. Accepted date formats: 2000-11-11 but also 2000-11.
+ *
+ *  Trailing "Z" is also tolerated (but ignored - the value is always read as a plain date): some
+ *  tags (e.g. ext:gig_last_updated) are required to be written with an explicit UTC designator,
+ *  e.g. 2000-11-11Z, per DateTimeFormatter.ofPattern("yyyy-MM-ddXXX") on ZonedDateTime.now(UTC). */
+private val OSM_CHECK_DATE_REGEX = Regex("([0-9]{4})-([0-9]{2})(?:-([0-9]{2}))?Z?")
 
 /** OSM key used by StreetComplete to mark that something has been checked */
 const val SURVEY_MARK_KEY = "check_date"

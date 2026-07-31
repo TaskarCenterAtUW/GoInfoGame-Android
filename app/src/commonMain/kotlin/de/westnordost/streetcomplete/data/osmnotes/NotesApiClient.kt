@@ -15,12 +15,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.parameters
 import io.ktor.utils.io.asSource
 import kotlinx.io.buffered
 
@@ -31,7 +33,7 @@ class NotesApiClient(
     private val httpClient: HttpClient,
     private val workspaceConfigProvider: WorkspaceConfigProvider,
     private val userAccessTokenSource: UserAccessTokenSource,
-    private val notesApiParser: NotesApiParser
+    private val notesApiParser: NotesApiParser,
 ) {
     /**
      * Create a new note at the given location
@@ -46,14 +48,19 @@ class NotesApiClient(
      * @return the new note
      */
     suspend fun create(pos: LatLon, text: String): Note = wrapApiClientExceptions {
-        val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes") {
+        val response = httpClient.submitForm(
+            url = workspaceConfigProvider.osmBaseUrl + "notes",
+            formParameters = parameters {
+                append("lat", pos.latitude.format(7))
+                append("lon", pos.longitude.format(7))
+                append("text", text)
+            }
+        ) {
             header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
             workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
-            parameter("lat", pos.latitude.format(7))
-            parameter("lon", pos.longitude.format(7))
-            parameter("text", text)
             expectSuccess = true
         }
+
         val source = response.bodyAsChannel().asSource().buffered()
         return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId).single()
     }
@@ -71,11 +78,12 @@ class NotesApiClient(
      */
     suspend fun comment(id: Long, text: String): Note = wrapApiClientExceptions {
         try {
-            val response = httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes/$id/comment") {
-                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
-                parameter("text", text)
-                expectSuccess = true
-            }
+            val response =
+                httpClient.post(workspaceConfigProvider.osmBaseUrl + "notes/$id/comment") {
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+                    parameter("text", text)
+                    expectSuccess = true
+                }
             val source = response.bodyAsChannel().asSource().buffered()
             return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId).single()
         } catch (e: ClientRequestException) {
@@ -84,6 +92,7 @@ class NotesApiClient(
                 HttpStatusCode.Gone, HttpStatusCode.NotFound, HttpStatusCode.Conflict -> {
                     throw ConflictException(e.message, e)
                 }
+
                 else -> throw e
             }
         }
@@ -98,12 +107,14 @@ class NotesApiClient(
      */
     suspend fun get(id: Long): Note? = wrapApiClientExceptions {
         try {
-            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes/$id") { expectSuccess = true
+            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes/$id") {
+                expectSuccess = true
                 header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
                 workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
             }
             val source = response.bodyAsChannel().asSource().buffered()
-            return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId).singleOrNull()
+            return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId)
+                .singleOrNull()
         } catch (e: ClientRequestException) {
             when (e.response.status) {
                 // hidden by moderator, does not exist (yet)
@@ -126,28 +137,29 @@ class NotesApiClient(
      *
      * @return the incoming notes
      */
-    suspend fun getAllOpen(bounds: BoundingBox, limit: Int? = null): List<Note> = wrapApiClientExceptions {
-        if (bounds.crosses180thMeridian) {
-            throw IllegalArgumentException("Bounding box crosses 180th meridian")
-        }
+    suspend fun getAllOpen(bounds: BoundingBox, limit: Int? = null): List<Note> =
+        wrapApiClientExceptions {
+            if (bounds.crosses180thMeridian) {
+                throw IllegalArgumentException("Bounding box crosses 180th meridian")
+            }
 
-        try {
-            val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes") {
-                header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
-                workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
-                parameter("bbox", bounds.toOsmApiString())
-                parameter("limit", limit)
-                parameter("closed", 0)
-                expectSuccess = true
-            }
-            val source = response.bodyAsChannel().asSource().buffered()
-            return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId)
-        } catch (e: ClientRequestException) {
-            if (e.response.status == HttpStatusCode.BadRequest) {
-                throw QueryTooBigException(e.message, e)
-            } else {
-                throw e
+            try {
+                val response = httpClient.get(workspaceConfigProvider.osmBaseUrl + "notes") {
+                    header("X-Workspace", workspaceConfigProvider.workspaceId.toString())
+                    workspaceConfigProvider.workspaceToken?.let { bearerAuth(it) }
+                    parameter("bbox", bounds.toOsmApiString())
+                    parameter("limit", limit)
+                    parameter("closed", 0)
+                    expectSuccess = true
+                }
+                val source = response.bodyAsChannel().asSource().buffered()
+                return notesApiParser.parseNotes(source, workspaceConfigProvider.workspaceId)
+            } catch (e: ClientRequestException) {
+                if (e.response.status == HttpStatusCode.BadRequest) {
+                    throw QueryTooBigException(e.message, e)
+                } else {
+                    throw e
+                }
             }
         }
-    }
 }

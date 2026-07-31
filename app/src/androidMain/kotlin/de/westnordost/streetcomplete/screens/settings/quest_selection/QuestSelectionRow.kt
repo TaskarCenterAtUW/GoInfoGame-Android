@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
@@ -36,10 +34,8 @@ import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.resources.ic_drag_vertical_24
 import de.westnordost.streetcomplete.resources.questList_disabled_by_default
 import de.westnordost.streetcomplete.resources.questList_disabled_in_country
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -54,9 +50,9 @@ fun QuestSelectionRow(
 ) {
     val alpha = if (!item.selected) 0.5f else 1.0f
     var title = ""
-    title = if (item.questType is AddGenericLong){
+    title = if (item.questType is AddGenericLong) {
         item.questType.item.elementType!!
-    }else{
+    } else {
         "Create Note"
     }
     Row(
@@ -86,9 +82,11 @@ fun QuestSelectionRow(
 
             Text(
                 text = title,
-                modifier = Modifier.alpha(alpha).clearAndSetSemantics{
-                    hideFromAccessibility()
-                },
+                modifier = Modifier
+                    .alpha(alpha)
+                    .clearAndSetSemantics {
+                        hideFromAccessibility()
+                    },
                 style = MaterialTheme.typography.bodyLarge,
             )
             if (!item.enabledInCurrentCountry) {
@@ -113,9 +111,9 @@ fun QuestSelectionRow(
                 checked = item.selected,
                 onCheckedChange = onToggleSelection,
                 enabled = item.isInteractionEnabled,
-                modifier = Modifier.semantics{
-                contentDescription = "Quest type : $title"
-            }
+                modifier = Modifier.semantics {
+                    contentDescription = "Quest type : $title"
+                }
             )
         }
     }
@@ -137,7 +135,11 @@ private fun QuestSelectionRowPreview() {
     var selected by remember { mutableStateOf(true) }
 
     QuestSelectionRow(
-        item = QuestSelection(AddGenericLong(Elements()), selected, false),
+        item = QuestSelection(
+            AddGenericLong(Elements(), recencyPeriodInDays = 90),
+            selected,
+            false
+        ),
         onToggleSelection = { selected = !selected },
         displayCountry = "Atlantis",
     )
