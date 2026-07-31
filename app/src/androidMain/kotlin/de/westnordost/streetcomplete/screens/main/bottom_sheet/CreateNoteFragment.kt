@@ -20,7 +20,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditAction
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
-import de.westnordost.streetcomplete.databinding.FormLeaveNoteBinding
+import de.westnordost.streetcomplete.databinding.FormCreateNoteBinding
 import de.westnordost.streetcomplete.databinding.FragmentCreateNoteBinding
 import de.westnordost.streetcomplete.quests.note_discussion.AttachPhotoFragment
 import de.westnordost.streetcomplete.util.ktx.childFragmentManagerOrNull
@@ -49,11 +49,14 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
     override val scrollViewChild get() = bottomSheetBinding.scrollViewChild
     override val bottomSheetTitle get() = bottomSheetBinding.speechBubbleTitleContainer
     override val bottomSheetContent get() = bottomSheetBinding.speechbubbleContentContainer
-    override val floatingBottomView get() = bottomSheetBinding.okButton
+
+    // the shared floating round tick is replaced by contentBinding.confirmNoteButton below, to
+    // match the full-width submit button used by Add Feature / Long Form
+    override val floatingBottomView: View? get() = null
     override val okButton get() = bottomSheetBinding.okButton
     override val okButtonContainer get() = bottomSheetBinding.okButtonContainer
 
-    private val contentBinding by viewBinding(FormLeaveNoteBinding::bind, R.id.content)
+    private val contentBinding by viewBinding(FormCreateNoteBinding::bind, R.id.content)
 
     override val noteInput get() = contentBinding.noteInput
 
@@ -67,6 +70,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
 
         fun closeNoteCreation()
     }
+
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,9 +84,13 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
         _binding = FragmentCreateNoteBinding.inflate(inflater, container, false)
-        inflater.inflate(R.layout.form_leave_note, bottomSheetBinding.content)
+        inflater.inflate(R.layout.form_create_note, bottomSheetBinding.content)
         return binding.root
     }
 
@@ -90,6 +98,8 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         bottomSheetBinding.buttonPanel.isGone = true
+        bottomSheetBinding.okButtonContainer.isGone = true
+        contentBinding.confirmNoteButton.setOnClickListener { onClickOk() }
 
         if (savedInstanceState == null) {
             binding.markerCreateLayout.markerLayoutContainer.startAnimation(createFallDownAnimation())
@@ -101,6 +111,12 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
             onClickClose { listener?.closeNoteCreation() }
         }
         contentBinding.descriptionLabel.text = getString(R.string.create_new_note_description)
+    }
+
+    // full-width confirmNoteButton stays visible, just dims when there's no text yet - unlike the
+    // shared base's default (okButtonContainer popping in/out of existence), see floatingBottomView
+    override fun updateOkButtonEnablement() {
+        contentBinding.confirmNoteButton.alpha = if (noteText != null) 1f else 0.5f
     }
 
     override fun onDestroyView() {
@@ -168,8 +184,10 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
             withContext(Dispatchers.IO) {
                 val recordedTrack =
                     if (hasGpxAttached) listener?.getRecordedTrack().orEmpty() else emptyList()
-                noteEditsController.add(0, NoteEditAction.CREATE, position,
-                    text, imagePaths, recordedTrack)
+                noteEditsController.add(
+                    0, NoteEditAction.CREATE, position,
+                    text, imagePaths, recordedTrack
+                )
             }
         }
 

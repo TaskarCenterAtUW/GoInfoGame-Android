@@ -165,6 +165,13 @@ abstract class AbstractQuestForm :
         binding.titleLabel.text = text
     }
 
+    protected fun setSmallTitle(text: CharSequence?){
+        binding.smallLabel.apply {
+            visibility = View.VISIBLE
+            this.text = text
+        }
+    }
+
     protected fun setHideQuestOnClick(hideQuest: () -> Unit) {
         binding.hideButton.setOnClickListener {
             onClickHide { hideQuest.invoke() }

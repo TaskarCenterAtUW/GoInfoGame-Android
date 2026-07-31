@@ -182,7 +182,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             // the category alone ("Sidewalk", "Kerb"...) doesn't distinguish between several
             // queued quests of the same type - add the OSM element type and id
             val typeAndId = "${element.type.name.lowercase().replaceFirstChar { it.uppercase() }} #${element.id}"
+            val intersectionData = element.tags["ext:intersection_at"]
             setTitle("$category — $typeAndId")
+            intersectionData?.apply {
+                setSmallTitle("Intersection : $intersectionData")
+            }
         }
 
         setHideQuestOnClick { hideQuest() }

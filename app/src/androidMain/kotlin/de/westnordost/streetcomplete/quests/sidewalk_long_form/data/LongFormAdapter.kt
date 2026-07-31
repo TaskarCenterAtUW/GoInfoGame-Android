@@ -9,12 +9,15 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -73,6 +76,41 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
     private fun setFieldError(questId: Int, hasError: Boolean) {
         if (hasError) erroredQuestionIds.add(questId) else erroredQuestionIds.remove(questId)
         _isErrorFree.value = erroredQuestionIds.isEmpty()
+    }
+
+    private fun scrollFieldAboveKeyboard(field: View) {
+        val root = field.rootView
+        val imeBottom = ViewCompat.getRootWindowInsets(root)
+            ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        if (imeBottom <= 0) return
+
+        var scrollAncestor = field.parent as? View
+        while (scrollAncestor != null && scrollAncestor !is NestedScrollView) {
+            scrollAncestor = scrollAncestor.parent as? View
+        }
+        val scrollView = scrollAncestor as? NestedScrollView ?: return
+
+        val fieldLocation = IntArray(2)
+        field.getLocationOnScreen(fieldLocation)
+        val fieldBottomOnScreen = fieldLocation[1] + field.height
+        val keyboardTopOnScreen = root.height - imeBottom
+        val overlap = fieldBottomOnScreen - keyboardTopOnScreen
+        if (overlap > 0) scrollView.smoothScrollBy(0, overlap)
+    }
+
+    /** Keeps [this] field scrolled above the keyboard for as long as it holds focus, tracking the
+     *  keyboard's own show/hide animation (each frame of which triggers a global layout pass). */
+    private fun View.keepAboveKeyboardWhileFocused() {
+        var listener: ViewTreeObserver.OnGlobalLayoutListener? = null
+        setOnFocusChangeListener { view, hasFocus ->
+            listener?.let { view.viewTreeObserver.removeOnGlobalLayoutListener(it) }
+            listener = null
+            if (hasFocus) {
+                val l = ViewTreeObserver.OnGlobalLayoutListener { scrollFieldAboveKeyboard(view) }
+                listener = l
+                view.viewTreeObserver.addOnGlobalLayoutListener(l)
+            }
+        }
     }
 
     enum class ViewType(val value: Int) {
@@ -156,10 +194,6 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         fun bind(item: LongFormQuest) {
             if (item.visible) binding.container.visibility =
                 View.VISIBLE else binding.container.visibility = View.GONE
-
-            binding.container.visibility = View.GONE
-            // binding.title.text = item.questTitle
-            // binding.description.text = item.questDescription
         }
     }
 
@@ -227,6 +261,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.root.setOnClickListener {
                 hideKeyboard(it)
             }
+            binding.input.editText?.keepAboveKeyboardWhileFocused()
         }
 
         private fun hideKeyboard(view: View) {
@@ -279,6 +314,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.root.setOnClickListener {
                 hideKeyboard(it)
             }
+            binding.input.editText?.keepAboveKeyboardWhileFocused()
         }
 
         private fun hideKeyboard(view: View) {

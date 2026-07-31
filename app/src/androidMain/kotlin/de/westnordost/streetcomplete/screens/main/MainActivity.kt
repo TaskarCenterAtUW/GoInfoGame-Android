@@ -69,6 +69,7 @@ import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
 import de.westnordost.streetcomplete.data.edithistory.EditHistoryController
 import de.westnordost.streetcomplete.data.edithistory.EditKey
+import de.westnordost.streetcomplete.data.connection.InternetConnectionState
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
@@ -76,7 +77,11 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
+import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataWithGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
@@ -176,6 +181,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -184,6 +190,7 @@ import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sqrt
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Controls the main view.
  *
@@ -230,6 +237,9 @@ class MainActivity :
     private val prefs: Preferences by inject()
     private val visibleQuestsSource: VisibleQuestsSource by inject()
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
+    private val mapDataController: MapDataController by inject()
+    private val mapDataApiClient: MapDataApiClient by inject()
+    private val internetConnectionState: InternetConnectionState by inject()
     private val notesSource: NotesWithEditsSource by inject()
     private val questsHiddenSource: QuestsHiddenSource by inject()
     private val featureDictionary: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
@@ -1510,10 +1520,72 @@ class MainActivity :
         }
     }
 
+    /** Outcome of [checkGigQuestNotAlreadyAnswered]: either the quest is clear to open (with a
+     *  freshly-fetched element to use if one was fetched), or it's already been answered by
+     *  someone else and the form must not open at all. */
+    private sealed interface GigQuestCheckResult {
+        /** Not a gig quest, offline, or the check itself failed - proceed exactly as before
+         *  (the caller falls back to its usual local element lookup). */
+        data object NotChecked : GigQuestCheckResult
+        /** Checked and still needs an answer - use this freshly-fetched element to skip a
+         *  redundant local lookup, so the form opens with the latest tags. */
+        data class StillOpen(val element: Element) : GigQuestCheckResult
+        /** Checked and someone else already answered it - the "already answered" sheet is
+         *  showing; the form must not open. */
+        data object AlreadyAnswered : GigQuestCheckResult
+    }
+
+    /** For a gig quest (AddGenericLong), re-fetches the element fresh from the server and checks
+     *  whether someone else has already answered it in the meantime - using the exact same
+     *  gig_complete/gig_last_updated recency filter (isApplicableTo) already used to decide which
+     *  quests show on the map, so the two can never disagree. Shows a small bottom sheet while
+     *  fetching; if already answered, swaps that sheet's content to tell the user and refreshes
+     *  the local map data so the pin disappears. */
+    private suspend fun checkGigQuestNotAlreadyAnswered(quest: OsmQuest): GigQuestCheckResult {
+        val questType = quest.type
+        if (questType !is AddGenericLong || !internetConnectionState.isConnected) {
+            return GigQuestCheckResult.NotChecked
+        }
+
+        val checkSheet = QuestCheckBottomSheet()
+        checkSheet.show(supportFragmentManager, "quest_check")
+
+        val freshElement = withContext(Dispatchers.IO) {
+            // a stalled connection must not leave the user stuck behind the loading sheet forever -
+            // timing out is handled exactly like the catch below, falling through as if offline
+            withTimeoutOrNull(GIG_QUEST_CHECK_TIMEOUT) {
+                try {
+                    when (quest.elementType) {
+                        ElementType.NODE -> mapDataApiClient.getNode(quest.elementId)
+                        ElementType.WAY -> mapDataApiClient.getWay(quest.elementId)
+                        ElementType.RELATION -> mapDataApiClient.getRelation(quest.elementId)
+                    }
+                } catch (e: Exception) {
+                    null // network hiccup mid-check - fall through, open the form as if offline
+                }
+            }
+        }
+
+        if (freshElement != null && questType.isApplicableTo(freshElement) == false) {
+            mapDataController.updateAll(MapDataUpdates(updated = listOf(freshElement)))
+            checkSheet.showAlreadyAnswered { checkSheet.dismiss() }
+            return GigQuestCheckResult.AlreadyAnswered
+        }
+
+        checkSheet.dismiss()
+        return freshElement?.let { GigQuestCheckResult.StillOpen(it) } ?: GigQuestCheckResult.NotChecked
+    }
+
     @UiThread
     private suspend fun showQuestDetails(quest: Quest) {
         val mapFragment = mapFragment ?: return
         if (isQuestDetailsCurrentlyDisplayedFor(quest.key)) return
+
+        var checkResult: GigQuestCheckResult = GigQuestCheckResult.NotChecked
+        if (quest is OsmQuest) {
+            checkResult = checkGigQuestNotAlreadyAnswered(quest)
+            if (checkResult is GigQuestCheckResult.AlreadyAnswered) return
+        }
 
         val f = (quest.type as? AndroidQuest)?.createForm() ?: return
         if (f.arguments == null) f.arguments = bundleOf()
@@ -1526,12 +1598,13 @@ class MainActivity :
         f.requireArguments().putAll(args)
 
         if (f is AbstractOsmQuestForm<*> && quest is OsmQuest) {
-            val element = withContext(Dispatchers.IO) {
-                mapDataWithEditsSource.get(
-                    quest.elementType,
-                    quest.elementId
-                )
-            } ?: return
+            val element = (checkResult as? GigQuestCheckResult.StillOpen)?.element
+                ?: withContext(Dispatchers.IO) {
+                    mapDataWithEditsSource.get(
+                        quest.elementType,
+                        quest.elementId
+                    )
+                } ?: return
             val osmArgs =
                 AbstractOsmQuestForm.createArguments(element, mapFragment.displayedLocation)
             f.requireArguments().putAll(osmArgs)
@@ -1663,7 +1736,7 @@ class MainActivity :
             } else {
                 intent?.getParcelableArrayListExtra("LONG_FORM")
             }
-
+        val recencyPeriodInDays = intent?.getIntExtra("RECENCY_PERIOD_IN_DAYS", 90) ?: 90
         featurePresets =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent?.getParcelableArrayListExtra("FEATURE_PRESETS", FeaturePreset::class.java)
@@ -1680,7 +1753,7 @@ class MainActivity :
 
         val questTypes: MutableList<Pair<Int, QuestType>> = mutableListOf()
         for ((index, item) in result?.withIndex()!!) {
-            questTypes.add(index to AddGenericLong(item))
+            questTypes.add(index to AddGenericLong(item, recencyPeriodInDays))
         }
         questTypeRegistry.addItem(questTypes)
 
@@ -1836,5 +1909,7 @@ class MainActivity :
         private const val BOTTOM_SHEET = "bottom_sheet"
 
         private const val TAG_LOCATION_REQUEST = "LocationRequestFragment"
+
+        private val GIG_QUEST_CHECK_TIMEOUT = 30_000.milliseconds
     }
 }

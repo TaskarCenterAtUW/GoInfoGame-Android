@@ -8,8 +8,8 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "1.2.7"
-val appVersionCode = 16
+val appVersionName = "1.2.8"
+val appVersionCode = 17
 
 /** Localizations the app should be available in */
 val bcp47ExportLanguages = setOf(
@@ -323,6 +323,7 @@ android {
         }
         getByName("debug") {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         getByName("release") {

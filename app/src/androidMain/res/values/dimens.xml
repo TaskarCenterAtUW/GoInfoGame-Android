@@ -26,7 +26,12 @@
 
     <dimen name="quest_form_speech_bubble_top_margin">-27dp</dimen>
 
-    <dimen name="speech_bubble_rounded_corner_radius">10.5dp</dimen>
+    <!-- flat, non-speech-bubble bottom sheet chrome (fragment_quest_answer.xml) - kept separate
+         from quest_form_speech_bubble_top_margin above, which NoteDiscussionForm's comment-bubble
+         rendering also reads directly and must keep its old value -->
+    <dimen name="bottom_sheet_top_margin">0dp</dimen>
+
+    <dimen name="speech_bubble_rounded_corner_radius">32dp</dimen>
     <dimen name="speech_bubble_margin">2.5dp</dimen>
 
     <dimen name="speech_bubble_elevation">16dp</dimen>

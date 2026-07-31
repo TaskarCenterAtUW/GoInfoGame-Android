@@ -263,7 +263,8 @@ fun WorkSpaceListScreen(
                                 longFormState.imageryList,
                                 workspace,
                                 longFormState.featurePresets,
-                                longFormState.customIcons
+                                longFormState.customIcons,
+                                longFormState.recencyPeriodInDays
                             )
                         }
 
@@ -292,6 +293,7 @@ fun finishAndLaunchNewActivity(
     workspace: Workspace,
     featurePresets: List<FeaturePreset> = emptyList(),
     customIcons: List<CustomIcon> = emptyList(),
+    recencyPeriodInDays : Int
 ) {
     val activity = context as? Activity
     activity?.let {
@@ -302,6 +304,7 @@ fun finishAndLaunchNewActivity(
             putParcelableArrayListExtra("IMAGERY_LIST", ArrayList(imageryList ?: emptyList()))
             putParcelableArrayListExtra("FEATURE_PRESETS", ArrayList(featurePresets))
             putParcelableArrayListExtra("CUSTOM_ICONS", ArrayList(customIcons))
+            putExtra("RECENCY_PERIOD_IN_DAYS", recencyPeriodInDays)
         }
         it.startActivity(intent)
         it.finish()
@@ -600,28 +603,30 @@ fun WorkSpaceListItem(
 
 private fun formatWorkspaceCreatedAt(rawCreatedAt: String?): String {
     if (rawCreatedAt.isNullOrBlank()) return "date unknown"
-    return try {
-        java.time.OffsetDateTime.parse(rawCreatedAt)
-            .format(
-                java.time.format.DateTimeFormatter.ofPattern(
-                    "MMM d, yyyy",
-                    java.util.Locale.getDefault()
-                )
-            )
+    val formatter = java.time.format.DateTimeFormatter.ofPattern(
+        "MMM d, yyyy",
+        java.util.Locale.getDefault()
+    )
+    val zonedCreatedAt = try {
+        java.time.OffsetDateTime.parse(rawCreatedAt).atZoneSameInstant(java.time.ZoneId.systemDefault())
     } catch (e: Exception) {
         try {
-            java.time.Instant.parse(rawCreatedAt)
-                .atZone(java.time.ZoneId.systemDefault())
-                .format(
-                    java.time.format.DateTimeFormatter.ofPattern(
-                        "MMM d, yyyy",
-                        java.util.Locale.getDefault()
-                    )
-                )
+            java.time.Instant.parse(rawCreatedAt).atZone(java.time.ZoneId.systemDefault())
         } catch (e: Exception) {
-            rawCreatedAt
+            try {
+                // the backend sometimes sends a naive datetime with no offset/Z at all (e.g.
+                // "2025-09-12T12:27:22.679848", Python's datetime.utcnow().isoformat() shape) -
+                // neither parser above accepts that. Assume it's UTC (matches this backend's
+                // other timestamps, see ext:gig_last_updated) and convert to the display zone.
+                java.time.LocalDateTime.parse(rawCreatedAt)
+                    .atZone(java.time.ZoneOffset.UTC)
+                    .withZoneSameInstant(java.time.ZoneId.systemDefault())
+            } catch (e: Exception) {
+                null
+            }
         }
     }
+    return zonedCreatedAt?.format(formatter) ?: rawCreatedAt
 }
 
 @Composable

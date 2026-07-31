@@ -126,7 +126,7 @@ class NoteEditsUploader(
         if (imagePaths.isNotEmpty()) {
             val urls = imageUploader.upload(imagePaths, position)
             if (urls.isNotEmpty()) {
-                return "\n\nAttached photo(s):\n" + urls.joinToString("\n")
+                return "\n\nAttached photo:\n" + urls.joinToString("\n")
             }
         }
         return ""

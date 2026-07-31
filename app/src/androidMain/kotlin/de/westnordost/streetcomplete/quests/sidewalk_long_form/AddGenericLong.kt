@@ -1,7 +1,6 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form
 
 import android.content.res.Resources
-import android.util.Log
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
@@ -18,12 +17,11 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-class AddGenericLong(val item: Elements) :
+class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest, HasName {
 
     val resources: Resources = getKoin().get()
@@ -106,7 +104,7 @@ class AddGenericLong(val item: Elements) :
         mapData.filter { isApplicableTo(it) }
 
     override fun isApplicableTo(element: Element): Boolean =
-        createRoadsFilter(item.questQuery!!, item.elementType!!).matches(element)
+        createQueryFilter(item.questQuery!!, item.elementType!!, recencyPeriodInDays).matches(element)
 
     override fun createForm() = AddGenericLongForm.newInstance(item.quests)
 
@@ -122,6 +120,13 @@ private fun getNodeOrWay(variable: String): String {
 //          and ext:gig_complete !~ yes
 //          and ext:gig_last_updated older today -0 days
 //     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
-private fun createRoadsFilter(variable: String, elementType: String) = """
-     $variable and ext:gig_complete !~ yes
+private fun createQueryFilter(variable: String, elementType: String, recencyPeriodInDays: Int) = """
+     $variable and (
+    ext:gig_complete !~ yes
+    or (
+        ext:gig_complete ~ yes
+        and ext:gig_last_updated
+        and ext:gig_last_updated < today - $recencyPeriodInDays days
+    )
+)
 """.toElementFilterExpression()

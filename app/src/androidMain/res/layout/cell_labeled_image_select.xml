@@ -13,8 +13,9 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:adjustViewBounds="true"
+        android:paddingHorizontal="2dp"
         android:background="@drawable/black_image_border"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         tools:src="@drawable/surface_asphalt" />
 
     <TextView

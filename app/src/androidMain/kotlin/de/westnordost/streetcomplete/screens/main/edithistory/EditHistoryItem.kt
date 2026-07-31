@@ -133,6 +133,6 @@ private fun PreviewEditsColumnItem() {
         onSelect = { selected = !selected },
         onUndo = {},
         modifier = Modifier.width(80.dp),
-        edit = OsmQuestHidden(ElementType.NODE, 1L, AddGenericLong(Elements()), ElementPointGeometry(LatLon(0.0, 0.0)), 1L, 0),
+        edit = OsmQuestHidden(ElementType.NODE, 1L, AddGenericLong(Elements(), recencyPeriodInDays = 90), ElementPointGeometry(LatLon(0.0, 0.0)), 1L, 0),
     )
 }

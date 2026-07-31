@@ -16,7 +16,6 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDE
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.util.ktx.updateMargins
-import de.westnordost.streetcomplete.view.RoundRectOutlineProvider
 import de.westnordost.streetcomplete.view.SlidingRelativeLayout
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlin.math.min
@@ -64,17 +63,6 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
         }
 
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
-
-        val cornerRadius = resources.getDimension(R.dimen.speech_bubble_rounded_corner_radius)
-        val margin = resources.getDimensionPixelSize(R.dimen.horizontal_speech_bubble_margin)
-        val topMargin = -resources.getDimensionPixelSize(R.dimen.quest_form_speech_bubble_top_margin)
-        bottomSheetTitle?.outlineProvider = RoundRectOutlineProvider(
-            cornerRadius, margin, topMargin, margin, margin
-        )
-
-        bottomSheetContent?.outlineProvider = RoundRectOutlineProvider(
-            cornerRadius, margin, margin, margin, margin
-        )
 
         bottomSheetTitle?.setOnClickListener {
             bottomSheetBehavior.apply {
