@@ -8,8 +8,8 @@ import java.util.Properties
 
 
 /** App version name, code and flavor */
-val appVersionName = "1.2.7"
-val appVersionCode = 16
+val appVersionName = "1.2.8"
+val appVersionCode = 17
 
 /** Localizations the app should be available in */
 val bcp47ExportLanguages = setOf(
@@ -316,7 +316,7 @@ android {
     buildTypes {
         all {
             isMinifyEnabled = true
-            isShrinkResources = false
+            isShrinkResources = true
             // don't use proguard-android-optimize.txt, it is too aggressive, it is more trouble than it is worth
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             testProguardFile("test-proguard-rules.pro")

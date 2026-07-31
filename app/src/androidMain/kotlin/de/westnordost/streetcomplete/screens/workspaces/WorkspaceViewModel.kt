@@ -189,9 +189,9 @@ class WorkspaceViewModelImpl(
             val json = Json {
                 ignoreUnknownKeys = true
             }
-            val jsonElement = Json.parseToJsonElement(readTestLongFormJson())
+            val jsonElement = workspaceDetails.longFormQuestDef
             var featurePresets: List<FeaturePreset> = emptyList()
-            var recencyPeriodInDays: Int = 90
+            var recencyPeriodInDays = 90
             var customIcons: List<CustomIcon> = emptyList()
             val longFormResponse = when {
                 jsonElement is JsonObject && "version" in jsonElement -> {
