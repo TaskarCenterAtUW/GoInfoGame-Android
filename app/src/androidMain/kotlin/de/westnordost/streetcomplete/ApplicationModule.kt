@@ -29,13 +29,10 @@ import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
 import io.ktor.client.request.post
-import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
-import io.ktor.http.headers
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.serialization.kotlinx.xml.xml
@@ -174,10 +171,9 @@ suspend fun refreshJwtToken(
 
         val response =
             tempClient.post(environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token") {
-                setBody(preferences.workspaceRefreshToken)
-                headers {
-                    contentType(ContentType.Application.Json)
-                }
+                // the API takes the refresh token as the "refresh_token" header, not the body
+                // (confirmed against the API's own curl example) - body must stay empty.
+                header("refresh_token", preferences.workspaceRefreshToken)
             }
 
         if (response.status == HttpStatusCode.OK) {
