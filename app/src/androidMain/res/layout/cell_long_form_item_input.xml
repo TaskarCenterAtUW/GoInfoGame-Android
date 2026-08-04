@@ -62,7 +62,7 @@
         android:layout_height="150dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         android:visibility="visible"
         android:background="@drawable/black_image_border"
         app:layout_constraintBottom_toBottomOf="parent"
