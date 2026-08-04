@@ -47,6 +47,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -182,11 +183,20 @@ class WorkSpaceActivity : AppCompatActivity() {
             contentWindowInsets = WindowInsets.statusBars
         ) { innerPadding ->
             var showDialog by remember { mutableStateOf(showAlert) }
+            val navController = rememberNavController()
 
             MyAlertDialog(
                 showDialog = showDialog,
-                onDismiss = { showDialog = false })
-            AppNavigator(innerPadding, preferences, environmentManager, this)
+                onDismiss = {
+                    showDialog = false
+                    // dismissing "Session Expired" must always land on the login screen, not
+                    // rely on preferences.workspaceLogin already being false and startDestination
+                    // having defaulted to "home" by coincidence of composition order.
+                    navController.navigate("home") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                })
+            AppNavigator(innerPadding, preferences, environmentManager, this, navController)
         }
     }
 
@@ -213,17 +223,20 @@ fun AppNavigator(
     preferences: Preferences,
     environmentManager: EnvironmentManager,
     activity: AppCompatActivity,
+    navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    val navController = rememberNavController()
     var startDestination = "home"
     var doTokenRefresh = false
     var doLogout = false
 
     val data: Uri? = activity.intent?.data
     data?.let {
-        val refreshToken = it.getQueryParameter("code")
-        refreshToken?.isNotBlank().let {
+        val code = it.getQueryParameter("code")
+        // must be ?.let, not .let - refreshToken?.isNotBlank() is a Boolean? that plain .let
+        // would run unconditionally (even when code is null), forcing a logout on any
+        // avivscr:// deep link at all, not just an actual OAuth code redirect.
+        if (!code.isNullOrBlank()) {
             preferences.workspaceLogin = false
             doLogout = true
         }
