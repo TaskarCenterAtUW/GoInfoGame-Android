@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Resources
@@ -18,6 +19,7 @@ import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -44,6 +46,61 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
+// shared by every HttpClient that calls OSM/workspace endpoints with the workspace bearer token
+// (the main workspace-API client and osmClient/MapDataApiClient/ChangesetApiClient/NotesApiClient)
+// - extracted so the reactive 401-triggered refresh-and-retry behavior can't drift between them
+// the way it did when only the main client had it: osmClient previously had no Auth plugin at
+// all, so any expired access token on a map-data/changeset/note call skipped straight to
+// AuthorizationException -> Downloader/Uploader's unconditional userLoginController.logOut(),
+// with no refresh attempt first.
+private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
+    context: Context,
+    preferences: Preferences,
+    environmentManager: EnvironmentManager,
+) {
+    install(Auth) {
+        bearer {
+            loadTokens {
+                val token = preferences.workspaceToken
+                val refreshToken = preferences.workspaceRefreshToken
+                if (token != null && refreshToken != null) {
+                    BearerTokens(token, refreshToken)
+                } else {
+                    null
+                }
+            }
+
+            sendWithoutRequest { request ->
+                val url = request.url.toString()
+                !url.contains("raw.githubusercontent.com") &&
+                    !url.contains("githubusercontent.com") && !url.contains("refresh-token")
+            }
+
+            refreshTokens {
+                if (!preferences.workspaceLogin)
+                    return@refreshTokens null
+                val newAccessToken =
+                    refreshJwtToken(preferences, environmentManager)
+
+                if (newAccessToken == null) {
+                    preferences.workspaceLogin = false
+                    //Launch workspaceActivity
+                    val intent = Intent(context, WorkSpaceActivity::class.java)
+                    intent.flags =
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    intent.putExtra(SHOW_LOGGED_OUT_ALERT, true)
+                    context.startActivity(intent)
+                }
+
+                newAccessToken?.let {
+                    preferences.workspaceToken = it  // Save new access token
+                    BearerTokens(it, preferences.workspaceRefreshToken!!)
+                }
+            }
+        }
+    }
+}
+
 val appModule = module {
     factory<AssetManager> { androidContext().assets }
     factory<Resources> { androidContext().resources }
@@ -53,6 +110,9 @@ val appModule = module {
     single { SoundFx(androidContext()) }
     single { Json { ignoreUnknownKeys = true } }
     single(named("osmClient")) {
+        val context = androidContext()
+        val preferences = get<Preferences>()
+        val environmentManager = get<EnvironmentManager>()
         HttpClient {
             defaultRequest {
                 userAgent(ApplicationConstants.USER_AGENT)
@@ -60,9 +120,13 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
+            installWorkspaceBearerAuth(context, preferences, environmentManager)
         }
     }
     single {
+        val context = androidContext()
+        val preferences = get<Preferences>()
+        val environmentManager = get<EnvironmentManager>()
         HttpClient {
             install(ContentNegotiation) {
                 json(Json {
@@ -73,51 +137,7 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        val token = get<Preferences>().workspaceToken
-                        val refreshToken = get<Preferences>().workspaceRefreshToken
-                        if (token != null && refreshToken != null) {
-                            BearerTokens(token, refreshToken)
-                        } else {
-                            null
-                        }
-                    }
-
-                    sendWithoutRequest { request ->
-                        val url = request.url.toString()
-                        !url.contains("raw.githubusercontent.com") &&
-                            !url.contains("githubusercontent.com") && !url.contains("refresh-token")
-                    }
-
-                    refreshTokens {
-                        val preferences = get<Preferences>()
-                        val httpClient = get<HttpClient>() // Inject HttpClient for making requests
-                        val environmentManager = get<EnvironmentManager>()
-
-                        if (!preferences.workspaceLogin)
-                            return@refreshTokens null
-                        val newAccessToken =
-                            refreshJwtToken(preferences, environmentManager)
-
-                        if (newAccessToken == null) {
-                            preferences.workspaceLogin = false
-                            //Launch workspaceActivity
-                            val intent = Intent(androidContext(), WorkSpaceActivity::class.java)
-                            intent.flags =
-                                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            intent.putExtra(SHOW_LOGGED_OUT_ALERT, true)
-                            androidContext().startActivity(intent)
-                        }
-
-                        newAccessToken?.let {
-                            preferences.workspaceToken = it  // Save new access token
-                            BearerTokens(it, preferences.workspaceRefreshToken!!)
-                        }
-                    }
-                }
-            }
+            installWorkspaceBearerAuth(context, preferences, environmentManager)
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -184,6 +204,16 @@ suspend fun refreshJwtToken(
             preferences.refreshTokenExpiryInterval = jsonResponse.refresh_expires_in * 1000
             preferences.accessTokenExpiryInterval = jsonResponse.expires_in * 1000
             preferences.workspaceLastLogin = System.currentTimeMillis()
+            // must stay in sync with the other two refresh/login call sites
+            // (WorkspaceViewModel.refreshToken()/setLoginState()) - this is the reactive
+            // Ktor Auth 401-triggered refresh path, and without recomputing these two absolute
+            // timestamps here, WorkSpaceActivity's stale-refresh-token check keeps counting down
+            // from whenever the last proactive refresh/login happened, even though this path just
+            // rotated the refresh token and kept the session alive.
+            preferences.refreshTokenExpiryTime =
+                preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
+            preferences.accessTokenExpiryTime =
+                preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
 
             jsonResponse.access_token
         } else null
