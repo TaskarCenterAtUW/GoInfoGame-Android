@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.UserInfoResponse
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.performHttpCallWithFirebaseTracing
+import de.westnordost.streetcomplete.util.network.retryOnTransientHttpFailure
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.authProvider
@@ -191,21 +192,27 @@ class WorkspaceApiService(
         val url = environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token"
         try {
 
-            val response = performHttpCallWithFirebaseTracing(
-                client = httpClient,
-                url = url,
-                method = HttpMethod.Get
-            ) {
-                post(url) {
-                    // deliberately no bearerAuth here - this call fires precisely when the access
-                    // token is expired/near-expiry, so attaching it as Authorization risks the
-                    // server rejecting the request before it even looks at the refresh token. The
-                    // reactive refresh path (refreshJwtToken() in ApplicationModule.kt) hits the
-                    // same endpoint the same way, unauthenticated.
-                    //
-                    // the API takes the refresh token as the "refresh_token" header, not the body
-                    // (confirmed against the API's own curl example) - body must stay empty.
-                    header("refresh_token", refreshToken)
+            // a transient failure here (network blip, backend 5xx, rate limit) must not be
+            // treated the same as an actually invalid/expired refresh token - both used to
+            // surface as the same thrown Exception below, which WorkSpaceActivity treats as
+            // fatal (force logout) with zero retry.
+            val response = retryOnTransientHttpFailure {
+                performHttpCallWithFirebaseTracing(
+                    client = httpClient,
+                    url = url,
+                    method = HttpMethod.Get
+                ) {
+                    post(url) {
+                        // deliberately no bearerAuth here - this call fires precisely when the access
+                        // token is expired/near-expiry, so attaching it as Authorization risks the
+                        // server rejecting the request before it even looks at the refresh token. The
+                        // reactive refresh path (refreshJwtToken() in ApplicationModule.kt) hits the
+                        // same endpoint the same way, unauthenticated.
+                        //
+                        // the API takes the refresh token as the "refresh_token" header, not the body
+                        // (confirmed against the API's own curl example) - body must stay empty.
+                        header("refresh_token", refreshToken)
+                    }
                 }
             }
             if (response.status == HttpStatusCode.OK) {

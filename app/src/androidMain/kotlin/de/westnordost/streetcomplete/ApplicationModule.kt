@@ -17,6 +17,7 @@ import de.westnordost.streetcomplete.util.ResourceProvider
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
+import de.westnordost.streetcomplete.util.network.retryOnTransientHttpFailure
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
@@ -189,12 +190,16 @@ suspend fun refreshJwtToken(
             }
         }
 
-        val response =
+        // a transient failure here (network blip, backend 5xx, rate limit) must not be treated
+        // the same as an actually invalid/expired refresh token - both used to fall through to
+        // the same "refresh failed -> force logout" path below with zero retry.
+        val response = retryOnTransientHttpFailure {
             tempClient.post(environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token") {
                 // the API takes the refresh token as the "refresh_token" header, not the body
                 // (confirmed against the API's own curl example) - body must stay empty.
                 header("refresh_token", preferences.workspaceRefreshToken)
             }
+        }
 
         if (response.status == HttpStatusCode.OK) {
             val jsonResponse = Json.decodeFromString<LoginResponse>(response.bodyAsText())
