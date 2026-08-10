@@ -596,7 +596,7 @@ fun UserInfoComponent() {
                 .clickable {
                     val intent = Intent(Intent.ACTION_SENDTO).apply {
                         data = "mailto:".toUri() // Only email apps should handle this
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf("tdei@uw.edu"))
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf("helpdesk@tdei.us"))
                     }
 
                     // Check if there is an app to handle the intent to prevent crashes
@@ -605,7 +605,7 @@ fun UserInfoComponent() {
                     } else {
                         Toast.makeText(
                             context,
-                            "No email app found. Please contact us directly at: tdei@uw.edu ",
+                            "No email app found. Please contact us directly at: helpdesk@tdei.us ",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
