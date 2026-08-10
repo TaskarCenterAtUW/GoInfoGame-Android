@@ -75,6 +75,7 @@ import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
 import de.westnordost.streetcomplete.screens.main.controls.MapButton
 import de.westnordost.streetcomplete.screens.main.controls.PointerPinButton
+import de.westnordost.streetcomplete.screens.main.controls.QuestSelectionBottomSheet
 import de.westnordost.streetcomplete.screens.main.controls.ScaleBar
 import de.westnordost.streetcomplete.screens.main.controls.ZoomButtons
 import de.westnordost.streetcomplete.screens.main.controls.findEllipsisIntersection
@@ -101,6 +102,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.PI
 import kotlin.math.absoluteValue
 
@@ -171,6 +173,7 @@ fun MainScreen(
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
+    var showFilterOptions by remember { mutableStateOf(false) }
     val showMainMenuDialog by viewModel.showMainMenuDialog.collectAsState()
     var shownMessage by remember { mutableStateOf<Message?>(null) }
     val showEditHistorySidebar by editHistoryViewModel.isShowingSidebar.collectAsState()
@@ -341,7 +344,10 @@ fun MainScreen(
                                 onClick = {onClickImageryLayer()}
                             )
                             FilterOptionsButton(
-                                onClick = { onClickFilterOptions() }
+                                onClick = {
+                                    showFilterOptions = true
+                                    onClickFilterOptions()
+                                }
                             )
                             val isCompassVisible =
                                 mapRotation.absoluteValue >= 1.0 || mapTilt.absoluteValue >= 1.0
@@ -540,6 +546,12 @@ fun MainScreen(
     )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
+    }
+    if (showFilterOptions) {
+        QuestSelectionBottomSheet(
+            viewModel = koinViewModel(),
+            onClose = { showFilterOptions = false }
+        )
     }
 
     AnimatedScreenVisibility(showTeamModeWizard) {
