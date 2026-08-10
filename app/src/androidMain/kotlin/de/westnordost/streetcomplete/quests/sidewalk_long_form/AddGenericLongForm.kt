@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form
 import android.os.Bundle
 import de.westnordost.streetcomplete.quests.ALongForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.seedFrom
 
 class AddGenericLongForm : ALongForm<List<LongFormQuest?>>() {
 
@@ -11,7 +12,7 @@ class AddGenericLongForm : ALongForm<List<LongFormQuest?>>() {
             val quests = arguments?.getParcelableArrayList<LongFormQuest>("quests")
             val copy = mutableListOf<LongFormQuest?>()
             quests?.forEach { quest ->
-                quest?.userInput = null
+                quest?.seedFrom(element.tags)
                 copy.add(quest)
             }
             return copy

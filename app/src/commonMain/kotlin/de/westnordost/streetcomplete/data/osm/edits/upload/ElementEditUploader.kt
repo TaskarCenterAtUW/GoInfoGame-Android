@@ -7,12 +7,10 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.changesApplied
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.isGeometrySubstantiallyDifferent
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.mineValue
-import de.westnordost.streetcomplete.data.osm.edits.update_tags.rebuiltAgainst
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ChangesetTooLargeException
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -102,9 +100,7 @@ class ElementEditUploader(
     /**
      * Applies a tag-update edit onto the element's current (freshly fetched) remote state, but
      * unlike other edit types, a per-key value collision does not discard the whole edit:
-     * - the two bookkeeping keys are always force-overwritten with the local value, never treated
-     *   as a conflict
-     * - if any other key genuinely collides, the *whole edit* is held back: nothing is uploaded,
+     * - if any key genuinely collides, the *whole edit* is held back: nothing is uploaded,
      *   a [PendingTagConflict] is recorded per colliding key, and
      *   [HeldForConflictResolutionException] is thrown so the caller blocks the edit until the
      *   user has decided per tag. The decisions are folded into the edit and it then uploads
@@ -122,18 +118,7 @@ class ElementEditUploader(
             throw ConflictException("Element geometry changed substantially")
         }
 
-        // bookkeeping tags are never shown to the user as a conflict - rebuild them against the
-        // element's current value so they never register as colliding and always win with the
-        // local (i.e. most recent) value
-        val reconciledChanges = action.changes.changes.map { change ->
-            if (change.key in SILENTLY_OVERRIDDEN_TAG_KEYS) {
-                change.rebuiltAgainst(currentElement.tags[change.key])
-            } else {
-                change
-            }
-        }.toSet()
-
-        val realConflicts = StringMapChanges(reconciledChanges).getConflictsTo(currentElement.tags).toSet()
+        val realConflicts = action.changes.getConflictsTo(currentElement.tags).toSet()
 
         if (realConflicts.isNotEmpty()) {
             for (conflict in realConflicts) {
@@ -158,7 +143,7 @@ class ElementEditUploader(
         }
 
         val changes = MapDataChanges(
-            modifications = listOf(currentElement.changesApplied(StringMapChanges(reconciledChanges)))
+            modifications = listOf(currentElement.changesApplied(action.changes))
         )
         return try {
             uploadChanges(edit, changes, false)
@@ -189,13 +174,6 @@ class ElementEditUploader(
             changesetManager.getOrCreateChangeset(edit.type, edit.source, edit.position, edit.isNearUserLocation)
         }
         return mapDataApi.uploadChanges(changesetId, changes, ApplicationConstants::ignoreRelation)
-    }
-
-    companion object {
-        /** tags that are set on every long-form answer purely for bookkeeping/quest-visibility
-         *  purposes - never worth bothering the user with a conflict prompt about, see
-         *  EditDescription.kt which excludes the same two keys from edit-history display */
-        private val SILENTLY_OVERRIDDEN_TAG_KEYS = setOf("ext:gig_complete", "ext:gig_last_updated")
     }
 }
 

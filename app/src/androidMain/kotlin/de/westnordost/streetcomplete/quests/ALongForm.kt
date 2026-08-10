@@ -17,6 +17,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.contentEquals
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.coroutines.launch
 
@@ -37,7 +38,10 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     override fun onClickOk() {
         val editedItems =
-            adapter.givenItems.filter { it.visible && it.userInput != null && !it.userInput!!.isEmpty() }
+            adapter.givenItems.filter {
+                it.visible && it.userInput != null && !it.userInput!!.isEmpty() &&
+                    !it.userInput.contentEquals(it.seededAnswer)
+            }
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
             val urls = imageUrls.joinToString(",")
@@ -117,10 +121,6 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = (itemCopy as List<LongFormQuest>).apply {
-            this.forEach {
-                it.selectedIndex = null
-            }
-        }
+        adapter.items = itemCopy as List<LongFormQuest>
     }
 }

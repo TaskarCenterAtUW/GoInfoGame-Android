@@ -14,12 +14,10 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.isVisibleGiven
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest, HasName {
@@ -86,11 +84,6 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
                 }
             }
         }
-        tags["ext:gig_complete"] = "yes"
-        //time stamp to date
-        val date = ZonedDateTime.now(ZoneOffset.UTC)
-        val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-ddXXX"))
-        tags["ext:gig_last_updated"] = currentDate
         item.elementType?.let { FirebaseAnalyticsHelper.logQuestAnswered(it) }
     }
 
@@ -104,7 +97,8 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
         mapData.filter { isApplicableTo(it) }
 
     override fun isApplicableTo(element: Element): Boolean =
-        createQueryFilter(item.questQuery!!, item.elementType!!, recencyPeriodInDays).matches(element)
+        item.questQuery!!.toElementFilterExpression().matches(element) &&
+            item.quests.unansweredQuestions(element.tags).isNotEmpty()
 
     override fun createForm() = AddGenericLongForm.newInstance(item.quests)
 
@@ -117,16 +111,19 @@ private fun getNodeOrWay(variable: String): String {
     }
 }
 
-//          and ext:gig_complete !~ yes
-//          and ext:gig_last_updated older today -0 days
-//     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
-private fun createQueryFilter(variable: String, elementType: String, recencyPeriodInDays: Int) = """
-     $variable and (
-    ext:gig_complete !~ yes
-    or (
-        ext:gig_complete ~ yes
-        and ext:gig_last_updated
-        and ext:gig_last_updated < today - $recencyPeriodInDays days
-    )
-)
-""".toElementFilterExpression()
+/** The subset of [this] question set that is still unanswered on [tags] - i.e. applicable per
+ *  questAnswerDependency (see [LongFormQuest.isVisibleGiven]) but with no value yet for its
+ *  questTag. A quest is complete (its pin hidden) once this is empty. */
+private fun List<LongFormQuest?>.unansweredQuestions(tags: Map<String, String>): List<LongFormQuest> {
+    val quests = filterNotNull()
+    val byQuestId = quests.associateBy { it.questId }
+    fun answersOf(id: Int): List<String>? {
+        val quest = byQuestId[id] ?: return null
+        val value = quest.questTag?.let { tags[it] } ?: return null
+        return if (quest.questType == "MultipleChoice") value.split(";") else listOf(value)
+    }
+    return quests.filter { quest ->
+        quest.isVisibleGiven({ byQuestId.containsKey(it) }, ::answersOf) &&
+            (quest.questTag == null || tags[quest.questTag].isNullOrBlank())
+    }
+}
