@@ -24,7 +24,7 @@ data class Elements(
 data class LongFormResponse(
     @SerialName("version")
     val version: String? = null,
-    @SerialName("recency_period_in_days")
+    @SerialName("recency_period")
     val recencyPeriodInDays: Int? = null,
     @SerialName("elements")
     val elements: List<Elements> = emptyList(),
