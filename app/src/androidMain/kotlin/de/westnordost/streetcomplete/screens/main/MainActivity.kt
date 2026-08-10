@@ -345,6 +345,7 @@ class MainActivity :
                     onClickStopTrackRecording = ::onClickTracksStop,
                     onClickDownload = ::onClickDownload,
                     onClickImageryLayer = ::onClickImageryLayerButton,
+                    onClickFilterOptions = {},
                     onSwitchWorkspace = {
                         val activity = this
                         activity.let {
