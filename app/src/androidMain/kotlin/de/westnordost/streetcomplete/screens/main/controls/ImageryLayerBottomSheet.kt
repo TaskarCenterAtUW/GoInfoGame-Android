@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,7 @@ fun ImageryLayerBottomSheet(
             .components { add(SvgDecoder.Factory()) }
             .build()
     }
-    val maxSheetHeight = LocalConfiguration.current.screenHeightDp.dp * 0.85f
+    val maxSheetHeight =  LocalWindowInfo.current.containerSize.height.dp * 0.85f
 
     ModalBottomSheet(
         onDismissRequest = onClose,
@@ -134,7 +135,7 @@ private fun ImageryRow(
         modifier = Modifier
             .fillMaxWidth()
             .selectable(selected = selected, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = onClick)

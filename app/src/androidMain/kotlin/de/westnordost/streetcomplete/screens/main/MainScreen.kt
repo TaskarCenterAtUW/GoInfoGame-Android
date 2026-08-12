@@ -120,8 +120,6 @@ fun MainScreen(
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
     onClickImageryLayer: () -> Unit,
-    onClickFilterOptions: () -> Unit,
-    onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -346,7 +344,6 @@ fun MainScreen(
                             FilterOptionsButton(
                                 onClick = {
                                     showFilterOptions = true
-                                    onClickFilterOptions()
                                 }
                             )
                             val isCompassVisible =
@@ -510,8 +507,7 @@ fun MainScreen(
                     )
                 )
             },
-            onClickDownload = onClickDownload,
-            onSwitchWorkspace = onSwitchWorkspace
+            onClickDownload = onClickDownload
         )
     }
 
@@ -593,8 +589,6 @@ private fun PreviewMainScreen() {
         onClickStopTrackRecording = {},
         onClickDownload = {},
         onClickImageryLayer = {},
-        onClickFilterOptions = {},
-        onSwitchWorkspace = {}
     )
 }
 

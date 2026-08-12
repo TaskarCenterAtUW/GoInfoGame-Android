@@ -340,15 +340,6 @@ class MainActivity :
                     onClickStopTrackRecording = ::onClickTracksStop,
                     onClickDownload = ::onClickDownload,
                     onClickImageryLayer = ::onClickImageryLayerButton,
-                    onClickFilterOptions = {},
-                    onSwitchWorkspace = {
-                        val activity = this
-                        activity.let {
-                            val intent = Intent(it, WorkSpaceActivity::class.java)
-                            it.startActivity(intent)
-                            it.finish()
-                        }
-                    }
                 )
                 if (showImageryPicker) {
                     ImageryLayerBottomSheet(
@@ -363,6 +354,15 @@ class MainActivity :
 
         binding.toolbar.followModeButton.setOnClickListener {
             startFollowMode()
+        }
+
+        binding.toolbar.workspaceContainer.setOnClickListener {
+            val activity = this
+            activity.let {
+                val intent = Intent(it, WorkSpaceActivity::class.java)
+                it.startActivity(intent)
+                it.finish()
+        }
         }
 
         onBackPressedDispatcher.addCallback(this, sheetBackPressedCallback)

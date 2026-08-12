@@ -26,6 +26,7 @@
 
         <!-- Two lines of text -->
         <LinearLayout
+            android:id="@+id/workspace_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
