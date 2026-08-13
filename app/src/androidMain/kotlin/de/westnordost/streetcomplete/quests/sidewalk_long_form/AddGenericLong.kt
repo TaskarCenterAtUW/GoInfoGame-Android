@@ -71,20 +71,22 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
         timestampEdited: Long,
     ) {
         for (quest in answer) {
-            if (quest != null) {
-                tags[quest.questTag!!] = quest.userInput.toString()
-                when (quest.userInput){
-                    is UserInput.Single -> {
-                        tags[quest.questTag] = (quest.userInput as UserInput.Single).answer!!
-                    }
-                    is UserInput.Multiple -> {
-                        val multipleAnswers = (quest.userInput as UserInput.Multiple).answers
-                        if(multipleAnswers.isNotEmpty()){
-                            tags[quest.questTag] = multipleAnswers.joinToString(";")
-                        }
-                    }
-                    null -> {}
+            if (quest == null) continue
+            val questTag = quest.questTag ?: continue
+            // A null/empty userInput here means the user cleared a previously-answered question
+            // (deselected a choice, emptied a text field) - remove the tag entirely rather than
+            // leaving the stale prior value in place. Tags.remove() is a safe no-op if the tag
+            // wasn't set to begin with.
+            when (val input = quest.userInput) {
+                is UserInput.Single -> {
+                    val value = input.answer
+                    if (value.isNullOrEmpty()) tags.remove(questTag) else tags[questTag] = value
                 }
+                is UserInput.Multiple -> {
+                    if (input.answers.isNotEmpty()) tags[questTag] = input.answers.joinToString(";")
+                    else tags.remove(questTag)
+                }
+                null -> tags.remove(questTag)
             }
         }
         item.elementType?.let { FirebaseAnalyticsHelper.logQuestAnswered(it) }

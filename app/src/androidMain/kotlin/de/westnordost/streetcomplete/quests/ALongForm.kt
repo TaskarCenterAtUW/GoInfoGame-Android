@@ -37,10 +37,14 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onClickOk() {
+        // No null/isEmpty guard here on purpose: a question the user deselected/cleared back to
+        // nothing (userInput null or empty) after it had a seeded answer must still be included -
+        // otherwise the clear is silently dropped and the stale tag from before never gets
+        // removed (contentEquals(null, null) already excludes a question that was never touched,
+        // so this alone is sufficient to also exclude untouched blanks).
         val editedItems =
             adapter.givenItems.filter {
-                it.visible && it.userInput != null && !it.userInput!!.isEmpty() &&
-                    !it.userInput.contentEquals(it.seededAnswer)
+                it.visible && !it.userInput.contentEquals(it.seededAnswer)
             }
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
