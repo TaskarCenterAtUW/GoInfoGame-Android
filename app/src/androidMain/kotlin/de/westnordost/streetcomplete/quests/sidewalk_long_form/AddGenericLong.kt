@@ -16,8 +16,11 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.isVisibleGiven
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
+
+private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
 
 class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest, HasName {
@@ -96,9 +99,14 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> =
         mapData.filter { isApplicableTo(it) }
 
-    override fun isApplicableTo(element: Element): Boolean =
-        item.questQuery!!.toElementFilterExpression().matches(element) &&
-            item.quests.unansweredQuestions(element.tags).isNotEmpty()
+    override fun isApplicableTo(element: Element): Boolean {
+        if (!item.questQuery!!.toElementFilterExpression().matches(element)) return false
+        if (item.quests.unansweredQuestions(element.tags).isNotEmpty()) return true
+        // All applicable questions are answered - resurface for a recheck once the element's
+        // own OSM last-edited timestamp is older than the workspace's recency period.
+        val ageInMillis = nowAsEpochMilliseconds() - element.timestampEdited
+        return ageInMillis >= recencyPeriodInDays * MILLIS_PER_DAY
+    }
 
     override fun createForm() = AddGenericLongForm.newInstance(item.quests)
 
@@ -113,7 +121,8 @@ private fun getNodeOrWay(variable: String): String {
 
 /** The subset of [this] question set that is still unanswered on [tags] - i.e. applicable per
  *  questAnswerDependency (see [LongFormQuest.isVisibleGiven]) but with no value yet for its
- *  questTag. A quest is complete (its pin hidden) once this is empty. */
+ *  questTag. Once this is empty, the quest is fully answered - the pin then only reappears once
+ *  the element's own OSM timestamp is older than [AddGenericLong.recencyPeriodInDays]. */
 private fun List<LongFormQuest?>.unansweredQuestions(tags: Map<String, String>): List<LongFormQuest> {
     val quests = filterNotNull()
     val byQuestId = quests.associateBy { it.questId }
