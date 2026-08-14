@@ -357,12 +357,16 @@ class MainActivity :
         }
 
         binding.toolbar.workspaceContainer.setOnClickListener {
-            val activity = this
-            activity.let {
-                val intent = Intent(it, WorkSpaceActivity::class.java)
-                it.startActivity(intent)
-                it.finish()
-        }
+            AlertDialog.Builder(this)
+                .setTitle(R.string.confirmation_switch_workspace_title)
+                .setMessage(getString(R.string.confirmation_switch_workspace_message, viewModel.workspaceTitle.value))
+                .setPositiveButton(R.string.confirmation_switch_workspace_confirm) { _, _ ->
+                    val intent = Intent(this, WorkSpaceActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
 
         onBackPressedDispatcher.addCallback(this, sheetBackPressedCallback)
