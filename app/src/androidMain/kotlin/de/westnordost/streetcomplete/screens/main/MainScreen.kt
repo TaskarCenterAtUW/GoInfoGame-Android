@@ -40,8 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
-import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
@@ -65,19 +63,22 @@ import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.resources.ic_undo_24
 import de.westnordost.streetcomplete.resources.location_dot_small
 import de.westnordost.streetcomplete.resources.map_attribution_osm
+import de.westnordost.streetcomplete.screens.main.conflicts.DiscardedEditNoticeEffect
+import de.westnordost.streetcomplete.screens.main.conflicts.TagConflictResolutionEffect
 import de.westnordost.streetcomplete.screens.main.controls.AttributionButton
 import de.westnordost.streetcomplete.screens.main.controls.AttributionLink
 import de.westnordost.streetcomplete.screens.main.controls.CompassButton
 import de.westnordost.streetcomplete.screens.main.controls.Crosshair
+import de.westnordost.streetcomplete.screens.main.controls.FilterOptionsButton
+import de.westnordost.streetcomplete.screens.main.controls.ImageryListButton
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
 import de.westnordost.streetcomplete.screens.main.controls.MapButton
 import de.westnordost.streetcomplete.screens.main.controls.PointerPinButton
+import de.westnordost.streetcomplete.screens.main.controls.QuestSelectionBottomSheet
 import de.westnordost.streetcomplete.screens.main.controls.ScaleBar
 import de.westnordost.streetcomplete.screens.main.controls.ZoomButtons
 import de.westnordost.streetcomplete.screens.main.controls.findEllipsisIntersection
-import de.westnordost.streetcomplete.screens.main.conflicts.DiscardedEditNoticeEffect
-import de.westnordost.streetcomplete.screens.main.conflicts.TagConflictResolutionEffect
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistorySidebar
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
 import de.westnordost.streetcomplete.screens.main.edithistory.EditItem
@@ -101,8 +102,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.androidx.compose.koinViewModel
 import kotlin.math.PI
-import kotlin.math.abs
+import kotlin.math.absoluteValue
 
 /** Map controls shown on top of the map. */
 @Composable
@@ -118,7 +120,6 @@ fun MainScreen(
     onClickStopTrackRecording: () -> Unit,
     onClickDownload: () -> Unit,
     onClickImageryLayer: () -> Unit,
-    onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -170,6 +171,7 @@ fun MainScreen(
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
+    var showFilterOptions by remember { mutableStateOf(false) }
     val showMainMenuDialog by viewModel.showMainMenuDialog.collectAsState()
     var shownMessage by remember { mutableStateOf<Message?>(null) }
     val showEditHistorySidebar by editHistoryViewModel.isShowingSidebar.collectAsState()
@@ -336,7 +338,16 @@ fun MainScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.End,
                         ) {
-                            val isCompassVisible = abs(mapRotation) >= 1.0 || abs(mapTilt) >= 1.0
+                            ImageryListButton(
+                                onClick = {onClickImageryLayer()}
+                            )
+                            FilterOptionsButton(
+                                onClick = {
+                                    showFilterOptions = true
+                                }
+                            )
+                            val isCompassVisible =
+                                mapRotation.absoluteValue >= 1.0 || mapTilt.absoluteValue >= 1.0
                             AnimatedVisibility(
                                 visible = isCompassVisible,
                                 enter = fadeIn(),
@@ -450,7 +461,8 @@ fun MainScreen(
                             userHasMovedMap = userHasMovedCamera,
                             attributions = mapAttribution,
                             modifier = Modifier
-                                .align(Alignment.TopStart).clearAndSetSemantics{},
+                                .align(Alignment.TopStart)
+                                .clearAndSetSemantics {},
                             popupElevation = 4.dp,
                         )
                         ScaleBar(
@@ -495,8 +507,7 @@ fun MainScreen(
                     )
                 )
             },
-            onClickDownload = onClickDownload,
-            onSwitchWorkspace = onSwitchWorkspace
+            onClickDownload = onClickDownload
         )
     }
 
@@ -531,6 +542,12 @@ fun MainScreen(
     )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
+    }
+    if (showFilterOptions) {
+        QuestSelectionBottomSheet(
+            viewModel = koinViewModel(),
+            onClose = { showFilterOptions = false }
+        )
     }
 
     AnimatedScreenVisibility(showTeamModeWizard) {
@@ -572,7 +589,6 @@ private fun PreviewMainScreen() {
         onClickStopTrackRecording = {},
         onClickDownload = {},
         onClickImageryLayer = {},
-        onSwitchWorkspace = {}
     )
 }
 
@@ -696,12 +712,14 @@ object PreviewMainViewModel : MainViewModel() {
         get() = MutableStateFlow(0)
     override val conflictReviewRequests: StateFlow<Int>
         get() = MutableStateFlow(0)
+
     override fun requestConflictReview() {}
     override suspend fun popNextConflictGroup(): List<PendingTagConflict> = emptyList()
     override suspend fun resolveConflictKeepMine(conflict: PendingTagConflict) {}
     override suspend fun resolveConflictKeepTheirs(conflict: PendingTagConflict) {}
     override val discardedNoticesCount: StateFlow<Int>
         get() = MutableStateFlow(0)
+
     override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = null
     override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) {}
     override suspend fun getElementLabel(type: ElementType, id: Long): String? = null

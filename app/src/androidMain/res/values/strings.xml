@@ -33,6 +33,9 @@ The info you enter is directly added to OpenStreetMap in your name, without the 
     <string name="confirmation_cancel_prev_download_title">Stop the current download and download here instead?</string>
     <string name="confirmation_cancel_prev_download_confirmed">Download here instead</string>
     <string name="confirmation_cancel_prev_download_cancel">Continue current download</string>
+    <string name="confirmation_switch_workspace_title">Switch workspace?</string>
+    <string name="confirmation_switch_workspace_message">You are currently in \"%1$s\". Do you want to switch to a different workspace?</string>
+    <string name="confirmation_switch_workspace_confirm">Switch workspace</string>
 
     <!-- Elements on map view -->
 

@@ -206,6 +206,7 @@ kotlin {
                 implementation("androidx.compose.material:material-icons-extended:1.7.8")
                 implementation("io.coil-kt:coil:2.7.0")
                 implementation("io.coil-kt:coil-svg:2.7.0")
+                implementation("io.coil-kt:coil-compose:2.7.0")
                 // Compose
                 implementation(compose.preview)
                 implementation("androidx.activity:activity-compose:1.12.0")

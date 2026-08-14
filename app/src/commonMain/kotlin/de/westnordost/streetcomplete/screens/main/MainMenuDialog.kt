@@ -45,7 +45,6 @@ fun MainMenuDialog(
     onDismissRequest: () -> Unit,
     onClickSettings: () -> Unit,
     onClickDownload: () -> Unit,
-    onSwitchWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
@@ -105,16 +104,6 @@ fun MainMenuDialog(
                             .padding(horizontal = 16.dp),
                         thickness = 0.5.dp,
                         color = Color.LightGray
-                    )
-                    CompactMenuButton(
-                        onClick = { onDismissRequest(); onSwitchWorkspace() },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Outlined.SwapHoriz,
-                                contentDescription = "Download"
-                            )
-                        },
-                        text = stringResource(Res.string.action_switch_workspace),
                     )
                 }
 
@@ -214,6 +203,5 @@ private fun PreviewMainMenuDialog() {
         onDismissRequest = {},
         onClickSettings = {},
         onClickDownload = {},
-        onSwitchWorkspace = {}
     )
 }

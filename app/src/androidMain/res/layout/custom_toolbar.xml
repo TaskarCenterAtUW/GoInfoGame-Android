@@ -26,6 +26,7 @@
 
         <!-- Two lines of text -->
         <LinearLayout
+            android:id="@+id/workspace_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -82,18 +83,6 @@
             android:contentDescription="@string/action_upload"
             app:layout_constraintRight_toLeftOf="@+id/overlaysButton"
             app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/overlaysButton"
-            style="@style/RoundPurpleButton"
-            android:layout_width="@dimen/map_button_size"
-            android:layout_height="@dimen/map_button_size"
-            android:contentDescription="@string/action_overlays"
-            android:elevation="4dp"
-            android:scaleType="centerInside"
-            android:visibility="visible"
-            app:srcCompat="@drawable/ic_overlay_black_24dp"
-            app:tint="#2D0369" />
 
         <ImageButton
             android:id="@+id/mainMenuButton"
