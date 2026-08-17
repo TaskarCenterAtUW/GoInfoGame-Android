@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -50,11 +49,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.preferences.Theme
+import de.westnordost.streetcomplete.resources.Res
+import de.westnordost.streetcomplete.resources.pref_title_theme_select
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
+import de.westnordost.streetcomplete.screens.settings.title
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
+import de.westnordost.streetcomplete.ui.common.dialogs.SimpleListPickerDialog
+import de.westnordost.streetcomplete.ui.common.settings.Preference
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
+import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KSuspendFunction1
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +76,8 @@ fun ProfileScreenNewContent(
     var lowBandwidthModeEnabled by remember { mutableStateOf(preferences.isLowBandwidthModeEnabled) }
     var isFollowModeEnabled by remember { mutableStateOf(preferences.isFollowModeEnabled) }
     val userName by viewModel.userName.collectAsState()
+    var showThemeSelect by remember { mutableStateOf(false) }
+    val theme by settingsViewModel.theme.collectAsState()
 
     Column(
         modifier = Modifier
@@ -104,7 +112,7 @@ fun ProfileScreenNewContent(
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.semantics{
+                modifier = Modifier.semantics {
                     val info = userName?.split("\n") ?: emptyList()
                     val email = info.getOrNull(0) ?: "Unknown"
                     val name = info.getOrNull(1) ?: "Unknown"
@@ -171,6 +179,17 @@ fun ProfileScreenNewContent(
                 }
             }
 
+            if (showThemeSelect) {
+                SimpleListPickerDialog(
+                    onDismissRequest = { showThemeSelect = false },
+                    items = Theme.entries,
+                    onItemSelected = { settingsViewModel.setTheme(it) },
+                    title = { Text(stringResource(Res.string.pref_title_theme_select)) },
+                    selectedItem = theme,
+                    getItemName = { stringResource(it.title) }
+                )
+            }
+
             PreferenceRow(
                 stringResource(R.string.diable_biometric_title),
                 stringResource(R.string.disable_biometric_message),
@@ -186,6 +205,13 @@ fun ProfileScreenNewContent(
                 onCheckedChange = { newValue ->
                     lowBandwidth = newValue // trigger LaunchedEffect
                 })
+
+            Preference(
+                name = stringResource(Res.string.pref_title_theme_select),
+                onClick = { showThemeSelect = true },
+            ) {
+                Text(stringResource(theme.title))
+            }
 
             // PreferenceRow(
             //     stringResource(R.string.follow_mode),

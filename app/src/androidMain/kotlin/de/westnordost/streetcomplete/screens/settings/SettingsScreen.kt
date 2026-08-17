@@ -53,15 +53,11 @@ import de.westnordost.streetcomplete.resources.pref_title_delete_cache_summary
 import de.westnordost.streetcomplete.resources.pref_title_keep_screen_on
 import de.westnordost.streetcomplete.resources.pref_title_language_select2
 import de.westnordost.streetcomplete.resources.pref_title_quests2
-import de.westnordost.streetcomplete.resources.pref_title_quests_restore_hidden
-import de.westnordost.streetcomplete.resources.pref_title_quests_restore_hidden_summary
 import de.westnordost.streetcomplete.resources.pref_title_resurvey_intervals
 import de.westnordost.streetcomplete.resources.pref_title_sync2
 import de.westnordost.streetcomplete.resources.pref_title_theme_select
 import de.westnordost.streetcomplete.resources.pref_title_zoom_buttons
 import de.westnordost.streetcomplete.resources.quest_presets_default_name
-import de.westnordost.streetcomplete.resources.restore_confirmation
-import de.westnordost.streetcomplete.resources.restore_dialog_message
 import de.westnordost.streetcomplete.resources.resurvey_intervals_default
 import de.westnordost.streetcomplete.resources.resurvey_intervals_less_often
 import de.westnordost.streetcomplete.resources.resurvey_intervals_more_often
@@ -87,12 +83,9 @@ import org.jetbrains.compose.resources.stringResource
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onClickShowQuestForms: () -> Unit,
-    onClickPresetSelection: () -> Unit,
     onClickQuestSelection: () -> Unit,
-    onClickOverlaySelection: () -> Unit,
     onClickBack: () -> Unit,
 ) {
-    val hiddenQuestCount by viewModel.hiddenQuestCount.collectAsState()
     val questTypeCount by viewModel.questTypeCount.collectAsState()
     val overlayCount by viewModel.overlayCount.collectAsState()
     val selectedPresetName by viewModel.selectedEditTypePresetName.collectAsState()
@@ -107,7 +100,6 @@ fun SettingsScreen(
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
 
     var showDeleteCacheConfirmation by remember { mutableStateOf(false) }
-    var showRestoreHiddenQuestsConfirmation by remember { mutableStateOf(false) }
     var showUploadTutorialInfo by remember { mutableStateOf(false) }
 
     var showThemeSelect by remember { mutableStateOf(false) }
@@ -133,55 +125,55 @@ fun SettingsScreen(
                     )
                 )
         ) {
-            PreferenceCategory(stringResource(Res.string.pref_category_quests)) {
-
-                // Preference(
-                //     name = stringResource(Res.string.action_manage_presets),
-                //     onClick = onClickPresetSelection,
-                //     description = stringResource(Res.string.action_manage_presets_summary)
-                // ) {
-                //     Text(presetNameOrDefault)
-                //     NextScreenIcon()
-                // }
-
-                Preference(
-                    name = stringResource(Res.string.pref_title_quests2),
-                    onClick = onClickQuestSelection,
-                    description = questTypeCount?.let {
-                        stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
-                    }
-                ) { NextScreenIcon() }
-
-                // Preference(
-                //     name = stringResource(Res.string.pref_title_overlays),
-                //     onClick = onClickOverlaySelection,
-                //     description = overlayCount?.let {
-                //         stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
-                //     }
-                // ) { NextScreenIcon() }
-
-                // Preference(
-                //     name = stringResource(Res.string.pref_title_resurvey_intervals),
-                //     onClick = { showResurveyIntervalsSelect = true },
-                //     description = stringResource(Res.string.pref_title_resurvey_intervals_summary)
-                // ) {
-                //     Text(stringResource(resurveyIntervals.title))
-                // }
-                //
-                // Preference(
-                //     name = stringResource(Res.string.pref_title_show_notes_not_phrased_as_questions),
-                //     onClick = { viewModel.setShowAllNotes(!showAllNotes) },
-                //     description = stringResource(
-                //         if (showAllNotes) Res.string.pref_summaryOn_show_notes_not_phrased_as_questions
-                //         else Res.string.pref_summaryOff_show_notes_not_phrased_as_questions
-                //     )
-                // ) {
-                //     Switch(
-                //         checked = showAllNotes,
-                //         onCheckedChange = { viewModel.setShowAllNotes(it) }
-                //     )
-                // }
-            }
+            // PreferenceCategory(stringResource(Res.string.pref_category_quests)) {
+            //
+            //     // Preference(
+            //     //     name = stringResource(Res.string.action_manage_presets),
+            //     //     onClick = onClickPresetSelection,
+            //     //     description = stringResource(Res.string.action_manage_presets_summary)
+            //     // ) {
+            //     //     Text(presetNameOrDefault)
+            //     //     NextScreenIcon()
+            //     // }
+            //
+            //     // Preference(
+            //     //     name = stringResource(Res.string.pref_title_quests2),
+            //     //     onClick = onClickQuestSelection,
+            //     //     description = questTypeCount?.let {
+            //     //         stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
+            //     //     }
+            //     // ) { NextScreenIcon() }
+            //
+            //     // Preference(
+            //     //     name = stringResource(Res.string.pref_title_overlays),
+            //     //     onClick = onClickOverlaySelection,
+            //     //     description = overlayCount?.let {
+            //     //         stringResource(Res.string.pref_subtitle_quests, it.enabled, it.total)
+            //     //     }
+            //     // ) { NextScreenIcon() }
+            //
+            //     // Preference(
+            //     //     name = stringResource(Res.string.pref_title_resurvey_intervals),
+            //     //     onClick = { showResurveyIntervalsSelect = true },
+            //     //     description = stringResource(Res.string.pref_title_resurvey_intervals_summary)
+            //     // ) {
+            //     //     Text(stringResource(resurveyIntervals.title))
+            //     // }
+            //     //
+            //     // Preference(
+            //     //     name = stringResource(Res.string.pref_title_show_notes_not_phrased_as_questions),
+            //     //     onClick = { viewModel.setShowAllNotes(!showAllNotes) },
+            //     //     description = stringResource(
+            //     //         if (showAllNotes) Res.string.pref_summaryOn_show_notes_not_phrased_as_questions
+            //     //         else Res.string.pref_summaryOff_show_notes_not_phrased_as_questions
+            //     //     )
+            //     // ) {
+            //     //     Switch(
+            //     //         checked = showAllNotes,
+            //     //         onCheckedChange = { viewModel.setShowAllNotes(it) }
+            //     //     )
+            //     // }
+            // }
 
             PreferenceCategory(stringResource(Res.string.pref_category_communication)) {
                 Preference(
@@ -239,15 +231,6 @@ fun SettingsScreen(
                     onClick = { showDeleteCacheConfirmation = true },
                     description = stringResource(Res.string.pref_title_delete_cache_summary)
                 )
-
-                Preference(
-                    name = stringResource(Res.string.pref_title_quests_restore_hidden),
-                    onClick = { showRestoreHiddenQuestsConfirmation = true },
-                    description = stringResource(
-                        Res.string.pref_title_quests_restore_hidden_summary,
-                        hiddenQuestCount
-                    )
-                )
             }
 
             if (BuildConfig.DEBUG) {
@@ -276,14 +259,6 @@ fun SettingsScreen(
                 )
             },
             confirmButtonText = stringResource(Res.string.delete_confirmation)
-        )
-    }
-    if (showRestoreHiddenQuestsConfirmation) {
-        ConfirmationDialog(
-            onDismissRequest = { showRestoreHiddenQuestsConfirmation = false },
-            onConfirmed = { viewModel.unhideQuests() },
-            title = { Text(stringResource(Res.string.restore_dialog_message)) },
-            confirmButtonText = stringResource(Res.string.restore_confirmation)
         )
     }
     if (showUploadTutorialInfo) {
@@ -364,7 +339,7 @@ private val ResurveyIntervals.title: StringResource
         ResurveyIntervals.MORE_OFTEN -> Res.string.resurvey_intervals_more_often
     }
 
-private val Theme.title: StringResource
+val Theme.title: StringResource
     get() = when (this) {
         Theme.LIGHT -> Res.string.theme_light
         Theme.DARK -> Res.string.theme_dark

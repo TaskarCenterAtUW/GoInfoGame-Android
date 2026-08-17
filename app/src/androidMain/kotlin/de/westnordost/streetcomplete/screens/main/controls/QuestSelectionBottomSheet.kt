@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.screens.main.controls
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -21,11 +20,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.westnordost.streetcomplete.screens.settings.quest_selection.HiddenQuestsSection
 import de.westnordost.streetcomplete.screens.settings.quest_selection.QuestSelectionList
 import de.westnordost.streetcomplete.screens.settings.quest_selection.QuestSelectionViewModel
 import de.westnordost.streetcomplete.util.ktx.displayRegion
@@ -39,11 +44,26 @@ fun QuestSelectionBottomSheet(
     onClose: () -> Unit,
 ) {
     val filteredQuests by viewModel.filteredQuests.collectAsStateWithLifecycle()
+    val hiddenQuests by viewModel.hiddenQuests.collectAsStateWithLifecycle()
     val displayCountry = remember {
         viewModel.currentCountry?.let { getCountryName(it) } ?: "Atlantis"
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val maxSheetHeight =  LocalWindowInfo.current.containerSize.height.dp * 0.85f
+    val maxSheetHeight = LocalWindowInfo.current.containerSize.height.dp * 0.85f
+    // Swallow any scroll/fling leftover from the lists below so it never bubbles up into the
+    // sheet's own drag-to-dismiss handling - only the sheet's drag handle should move the sheet
+    val blockSheetDragFromContent = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset = available
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onClose,
         sheetState = sheetState,
@@ -54,6 +74,7 @@ fun QuestSelectionBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = maxSheetHeight)
+                .nestedScroll(blockSheetDragFromContent)
         ) {
             Box(
                 modifier = Modifier
@@ -90,6 +111,14 @@ fun QuestSelectionBottomSheet(
                 displayCountry = displayCountry,
                 onSelect = { questType, selected -> viewModel.select(questType, selected) },
                 onReorder = { questType, toAfter -> viewModel.order(questType, toAfter) },
+                modifier = Modifier.weight(1f),
+            )
+
+            HiddenQuestsSection(
+                items = hiddenQuests,
+                onUnhide = { key -> viewModel.unhideQuest(key) },
+                onUnhideAll = { viewModel.unhideAllQuests() },
+                modifier = Modifier.weight(1f),
             )
         }
     }
