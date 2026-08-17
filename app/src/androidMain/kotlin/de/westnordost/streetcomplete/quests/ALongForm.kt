@@ -42,9 +42,18 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         // otherwise the clear is silently dropped and the stale tag from before never gets
         // removed (contentEquals(null, null) already excludes a question that was never touched,
         // so this alone is sufficient to also exclude untouched blanks).
+        //
+        // A question currently hidden by questAnswerDependency (its controlling answer no longer
+        // satisfies the dependency - e.g. the user deselected/changed the controlling answer this
+        // visit) is submitted as cleared too, via a .copy() used ONLY for this comparison/submit -
+        // the live item in adapter.givenItems is left untouched. This matters: if the user flips
+        // the controlling answer back before submitting, the dependent question must still show
+        // whatever was already entered, not something wiped out mid-edit. Only the final state at
+        // submit time decides whether a hidden question's old value actually gets removed.
         val editedItems =
-            adapter.givenItems.filter {
-                it.visible && !it.userInput.contentEquals(it.seededAnswer)
+            adapter.givenItems.mapNotNull { quest ->
+                val effective = if (quest.visible) quest else quest.copy(userInput = null)
+                effective.takeIf { !it.userInput.contentEquals(it.seededAnswer) }
             }
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
