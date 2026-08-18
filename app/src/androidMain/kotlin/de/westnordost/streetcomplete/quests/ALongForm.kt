@@ -68,15 +68,17 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         //
         // Only when EVERY currently-visible question already has a seeded answer (i.e. there is no
         // genuinely unanswered question left - the same condition AddGenericLong.isApplicableTo's
-        // recency branch itself gates on) do we resubmit one already-answered question's OWN
+        // recency branch itself gates on) do we resubmit every already-answered question's OWN
         // existing value unchanged, purely to force a real, non-empty edit through so the element's
-        // timestamp bumps - no new tag, no different value. If a real gap remains (some visible
+        // timestamp bumps. StringMapChangesBuilder records a same-value set as a real change
+        // regardless of value equality, so this produces one Modify(key, x, x) per question - undo
+        // reverts each back to the same value, so this is safe. If a real gap remains (some visible
         // question was never answered), this is NOT a recheck - fall through to the "No changes"
         // toast as before, so the user is still nudged to actually answer it.
         val isFullyAnswered = adapter.givenItems.none { it.visible && it.seededAnswer == null }
-        val touchItem = adapter.givenItems.firstOrNull { it.visible && it.seededAnswer != null }
         val submittedItems = editedItems.ifEmpty {
-            if (isFullyAnswered && touchItem != null) listOf(touchItem) else emptyList()
+            if (isFullyAnswered) adapter.givenItems.filter { it.visible && it.seededAnswer != null }
+            else emptyList()
         }
 
         if (submittedItems.isEmpty()) {
