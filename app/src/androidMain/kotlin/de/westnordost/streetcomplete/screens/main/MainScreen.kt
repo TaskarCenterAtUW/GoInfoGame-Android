@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
@@ -69,7 +70,7 @@ import de.westnordost.streetcomplete.screens.main.controls.AttributionButton
 import de.westnordost.streetcomplete.screens.main.controls.AttributionLink
 import de.westnordost.streetcomplete.screens.main.controls.CompassButton
 import de.westnordost.streetcomplete.screens.main.controls.Crosshair
-import de.westnordost.streetcomplete.screens.main.controls.FilterOptionsButton
+import de.westnordost.streetcomplete.screens.main.controls.DownloadMapDataButton
 import de.westnordost.streetcomplete.screens.main.controls.ImageryListButton
 import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
@@ -171,7 +172,6 @@ fun MainScreen(
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
-    var showFilterOptions by remember { mutableStateOf(false) }
     val showMainMenuDialog by viewModel.showMainMenuDialog.collectAsState()
     var shownMessage by remember { mutableStateOf<Message?>(null) }
     val showEditHistorySidebar by editHistoryViewModel.isShowingSidebar.collectAsState()
@@ -290,33 +290,36 @@ fun MainScreen(
                 // }
 
                 // top-end controls
-                // Row(
-                //     modifier = Modifier
-                //         .align(Alignment.TopEnd)
-                //         .padding(4.dp),
-                //     horizontalArrangement = Arrangement.spacedBy(8.dp)
-                // ) {
-                //     if (overlays.isNotEmpty()) {
-                //         Box {
-                //             OverlaySelectionButton(
-                //                 onClick = ::onClickOverlays,
-                //                 overlay = selectedOverlay
-                //             )
-                //             OverlaySelectionDropdownMenu(
-                //                 expanded = showOverlaysDropdown,
-                //                 onDismissRequest = { showOverlaysDropdown = false },
-                //                 overlays = overlays,
-                //                 onSelect = { viewModel.selectOverlay(it) }
-                //             )
-                //         }
-                //     }
-                //
-                //     MainMenuButton(
-                //         onClick = { showMainMenuDialog = true },
-                //         unsyncedEditsCount = if (!isAutoSync) unsyncedEditsCount else 0,
-                //         indexInTeam = if (isTeamMode) indexInTeam else null
-                //     )
-                // }
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .semantics { isTraversalGroup = true }) {
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(4.dp)
+                                .semantics { isTraversalGroup = true },
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.End,
+                        ) {
+                            ImageryListButton(
+                                onClick = { onClickImageryLayer() }
+                            )
+                            DownloadMapDataButton(
+                                onClick = {
+                                   onClickDownload()
+                                }
+                            )
+                        }
+                    }
+                }
 
                 // bottom controls
                 Column(
@@ -338,14 +341,6 @@ fun MainScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.End,
                         ) {
-                            ImageryListButton(
-                                onClick = {onClickImageryLayer()}
-                            )
-                            FilterOptionsButton(
-                                onClick = {
-                                    showFilterOptions = true
-                                }
-                            )
                             val isCompassVisible =
                                 mapRotation.absoluteValue >= 1.0 || mapTilt.absoluteValue >= 1.0
                             AnimatedVisibility(
@@ -543,10 +538,10 @@ fun MainScreen(
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
     }
-    if (showFilterOptions) {
+    if (viewModel.showFilterOptions.collectAsState().value) {
         QuestSelectionBottomSheet(
             viewModel = koinViewModel(),
-            onClose = { showFilterOptions = false }
+            onClose = { viewModel.showFilterOptions.value = false }
         )
     }
 
@@ -783,8 +778,14 @@ object PreviewMainViewModel : MainViewModel() {
 
     override val showMainMenuDialog: MutableStateFlow<Boolean>
         get() = MutableStateFlow(false)
+    override val showFilterOptions: MutableStateFlow<Boolean>
+        get() = TODO("Not yet implemented")
 
     override fun showMenu() {
+        TODO("Not yet implemented")
+    }
+
+    override fun showFilterOptions() {
         TODO("Not yet implemented")
     }
 

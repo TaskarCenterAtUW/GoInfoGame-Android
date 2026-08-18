@@ -44,9 +44,9 @@ import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
-import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
@@ -58,12 +58,13 @@ import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AllEditTypes
+import de.westnordost.streetcomplete.data.connection.InternetConnectionState
 import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
 import de.westnordost.streetcomplete.data.edithistory.EditHistoryController
 import de.westnordost.streetcomplete.data.edithistory.EditKey
-import de.westnordost.streetcomplete.data.connection.InternetConnectionState
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeatureRegistry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -106,15 +107,14 @@ import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.IsShowingQuestDetails
 import de.westnordost.streetcomplete.quests.LeaveNoteInsteadFragment
-import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
-import de.westnordost.streetcomplete.data.osm.edits.create_feature.CreateFeatureRegistry
 import de.westnordost.streetcomplete.quests.create_feature.CustomIconCache
 import de.westnordost.streetcomplete.quests.create_feature.FeaturePresetCatalog
-import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
 import de.westnordost.streetcomplete.quests.create_feature.cachedQuestCustomIconFileOf
+import de.westnordost.streetcomplete.quests.create_feature.customPinIconName
 import de.westnordost.streetcomplete.quests.create_feature.featurePresetCustomIconFileOf
 import de.westnordost.streetcomplete.quests.create_feature.featurePresetIconOf
 import de.westnordost.streetcomplete.quests.create_feature.questCustomIconFileOrNull
+import de.westnordost.streetcomplete.quests.note_discussion.NoteDiscussionForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
@@ -356,10 +356,19 @@ class MainActivity :
             startFollowMode()
         }
 
+        binding.toolbar.mainMenuButton.setOnClickListener {
+            viewModel.showFilterOptions()
+        }
+
         binding.toolbar.workspaceContainer.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle(R.string.confirmation_switch_workspace_title)
-                .setMessage(getString(R.string.confirmation_switch_workspace_message, viewModel.workspaceTitle.value))
+                .setMessage(
+                    getString(
+                        R.string.confirmation_switch_workspace_message,
+                        viewModel.workspaceTitle.value
+                    )
+                )
                 .setPositiveButton(R.string.confirmation_switch_workspace_confirm) { _, _ ->
                     val intent = Intent(this, WorkSpaceActivity::class.java)
                     startActivity(intent)
@@ -378,10 +387,14 @@ class MainActivity :
                 mapFragment?.startFocus(geometry, Insets.NONE)
                 mapFragment?.highlightGeometry(geometry)
                 // created features show the added feature's own icon inside the pin bubble
-                val customIconFile = featurePresetCatalog.featurePresetCustomIconFileOf(edit, customIconCache)
+                val customIconFile =
+                    featurePresetCatalog.featurePresetCustomIconFileOf(edit, customIconCache)
                 if (customIconFile != null) {
                     // registered as a style image when the edit history pins were shown
-                    mapFragment?.highlightPins(customPinIconName(customIconFile), listOf(edit.position))
+                    mapFragment?.highlightPins(
+                        customPinIconName(customIconFile),
+                        listOf(edit.position)
+                    )
                 } else {
                     val pinIcon = featurePresetCatalog.featurePresetIconOf(edit) ?: edit.icon
                     mapFragment?.highlightPins(pinIcon, listOf(edit.position))
@@ -717,7 +730,8 @@ class MainActivity :
         }
         multiSelectViewModel.dynamicText.postValue(getFragmentTitle(quest))
 
-        val customIconFile = featurePresetCatalog.cachedQuestCustomIconFileOf(quest.type, customIconCache)
+        val customIconFile =
+            featurePresetCatalog.cachedQuestCustomIconFileOf(quest.type, customIconCache)
         if (customIconFile != null) {
             mapFragment.highlightForMultiSelect(customIconFile, quest.type.name, multiSelectPoints)
         } else {
@@ -1533,9 +1547,11 @@ class MainActivity :
         /** Not a gig quest, offline, or the check itself failed - proceed exactly as before
          *  (the caller falls back to its usual local element lookup). */
         data object NotChecked : GigQuestCheckResult
+
         /** Checked and still needs an answer - use this freshly-fetched element to skip a
          *  redundant local lookup, so the form opens with the latest tags. */
         data class StillOpen(val element: Element) : GigQuestCheckResult
+
         /** Checked and someone else already answered it - the "already answered" sheet is
          *  showing; the form must not open. */
         data object AlreadyAnswered : GigQuestCheckResult
@@ -1579,7 +1595,8 @@ class MainActivity :
         }
 
         checkSheet.dismiss()
-        return freshElement?.let { GigQuestCheckResult.StillOpen(it) } ?: GigQuestCheckResult.NotChecked
+        return freshElement?.let { GigQuestCheckResult.StillOpen(it) }
+            ?: GigQuestCheckResult.NotChecked
     }
 
     @UiThread
@@ -1621,7 +1638,8 @@ class MainActivity :
 
         mapFragment.startFocus(quest.geometry, getQuestFormInsets())
         mapFragment.highlightGeometry(quest.geometry)
-        val questCustomIconFile = featurePresetCatalog.questCustomIconFileOrNull(quest.type, customIconCache)
+        val questCustomIconFile =
+            featurePresetCatalog.questCustomIconFileOrNull(quest.type, customIconCache)
         if (questCustomIconFile != null) {
             // already registered as a style image by QuestPinsManager when the base pin was shown
             mapFragment.highlightPins(customPinIconName(questCustomIconFile), quest.markerLocations)
@@ -1786,7 +1804,8 @@ class MainActivity :
                 intent?.getParcelableArrayListExtra<Imagery>("IMAGERY_LIST") ?: emptyList()
             }
             try {
-                imageryPickerList = imageryRepository.getImageryForLocation(screenCenter, imagerList).orEmpty()
+                imageryPickerList =
+                    imageryRepository.getImageryForLocation(screenCenter, imagerList).orEmpty()
             } catch (e: Exception) {
                 Log.d("Error", e.message.toString())
                 Toast.makeText(

@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.screens.main.controls
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
@@ -15,7 +16,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun FilterOptionsButton(
+fun DownloadMapDataButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -25,11 +26,10 @@ fun FilterOptionsButton(
         contentPadding = 8.dp
     ) {
         Image(
-            imageVector = Icons.Default.Tune,
-            contentDescription = stringResource(Res.string.filter_options),
+            imageVector = Icons.Default.Download,
+            contentDescription = "Fetch map data",
             modifier = Modifier
                 .size(32.dp)
-
         )
     }
 }
@@ -56,8 +56,8 @@ fun ImageryListButton(
 
 @Preview
 @Composable
-private fun PreviewFilterOptionsButton() {
-    FilterOptionsButton(
+private fun PreviewDownloadMapDataButton() {
+    DownloadMapDataButton(
         onClick = {}
     )
 }

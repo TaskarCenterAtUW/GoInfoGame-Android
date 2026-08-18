@@ -73,7 +73,7 @@
             android:scaleType="centerInside"
             android:visibility="visible"
             app:srcCompat="@drawable/outline_accessibility_24"
-            app:tint="#2D0369" />
+            app:tint="@color/primary" />
 
         <de.westnordost.streetcomplete.screens.main.UploadButton
             android:id="@+id/uploadButton"
@@ -90,12 +90,12 @@
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
             android:contentDescription="@string/map_btn_menu"
-            android:scaleType="fitCenter"
+            android:scaleType="centerInside"
             android:elevation="4dp"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_menu_24dp"
-            app:tint="#2D0369" />
+            app:srcCompat="@drawable/ic_outline_tune_24"
+            app:tint="@color/primary" />
 
     </LinearLayout>
 

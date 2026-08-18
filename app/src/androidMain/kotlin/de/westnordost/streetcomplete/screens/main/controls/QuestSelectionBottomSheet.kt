@@ -24,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
@@ -49,7 +50,14 @@ fun QuestSelectionBottomSheet(
         viewModel.currentCountry?.let { getCountryName(it) } ?: "Atlantis"
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val maxSheetHeight = LocalWindowInfo.current.containerSize.height.dp * 0.85f
+    // containerSize is in pixels - .dp on a raw Int does NOT do a px-to-dp conversion (it just
+    // wraps the number as-is), so this must go through the actual screen density or the resulting
+    // "80%" is several times larger than the real screen height and never actually constrains
+    // anything, letting the sheet expand to fill the whole screen regardless of the fraction used.
+    val density = LocalDensity.current
+    val maxSheetHeight = with(density) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    } * 0.8f
     // Swallow any scroll/fling leftover from the lists below so it never bubbles up into the
     // sheet's own drag-to-dismiss handling - only the sheet's drag handle should move the sheet
     val blockSheetDragFromContent = remember {
