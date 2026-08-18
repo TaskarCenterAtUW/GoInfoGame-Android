@@ -36,6 +36,24 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         adapter = LongFormAdapter { setCameraIntent() }
     }
 
+    // Gates the "resubmit every answered question on a no-diff recheck" behavior in onClickOk.
+    // Multi-select would resubmit every answered field for every selected element, risking
+    // overwriting a secondary element's genuinely different value with the primary session's one -
+    // so this is turned off whenever multi-select is active (see onClickOk).
+    protected var partialAnsweringRecheckEnabled: Boolean = true
+
+    /** Whether this form was opened for a multi-select group (2+ quests selected on the map) -
+     *  same listener lookup `AbstractOsmQuestForm`'s own private `listener` uses internally, but
+     *  that property isn't exposed to subclasses so it's re-derived here. Used to disable partial
+     *  answering entirely in multi-select: pre-filling from one element's tags and pre-computing
+     *  "already answered" doesn't make sense when the answer is about to be applied to several
+     *  different elements that may not share the same existing tag values. */
+    protected val isMultiSelectActive: Boolean
+        get() {
+            val listener = parentFragment as? Listener ?: activity as? Listener
+            return !listener?.mutableMultiSelectQuests.isNullOrEmpty()
+        }
+
     override fun onClickOk() {
         // No null/isEmpty guard here on purpose: a question the user deselected/cleared back to
         // nothing (userInput null or empty) after it had a seeded answer must still be included -
@@ -75,10 +93,17 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         // reverts each back to the same value, so this is safe. If a real gap remains (some visible
         // question was never answered), this is NOT a recheck - fall through to the "No changes"
         // toast as before, so the user is still nudged to actually answer it.
+        //
+        // partialAnsweringRecheckEnabled is off in multi-select mode: resubmitting every answered
+        // field there would apply to every selected element, and an element whose field genuinely
+        // differs from the primary/session value would get silently overwritten. In that case a
+        // no-diff recheck just falls through to the "No changes" toast instead.
+        partialAnsweringRecheckEnabled = !isMultiSelectActive
         val isFullyAnswered = adapter.givenItems.none { it.visible && it.seededAnswer == null }
         val submittedItems = editedItems.ifEmpty {
-            if (isFullyAnswered) adapter.givenItems.filter { it.visible && it.seededAnswer != null }
-            else emptyList()
+            if (isFullyAnswered && partialAnsweringRecheckEnabled) {
+                adapter.givenItems.filter { it.visible && it.seededAnswer != null }
+            } else emptyList()
         }
 
         if (submittedItems.isEmpty()) {
