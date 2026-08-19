@@ -129,41 +129,16 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         val byQuestId = itemCopy.associateBy { it.questId }
 
         for (quest in itemCopy) {
-            val dependencies = quest.questAnswerDependency ?: emptyList()
-            var isVisible = true
-
-            for (dependency in dependencies) {
-                val requiredUserInput = dependency.requiredValue
-                val requiredQuestId = dependency.questionId
-
-                if (requiredUserInput == null || requiredQuestId == null) continue
-
-                val filteredQuest = byQuestId[requiredQuestId]
-                if (filteredQuest != null) {
-                    when (filteredQuest.userInput) {
-                        is UserInput.Single -> {
-                            if ((filteredQuest.userInput as UserInput.Single).answer !in requiredUserInput) {
-                                isVisible = false
-                                break
-                            }
-                        }
-
-                        is UserInput.Multiple -> {
-                            val userInputs = (filteredQuest.userInput as UserInput.Multiple).answers
-                            if (userInputs.none { it in requiredUserInput }) {
-                                isVisible = false
-                                break
-                            }
-                        }
-
-                        else -> {
-                            isVisible = false
-                            break
-                        }
+            quest.visible = quest.isVisibleGiven(
+                questionExists = { byQuestId.containsKey(it) },
+                answersOf = { id ->
+                    when (val input = byQuestId[id]?.userInput) {
+                        is UserInput.Single -> input.answer?.let { listOf(it) }
+                        is UserInput.Multiple -> input.answers
+                        null -> null
                     }
                 }
-            }
-            quest.visible = isVisible
+            )
         }
 
         itemCopy.forEach {

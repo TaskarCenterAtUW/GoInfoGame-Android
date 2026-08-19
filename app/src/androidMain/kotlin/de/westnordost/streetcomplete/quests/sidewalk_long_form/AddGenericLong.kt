@@ -14,12 +14,13 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.UserInput
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.isVisibleGiven
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.platform.HasName
 import org.koin.core.component.KoinComponent
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+
+private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
 
 class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     OsmElementQuestType<List<LongFormQuest?>>, KoinComponent, AndroidQuest, HasName {
@@ -70,27 +71,24 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
         timestampEdited: Long,
     ) {
         for (quest in answer) {
-            if (quest != null) {
-                tags[quest.questTag!!] = quest.userInput.toString()
-                when (quest.userInput){
-                    is UserInput.Single -> {
-                        tags[quest.questTag] = (quest.userInput as UserInput.Single).answer!!
-                    }
-                    is UserInput.Multiple -> {
-                        val multipleAnswers = (quest.userInput as UserInput.Multiple).answers
-                        if(multipleAnswers.isNotEmpty()){
-                            tags[quest.questTag] = multipleAnswers.joinToString(";")
-                        }
-                    }
-                    null -> {}
+            if (quest == null) continue
+            val questTag = quest.questTag ?: continue
+            // A null/empty userInput here means the user cleared a previously-answered question
+            // (deselected a choice, emptied a text field) - remove the tag entirely rather than
+            // leaving the stale prior value in place. Tags.remove() is a safe no-op if the tag
+            // wasn't set to begin with.
+            when (val input = quest.userInput) {
+                is UserInput.Single -> {
+                    val value = input.answer
+                    if (value.isNullOrEmpty()) tags.remove(questTag) else tags[questTag] = value
                 }
+                is UserInput.Multiple -> {
+                    if (input.answers.isNotEmpty()) tags[questTag] = input.answers.joinToString(";")
+                    else tags.remove(questTag)
+                }
+                null -> tags.remove(questTag)
             }
         }
-        tags["ext:gig_complete"] = "yes"
-        //time stamp to date
-        val date = ZonedDateTime.now(ZoneOffset.UTC)
-        val currentDate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-ddXXX"))
-        tags["ext:gig_last_updated"] = currentDate
         item.elementType?.let { FirebaseAnalyticsHelper.logQuestAnswered(it) }
     }
 
@@ -103,8 +101,14 @@ class AddGenericLong(val item: Elements, val recencyPeriodInDays : Int) :
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> =
         mapData.filter { isApplicableTo(it) }
 
-    override fun isApplicableTo(element: Element): Boolean =
-        createQueryFilter(item.questQuery!!, item.elementType!!, recencyPeriodInDays).matches(element)
+    override fun isApplicableTo(element: Element): Boolean {
+        if (!item.questQuery!!.toElementFilterExpression().matches(element)) return false
+        if (item.quests.unansweredQuestions(element.tags).isNotEmpty()) return true
+        // All applicable questions are answered - resurface for a recheck once the element's
+        // own OSM last-edited timestamp is older than the workspace's recency period.
+        val ageInMillis = nowAsEpochMilliseconds() - element.timestampEdited
+        return ageInMillis >= recencyPeriodInDays * MILLIS_PER_DAY
+    }
 
     override fun createForm() = AddGenericLongForm.newInstance(item.quests)
 
@@ -117,16 +121,20 @@ private fun getNodeOrWay(variable: String): String {
     }
 }
 
-//          and ext:gig_complete !~ yes
-//          and ext:gig_last_updated older today -0 days
-//     and (!ext:gig_last_updated or ext:gig_last_updated older today -1 days)
-private fun createQueryFilter(variable: String, elementType: String, recencyPeriodInDays: Int) = """
-     $variable and (
-    ext:gig_complete !~ yes
-    or (
-        ext:gig_complete ~ yes
-        and ext:gig_last_updated
-        and ext:gig_last_updated < today - $recencyPeriodInDays days
-    )
-)
-""".toElementFilterExpression()
+/** The subset of [this] question set that is still unanswered on [tags] - i.e. applicable per
+ *  questAnswerDependency (see [LongFormQuest.isVisibleGiven]) but with no value yet for its
+ *  questTag. Once this is empty, the quest is fully answered - the pin then only reappears once
+ *  the element's own OSM timestamp is older than [AddGenericLong.recencyPeriodInDays]. */
+private fun List<LongFormQuest?>.unansweredQuestions(tags: Map<String, String>): List<LongFormQuest> {
+    val quests = filterNotNull()
+    val byQuestId = quests.associateBy { it.questId }
+    fun answersOf(id: Int): List<String>? {
+        val quest = byQuestId[id] ?: return null
+        val value = quest.questTag?.let { tags[it] } ?: return null
+        return if (quest.questType == "MultipleChoice") value.split(";") else listOf(value)
+    }
+    return quests.filter { quest ->
+        quest.isVisibleGiven({ byQuestId.containsKey(it) }, ::answersOf) &&
+            (quest.questTag == null || tags[quest.questTag].isNullOrBlank())
+    }
+}

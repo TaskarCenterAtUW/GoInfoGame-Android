@@ -122,6 +122,14 @@ val appModule = module {
                 gzip()
             }
             installWorkspaceBearerAuth(context, preferences, environmentManager)
+            install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        Log.d("OsmClient", message) // Avoid System.err
+                    }
+                }
+                level = LogLevel.ALL
+            }
         }
     }
     single {

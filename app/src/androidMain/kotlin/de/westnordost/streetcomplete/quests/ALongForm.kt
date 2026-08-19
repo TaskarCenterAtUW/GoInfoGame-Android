@@ -17,6 +17,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.contentEquals
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.coroutines.launch
 
@@ -35,23 +36,84 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         adapter = LongFormAdapter { setCameraIntent() }
     }
 
+    // Gates the "resubmit every answered question on a no-diff recheck" behavior in onClickOk.
+    // Multi-select would resubmit every answered field for every selected element, risking
+    // overwriting a secondary element's genuinely different value with the primary session's one -
+    // so this is turned off whenever multi-select is active (see onClickOk).
+    protected var partialAnsweringRecheckEnabled: Boolean = true
+
+    /** Whether this form was opened for a multi-select group (2+ quests selected on the map) -
+     *  same listener lookup `AbstractOsmQuestForm`'s own private `listener` uses internally, but
+     *  that property isn't exposed to subclasses so it's re-derived here. Used to disable partial
+     *  answering entirely in multi-select: pre-filling from one element's tags and pre-computing
+     *  "already answered" doesn't make sense when the answer is about to be applied to several
+     *  different elements that may not share the same existing tag values. */
+    protected val isMultiSelectActive: Boolean
+        get() {
+            val listener = parentFragment as? Listener ?: activity as? Listener
+            return !listener?.mutableMultiSelectQuests.isNullOrEmpty()
+        }
+
     override fun onClickOk() {
+        // No null/isEmpty guard here on purpose: a question the user deselected/cleared back to
+        // nothing (userInput null or empty) after it had a seeded answer must still be included -
+        // otherwise the clear is silently dropped and the stale tag from before never gets
+        // removed (contentEquals(null, null) already excludes a question that was never touched,
+        // so this alone is sufficient to also exclude untouched blanks).
+        //
+        // A question currently hidden by questAnswerDependency (its controlling answer no longer
+        // satisfies the dependency - e.g. the user deselected/changed the controlling answer this
+        // visit) is submitted as cleared too, via a .copy() used ONLY for this comparison/submit -
+        // the live item in adapter.givenItems is left untouched. This matters: if the user flips
+        // the controlling answer back before submitting, the dependent question must still show
+        // whatever was already entered, not something wiped out mid-edit. Only the final state at
+        // submit time decides whether a hidden question's old value actually gets removed.
         val editedItems =
-            adapter.givenItems.filter { it.visible && it.userInput != null && !it.userInput!!.isEmpty() }
+            adapter.givenItems.mapNotNull { quest ->
+                val effective = if (quest.visible) quest else quest.copy(userInput = null)
+                effective.takeIf { !it.userInput.contentEquals(it.seededAnswer) }
+            }
         val tagList: MutableList<Pair<String, String>> = mutableListOf()
         if (imageUrls.isNotEmpty()) {
             val urls = imageUrls.joinToString(",")
             tagList.add(Pair("ext:kartaview_url", urls))
         }
 
-        if (editedItems.isEmpty()) {
+        // a "recheck" of an already fully-answered element - reopened purely because
+        // AddGenericLong.isApplicableTo's recency check resurfaced it - has nothing to actually change, so editedItems above is
+        // empty and this used to always be blocked with the "No changes" toast, leaving the pin
+        // stuck reappearing forever (submitting never bumped the element's OSM timestamp).
+        //
+        // Only when EVERY currently-visible question already has a seeded answer (i.e. there is no
+        // genuinely unanswered question left - the same condition AddGenericLong.isApplicableTo's
+        // recency branch itself gates on) do we resubmit every already-answered question's OWN
+        // existing value unchanged, purely to force a real, non-empty edit through so the element's
+        // timestamp bumps. StringMapChangesBuilder records a same-value set as a real change
+        // regardless of value equality, so this produces one Modify(key, x, x) per question - undo
+        // reverts each back to the same value, so this is safe. If a real gap remains (some visible
+        // question was never answered), this is NOT a recheck - fall through to the "No changes"
+        // toast as before, so the user is still nudged to actually answer it.
+        //
+        // partialAnsweringRecheckEnabled is off in multi-select mode: resubmitting every answered
+        // field there would apply to every selected element, and an element whose field genuinely
+        // differs from the primary/session value would get silently overwritten. In that case a
+        // no-diff recheck just falls through to the "No changes" toast instead.
+        partialAnsweringRecheckEnabled = !isMultiSelectActive
+        val isFullyAnswered = adapter.givenItems.none { it.visible && it.seededAnswer == null }
+        val submittedItems = editedItems.ifEmpty {
+            if (isFullyAnswered && partialAnsweringRecheckEnabled) {
+                adapter.givenItems.filter { it.visible && it.seededAnswer != null }
+            } else emptyList()
+        }
+
+        if (submittedItems.isEmpty()) {
             Toast.makeText(
                 context,
                 "No changes to submit. Please answer at least one question.",
                 Toast.LENGTH_SHORT
             ).show()
         } else {
-            applyAnswer(editedItems as T, tagList)
+            applyAnswer(submittedItems as T, tagList)
         }
     }
 
@@ -117,10 +179,6 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
-        adapter.items = (itemCopy as List<LongFormQuest>).apply {
-            this.forEach {
-                it.selectedIndex = null
-            }
-        }
+        adapter.items = itemCopy as List<LongFormQuest>
     }
 }
