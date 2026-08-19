@@ -62,11 +62,12 @@ fun HiddenQuestsSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "HIDDEN ELEMENTS",
+                text = "Hidden Elements",
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .weight(1f),
             )
             Button(
                 onClick = { showUnhideAllConfirmation = true },
@@ -77,7 +78,7 @@ fun HiddenQuestsSection(
         }
         Text(
             text = "Swipe left on an item to unhide it and remove it from this list.",
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = LocalContentColor.current.copy(alpha = 0.6f),
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
         )

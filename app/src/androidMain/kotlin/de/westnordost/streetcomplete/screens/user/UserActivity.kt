@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Surface
+import androidx.core.app.ActivityCompat
+import com.russhwolf.settings.SettingsListener
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.BaseActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
@@ -20,6 +22,8 @@ class UserActivity : BaseActivity() {
     private val settingsViewModel by viewModel<SettingsViewModel>()
     private val preferences: Preferences by inject()
 
+    private val listeners = mutableListOf<SettingsListener>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -35,6 +39,20 @@ class UserActivity : BaseActivity() {
                 }
             }
         }
+
+        // AppTheme only follows isSystemInDarkTheme(), which reflects AppCompatDelegate's night
+        // mode - that's only updated (via StreetCompleteApplication's own theme listener) after
+        // this preference changes, and Compose has no way to know a Configuration change is coming
+        // from that until it's actually delivered. Recreating (same fix SettingsActivity already
+        // uses for its own theme picker) forces AppTheme to recompose against the now-current night
+        // mode immediately, instead of only looking right after leaving and reopening this screen.
+        listeners += preferences.onThemeChanged { ActivityCompat.recreate(this) }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listeners.forEach { it.deactivate() }
+        listeners.clear()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

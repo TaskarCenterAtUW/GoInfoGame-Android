@@ -2,7 +2,9 @@ package de.westnordost.streetcomplete.screens.main.controls
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -91,13 +93,14 @@ fun QuestSelectionBottomSheet(
             ) {
                 Column(modifier = Modifier.padding(end = 40.dp)) {
                     Text(
-                        text = "Choose which features to survey",
+                        text = "Manage Quests",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary,
                     )
+                    Spacer(modifier = Modifier.height(32.dp))
                     Text(
-                        text = "Show all hidden elements on the map by individual item or type",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Show or hide elements on the map by individual item or type",
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 4.dp)
                     )
