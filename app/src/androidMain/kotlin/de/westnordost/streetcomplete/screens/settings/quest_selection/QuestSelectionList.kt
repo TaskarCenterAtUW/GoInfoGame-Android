@@ -93,6 +93,7 @@ fun QuestSelectionList(
         //      single place that could have a scrollbar
         LazyColumn(
             state = listState,
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(
                 start = contentPadding.calculateStartPadding(layoutDirection),
                 end = contentPadding.calculateEndPadding(layoutDirection),

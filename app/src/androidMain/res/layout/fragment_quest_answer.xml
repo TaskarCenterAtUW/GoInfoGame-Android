@@ -31,6 +31,15 @@
             android:clipChildren="true"
             app:behavior_peekHeight="@dimen/quest_form_peekHeight">
 
+            <View
+                android:id="@+id/dragHandle"
+                android:layout_width="32dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_drag_handle"
+                android:importantForAccessibility="no" />
+
             <LinearLayout
                 android:id="@+id/speechBubbleTitleContainer"
                 android:layout_width="match_parent"

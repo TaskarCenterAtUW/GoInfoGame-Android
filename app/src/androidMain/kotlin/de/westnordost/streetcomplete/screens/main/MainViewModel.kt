@@ -114,10 +114,12 @@ abstract class MainViewModel : ViewModel() {
     abstract fun addAttributionsToMap(attribution: Attribution?)
     abstract fun hideMenu()
     abstract fun showMenu()
+    abstract fun showFilterOptions()
 
     abstract var workspaceTitle : MutableStateFlow<String>
 
     abstract val showMainMenuDialog : MutableStateFlow<Boolean>
+    abstract val showFilterOptions : MutableStateFlow<Boolean>
 
     abstract val followVisible: MutableStateFlow<Boolean>
 

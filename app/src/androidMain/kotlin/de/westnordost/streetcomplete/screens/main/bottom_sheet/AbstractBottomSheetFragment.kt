@@ -63,6 +63,7 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
         }
 
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet)
+        bottomSheetBehavior.maxHeight = maxBottomSheetHeightPx()
 
         bottomSheetTitle?.setOnClickListener {
             bottomSheetBehavior.apply {
@@ -96,8 +97,15 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
         resources.updateConfiguration(newConfig, resources.displayMetrics)
 
         bottomSheetBehavior.peekHeight = resources.getDimensionPixelSize(R.dimen.quest_form_peekHeight)
+        bottomSheetBehavior.maxHeight = maxBottomSheetHeightPx()
         bottomSheetContainer.updateLayoutParams { width = resources.getDimensionPixelSize(R.dimen.quest_form_width) }
     }
+
+    // When dragged/expanded, the sheet's height otherwise grows with its content (wrap_content) up
+    // to the full screen - cap it at 90% so it never covers the whole screen, leaving a sliver of
+    // the map visible above it as a drag affordance.
+    private fun maxBottomSheetHeightPx(): Int =
+        (resources.displayMetrics.heightPixels * 0.85f).toInt()
 
     fun expand() {
         bottomSheetBehavior.state = STATE_EXPANDED

@@ -39,9 +39,7 @@ import org.koin.androidx.compose.koinViewModel
             SettingsScreen(
                 viewModel = koinViewModel(),
                 onClickShowQuestForms = { navController.navigate(SettingsDestination.ShowQuestForms) },
-                onClickPresetSelection = { navController.navigate(SettingsDestination.EditTypePresets) },
                 onClickQuestSelection = { navController.navigate(SettingsDestination.QuestSelection) },
-                onClickOverlaySelection = { navController.navigate(SettingsDestination.OverlaySelection) },
                 onClickBack = ::goBack
             )
         }

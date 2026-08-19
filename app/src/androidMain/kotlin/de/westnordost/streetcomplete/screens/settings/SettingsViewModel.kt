@@ -13,11 +13,8 @@ import de.westnordost.streetcomplete.data.preferences.ResurveyIntervals
 import de.westnordost.streetcomplete.data.preferences.Theme
 import de.westnordost.streetcomplete.data.presets.EditTypePreset
 import de.westnordost.streetcomplete.data.presets.EditTypePresetsSource
-import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
-import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
-import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenSource
 import de.westnordost.streetcomplete.data.visiblequests.VisibleEditTypeSource
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.ui.ktx.readYaml
@@ -30,7 +27,6 @@ import kotlinx.coroutines.flow.StateFlow
 abstract class SettingsViewModel : ViewModel() {
     abstract val selectableLanguageCodes: StateFlow<List<String>?>
     abstract val selectedEditTypePresetName: StateFlow<String?>
-    abstract val hiddenQuestCount: StateFlow<Int>
     abstract val questTypeCount: StateFlow<QuestTypeCount?>
     abstract val overlayCount: StateFlow<QuestTypeCount?>
 
@@ -41,8 +37,6 @@ abstract class SettingsViewModel : ViewModel() {
     abstract val keepScreenOn: StateFlow<Boolean>
     abstract val showZoomButtons: StateFlow<Boolean>
     abstract val selectedLanguage: StateFlow<String?>
-
-    abstract fun unhideQuests()
 
     abstract fun deleteCache()
 
@@ -62,7 +56,6 @@ class SettingsViewModelImpl(
     private val prefs: Preferences,
     private val res: Res,
     private val cleaner: Cleaner,
-    private val hiddenQuestsController: QuestsHiddenController,
     private val questTypeRegistry: QuestTypeRegistry,
     private val overlayRegistry: OverlayRegistry,
     private val visibleEditTypeSource: VisibleEditTypeSource,
@@ -87,13 +80,6 @@ class SettingsViewModelImpl(
         override fun onDeleted(presetId: Long) { updateSelectedEditTypePreset() }
     }
 
-    private val hiddenQuestsListener = object : QuestsHiddenSource.Listener {
-        override fun onHid(key: QuestKey, timestamp: Long) { updateHiddenQuests() }
-        override fun onUnhid(key: QuestKey, timestamp: Long) { updateHiddenQuests() }
-        override fun onUnhidAll() { updateHiddenQuests() }
-    }
-
-    override val hiddenQuestCount = MutableStateFlow(0)
     override val questTypeCount = MutableStateFlow<QuestTypeCount?>(null)
     override val overlayCount = MutableStateFlow<QuestTypeCount?>(null)
     override val selectedEditTypePresetName = MutableStateFlow<String?>(null)
@@ -112,7 +98,6 @@ class SettingsViewModelImpl(
     init {
         visibleEditTypeSource.addListener(visibleEditTypeListener)
         editTypePresetsSource.addListener(editTypePresetsListener)
-        hiddenQuestsController.addListener(hiddenQuestsListener)
 
         listeners += prefs.onResurveyIntervalsChanged { resurveyIntervals.value = it }
         listeners += prefs.onAutosyncChanged { autosync.value = it }
@@ -125,14 +110,12 @@ class SettingsViewModelImpl(
         updateQuestTypeCount()
         updateOverlayCount()
         updateSelectableLanguageCodes()
-        updateHiddenQuests()
         updateSelectedEditTypePreset()
     }
 
     override fun onCleared() {
         visibleEditTypeSource.removeListener(visibleEditTypeListener)
         editTypePresetsSource.removeListener(editTypePresetsListener)
-        hiddenQuestsController.removeListener(hiddenQuestsListener)
 
         listeners.forEach { it.deactivate() }
         listeners.clear()
@@ -150,12 +133,6 @@ class SettingsViewModelImpl(
     override fun setShowZoomButtons(value: Boolean) { prefs.showZoomButtons = value }
     override fun setSelectedLanguage(value: String?) { prefs.language = value }
 
-    override fun unhideQuests() {
-        launch(IO) {
-            hiddenQuestsController.unhideAll()
-        }
-    }
-
     private fun updateSelectedEditTypePreset() {
         launch(IO) {
             selectedEditTypePresetName.value = editTypePresetsSource.selectedEditTypePresetName
@@ -165,12 +142,6 @@ class SettingsViewModelImpl(
     private fun updateSelectableLanguageCodes() {
         launch {
             selectableLanguageCodes.value = res.readYaml<List<String>>("files/languages.yml")
-        }
-    }
-
-    private fun updateHiddenQuests() {
-        launch(IO) {
-            hiddenQuestCount.value = hiddenQuestsController.countAll()
         }
     }
 
