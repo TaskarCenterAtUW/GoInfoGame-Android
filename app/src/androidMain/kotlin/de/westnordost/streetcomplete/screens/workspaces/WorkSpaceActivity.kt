@@ -58,6 +58,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
+import de.westnordost.streetcomplete.util.logs.Log
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
@@ -247,20 +248,36 @@ fun AppNavigator(
         preferences.workspaceUserId?.let {
             FirebaseAnalyticsHelper.setUserId(it)
         }
+        val now = System.currentTimeMillis()
         if (preferences.refreshTokenExpiryTime != 0L &&
-            preferences.refreshTokenExpiryTime < System.currentTimeMillis()
+            preferences.refreshTokenExpiryTime < now
         ) {
+            Log.w(
+                "AuthExpiry",
+                "refreshTokenExpiryTime=${preferences.refreshTokenExpiryTime} < now=$now " +
+                    "(expired ${now - preferences.refreshTokenExpiryTime}ms ago, " +
+                    "workspaceLastLogin=${preferences.workspaceLastLogin}) - forcing logout without attempting refresh"
+            )
             preferences.workspaceLogin = false
             doLogout = true
         } else if (preferences.accessTokenExpiryTime != 0L &&
-            preferences.accessTokenExpiryTime < System.currentTimeMillis()
+            preferences.accessTokenExpiryTime < now
         ) {
+            Log.d(
+                "AuthExpiry",
+                "accessTokenExpiryTime=${preferences.accessTokenExpiryTime} < now=$now - triggering proactive refresh"
+            )
             doTokenRefresh = true
         }
         //Check if we reached 80 percent of auth token expiry time
         else if (preferences.accessTokenExpiryTime != 0L &&
-            preferences.accessTokenExpiryTime - System.currentTimeMillis() < 0.2 * (preferences.accessTokenExpiryInterval)
+            preferences.accessTokenExpiryTime - now < 0.2 * (preferences.accessTokenExpiryInterval)
         ) {
+            Log.d(
+                "AuthExpiry",
+                "accessTokenExpiryTime=${preferences.accessTokenExpiryTime} is within 20% of expiry " +
+                    "(now=$now) - triggering proactive refresh"
+            )
             doTokenRefresh = true
         }
 
@@ -301,6 +318,11 @@ fun AppNavigator(
             LaunchedEffect(loginState) {
                 when (loginState) {
                     is WorkspaceLoginState.Error -> {
+                        Log.e(
+                            "AuthExpiry",
+                            "Proactive token refresh failed on workspace-list, forcing logout: " +
+                                (loginState as WorkspaceLoginState.Error).error
+                        )
                         preferences.workspaceLogin = false
                         val intent = Intent(context, WorkSpaceActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

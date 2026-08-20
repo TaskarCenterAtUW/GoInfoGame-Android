@@ -20,6 +20,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResp
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getEmailFromJWT
+import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -279,7 +280,10 @@ class WorkspaceViewModelImpl(
             _loginState.value = WorkspaceLoginState.loading()
             preferences.workspaceRefreshToken?.let {
                 workspaceRepository.refreshToken(it)
-                    .catch { e -> _loginState.value = WorkspaceLoginState.error(e.message) }
+                    .catch { e ->
+                        Log.e("AuthExpiry", "Proactive refreshToken() call failed", e)
+                        _loginState.value = WorkspaceLoginState.error(e.message)
+                    }
                     .collect { loginResponse ->
                         preferences.workspaceToken = loginResponse.access_token
                         preferences.workspaceRefreshToken = loginResponse.refresh_token
@@ -292,6 +296,12 @@ class WorkspaceViewModelImpl(
                             preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
                         preferences.accessTokenExpiryTime =
                             preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
+                        Log.d(
+                            "AuthExpiry",
+                            "Proactive refreshToken() succeeded, new refreshTokenExpiryTime=" +
+                                "${preferences.refreshTokenExpiryTime}, accessTokenExpiryTime=" +
+                                "${preferences.accessTokenExpiryTime}"
+                        )
                         if (expediteLogin) {
                             getEmailFromJWT(loginResponse.access_token)?.let { email ->
                                 preferences.workspaceUserEmail = email
@@ -301,10 +311,12 @@ class WorkspaceViewModelImpl(
                             _loginState.value =
                                 WorkspaceLoginState.success(loginResponse, this, expediteLogin)
                         } ?: run {
+                            Log.e("AuthExpiry", "Proactive refresh response had no workspaceUserEmail set")
                             _loginState.value = WorkspaceLoginState.error("No user email found")
                         }
                     }
             } ?: run {
+                Log.e("AuthExpiry", "Proactive refreshToken() called with no stored workspaceRefreshToken")
                 _loginState.value = WorkspaceLoginState.error("No refresh token found")
             }
         }
