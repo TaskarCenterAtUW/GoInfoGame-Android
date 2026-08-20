@@ -402,7 +402,7 @@ fun LoginCard(
                     val context = LocalContext.current
                     var visibility by rememberSaveable { mutableStateOf(false) }
                     OutlinedTextField(
-                        value = email.value, onValueChange = { newText -> email.value = newText },
+                        value = email.value, onValueChange = { newText -> email.value = newText.trim() },
                         label = {
                             Text(
                                 text = stringResource(
@@ -465,7 +465,7 @@ fun LoginCard(
                     )
                     OutlinedTextField(
                         value = password.value,
-                        onValueChange = { newText -> password.value = newText },
+                        onValueChange = { newText -> password.value = newText.trim() },
                         label = {
                             Text(
                                 text = stringResource(
