@@ -29,7 +29,6 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.ApplicationConstants.DELETE_OLD_DATA_AFTER
 import de.westnordost.streetcomplete.ApplicationConstants.REFRESH_DATA_AFTER
-import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.data.preferences.Autosync
 import de.westnordost.streetcomplete.data.preferences.ResurveyIntervals
 import de.westnordost.streetcomplete.data.preferences.Theme
@@ -65,7 +64,6 @@ import de.westnordost.streetcomplete.resources.theme_dark
 import de.westnordost.streetcomplete.resources.theme_light
 import de.westnordost.streetcomplete.resources.theme_system_default
 import de.westnordost.streetcomplete.ui.common.BackIcon
-import de.westnordost.streetcomplete.ui.common.NextScreenIcon
 import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 import de.westnordost.streetcomplete.ui.common.dialogs.InfoDialog
 import de.westnordost.streetcomplete.ui.common.dialogs.SimpleListPickerDialog
@@ -82,7 +80,6 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onClickShowQuestForms: () -> Unit,
     onClickQuestSelection: () -> Unit,
     onClickBack: () -> Unit,
 ) {
@@ -231,15 +228,6 @@ fun SettingsScreen(
                     onClick = { showDeleteCacheConfirmation = true },
                     description = stringResource(Res.string.pref_title_delete_cache_summary)
                 )
-            }
-
-            if (BuildConfig.DEBUG) {
-                PreferenceCategory("Debug") {
-                    Preference(
-                        name = "Show Quest Forms",
-                        onClick = onClickShowQuestForms
-                    ) { NextScreenIcon() }
-                }
             }
         }
     }

@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +49,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.preferences.Theme
@@ -56,9 +59,11 @@ import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.settings.title
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.common.BackIcon
+import de.westnordost.streetcomplete.ui.common.NextScreenIcon
 import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
 import de.westnordost.streetcomplete.ui.common.dialogs.SimpleListPickerDialog
 import de.westnordost.streetcomplete.ui.common.settings.Preference
+import de.westnordost.streetcomplete.ui.common.settings.PreferenceCategory
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KSuspendFunction1
@@ -70,6 +75,7 @@ fun ProfileScreenNewContent(
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
     onClickBack: () -> Unit,
+    onClickShowQuestForms: () -> Unit,
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>,
 ) {
     var isBiometricEnabled by remember { mutableStateOf(preferences.isBiometricEnabled) }
@@ -78,6 +84,7 @@ fun ProfileScreenNewContent(
     val userName by viewModel.userName.collectAsState()
     var showThemeSelect by remember { mutableStateOf(false) }
     val theme by settingsViewModel.theme.collectAsState()
+    val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
 
     Column(
         modifier = Modifier
@@ -213,6 +220,16 @@ fun ProfileScreenNewContent(
                 Text(stringResource(theme.title))
             }
 
+
+            if (isDebugModeEnabled) {
+                PreferenceCategory("Debug") {
+                    Preference(
+                        name = "Show Quest Forms",
+                        onClick = onClickShowQuestForms
+                    ) { NextScreenIcon() }
+                }
+            }
+
             // PreferenceRow(
             //     stringResource(R.string.follow_mode),
             //     stringResource(R.string.enable_follow_mode),
@@ -254,6 +271,19 @@ fun ProfileScreenNewContent(
                         color = MaterialTheme.colorScheme.onSecondary
                     )
                 }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Text(
+                    text = "Version ${BuildConfig.VERSION_NAME}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .padding(8.dp)
+                )
             }
         }
     }

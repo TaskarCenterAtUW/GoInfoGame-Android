@@ -38,7 +38,6 @@ import org.koin.androidx.compose.koinViewModel
         composable(SettingsDestination.Settings) {
             SettingsScreen(
                 viewModel = koinViewModel(),
-                onClickShowQuestForms = { navController.navigate(SettingsDestination.ShowQuestForms) },
                 onClickQuestSelection = { navController.navigate(SettingsDestination.QuestSelection) },
                 onClickBack = ::goBack
             )
