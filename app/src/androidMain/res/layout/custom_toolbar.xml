@@ -89,7 +89,7 @@
             style="@style/RoundPurpleButton"
             android:layout_width="@dimen/map_button_size"
             android:layout_height="@dimen/map_button_size"
-            android:contentDescription="@string/map_btn_menu"
+            android:contentDescription="@string/manage_quests"
             android:scaleType="centerInside"
             android:elevation="4dp"
             app:layout_constraintRight_toRightOf="parent"

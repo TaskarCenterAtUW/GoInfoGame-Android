@@ -20,9 +20,15 @@ import androidx.core.util.Consumer
 class FineLocationManager(context: Context, locationUpdateCallback: (Location) -> Unit) {
     private val locationManager = context.getSystemService<LocationManager>()!!
     private val mainExecutor = ContextCompat.getMainExecutor(context)
+    // getCurrentLocation() below asks GPS and Network providers separately, and each one calls
+    // this consumer independently as soon as it resolves - without the isBetterThan() check
+    // (same one the continuous locationListener already uses), a single getCurrentLocation()
+    // call fired locationUpdateCallback twice back-to-back, once per provider, double-triggering
+    // whatever the caller does per update (e.g. re-fetching workspaces from the network).
     private val currentLocationConsumer = Consumer<Location?> {
-        if (it != null) {
+        if (it != null && it.isBetterThan(lastLocation)) {
             if (!networkCancellationSignal.isCanceled && !gpsCancellationSignal.isCanceled) {
+                lastLocation = it
                 locationUpdateCallback(it)
             }
         }

@@ -43,7 +43,7 @@ The info you enter is directly added to OpenStreetMap in your name, without the 
     <string name="compass">Compass</string>
 
     <string name="map_btn_menu">Menu</string>
-
+    <string name="manage_quests">Manage Quests</string>
     <string name="map_btn_gps_tracking">Follow me</string>
     <string name="turn_on_location_request">Location is off. Open Settings to turn it on now?</string>
     <string name="no_location_permission_warning_title">Location Permission</string>
