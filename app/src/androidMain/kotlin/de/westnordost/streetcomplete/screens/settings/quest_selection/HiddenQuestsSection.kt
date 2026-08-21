@@ -51,6 +51,8 @@ fun HiddenQuestsSection(
     onUnhideAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (items.isEmpty()) return
+
     var showUnhideAllConfirmation by remember { mutableStateOf(false) }
 
     Column(modifier) {
@@ -69,10 +71,7 @@ fun HiddenQuestsSection(
                     .padding(top = 4.dp)
                     .weight(1f),
             )
-            Button(
-                onClick = { showUnhideAllConfirmation = true },
-                enabled = items.isNotEmpty(),
-            ) {
+            Button(onClick = { showUnhideAllConfirmation = true }) {
                 Text("Unhide All")
             }
         }
@@ -86,22 +85,6 @@ fun HiddenQuestsSection(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 8.dp),
         ) {
-            if (items.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "No hidden elements",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = LocalContentColor.current.copy(alpha = 0.6f),
-                        )
-                    }
-                }
-            }
             items(items, key = { it.key.listKey() }) { item ->
                 HiddenQuestRow(
                     item = item,
