@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceAuthRejectedException
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
@@ -282,7 +283,14 @@ class WorkspaceViewModelImpl(
                 workspaceRepository.refreshToken(it)
                     .catch { e ->
                         Log.e("AuthExpiry", "Proactive refreshToken() call failed", e)
-                        _loginState.value = WorkspaceLoginState.error(e.message)
+                        // only a server-rejected refresh token (WorkspaceAuthRejectedException)
+                        // means the session is actually dead - anything else (UnresolvedAddressException,
+                        // IOException, etc.) is a connectivity failure and must not force a logout
+                        _loginState.value = if (e is WorkspaceAuthRejectedException) {
+                            WorkspaceLoginState.error(e.message)
+                        } else {
+                            WorkspaceLoginState.networkError(e.message)
+                        }
                     }
                     .collect { loginResponse ->
                         preferences.workspaceToken = loginResponse.access_token

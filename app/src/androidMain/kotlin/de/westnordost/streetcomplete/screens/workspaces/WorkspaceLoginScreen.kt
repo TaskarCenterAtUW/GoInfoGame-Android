@@ -142,6 +142,13 @@ fun LoginScreen(
                 snackBarMessage = (loginState as WorkspaceLoginState.Error).error
             }
 
+            is WorkspaceLoginState.NetworkError -> {
+                // login attempt couldn't reach the server (no connectivity/DNS failure) -
+                // surface the same as a regular error here so the user can retry
+                isLoading = false
+                snackBarMessage = (loginState as WorkspaceLoginState.NetworkError).error
+            }
+
             is WorkspaceLoginState.Success -> {
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success

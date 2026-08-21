@@ -330,6 +330,20 @@ fun AppNavigator(
                         }
                         context.startActivity(intent)
                     }
+                    is WorkspaceLoginState.NetworkError -> {
+                        // couldn't reach the server at all (no connectivity/DNS failure) - the
+                        // refresh token itself was never actually rejected, so don't force a
+                        // logout; proceed with the still-locally-valid token and let the next
+                        // proactive-refresh trigger (or a real 401, handled reactively in
+                        // ApplicationModule.kt) retry later
+                        Log.w(
+                            "AuthExpiry",
+                            "Proactive token refresh on workspace-list couldn't reach the server, " +
+                                "not forcing logout: " +
+                                (loginState as WorkspaceLoginState.NetworkError).error
+                        )
+                        tokenRefreshInFlight = false
+                    }
                     is WorkspaceLoginState.Success -> tokenRefreshInFlight = false
                     else -> {}
                 }
