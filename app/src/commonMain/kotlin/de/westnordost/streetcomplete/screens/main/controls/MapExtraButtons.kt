@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.resources.Res
+import de.westnordost.streetcomplete.resources.action_imagery_list
 import de.westnordost.streetcomplete.resources.action_overlays
 import de.westnordost.streetcomplete.resources.filter_options
 import org.jetbrains.compose.resources.stringResource
@@ -27,7 +28,7 @@ fun DownloadMapDataButton(
     ) {
         Image(
             imageVector = Icons.Default.Download,
-            contentDescription = "Fetch map data",
+            contentDescription = "Fetch the latest quests for this area",
             modifier = Modifier
                 .size(32.dp)
         )
@@ -46,7 +47,7 @@ fun ImageryListButton(
     ) {
         Image(
             imageVector = Icons.Default.Layers,
-            contentDescription = stringResource(Res.string.action_overlays),
+            contentDescription = stringResource(Res.string.action_imagery_list),
             modifier = Modifier
                 .size(32.dp)
 
