@@ -76,12 +76,17 @@ sealed class WorkspaceLoginState {
     data object Loading : WorkspaceLoginState()
     data class Success(val loginResponse: LoginResponse, val email: String, val expediteLogin: Boolean = false) : WorkspaceLoginState()
     data class Error(val error: String?) : WorkspaceLoginState()
+    // a refresh attempt couldn't reach the server at all (no connectivity/DNS failure) - distinct
+    // from Error, which means the server was reached and actively rejected the refresh token.
+    // Only Error should trigger a forced logout.
+    data class NetworkError(val error: String?) : WorkspaceLoginState()
 
     companion object {
         fun Init() = Init
         fun loading() = Loading
         fun success(loginResponse: LoginResponse, email: String, expediteLogin : Boolean = false) = Success(loginResponse, email, expediteLogin)
         fun error(errorMessage: String?) = Error(errorMessage)
+        fun networkError(errorMessage: String?) = NetworkError(errorMessage)
     }
 }
 

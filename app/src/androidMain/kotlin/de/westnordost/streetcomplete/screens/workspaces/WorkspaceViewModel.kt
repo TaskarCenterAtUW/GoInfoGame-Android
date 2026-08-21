@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.Workspace
+import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceAuthRejectedException
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.data.workspace.domain.model.AppUpdateCheckerResponse
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
@@ -20,6 +21,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResp
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDetailsResponse
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getEmailFromJWT
+import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -279,7 +281,17 @@ class WorkspaceViewModelImpl(
             _loginState.value = WorkspaceLoginState.loading()
             preferences.workspaceRefreshToken?.let {
                 workspaceRepository.refreshToken(it)
-                    .catch { e -> _loginState.value = WorkspaceLoginState.error(e.message) }
+                    .catch { e ->
+                        Log.e("AuthExpiry", "Proactive refreshToken() call failed", e)
+                        // only a server-rejected refresh token (WorkspaceAuthRejectedException)
+                        // means the session is actually dead - anything else (UnresolvedAddressException,
+                        // IOException, etc.) is a connectivity failure and must not force a logout
+                        _loginState.value = if (e is WorkspaceAuthRejectedException) {
+                            WorkspaceLoginState.error(e.message)
+                        } else {
+                            WorkspaceLoginState.networkError(e.message)
+                        }
+                    }
                     .collect { loginResponse ->
                         preferences.workspaceToken = loginResponse.access_token
                         preferences.workspaceRefreshToken = loginResponse.refresh_token
@@ -292,6 +304,12 @@ class WorkspaceViewModelImpl(
                             preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
                         preferences.accessTokenExpiryTime =
                             preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
+                        Log.d(
+                            "AuthExpiry",
+                            "Proactive refreshToken() succeeded, new refreshTokenExpiryTime=" +
+                                "${preferences.refreshTokenExpiryTime}, accessTokenExpiryTime=" +
+                                "${preferences.accessTokenExpiryTime}"
+                        )
                         if (expediteLogin) {
                             getEmailFromJWT(loginResponse.access_token)?.let { email ->
                                 preferences.workspaceUserEmail = email
@@ -301,10 +319,12 @@ class WorkspaceViewModelImpl(
                             _loginState.value =
                                 WorkspaceLoginState.success(loginResponse, this, expediteLogin)
                         } ?: run {
+                            Log.e("AuthExpiry", "Proactive refresh response had no workspaceUserEmail set")
                             _loginState.value = WorkspaceLoginState.error("No user email found")
                         }
                     }
             } ?: run {
+                Log.e("AuthExpiry", "Proactive refreshToken() called with no stored workspaceRefreshToken")
                 _loginState.value = WorkspaceLoginState.error("No refresh token found")
             }
         }

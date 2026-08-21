@@ -73,7 +73,7 @@
             android:scaleType="centerInside"
             android:visibility="visible"
             app:srcCompat="@drawable/outline_accessibility_24"
-            app:tint="@color/primary" />
+            app:tint="#2D0369" />
 
         <de.westnordost.streetcomplete.screens.main.UploadButton
             android:id="@+id/uploadButton"
@@ -95,7 +95,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_outline_tune_24"
-            app:tint="@color/primary" />
+            app:tint="#2D0369" />
 
     </LinearLayout>
 

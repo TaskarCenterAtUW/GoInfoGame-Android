@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,7 +33,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +50,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.preferences.Theme
@@ -56,10 +60,13 @@ import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.settings.title
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.common.BackIcon
+import de.westnordost.streetcomplete.ui.common.NextScreenIcon
 import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
 import de.westnordost.streetcomplete.ui.common.dialogs.SimpleListPickerDialog
 import de.westnordost.streetcomplete.ui.common.settings.Preference
+import de.westnordost.streetcomplete.ui.common.settings.PreferenceCategory
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KSuspendFunction1
 
@@ -70,6 +77,7 @@ fun ProfileScreenNewContent(
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
     onClickBack: () -> Unit,
+    onClickShowQuestForms: () -> Unit,
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>,
 ) {
     var isBiometricEnabled by remember { mutableStateOf(preferences.isBiometricEnabled) }
@@ -78,6 +86,12 @@ fun ProfileScreenNewContent(
     val userName by viewModel.userName.collectAsState()
     var showThemeSelect by remember { mutableStateOf(false) }
     val theme by settingsViewModel.theme.collectAsState()
+    // hoisted to this level, not inside `if (showThemeSelect)` below - a scope declared there
+    // gets cancelled the moment showThemeSelect flips to false (the dialog's onDismissRequest,
+    // called before the deferred setTheme() below has a chance to run), killing the pending
+    // theme change before it ever executes
+    val themeSelectCoroutineScope = rememberCoroutineScope()
+    val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
 
     Column(
         modifier = Modifier
@@ -183,7 +197,22 @@ fun ProfileScreenNewContent(
                 SimpleListPickerDialog(
                     onDismissRequest = { showThemeSelect = false },
                     items = Theme.entries,
-                    onItemSelected = { settingsViewModel.setTheme(it) },
+                    onItemSelected = { newTheme ->
+                        // setTheme() triggers AppCompatDelegate.setDefaultNightMode(), which
+                        // recreates this Activity when the mode actually changes - if that
+                        // happens synchronously, it tears down the Compose state before the
+                        // radio-button highlight or the dialog's own dismiss ever gets to render,
+                        // making the tap look like it did nothing. Wait two frames first so both
+                        // have actually been drawn before triggering the recreate. Must launch on
+                        // the scope hoisted above (not one scoped to this `if` block), since
+                        // showThemeSelect flips to false and removes this block from composition
+                        // before these two frames elapse, which would cancel a scope declared here.
+                        themeSelectCoroutineScope.launch {
+                            withFrameNanos {}
+                            withFrameNanos {}
+                            settingsViewModel.setTheme(newTheme)
+                        }
+                    },
                     title = { Text(stringResource(Res.string.pref_title_theme_select)) },
                     selectedItem = theme,
                     getItemName = { stringResource(it.title) }
@@ -211,6 +240,16 @@ fun ProfileScreenNewContent(
                 onClick = { showThemeSelect = true },
             ) {
                 Text(stringResource(theme.title))
+            }
+
+
+            if (isDebugModeEnabled) {
+                PreferenceCategory("Debug") {
+                    Preference(
+                        name = "Show Quest Forms",
+                        onClick = onClickShowQuestForms
+                    ) { NextScreenIcon() }
+                }
             }
 
             // PreferenceRow(
@@ -254,6 +293,19 @@ fun ProfileScreenNewContent(
                         color = MaterialTheme.colorScheme.onSecondary
                     )
                 }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Text(
+                    text = "Version ${BuildConfig.VERSION_NAME}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .padding(8.dp)
+                )
             }
         }
     }

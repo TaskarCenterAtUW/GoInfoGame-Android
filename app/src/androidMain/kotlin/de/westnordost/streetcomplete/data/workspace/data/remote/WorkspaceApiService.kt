@@ -112,6 +112,14 @@ class WorkspaceApiService(
                     parameter("user_name", emailId)
                 }
             }
+            // every field in UserInfoResponse is nullable, so a non-OK response (e.g. 404 when
+            // the profile isn't found) that happens to be a JSON object still deserializes
+            // "successfully" into an all-null UserInfoResponse instead of throwing - silently
+            // writing null workspaceUserId/workspaceUserName with no visible error. Must check
+            // status explicitly to catch that case.
+            if (response.status != HttpStatusCode.OK) {
+                throw Exception("Failed to load user profile {${response.bodyAsText()}}")
+            }
             return response.body<UserInfoResponse>()
         } catch (e: Exception) {
             throw Exception(e.message)
@@ -190,44 +198,43 @@ class WorkspaceApiService(
 
     suspend fun refreshToken(refreshToken: String): LoginResponse {
         val url = environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token"
-        try {
 
-            // a transient failure here (network blip, backend 5xx, rate limit) must not be
-            // treated the same as an actually invalid/expired refresh token - both used to
-            // surface as the same thrown Exception below, which WorkSpaceActivity treats as
-            // fatal (force logout) with zero retry.
-            val response = retryOnTransientHttpFailure {
-                performHttpCallWithFirebaseTracing(
-                    client = httpClient,
-                    url = url,
-                    method = HttpMethod.Get
-                ) {
-                    post(url) {
-                        // deliberately no bearerAuth here - this call fires precisely when the access
-                        // token is expired/near-expiry, so attaching it as Authorization risks the
-                        // server rejecting the request before it even looks at the refresh token. The
-                        // reactive refresh path (refreshJwtToken() in ApplicationModule.kt) hits the
-                        // same endpoint the same way, unauthenticated.
-                        //
-                        // the API takes the refresh token as the "refresh_token" header, not the body
-                        // (confirmed against the API's own curl example) - body must stay empty.
-                        header("refresh_token", refreshToken)
-                    }
+        // a transient failure here (network blip, backend 5xx, rate limit) must not be
+        // treated the same as an actually invalid/expired refresh token - retryOnTransientHttpFailure
+        // smooths over short blips, but once it gives up the exception (e.g. UnresolvedAddressException
+        // when the device has no connectivity at all) must propagate as-is rather than being flattened
+        // into a generic Exception below - WorkspaceViewModel needs the real type to tell "can't reach
+        // the server" apart from WorkspaceAuthRejectedException ("server rejected the refresh token"),
+        // since only the latter should force a logout.
+        val response = retryOnTransientHttpFailure {
+            performHttpCallWithFirebaseTracing(
+                client = httpClient,
+                url = url,
+                method = HttpMethod.Get
+            ) {
+                post(url) {
+                    // deliberately no bearerAuth here - this call fires precisely when the access
+                    // token is expired/near-expiry, so attaching it as Authorization risks the
+                    // server rejecting the request before it even looks at the refresh token. The
+                    // reactive refresh path (refreshJwtToken() in ApplicationModule.kt) hits the
+                    // same endpoint the same way, unauthenticated.
+                    //
+                    // the API takes the refresh token as the "refresh_token" header, not the body
+                    // (confirmed against the API's own curl example) - body must stay empty.
+                    header("refresh_token", refreshToken)
                 }
             }
-            if (response.status == HttpStatusCode.OK) {
-                val loginResponse = response.body<LoginResponse>()
-                // same stale-token-cache issue as loginToWorkspace() - persist + clear here too,
-                // not just after the ViewModel's own redundant preferences write
-                updateTokens(loginResponse.access_token, loginResponse.refresh_token)
-                return loginResponse
-            } else {
-                throw Exception("Refresh token failed {${response.bodyAsText()}}")
-            }
-
-            // if OSM server does not return valid JSON, it is the server's fault, hence
-        } catch (e: Exception) {
-            throw Exception(e.message)
+        }
+        if (response.status == HttpStatusCode.OK) {
+            val loginResponse = response.body<LoginResponse>()
+            // same stale-token-cache issue as loginToWorkspace() - persist + clear here too,
+            // not just after the ViewModel's own redundant preferences write
+            updateTokens(loginResponse.access_token, loginResponse.refresh_token)
+            return loginResponse
+        } else {
+            // the server actively responded that the refresh token is no longer valid - this is
+            // the only case that legitimately means "session expired, log out"
+            throw WorkspaceAuthRejectedException("Refresh token failed {${response.bodyAsText()}}")
         }
     }
 
@@ -262,3 +269,7 @@ class WorkspaceApiService(
         }
     }
 }
+
+// distinct from a network/IO failure - only thrown when the server actively responded that the
+// refresh token itself is invalid/expired, which is the one case that should force a logout
+class WorkspaceAuthRejectedException(message: String) : Exception(message)

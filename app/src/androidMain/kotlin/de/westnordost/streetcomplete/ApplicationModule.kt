@@ -84,6 +84,11 @@ private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
                     refreshJwtToken(preferences, environmentManager)
 
                 if (newAccessToken == null) {
+                    Log.w(
+                        "AuthExpiry",
+                        "Ktor Auth plugin's 401-triggered refresh returned null - forcing logout " +
+                            "and relaunching WorkSpaceActivity with the Session Expired alert"
+                    )
                     preferences.workspaceLogin = false
                     //Launch workspaceActivity
                     val intent = Intent(context, WorkSpaceActivity::class.java)
@@ -227,11 +232,22 @@ suspend fun refreshJwtToken(
                 preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
             preferences.accessTokenExpiryTime =
                 preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
+            Log.d(
+                "AuthExpiry",
+                "Reactive refresh (Ktor Auth 401 trigger) succeeded, new refreshTokenExpiryTime=" +
+                    "${preferences.refreshTokenExpiryTime}, accessTokenExpiryTime=${preferences.accessTokenExpiryTime}"
+            )
 
             jsonResponse.access_token
-        } else null
+        } else {
+            Log.w(
+                "AuthExpiry",
+                "Reactive refresh (Ktor Auth 401 trigger) failed: HTTP ${response.status}, body=${response.bodyAsText()}"
+            )
+            null
+        }
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e("AuthExpiry", "Reactive refresh (Ktor Auth 401 trigger) threw", e)
         null
     }
 }

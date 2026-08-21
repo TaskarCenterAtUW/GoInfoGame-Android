@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat
 import com.russhwolf.settings.SettingsListener
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.BaseActivity
+import de.westnordost.streetcomplete.screens.settings.SettingsActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.creds_manager.BiometricHelper
@@ -34,6 +35,9 @@ class UserActivity : BaseActivity() {
                         settingsViewModel,
                         preferences,
                         onClickBack = { finish() },
+                        onClickShowQuestForms = {
+                            startActivity(SettingsActivity.createLaunchShowQuestFormsIntent(this))
+                        },
                         onBiometricEnabledChanged = ::onBiometricEnabledChanged
                     )
                 }

@@ -61,13 +61,18 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
         }
 
         val launchQuestSelection = intent.getBooleanExtra(EXTRA_LAUNCH_QUEST_SETTINGS, false)
+        val launchShowQuestForms = intent.getBooleanExtra(EXTRA_LAUNCH_SHOW_QUEST_FORMS, false)
         binding.navHost.setContent {
             AppTheme {
                 Surface {
                     SettingsNavHost(
                         onClickBack = { finish() },
                         onClickShowQuestTypeForDebug = ::onClickQuestType,
-                        startDestination = if (launchQuestSelection) SettingsDestination.QuestSelection else null
+                        startDestination = when {
+                            launchQuestSelection -> SettingsDestination.QuestSelection
+                            launchShowQuestForms -> SettingsDestination.ShowQuestForms
+                            else -> null
+                        }
                     )
                 }
             }
@@ -218,6 +223,12 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
                 putExtra(EXTRA_LAUNCH_QUEST_SETTINGS, true)
             }
 
+        fun createLaunchShowQuestFormsIntent(context: Context) =
+            Intent(context, SettingsActivity::class.java).apply {
+                putExtra(EXTRA_LAUNCH_SHOW_QUEST_FORMS, true)
+            }
+
         private const val EXTRA_LAUNCH_QUEST_SETTINGS = "launch_quest_settings"
+        private const val EXTRA_LAUNCH_SHOW_QUEST_FORMS = "launch_show_quest_forms"
     }
 }

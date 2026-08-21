@@ -142,6 +142,13 @@ fun LoginScreen(
                 snackBarMessage = (loginState as WorkspaceLoginState.Error).error
             }
 
+            is WorkspaceLoginState.NetworkError -> {
+                // login attempt couldn't reach the server (no connectivity/DNS failure) -
+                // surface the same as a regular error here so the user can retry
+                isLoading = false
+                snackBarMessage = (loginState as WorkspaceLoginState.NetworkError).error
+            }
+
             is WorkspaceLoginState.Success -> {
                 snackBarMessage = null
                 val state = loginState as WorkspaceLoginState.Success
@@ -402,7 +409,7 @@ fun LoginCard(
                     val context = LocalContext.current
                     var visibility by rememberSaveable { mutableStateOf(false) }
                     OutlinedTextField(
-                        value = email.value, onValueChange = { newText -> email.value = newText },
+                        value = email.value, onValueChange = { newText -> email.value = newText.trim() },
                         label = {
                             Text(
                                 text = stringResource(
@@ -465,7 +472,7 @@ fun LoginCard(
                     )
                     OutlinedTextField(
                         value = password.value,
-                        onValueChange = { newText -> password.value = newText },
+                        onValueChange = { newText -> password.value = newText.trim() },
                         label = {
                             Text(
                                 text = stringResource(
