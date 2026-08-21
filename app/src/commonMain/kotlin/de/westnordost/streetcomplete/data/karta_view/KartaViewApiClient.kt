@@ -16,6 +16,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.delay
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
@@ -115,23 +116,46 @@ class KartaViewApiClient(
     }
 
     private suspend fun getPhotoLthUrl(sequenceId: String, sequenceIndex: Int): String {
-        val response = httpClient.get(BASE_URL + "2.0/photo/") {
-            parameter("access_token", prefs.kartaViewAccessToken)
-            parameter("sequenceId", sequenceId)
-            parameter("sequenceIndex", sequenceIndex)
+        // KartaView's lookup endpoint is eventually consistent - right after closeSequence()
+        // succeeds, a lookup for the photo that was just uploaded can still come back 200 OK
+        // with no data yet because the server hasn't indexed it. That is not a real failure, so
+        // retry with backoff before giving up, instead of failing the whole edit upload (and
+        // leaving the photo/sequence already created on KartaView orphaned, since the caller
+        // will re-upload from scratch on the next attempt).
+        var attempt = 1
+        var delayMillis = 1000L
+        while (true) {
+            val response = httpClient.get(BASE_URL + "2.0/photo/") {
+                parameter("access_token", prefs.kartaViewAccessToken)
+                parameter("sequenceId", sequenceId)
+                parameter("sequenceIndex", sequenceIndex)
+            }
+            if (response.status == HttpStatusCode.OK) {
+                val url = response.body<PhotoLookupResponse>().result?.data?.firstOrNull()?.imageLthUrl
+                if (url != null) return url
+            }
+            if (attempt >= MAX_PHOTO_LOOKUP_ATTEMPTS) {
+                throw KartaViewException(
+                    "Failed to retrieve photo URL. Please try again later " + response.status
+                )
+            }
+            Log.w(
+                TAG,
+                "Photo lookup for sequence $sequenceId#$sequenceIndex returned no data yet " +
+                    "(attempt $attempt/$MAX_PHOTO_LOOKUP_ATTEMPTS), retrying in ${delayMillis}ms"
+            )
+            delay(delayMillis)
+            delayMillis *= 2
+            attempt++
         }
-        if (response.status == HttpStatusCode.OK) {
-            val url = response.body<PhotoLookupResponse>().result?.data?.firstOrNull()?.imageLthUrl
-            if (url != null) return url
-        }
-        throw KartaViewException(
-            "Failed to retrieve photo URL. Please try again later " + response.status
-        )
     }
 
     companion object {
         private const val TAG = "KartaViewApiClient"
         private const val BASE_URL = "https://api.openstreetcam.org/"
+        // 1s, 2s, 4s, 8s between the 5 attempts - covers the observed sub-second indexing lag
+        // with headroom, without blowing up the upload worker's run time if it takes longer.
+        private const val MAX_PHOTO_LOOKUP_ATTEMPTS = 5
     }
 }
 
