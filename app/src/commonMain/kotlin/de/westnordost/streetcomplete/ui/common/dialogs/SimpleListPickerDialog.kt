@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,10 +55,14 @@ fun <T> SimpleListPickerDialog(
     contentColor: Color = contentColorFor(backgroundColor),
     properties: DialogProperties = DialogProperties(),
 ) {
-    val selected by remember { mutableStateOf(selectedItem) }
+    // must be a var, reassigned in select() below - was a val that was never updated, so the
+    // RadioButton highlight stayed frozen on whatever selectedItem was when the dialog first
+    // opened instead of reflecting the just-tapped item, making selection look unresponsive
+    var selected by remember { mutableStateOf<T?>(selectedItem) }
     val state = rememberLazyListState()
 
     fun select(item: T) {
+        selected = item
         onDismissRequest()
         onItemSelected(item)
     }
