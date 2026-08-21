@@ -1104,7 +1104,7 @@ class MainActivity :
             }
 
             else -> {
-                setIsNavigationMode(!mapFragment.isNavigationMode)
+                // setIsNavigationMode(!mapFragment.isNavigationMode)
             }
         }
     }

@@ -63,6 +63,15 @@
         android:gravity="center_vertical|end"
         android:orientation="horizontal">
 
+        <de.westnordost.streetcomplete.screens.main.UploadButton
+            android:id="@+id/uploadButton"
+            style="@style/RoundPurpleButton"
+            android:layout_width="@dimen/map_button_size"
+            android:layout_height="@dimen/map_button_size"
+            android:contentDescription="@string/action_upload"
+            app:layout_constraintRight_toLeftOf="@+id/overlaysButton"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <ImageButton
             android:id="@+id/followModeButton"
             style="@style/RoundPurpleButton"
@@ -74,15 +83,6 @@
             android:visibility="visible"
             app:srcCompat="@drawable/outline_accessibility_24"
             app:tint="#2D0369" />
-
-        <de.westnordost.streetcomplete.screens.main.UploadButton
-            android:id="@+id/uploadButton"
-            style="@style/RoundPurpleButton"
-            android:layout_width="@dimen/map_button_size"
-            android:layout_height="@dimen/map_button_size"
-            android:contentDescription="@string/action_upload"
-            app:layout_constraintRight_toLeftOf="@+id/overlaysButton"
-            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
             android:id="@+id/mainMenuButton"
