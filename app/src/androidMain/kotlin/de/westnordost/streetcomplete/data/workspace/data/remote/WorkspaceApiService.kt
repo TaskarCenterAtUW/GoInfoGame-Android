@@ -112,6 +112,14 @@ class WorkspaceApiService(
                     parameter("user_name", emailId)
                 }
             }
+            // every field in UserInfoResponse is nullable, so a non-OK response (e.g. 404 when
+            // the profile isn't found) that happens to be a JSON object still deserializes
+            // "successfully" into an all-null UserInfoResponse instead of throwing - silently
+            // writing null workspaceUserId/workspaceUserName with no visible error. Must check
+            // status explicitly to catch that case.
+            if (response.status != HttpStatusCode.OK) {
+                throw Exception("Failed to load user profile {${response.bodyAsText()}}")
+            }
             return response.body<UserInfoResponse>()
         } catch (e: Exception) {
             throw Exception(e.message)
