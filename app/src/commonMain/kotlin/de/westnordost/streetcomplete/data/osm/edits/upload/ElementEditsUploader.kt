@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.data.osm.edits.upload
 
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.karta_view.KartaViewException
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
@@ -52,10 +53,19 @@ class ElementEditsUploader(
         while (true) {
             val edit = elementEditsController.getOldestUnsynced() ?: break
             val getIdProvider: () -> ElementIdProvider = { elementEditsController.getIdProvider(edit.id) }
-            /* the sync of local change -> API and its response should not be cancellable because
-             * otherwise an inconsistency in the data would occur. E.g. no "star" for an uploaded
-             * change, a change could be uploaded twice etc */
-            withContext(scope.coroutineContext) { uploadEdit(edit, getIdProvider) }
+            try {
+                /* the sync of local change -> API and its response should not be cancellable
+                 * because otherwise an inconsistency in the data would occur. E.g. no "star" for
+                 * an uploaded change, a change could be uploaded twice etc */
+                withContext(scope.coroutineContext) { uploadEdit(edit, getIdProvider) }
+            } catch (e: KartaViewException) {
+                /* the edit's photos failed to upload (plain network failure) - leave the edit
+                 * unsynced for the next sync attempt instead of letting this bubble up and abort
+                 * uploading of any other edits still queued, e.g. note edits (see
+                 * uploadPendingPhotos KDoc) */
+                Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
+                break
+            }
         }
     } }
 

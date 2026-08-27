@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.osmnotes.edits
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.karta_view.KartaViewException
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
@@ -63,10 +64,17 @@ class NoteEditsUploader(
     private suspend fun uploadEdits() {
         while (true) {
             val edit = noteEditsController.getOldestUnsynced() ?: break
-            /* the sync of local change -> API and its response should not be cancellable because
-             * otherwise an inconsistency in the data would occur. E.g. a note could be uploaded
-             * twice  */
-            withContext(scope.coroutineContext) { uploadEdit(edit) }
+            try {
+                /* the sync of local change -> API and its response should not be cancellable
+                 * because otherwise an inconsistency in the data would occur. E.g. a note could
+                 * be uploaded twice */
+                withContext(scope.coroutineContext) { uploadEdit(edit) }
+            } catch (e: KartaViewException) {
+                // photo upload failed (plain network failure) - leave the note edit unsynced for
+                // the next sync attempt instead of aborting the whole upload (see class KDoc)
+                Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
+                break
+            }
         }
     }
 
