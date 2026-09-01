@@ -33,7 +33,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 25
+    const val DB_VERSION = 26
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -329,6 +329,11 @@ object DatabaseInitializer {
         if (oldVersion <= 24 && newVersion >= 25) {
             // photos attached to not-yet-synced create-feature edits
             db.exec(FeaturePhotosTable.CREATE)
+        }
+
+        if (oldVersion <= 25 && newVersion >= 26) {
+            // per-workspace conflict-resolution mode (WorkspaceDetailsResponse.overrideConflicts)
+            db.tryExec("ALTER TABLE work_spaces ADD COLUMN overrideConflicts INTEGER NOT NULL DEFAULT 0")
         }
     }
 }

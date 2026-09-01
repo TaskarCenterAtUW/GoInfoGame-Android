@@ -18,6 +18,8 @@ data class WorkspaceDetailsResponse(
     val description: String?,
     @SerialName("externalAppAccess")
     val externalAppAccess: Int,
+    @SerialName("overrideConflicts")
+    val overrideConflicts: Boolean?,
     @SerialName("id")
     val id: Int,
     @SerialName("imageryListDef")

@@ -7,10 +7,12 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.changesApplied
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.isGeometrySubstantiallyDifferent
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.mineValue
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.rebuiltAgainst
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ChangesetTooLargeException
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
@@ -20,6 +22,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataChanges
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
 import de.westnordost.streetcomplete.data.osm.mapdata.RemoteMapDataRepository
+import de.westnordost.streetcomplete.data.workspace.WorkspaceDao
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 
 class ElementEditUploader(
@@ -27,6 +30,7 @@ class ElementEditUploader(
     private val mapDataApi: MapDataApiClient,
     private val mapDataController: MapDataController,
     private val pendingTagConflictsController: PendingTagConflictsController,
+    private val workspaceDao: WorkspaceDao,
 ) {
 
     /** Apply the given change to the given element and upload it
@@ -99,15 +103,21 @@ class ElementEditUploader(
 
     /**
      * Applies a tag-update edit onto the element's current (freshly fetched) remote state, but
-     * unlike other edit types, a per-key value collision does not discard the whole edit:
-     * - if any key genuinely collides, the *whole edit* is held back: nothing is uploaded,
-     *   a [PendingTagConflict] is recorded per colliding key, and
+     * unlike other edit types, a per-key value collision does not discard the whole edit. What
+     * happens to a real collision depends on the edit's workspace's conflict-resolution mode
+     * (`Workspace.overrideConflicts`, looked up via [workspaceDao] by `edit.workspaceId`):
+     * - OVERRIDE (`overrideConflicts == true`): every colliding key is auto-resolved in favor of
+     *   the app's own value - rebuilt as a diff against the server's current value (same math as
+     *   [PendingTagConflictsController.resolveKeepMine]) - and uploaded immediately alongside the
+     *   non-conflicting tags, with no pending conflict ever created.
+     * - RESOLVE (default - `overrideConflicts` false or null/missing): the *whole edit* is held
+     *   back: nothing is uploaded, a [PendingTagConflict] is recorded per colliding key, and
      *   [HeldForConflictResolutionException] is thrown so the caller blocks the edit until the
      *   user has decided per tag. The decisions are folded into the edit and it then uploads
      *   normally, as one unit - so the edit history always shows exactly what was pushed.
      *
      * Structural issues (element deleted, geometry changed substantially) are still a hard,
-     * all-or-nothing failure - there's no sensible per-tag override for those.
+     * all-or-nothing failure in both modes - there's no sensible per-tag override for those.
      */
     private suspend fun uploadTagChangesUsingRemoteRepo(edit: ElementEdit, action: UpdateElementTagsAction): MapDataUpdates {
         val original = action.originalElement
@@ -119,8 +129,11 @@ class ElementEditUploader(
         }
 
         val realConflicts = action.changes.getConflictsTo(currentElement.tags).toSet()
+        val isOverrideMode = realConflicts.isNotEmpty() &&
+            workspaceDao.get(edit.workspaceId.toLong()).firstOrNull()?.overrideConflicts == true
 
-        if (realConflicts.isNotEmpty()) {
+        if (realConflicts.isNotEmpty() && !isOverrideMode) {
+            // RESOLVE mode (the default): hold the edit back for the user to decide per tag
             for (conflict in realConflicts) {
                 pendingTagConflictsController.add(
                     PendingTagConflict(
@@ -142,8 +155,17 @@ class ElementEditUploader(
             throw HeldForConflictResolutionException(currentElement)
         }
 
+        // OVERRIDE mode (or no real conflicts): keep the app's own value for any colliding key,
+        // rebuilt as a diff against the server's current value so applying it can't conflict again
+        val effectiveChanges = if (realConflicts.isEmpty()) action.changes else {
+            val conflictingKeys = realConflicts.mapTo(HashSet()) { it.key }
+            StringMapChanges(action.changes.changes.map { change ->
+                if (change.key in conflictingKeys) change.rebuiltAgainst(currentElement.tags[change.key]) else change
+            })
+        }
+
         val changes = MapDataChanges(
-            modifications = listOf(currentElement.changesApplied(action.changes))
+            modifications = listOf(currentElement.changesApplied(effectiveChanges))
         )
         return try {
             uploadChanges(edit, changes, false)
