@@ -81,6 +81,10 @@ import kotlin.math.sqrt
 
 private const val DISTANCE_FOR_ARRIVED_METERS = 30.0
 private const val DISTANCE_FOR_NEARBY_METERS = 250.0
+// Minimum time between two "arrived" sheets, even for different quests - keeps dense quest
+// clusters (many quests within DISTANCE_FOR_ARRIVED_METERS of each other) from popping a new
+// sheet every time the "nearest" quest changes as the user wanders or the GPS fix jitters.
+private const val ARRIVED_SHEET_COOLDOWN_MILLIS = 45_000L
 
 @Composable
 fun FollowModeScreen(
@@ -98,6 +102,12 @@ fun FollowModeScreen(
     val displayedLocation by mapFragment.displayedLocationFlow.collectAsState(initial = null)
     val refreshTrigger by viewModel.refreshCounter.collectAsState()
     val showProgress = remember { mutableStateOf(false) }
+    // Quests whose "arrived" sheet has already been shown this session - shown at most once each,
+    // regardless of whether the user answers, hides, or dismisses it.
+    val shownArrivedQuestIds = remember { mutableStateListOf<QuestKey>() }
+    // Timestamp of the last "arrived" sheet shown for any quest - enforces a cooldown so a
+    // cluster of nearby quests can't each trigger their own sheet back-to-back.
+    val lastArrivedShownAtMillis = remember { mutableStateOf(0L) }
 
     LaunchedEffect(refreshTrigger, displayedLocation) {
         withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -133,7 +143,9 @@ fun FollowModeScreen(
                     isUndoAvailable,
                     onUndoEdits,
                     onBackToMap,
-                    onHideQuest
+                    onHideQuest,
+                    shownArrivedQuestIds,
+                    lastArrivedShownAtMillis
                 )
             }
         }
@@ -274,6 +286,8 @@ private fun QuestListUI(
     onUndoEdits: () -> Unit,
     onBackToMap: () -> Unit,
     onHideQuest: (questKey: QuestKey) -> Unit,
+    shownArrivedQuestIds: SnapshotStateList<QuestKey>,
+    lastArrivedShownAtMillis: MutableState<Long>,
 ) {
     Column(
         modifier = Modifier
@@ -294,6 +308,8 @@ private fun QuestListUI(
             quests = questsState,
             displayedLocation,
             onHideQuest,
+            shownArrivedQuestIds,
+            lastArrivedShownAtMillis,
             modifier = Modifier
                 .weight(1f, fill = true)
                 .padding(vertical = 8.dp)
@@ -440,6 +456,8 @@ private fun QuestList(
     quests: List<QuestUiModel>,
     location: Location?,
     onHideQuest: (questKey: QuestKey) -> Unit,
+    shownArrivedQuestIds: SnapshotStateList<QuestKey>,
+    lastArrivedShownAtMillis: MutableState<Long>,
     modifier: Modifier = Modifier,
 ) {
     var showArrivedBottomSheet by remember { mutableStateOf(false) }
@@ -448,10 +466,13 @@ private fun QuestList(
     LaunchedEffect(key1 = location) {
         val quest = quests.minByOrNull { it.distanceMeters } ?: return@LaunchedEffect
         if (quest.distanceMeters <= DISTANCE_FOR_ARRIVED_METERS) {
-            if (nearestQuest?.id == quest.id) return@LaunchedEffect
+            if (quest.id in shownArrivedQuestIds) return@LaunchedEffect
+            val now = System.currentTimeMillis()
+            if (now - lastArrivedShownAtMillis.value < ARRIVED_SHEET_COOLDOWN_MILLIS) return@LaunchedEffect
             nearestQuest = quest
             showArrivedBottomSheet = true
-            return@LaunchedEffect
+            shownArrivedQuestIds.add(quest.id)
+            lastArrivedShownAtMillis.value = now
         }
     }
     Column(
