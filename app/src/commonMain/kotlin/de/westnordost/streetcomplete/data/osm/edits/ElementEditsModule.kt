@@ -11,7 +11,7 @@ import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChange
 import org.koin.dsl.module
 
 val elementEditsModule = module {
-    factory { ElementEditUploader(get(), get(), get(), get()) }
+    factory { ElementEditUploader(get(), get(), get(), get(), get()) }
 
     factory { ElementEditsDao(get(), get(), get()) }
     factory { ElementIdProviderDao(get()) }
