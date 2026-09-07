@@ -219,6 +219,12 @@ kotlin {
 
                 // scheduling background jobs
                 implementation("androidx.work:work-runtime-ktx:2.11.0")
+                // bumped from whatever work-runtime-ktx pulls in transitively (1.1.0) so its
+                // version matches what androidx.test.ext:junit 1.3.0 requires (androidTest's
+                // classpath is forced by AGP's "consistent resolution" to match this app's
+                // runtime classpath exactly, so a mismatch here fails androidTest dependency
+                // resolution, not just this module's own build)
+                implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 
                 // HTTP Client
                 implementation("io.ktor:ktor-client-core:3.3.3")
@@ -275,6 +281,9 @@ kotlin {
                 // android tests
                 implementation("androidx.test:runner:1.7.0")
                 implementation("androidx.test:rules:1.7.0")
+                implementation("androidx.test.ext:junit:1.3.0")
+                implementation("androidx.test.espresso:espresso-core:3.7.0")
+                implementation("androidx.compose.ui:ui-test-junit4:1.9.3")
             }
         }
     }
@@ -353,6 +362,7 @@ android {
 
     dependencies {
         debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
+        debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.3")
     }
 }
 
