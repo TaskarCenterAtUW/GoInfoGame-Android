@@ -226,6 +226,29 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
         }
     }
 
+    /** Same live-target-resolution as [CustomTextWatcher] (writes into [givenItems] by questId,
+     *  not the snapshot `item` a rebind hands to `bind()`) but without the numeric validation -
+     *  kept separate rather than reusing/generalizing [CustomTextWatcher] since that class also
+     *  owns min/max validation and [TextInputLayout] error state that don't apply to TextEntry. */
+    inner class TextEntryTextWatcher : TextWatcher {
+        private var position = 0
+        fun updatePosition(position: Int) {
+            this.position = position
+        }
+
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            val item = items[position]
+            val index = givenItems.indexOfFirst { it.questId == item.questId }
+            givenItems[index].userInput = UserInput.Single(s.toString())
+        }
+
+        override fun afterTextChanged(s: Editable?) {
+        }
+    }
+
     inner class InputViewHolder(
         val binding: CellLongFormItemInputBinding,
         private val customTextWatcher: CustomTextWatcher,
@@ -283,6 +306,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
 
     inner class TextEntryViewHolder(
         val binding: CellLongFormTextEntryItemBinding,
+        private val textEntryTextWatcher: TextEntryTextWatcher,
     ) : ViewHolder(binding.root) {
 
         init {
@@ -306,6 +330,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             binding.description.text = item.questDescription
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
+            binding.input.editText?.removeTextChangedListener(textEntryTextWatcher)
             binding.input.editText?.setText((item.userInput as? UserInput.Single)?.answer ?: "")
             if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.questImage.visibility = View.VISIBLE
@@ -322,21 +347,8 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             } else {
                 binding.questImage.visibility = View.GONE
             }
-            binding.input.editText?.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ) {
-                }
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    item.userInput = UserInput.Single(s.toString())
-                }
-
-                override fun afterTextChanged(s: Editable?) {}
-            })
+            textEntryTextWatcher.updatePosition(position)
+            binding.input.editText?.addTextChangedListener(textEntryTextWatcher)
         }
     }
 
@@ -644,7 +656,7 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
                     parent,
                     false
                 )
-                return TextEntryViewHolder(binding)
+                return TextEntryViewHolder(binding, TextEntryTextWatcher())
             }
 
             else -> {
