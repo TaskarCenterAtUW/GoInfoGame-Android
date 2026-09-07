@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.data.karta_view
 
 import de.westnordost.streetcomplete.data.karta_view.domain.model.CreateSequenceResponse
+import de.westnordost.streetcomplete.data.karta_view.domain.model.ImageUploadResponse
 import de.westnordost.streetcomplete.data.karta_view.domain.model.PhotoLookupResponse
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -33,10 +34,15 @@ class KartaViewApiClient(
      *  uploaded image, in the same order.
      *
      *  @throws KartaViewException naming the step that failed */
-    suspend fun upload(imagePaths: List<String>, position: LatLon, bearing: Float = 0f): List<String> {
+    suspend fun upload(
+        imagePaths: List<String>,
+        position: LatLon,
+        bearing: Float = 0f,
+    ): List<String> {
         val images = imagePaths.mapNotNull { path ->
             val file = Path(path)
-            if (fileSystem.exists(file)) fileSystem.source(file).buffered().readByteArray() else null
+            if (fileSystem.exists(file)) fileSystem.source(file).buffered()
+                .readByteArray() else null
         }
         return uploadImages(images, position, bearing)
     }
@@ -46,14 +52,18 @@ class KartaViewApiClient(
      *  image, in the same order.
      *
      *  @throws KartaViewException naming the step that failed */
-    suspend fun uploadImages(images: List<ByteArray>, position: LatLon, bearing: Float = 0f): List<String> {
+    suspend fun uploadImages(
+        images: List<ByteArray>,
+        position: LatLon,
+        bearing: Float = 0f,
+    ): List<String> {
         if (images.isEmpty()) return emptyList()
         val sequenceId = createSequence()
-        images.forEachIndexed { index, image ->
+        val photoIds = images.mapIndexed { index, image ->
             uploadPhoto(sequenceId, index + 1, image, position, bearing)
         }
         closeSequence(sequenceId)
-        return List(images.size) { index -> getPhotoLthUrl(sequenceId, index + 1) }
+        return photoIds.map { photoId -> getPhotoLthUrl(photoId) }
     }
 
     private suspend fun createSequence(): String {
@@ -78,7 +88,7 @@ class KartaViewApiClient(
         image: ByteArray,
         position: LatLon,
         bearing: Float,
-    ) {
+    ): String {
         val response = httpClient.post(BASE_URL + "1.0/photo/") {
             setBody(MultiPartFormDataContent(formData {
                 append("access_token", prefs.kartaViewAccessToken)
@@ -96,8 +106,12 @@ class KartaViewApiClient(
             throw KartaViewException(
                 "Failed to upload image to KartaView. Please try again later " + response.status
             )
+        } else {
+            val imageResponse = response.body<ImageUploadResponse>()
+            val imageId = imageResponse.osv.photo.id
+            Log.d(TAG, "Image $sequenceIndex uploaded to sequence $sequenceId and photo ID $imageId")
+            return imageId
         }
-        Log.d(TAG, "Image $sequenceIndex uploaded to sequence $sequenceId")
     }
 
     private suspend fun closeSequence(sequenceId: String) {
@@ -115,7 +129,7 @@ class KartaViewApiClient(
         Log.d(TAG, "Sequence closed: ${response.body<CreateSequenceResponse>().status.httpMessage}")
     }
 
-    private suspend fun getPhotoLthUrl(sequenceId: String, sequenceIndex: Int): String {
+    private suspend fun getPhotoLthUrl(photoId: String): String {
         // KartaView's lookup endpoint is eventually consistent - right after closeSequence()
         // succeeds, a lookup for the photo that was just uploaded can still come back 200 OK
         // with no data yet because the server hasn't indexed it. That is not a real failure, so
@@ -125,13 +139,11 @@ class KartaViewApiClient(
         var attempt = 1
         var delayMillis = 1000L
         while (true) {
-            val response = httpClient.get(BASE_URL + "2.0/photo/") {
+            val response = httpClient.get(BASE_URL + "2.0/photo/$photoId") {
                 parameter("access_token", prefs.kartaViewAccessToken)
-                parameter("sequenceId", sequenceId)
-                parameter("sequenceIndex", sequenceIndex)
             }
             if (response.status == HttpStatusCode.OK) {
-                val url = response.body<PhotoLookupResponse>().result?.data?.firstOrNull()?.imageLthUrl
+                val url = response.body<PhotoLookupResponse>().result?.data?.imageLthUrl
                 if (url != null) return url
             }
             if (attempt >= MAX_PHOTO_LOOKUP_ATTEMPTS) {
@@ -141,7 +153,7 @@ class KartaViewApiClient(
             }
             Log.w(
                 TAG,
-                "Photo lookup for sequence $sequenceId#$sequenceIndex returned no data yet " +
+                "Photo lookup for photo $photoId returned no data yet " +
                     "(attempt $attempt/$MAX_PHOTO_LOOKUP_ATTEMPTS), retrying in ${delayMillis}ms"
             )
             delay(delayMillis)
@@ -153,6 +165,7 @@ class KartaViewApiClient(
     companion object {
         private const val TAG = "KartaViewApiClient"
         private const val BASE_URL = "https://api.openstreetcam.org/"
+
         // 1s, 2s, 4s, 8s between the 5 attempts - covers the observed sub-second indexing lag
         // with headroom, without blowing up the upload worker's run time if it takes longer.
         private const val MAX_PHOTO_LOOKUP_ATTEMPTS = 5

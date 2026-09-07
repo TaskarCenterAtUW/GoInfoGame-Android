@@ -9,7 +9,7 @@ data class PhotoLookupResponse(
 
 @Serializable
 data class PhotoLookupResult(
-    val data: List<PhotoLookup> = emptyList()
+    val data: PhotoLookup? = null
 )
 
 @Serializable

@@ -6,6 +6,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Photo(
+    @SerialName("id")
+    val id : String,
     @SerialName("path")
     val path: String,
     @SerialName("photoName")

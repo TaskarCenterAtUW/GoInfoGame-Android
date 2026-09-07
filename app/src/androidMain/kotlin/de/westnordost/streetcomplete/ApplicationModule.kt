@@ -171,6 +171,14 @@ val appModule = module {
             install(ContentNegotiation) {
                 json(Json { ignoreUnknownKeys = true })
             }
+            install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        Log.d("KtorClient", message) // Avoid System.err
+                    }
+                }
+                level = LogLevel.ALL
+            }
             install(HttpRequestRetry) {
                 retryOnServerErrors(maxRetries = 3)
                 retryOnException(maxRetries = 3, retryOnTimeout = true)
