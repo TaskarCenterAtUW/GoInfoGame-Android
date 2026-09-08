@@ -101,6 +101,6 @@ tasks.register("updateStreetCompleteData") {
 
 subprojects {
     tasks.withType<Test>().configureEach {
-        enabled = false
+        enabled = true
     }
 }

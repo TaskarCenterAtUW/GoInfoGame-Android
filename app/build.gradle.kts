@@ -133,8 +133,8 @@ kotlin {
                 implementation("org.kotlincrypto.hash:sha2:0.8.0")
 
                 // XML
-                implementation("io.github.pdvrieze.xmlutil:core:0.91.2")
-                implementation("io.github.pdvrieze.xmlutil:core-io:0.91.2")
+                implementation("io.github.pdvrieze.xmlutil:core:0.91.3")
+                implementation("io.github.pdvrieze.xmlutil:core-io:0.91.3")
 
                 // YAML
                 implementation("com.charleskorn.kaml:kaml:0.97.0")
@@ -267,6 +267,11 @@ kotlin {
                 implementation(kotlin("test"))
 
                 implementation("io.ktor:ktor-client-mock:3.3.1")
+                // virtual-time coroutine test scheduler (runTest, Dispatchers.setMain) - needed
+                // for ViewModels using viewModelScope.launch/async
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                // StateFlow/Flow emission-sequence assertions (awaitItem/expectNoEvents etc.)
+                implementation("app.cash.turbine:turbine:1.2.0")
             }
         }
         androidUnitTest {

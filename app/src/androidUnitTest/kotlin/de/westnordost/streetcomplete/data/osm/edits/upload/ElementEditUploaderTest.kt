@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataChanges
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
+import de.westnordost.streetcomplete.data.workspace.WorkspaceDao
 import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.eq
 import de.westnordost.streetcomplete.testutils.mock
@@ -31,13 +32,15 @@ class ElementEditUploaderTest {
     private lateinit var mapDataController: MapDataController
     private lateinit var uploader: ElementEditUploader
     private lateinit var pendingTagConflict: PendingTagConflictsController
+    private lateinit var workspaceDao: WorkspaceDao
 
     @BeforeTest fun setUp() {
         changesetManager = mock()
         mapDataApi = mock()
         mapDataController = mock()
         pendingTagConflict = mock()
-        uploader = ElementEditUploader(changesetManager, mapDataApi, mapDataController, pendingTagConflict)
+        workspaceDao = mock()
+        uploader = ElementEditUploader(changesetManager, mapDataApi, mapDataController, pendingTagConflict, workspaceDao)
     }
 
     @Test fun `create new changeset when changeset is too large`(): Unit = runBlocking {
