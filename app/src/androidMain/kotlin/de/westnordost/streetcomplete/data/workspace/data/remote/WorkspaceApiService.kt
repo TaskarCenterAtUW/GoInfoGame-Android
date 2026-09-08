@@ -27,6 +27,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -41,6 +42,34 @@ class WorkspaceApiService(
     private val workspaceConfigProvider: WorkspaceConfigProvider,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
+
+    // maps a non-success HTTP status into a message meaningful to the end user, instead of
+    // showing raw response bodies or letting a failed body-parse produce a confusing
+    // SerializationException-derived message. Kept feature-local to this service rather than
+    // reusing the shared wrapApiClientExceptions (data/ApiClientExceptions.kt), since that relies
+    // on Ktor's expectSuccess throwing ClientRequestException/ServerResponseException, which this
+    // client doesn't have enabled - status checking here has to stay manual either way.
+    private fun httpErrorMessage(status: HttpStatusCode): String = when {
+        status == HttpStatusCode.Unauthorized -> "Your session has expired. Please log in again."
+        status == HttpStatusCode.Forbidden -> "You don't have permission to perform this action."
+        status == HttpStatusCode.NotFound -> "The requested information could not be found."
+        status == HttpStatusCode.RequestTimeout -> "The request timed out. Please check your connection and try again."
+        status == HttpStatusCode.TooManyRequests -> "Too many requests. Please wait a moment and try again."
+        status.value in 500..599 -> "The server is temporarily unavailable. Please try again later."
+        status.value in 400..499 -> "The request could not be completed. Please try again."
+        else -> "Something went wrong (error ${status.value}). Please try again."
+    }
+
+    // maps a caught network/parsing exception into a message meaningful to the end user. There's
+    // no HttpTimeout plugin installed on this client, so timeouts/connection resets from the CIO
+    // engine surface as raw java.io.IOException subtypes rather than a Ktor-specific exception.
+    private fun Throwable.toWorkspaceErrorMessage(): String = when (this) {
+        is UnresolvedAddressException -> "Please check your internet connection and try again."
+        is java.net.SocketTimeoutException -> "The server took too long to respond. Please try again."
+        is SerializationException -> "Received an unexpected response from the server. Please contact your workspace admin if this continues."
+        is java.io.IOException -> "Please check your internet connection and try again."
+        else -> message?.takeIf { it.isNotBlank() } ?: "Something went wrong. Please try again."
+    }
 
     @Serializable
     class User(val username: String, val password: String)
@@ -61,12 +90,13 @@ class WorkspaceApiService(
                 }
             }
 
+            if (!response.status.isSuccess()) {
+                throw Exception(httpErrorMessage(response.status))
+            }
             val responseBody = response.body<List<UserProjectGroupItem>>()
             return responseBody
-        } catch (e: UnresolvedAddressException) {
-            throw Exception("Please check your internet connection")
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 
@@ -89,12 +119,13 @@ class WorkspaceApiService(
                 }
             }
 
+            if (!response.status.isSuccess()) {
+                throw Exception(httpErrorMessage(response.status))
+            }
             val responseBody = response.body<List<Workspace>>()
             return responseBody
-        } catch (e: UnresolvedAddressException) {
-            throw Exception("Please check your internet connection")
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 
@@ -118,11 +149,16 @@ class WorkspaceApiService(
             // writing null workspaceUserId/workspaceUserName with no visible error. Must check
             // status explicitly to catch that case.
             if (response.status != HttpStatusCode.OK) {
-                throw Exception("Failed to load user profile {${response.bodyAsText()}}")
+                val message = if (response.status == HttpStatusCode.NotFound) {
+                    "User profile not found."
+                } else {
+                    httpErrorMessage(response.status)
+                }
+                throw Exception(message)
             }
             return response.body<UserInfoResponse>()
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 
@@ -143,13 +179,15 @@ class WorkspaceApiService(
 
             if (response.status == HttpStatusCode.NotFound) {
                 throw Exception("Failed. Workspace not found with ID : $workspaceId")
+            } else if (!response.status.isSuccess()) {
+                throw Exception(httpErrorMessage(response.status))
             }
 
             return response.body<WorkspaceDetailsResponse>()
         } catch (e: SerializationException) {
             throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")
         } catch (e: Exception) {
-            throw Exception(e.message?.take(100))
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 
@@ -172,13 +210,15 @@ class WorkspaceApiService(
                 val loginResponse = response.body<LoginResponse>()
                 updateTokens(loginResponse.access_token, loginResponse.refresh_token)
                 return loginResponse
+            } else if (response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden) {
+                throw Exception("Invalid username or password.")
             } else {
-                throw Exception("Login failed {${response.bodyAsText()}}")
+                throw Exception(httpErrorMessage(response.status))
             }
 
             // if OSM server does not return valid JSON, it is the server's fault, hence
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 
@@ -234,7 +274,7 @@ class WorkspaceApiService(
         } else {
             // the server actively responded that the refresh token is no longer valid - this is
             // the only case that legitimately means "session expired, log out"
-            throw WorkspaceAuthRejectedException("Refresh token failed {${response.bodyAsText()}}")
+            throw WorkspaceAuthRejectedException(httpErrorMessage(response.status))
         }
     }
 
@@ -258,6 +298,9 @@ class WorkspaceApiService(
             ) {
                 get(url)
             }
+            if (!response.status.isSuccess()) {
+                throw Exception(httpErrorMessage(response.status))
+            }
             if (response.status == HttpStatusCode.OK) {
                 preferences.configLastFetchTime = System.currentTimeMillis()
                 preferences.configJson = response.bodyAsText()
@@ -265,7 +308,7 @@ class WorkspaceApiService(
 
             return json.decodeFromString<AppUpdateCheckerResponse>(response.bodyAsText())
         } catch (e: Exception) {
-            throw Exception(e.message)
+            throw Exception(e.toWorkspaceErrorMessage())
         }
     }
 }

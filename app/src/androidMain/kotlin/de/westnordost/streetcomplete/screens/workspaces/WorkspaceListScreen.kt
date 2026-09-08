@@ -175,11 +175,8 @@ fun WorkSpaceListScreen(
                 is WorkspaceListState.Error -> {
                     isLoading = false
                     val error = (workspaceListState as WorkspaceListState.Error).error
-                    snackBarMessage = "Error: $error"
-                    retryAction = { viewModel.refreshWorkspaces() }
-                    // persistent, not just the (dismissable/timed-out) snackbar - otherwise once
-                    // that's gone the user is looking at a blank screen with no indication
-                    // anything failed, only the toolbar to fall back on
+                    // shown persistently below, with its own Retry button - deliberately not also
+                    // fired as a snackbar, since that would show the same error to the user twice
                     Box(
                         modifier = Modifier
                             .weight(1f)

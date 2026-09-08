@@ -17,7 +17,7 @@ class WorkspaceDao(private val db: Database) {
             NAME,
             arrayOf(ID, TITLE, QUESTS, TYPE, EXTERNAL_APP_ACCESS, OVERRIDE_CONFLICTS),
             responseItems.map {
-                arrayOf(it.id, it.title, it.quests?.joinToString(","), it.type, it.externalAppAccess, if (it.overrideConflicts) 1 else 0)
+                arrayOf(it.id, it.title, it.quests?.joinToString(","), it.type, it.externalAppAccess, if (it.overrideConflicts == true) 1 else 0)
             }
         )
     }
