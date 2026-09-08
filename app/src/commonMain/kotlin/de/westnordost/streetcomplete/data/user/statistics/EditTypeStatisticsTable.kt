@@ -14,7 +14,8 @@ object EditTypeStatisticsTable {
         CREATE TABLE $name (
            ${Columns.ELEMENT_EDIT_TYPE} varchar(255),
             ${Columns.SUCCEEDED} int NOT NULL,
-            ${Columns.WORKSPACE_ID} int NOT NULL
+            ${Columns.WORKSPACE_ID} int NOT NULL,
+            PRIMARY KEY (${Columns.ELEMENT_EDIT_TYPE}, ${Columns.WORKSPACE_ID})
         );
     """
 }
