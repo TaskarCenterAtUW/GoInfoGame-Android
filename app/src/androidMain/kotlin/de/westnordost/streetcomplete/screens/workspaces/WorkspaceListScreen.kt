@@ -175,11 +175,8 @@ fun WorkSpaceListScreen(
                 is WorkspaceListState.Error -> {
                     isLoading = false
                     val error = (workspaceListState as WorkspaceListState.Error).error
-                    snackBarMessage = "Error: $error"
-                    retryAction = { viewModel.refreshWorkspaces() }
-                    // persistent, not just the (dismissable/timed-out) snackbar - otherwise once
-                    // that's gone the user is looking at a blank screen with no indication
-                    // anything failed, only the toolbar to fall back on
+                    // shown persistently below, with its own Retry button - deliberately not also
+                    // fired as a snackbar, since that would show the same error to the user twice
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -206,11 +203,16 @@ fun WorkSpaceListScreen(
         }
 
         // project-group-roles failing doesn't block the workspace list itself (see
-        // WorkspaceViewModelImpl.refreshWorkspaces) - just surfaced the same way as the other two
-        LaunchedEffect(projectGroupsState) {
-            (projectGroupsState as? WorkspaceProjectGroupsState.Error)?.let {
-                snackBarMessage = "Error: ${it.error}"
-                retryAction = { viewModel.refreshWorkspaces() }
+        // WorkspaceViewModelImpl.refreshWorkspaces) - just surfaced the same way as the other two.
+        // Skipped when the workspace list itself is also in Error, though: both fetches usually
+        // fail together (e.g. a network outage), and the full-page error below already covers
+        // that case - showing this toast too would just double up on the same underlying failure.
+        LaunchedEffect(projectGroupsState, workspaceListState) {
+            if (workspaceListState !is WorkspaceListState.Error) {
+                (projectGroupsState as? WorkspaceProjectGroupsState.Error)?.let {
+                    snackBarMessage = "Error: ${it.error}"
+                    retryAction = { viewModel.refreshWorkspaces() }
+                }
             }
         }
 

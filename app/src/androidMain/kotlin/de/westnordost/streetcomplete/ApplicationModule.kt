@@ -7,6 +7,7 @@ import android.content.res.Resources
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.data.workspace.domain.model.LoginResponse
 import de.westnordost.streetcomplete.resources.Res
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
@@ -58,6 +59,7 @@ private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
     context: Context,
     preferences: Preferences,
     environmentManager: EnvironmentManager,
+    userLoginController: UserLoginController,
 ) {
     install(Auth) {
         bearer {
@@ -89,7 +91,11 @@ private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
                         "Ktor Auth plugin's 401-triggered refresh returned null - forcing logout " +
                             "and relaunching WorkSpaceActivity with the Session Expired alert"
                     )
-                    preferences.workspaceLogin = false
+                    // clears workspaceLogin/workspaceToken/workspaceRefreshToken - not scoped per
+                    // environment and never re-checked once written, so leaving them behind would
+                    // let a later login/refresh attempt send an old, no-longer-valid token to the
+                    // server, causing another 401
+                    userLoginController.logOut()
                     //Launch workspaceActivity
                     val intent = Intent(context, WorkSpaceActivity::class.java)
                     intent.flags =
@@ -119,6 +125,7 @@ val appModule = module {
         val context = androidContext()
         val preferences = get<Preferences>()
         val environmentManager = get<EnvironmentManager>()
+        val userLoginController = get<UserLoginController>()
         HttpClient {
             defaultRequest {
                 userAgent(ApplicationConstants.USER_AGENT)
@@ -126,7 +133,7 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager)
+            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController)
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -141,6 +148,7 @@ val appModule = module {
         val context = androidContext()
         val preferences = get<Preferences>()
         val environmentManager = get<EnvironmentManager>()
+        val userLoginController = get<UserLoginController>()
         HttpClient {
             install(ContentNegotiation) {
                 json(Json {
@@ -151,7 +159,7 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager)
+            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController)
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {

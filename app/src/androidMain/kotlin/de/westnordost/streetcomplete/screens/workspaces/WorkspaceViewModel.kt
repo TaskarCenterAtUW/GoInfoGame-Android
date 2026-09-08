@@ -10,6 +10,7 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceAuthRejectedException
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
@@ -23,11 +24,12 @@ import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getEmailFromJWT
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -61,6 +63,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setSelectedWorkspace(workspace: Workspace)
     abstract suspend fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
+    abstract fun resetSessionForEnvironmentChange()
     abstract fun refreshToken(expediteLogin: Boolean = false)
     abstract fun getAppUpdateInfo()
 }
@@ -69,6 +72,7 @@ class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
     private val preferences: Preferences,
     private val downloadedTilesController: DownloadedTilesController,
+    private val userLoginController: UserLoginController,
     // debug-only override: if this file exists, its contents are used as the workspace long-form
     // JSON instead of DEFAULT_TEST_LONG_FORM_JSON below, so the test data can be edited on-device
     // (e.g. via `adb push`) without rebuilding the app - see WorkspaceModule for the path.
@@ -126,28 +130,33 @@ class WorkspaceViewModelImpl(
 
     @OptIn(FlowPreview::class)
     override fun refreshWorkspaces() {
-        userLocation?.apply {
+        userLocation?.let { location ->
+            _projectGroupsState.value = WorkspaceProjectGroupsState.loading()
+            _showWorkspaces.value = WorkspaceListState.Loading
+
             viewModelScope.launch {
-                _projectGroupsState.value = WorkspaceProjectGroupsState.loading()
-                workspaceRepository.getUserProjectGroups()
-                    .catch { e ->
-                        _projectGroupsState.value =
-                            WorkspaceProjectGroupsState.error(
-                                e.message ?: "Failed to load project groups"
-                            )
-                    }
-                    .collect { groups ->
-                        _projectGroupsState.value = WorkspaceProjectGroupsState.success(groups)
-                    }
+                // fetched concurrently (the two are independent), but neither state is applied
+                // until BOTH have settled - applying whichever finished first immediately meant
+                // the faster one (project groups) could flip to Error and fire its toast several
+                // seconds before the slower one (workspace list) resolved, showing a toast with
+                // no corresponding full-page error on screen yet
+                val projectGroupsResult = async {
+                    runCatching { workspaceRepository.getUserProjectGroups().first() }
+                }
+                val workspacesResult = async {
+                    runCatching { workspaceRepository.getWorkspaces(location).first() }
+                }
 
-
-                _showWorkspaces.value = WorkspaceListState.Loading
-                workspaceRepository.getWorkspaces(this@apply)
-                    .distinctUntilChanged()
-                    .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
-                    .collect { workspaces ->
-                        _showWorkspaces.value = WorkspaceListState.success(workspaces)
+                _projectGroupsState.value = projectGroupsResult.await().fold(
+                    onSuccess = { WorkspaceProjectGroupsState.success(it) },
+                    onFailure = { e ->
+                        WorkspaceProjectGroupsState.error(e.message ?: "Failed to load project groups")
                     }
+                )
+                _showWorkspaces.value = workspacesResult.await().fold(
+                    onSuccess = { WorkspaceListState.success(it) },
+                    onFailure = { e -> WorkspaceListState.error(e.message) }
+                )
             }
         }
     }
@@ -333,6 +342,19 @@ class WorkspaceViewModelImpl(
     override fun setEnvironment(environment: Environment) {
         val environmentManager = EnvironmentManager(preferences)
         environmentManager.currentEnvironment = environment
+        resetSessionForEnvironmentChange()
+    }
+
+    // preferences.workspaceToken/workspaceRefreshToken aren't scoped per environment, so without
+    // this a token obtained under the old environment would keep being sent to the new
+    // environment's servers. userLoginController.logOut() is the same shared "clear the workspace
+    // session" call used by the Logout button and every forced-logout path (WorkSpaceActivity.kt,
+    // ApplicationModule.kt's reactive 401-refresh failure) - clearCachedAuthTokens() additionally
+    // clears the Ktor Auth plugin's in-memory token cache for both HttpClients, which only the
+    // data layer has access to.
+    override fun resetSessionForEnvironmentChange() {
+        userLoginController.logOut()
+        workspaceRepository.clearCachedAuthTokens()
     }
 
     override suspend fun setLoginState(

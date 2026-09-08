@@ -18,4 +18,6 @@ interface WorkspaceRepository {
     fun refreshToken(refreshToken: String): Flow<LoginResponse>
 
     fun getAppUpdateInfo(): Flow<AppUpdateCheckerResponse>
+
+    fun clearCachedAuthTokens()
 }
