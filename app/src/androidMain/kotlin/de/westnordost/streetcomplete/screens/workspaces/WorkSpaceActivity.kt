@@ -55,6 +55,7 @@ import de.westnordost.streetcomplete.ApplicationConstants.APP_NAME
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.ui.theme.AppTheme
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
@@ -71,6 +72,7 @@ class WorkSpaceActivity : AppCompatActivity() {
 
     private val preferences: Preferences by inject()
     private val environmentManager: EnvironmentManager by inject()
+    private val userLoginController: UserLoginController by inject()
     private val _isLocationEnabled = mutableStateOf(false)
     private val isLocationEnabled: State<Boolean> get() = _isLocationEnabled
     private val workspaceViewModel by viewModel<WorkspaceViewModel>()
@@ -197,7 +199,7 @@ class WorkSpaceActivity : AppCompatActivity() {
                         popUpTo(0) { inclusive = true }
                     }
                 })
-            AppNavigator(innerPadding, preferences, environmentManager, this, navController)
+            AppNavigator(innerPadding, preferences, environmentManager, userLoginController, this, navController)
         }
     }
 
@@ -223,6 +225,7 @@ fun AppNavigator(
     innerPadding: PaddingValues,
     preferences: Preferences,
     environmentManager: EnvironmentManager,
+    userLoginController: UserLoginController,
     activity: AppCompatActivity,
     navController: NavHostController,
     modifier: Modifier = Modifier,
@@ -238,7 +241,7 @@ fun AppNavigator(
         // would run unconditionally (even when code is null), forcing a logout on any
         // avivscr:// deep link at all, not just an actual OAuth code redirect.
         if (!code.isNullOrBlank()) {
-            preferences.workspaceLogin = false
+            userLoginController.logOut()
             doLogout = true
         }
     }
@@ -258,7 +261,7 @@ fun AppNavigator(
                     "(expired ${now - preferences.refreshTokenExpiryTime}ms ago, " +
                     "workspaceLastLogin=${preferences.workspaceLastLogin}) - forcing logout without attempting refresh"
             )
-            preferences.workspaceLogin = false
+            userLoginController.logOut()
             doLogout = true
         } else if (preferences.accessTokenExpiryTime != 0L &&
             preferences.accessTokenExpiryTime < now
@@ -323,7 +326,7 @@ fun AppNavigator(
                             "Proactive token refresh failed on workspace-list, forcing logout: " +
                                 (loginState as WorkspaceLoginState.Error).error
                         )
-                        preferences.workspaceLogin = false
+                        userLoginController.logOut()
                         val intent = Intent(context, WorkSpaceActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             putExtra(WorkSpaceActivity.SHOW_LOGGED_OUT_ALERT, true)

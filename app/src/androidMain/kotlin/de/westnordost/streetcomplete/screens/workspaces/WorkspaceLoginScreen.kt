@@ -247,6 +247,7 @@ fun checkForIntent(
                     val environment = Environment.valueOf(env.uppercase())
                     environmentManager.currentEnvironment = environment
                     selectedEnvironment.value = environment
+                    viewModel.resetSessionForEnvironmentChange()
                 } catch (e: IllegalArgumentException) {
                     // Invalid environment value, handle as needed
                     Toast.makeText(

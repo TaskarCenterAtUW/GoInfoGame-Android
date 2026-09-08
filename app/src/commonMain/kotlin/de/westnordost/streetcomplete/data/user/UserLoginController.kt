@@ -26,6 +26,10 @@ class UserLoginController(
 
     fun logOut() {
         prefs.workspaceToken = null
+        // not scoped per environment, and never re-checked once written - leaving this behind let
+        // a later login/refresh attempt (e.g. after switching environment) send an old, no-longer-
+        // applicable refresh token to the server, causing a 401
+        prefs.workspaceRefreshToken = null
         prefs.removeOAuth1Data()
         prefs.workspaceLogin = false
         listeners.forEach { it.onLoggedOut() }

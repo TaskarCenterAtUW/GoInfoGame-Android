@@ -62,4 +62,8 @@ class WorkspaceRepositoryImpl(
     override fun getAppUpdateInfo(): Flow<AppUpdateCheckerResponse> =
         flow { emit(apiService.getForceUpdateInfo()) }
 
+    override fun clearCachedAuthTokens() {
+        apiService.clearCachedAuthTokens()
+    }
+
 }

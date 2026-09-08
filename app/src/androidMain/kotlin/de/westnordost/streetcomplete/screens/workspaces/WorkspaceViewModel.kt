@@ -10,6 +10,7 @@ import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpressio
 import de.westnordost.streetcomplete.data.preferences.Environment
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.user.UserLoginController
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceAuthRejectedException
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
@@ -61,6 +62,7 @@ abstract class WorkspaceViewModel : ViewModel() {
     abstract fun setSelectedWorkspace(workspace: Workspace)
     abstract suspend fun getUserInfo(email: String)
     abstract fun setEnvironment(environment: Environment)
+    abstract fun resetSessionForEnvironmentChange()
     abstract fun refreshToken(expediteLogin: Boolean = false)
     abstract fun getAppUpdateInfo()
 }
@@ -69,6 +71,7 @@ class WorkspaceViewModelImpl(
     private val workspaceRepository: WorkspaceRepository,
     private val preferences: Preferences,
     private val downloadedTilesController: DownloadedTilesController,
+    private val userLoginController: UserLoginController,
     // debug-only override: if this file exists, its contents are used as the workspace long-form
     // JSON instead of DEFAULT_TEST_LONG_FORM_JSON below, so the test data can be edited on-device
     // (e.g. via `adb push`) without rebuilding the app - see WorkspaceModule for the path.
@@ -333,6 +336,19 @@ class WorkspaceViewModelImpl(
     override fun setEnvironment(environment: Environment) {
         val environmentManager = EnvironmentManager(preferences)
         environmentManager.currentEnvironment = environment
+        resetSessionForEnvironmentChange()
+    }
+
+    // preferences.workspaceToken/workspaceRefreshToken aren't scoped per environment, so without
+    // this a token obtained under the old environment would keep being sent to the new
+    // environment's servers. userLoginController.logOut() is the same shared "clear the workspace
+    // session" call used by the Logout button and every forced-logout path (WorkSpaceActivity.kt,
+    // ApplicationModule.kt's reactive 401-refresh failure) - clearCachedAuthTokens() additionally
+    // clears the Ktor Auth plugin's in-memory token cache for both HttpClients, which only the
+    // data layer has access to.
+    override fun resetSessionForEnvironmentChange() {
+        userLoginController.logOut()
+        workspaceRepository.clearCachedAuthTokens()
     }
 
     override suspend fun setLoginState(

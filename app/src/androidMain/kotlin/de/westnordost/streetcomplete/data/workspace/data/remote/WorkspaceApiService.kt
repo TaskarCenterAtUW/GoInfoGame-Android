@@ -40,6 +40,7 @@ class WorkspaceApiService(
     private val preferences: Preferences,
     private val environmentManager: EnvironmentManager,
     private val workspaceConfigProvider: WorkspaceConfigProvider,
+    private val osmClient: HttpClient,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -227,13 +228,28 @@ class WorkspaceApiService(
         preferences.workspaceRefreshToken = refreshToken
 
         // Ktor's Auth{bearer{}} plugin (ApplicationModule.kt) caches whatever loadTokens{} first
-        // returned for this HttpClient's whole lifetime - writing new tokens to Preferences above
+        // returned for each HttpClient's whole lifetime - writing new tokens to Preferences above
         // does NOT invalidate that cache, so every subsequent request (even ones that also set
         // bearerAuth() manually per-request) keeps silently reusing the stale cached token until
         // this is cleared. Confirmed via logcat: the request right after a fresh login carried the
         // OLD token's JWT (different `iss`), causing a 401 - clearing here forces the next request
-        // needing auth to call loadTokens{} again and pick up what was just written above.
+        // needing auth to call loadTokens{} again and pick up what was just written above. Clearing
+        // both clients (not just httpClient) means this also cleans up after any prior logout/forced
+        // logout/environment switch that left a stale cache behind, the moment a new login succeeds.
+        clearCachedAuthTokens()
+    }
+
+    // called whenever the user switches environment (dev dropdown or a login deep link's ?env=)
+    // before logging in - Ktor's Auth{bearer{}} plugin caches whatever loadTokens{} first
+    // returned for each HttpClient's whole process lifetime (see updateTokens() above), so without
+    // this a token obtained under the old environment keeps being sent to the new environment's
+    // servers, which will always reject it with a 401. The caller is responsible for also
+    // clearing preferences.workspaceToken/workspaceRefreshToken - this only clears the in-memory
+    // Ktor-side cache, which is the one piece of state that lives in this class (it owns the
+    // HttpClient instances).
+    fun clearCachedAuthTokens() {
         httpClient.authProvider<BearerAuthProvider>()?.clearToken()
+        osmClient.authProvider<BearerAuthProvider>()?.clearToken()
     }
 
     suspend fun refreshToken(refreshToken: String): LoginResponse {
