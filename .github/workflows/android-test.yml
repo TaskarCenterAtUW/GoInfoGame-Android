@@ -49,4 +49,8 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest && killall -INT crashpad_handler || true
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest
+            test_exit_code=$?
+            killall -INT crashpad_handler || true
+            exit $test_exit_code

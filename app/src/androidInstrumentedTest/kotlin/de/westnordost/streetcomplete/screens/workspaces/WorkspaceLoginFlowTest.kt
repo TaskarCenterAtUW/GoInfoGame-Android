@@ -37,11 +37,16 @@ import org.koin.dsl.module
 class WorkspaceLoginFlowTest {
 
     // grants both permissions WorkSpaceActivity's PermissionHandler asks for, before the
-    // activity is launched below, so no system permission dialog appears mid-test
+    // activity is launched below, so no system permission dialog appears mid-test.
+    // POST_NOTIFICATIONS only exists from API 33 - GrantPermissionRule throws on older platforms
+    // if asked to grant an unknown permission, so it's only included there.
     @get:Rule
     val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        Manifest.permission.POST_NOTIFICATIONS,
-        Manifest.permission.ACCESS_FINE_LOCATION,
+        *(if (android.os.Build.VERSION.SDK_INT >= 33) {
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        })
     )
 
     // not createAndroidComposeRule<WorkSpaceActivity>() - that would launch the activity as part
