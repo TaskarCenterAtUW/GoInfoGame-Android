@@ -24,11 +24,12 @@ import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getEmailFromJWT
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -129,28 +130,33 @@ class WorkspaceViewModelImpl(
 
     @OptIn(FlowPreview::class)
     override fun refreshWorkspaces() {
-        userLocation?.apply {
+        userLocation?.let { location ->
+            _projectGroupsState.value = WorkspaceProjectGroupsState.loading()
+            _showWorkspaces.value = WorkspaceListState.Loading
+
             viewModelScope.launch {
-                _projectGroupsState.value = WorkspaceProjectGroupsState.loading()
-                workspaceRepository.getUserProjectGroups()
-                    .catch { e ->
-                        _projectGroupsState.value =
-                            WorkspaceProjectGroupsState.error(
-                                e.message ?: "Failed to load project groups"
-                            )
-                    }
-                    .collect { groups ->
-                        _projectGroupsState.value = WorkspaceProjectGroupsState.success(groups)
-                    }
+                // fetched concurrently (the two are independent), but neither state is applied
+                // until BOTH have settled - applying whichever finished first immediately meant
+                // the faster one (project groups) could flip to Error and fire its toast several
+                // seconds before the slower one (workspace list) resolved, showing a toast with
+                // no corresponding full-page error on screen yet
+                val projectGroupsResult = async {
+                    runCatching { workspaceRepository.getUserProjectGroups().first() }
+                }
+                val workspacesResult = async {
+                    runCatching { workspaceRepository.getWorkspaces(location).first() }
+                }
 
-
-                _showWorkspaces.value = WorkspaceListState.Loading
-                workspaceRepository.getWorkspaces(this@apply)
-                    .distinctUntilChanged()
-                    .catch { e -> _showWorkspaces.value = WorkspaceListState.error(e.message) }
-                    .collect { workspaces ->
-                        _showWorkspaces.value = WorkspaceListState.success(workspaces)
+                _projectGroupsState.value = projectGroupsResult.await().fold(
+                    onSuccess = { WorkspaceProjectGroupsState.success(it) },
+                    onFailure = { e ->
+                        WorkspaceProjectGroupsState.error(e.message ?: "Failed to load project groups")
                     }
+                )
+                _showWorkspaces.value = workspacesResult.await().fold(
+                    onSuccess = { WorkspaceListState.success(it) },
+                    onFailure = { e -> WorkspaceListState.error(e.message) }
+                )
             }
         }
     }
