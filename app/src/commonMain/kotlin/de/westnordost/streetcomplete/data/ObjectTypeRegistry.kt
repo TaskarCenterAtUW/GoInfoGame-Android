@@ -28,9 +28,9 @@ open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T
             }else{
                 objectType::class.simpleName!!
             }
-            // require(!byNameMap.containsKey(typeName)) {
-            //     "A object type's name must be unique! \"$typeName\" is defined twice!"
-            // }
+            require(!byNameMap.containsKey(typeName)) {
+                "A object type's name must be unique! \"$typeName\" is defined twice!"
+            }
             require(!byOrdinalMap.containsKey(ordinal)) {
                 val otherTypeName = byOrdinalMap[ordinal]!!::class.simpleName!!
                 "Duplicate ordinal for \"$typeName\" and \"$otherTypeName\""

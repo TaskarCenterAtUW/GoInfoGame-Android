@@ -56,6 +56,9 @@ class FakeWorkspaceRepository : WorkspaceRepository {
 
     override fun refreshToken(refreshToken: String): Flow<LoginResponse> = loginToWorkspace("", "")
 
+    // no-op - this in-memory fake has no real HttpClient/BearerAuthProvider to clear
+    override fun clearCachedAuthTokens() {}
+
     // no environment's version numbers ever compare higher than the installed build, so the
     // force/optional update dialogs in AppForceUpdateHandler never appear and block the test
     override fun getAppUpdateInfo(): Flow<AppUpdateCheckerResponse> = flowOf(

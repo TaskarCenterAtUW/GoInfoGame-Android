@@ -97,7 +97,7 @@ class OpenChangesetsManagerTest {
             "created_by" to ApplicationConstants.USER_AGENT,
             "comment" to "test me",
             "locale" to "es-AR",
-            "StreetComplete:quest_type" to questType.name
+            ApplicationConstants.QUESTTYPE_TAG_KEY to questType.name
         ))
         verify(openChangesetsDB).put(any())
     }

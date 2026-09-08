@@ -7,6 +7,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class LocalDateTimeFormatterTest {
     @Test fun format() {
@@ -25,9 +26,12 @@ class LocalDateTimeFormatterTest {
             "8. November 1985, 18:30:24 MEZ",
             LocalDateTimeFormatter(german, timeZone = TimeZone.of("CET"), dateStyle = DateFormatStyle.Long).format(dateTime)
         )
-        assertEquals(
-            "Freitag, 8. November 1985, 18:30:24 Mitteleuropäische Zeit",
-            LocalDateTimeFormatter(german, timeZone = TimeZone.of("CET"), dateStyle = DateFormatStyle.Full).format(dateTime)
-        )
+        // the exact CET display name (e.g. "Mitteleuropäische Zeit" vs "...Normalzeit") comes from
+        // the JDK's own CLDR locale data and differs between JDK versions (confirmed: JDK 21
+        // produces "Zeit", JDK 24 produces "Normalzeit") - assert the part this formatter is
+        // actually responsible for exactly, and only check the platform-supplied timezone name
+        // loosely
+        val full = LocalDateTimeFormatter(german, timeZone = TimeZone.of("CET"), dateStyle = DateFormatStyle.Full).format(dateTime)
+        assertTrue(full.startsWith("Freitag, 8. November 1985, 18:30:24 Mitteleuropäische"))
     }
 }
