@@ -3,37 +3,23 @@ name: Gradle Android tests
 on:
   push:
     branches:
-      - "master"
+      - "add-unit-tests"
   workflow_dispatch:
 
 jobs:
   android-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     strategy:
       matrix:
         api-level:
-          - 25 # minSdk
-          - 35 # targetSdk
-        jdk-version:
-          - 21
+          - 30 # min API with arm64-v8a system images
+          - 34 # close to targetSdk, well-supported arm64-v8a image
         arch:
-          - x86_64
+          - arm64-v8a
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ matrix.jdk-version }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: '${{ matrix.jdk-version }}'
-          distribution: 'temurin'
-
       - uses: gradle/actions/setup-gradle@v3
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
         uses: actions/cache@v4
@@ -42,7 +28,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.jdk-version }}-${{ matrix.api-level }}
+          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
