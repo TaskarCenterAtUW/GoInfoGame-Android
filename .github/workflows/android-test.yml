@@ -10,6 +10,9 @@ jobs:
   android-test:
     runs-on: [self-hosted, macOS]
     strategy:
+      max-parallel: 1 # multiple runners are registered on the same physical Mac - without this,
+      # matrix legs can run concurrently and contend for the same real GPU, which is what was
+      # causing "Failed to find ColorBuffer" emulator errors regardless of the -gpu backend used
       matrix:
         api-level:
           - 30 # min API with arm64-v8a system images
@@ -28,7 +31,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-gpu-host
+          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -36,8 +39,9 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
+          target: google_apis
           force-avd-creation: false
-          emulator-options: -no-window -gpu host -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching." && killall -INT crashpad_handler || true
 
@@ -46,8 +50,9 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
+          target: google_apis
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu host -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
             ./gradlew :app:connectedDebugAndroidTest
