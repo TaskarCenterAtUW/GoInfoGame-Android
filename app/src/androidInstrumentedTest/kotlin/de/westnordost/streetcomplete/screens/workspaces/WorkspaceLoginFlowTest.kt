@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -88,6 +89,13 @@ class WorkspaceLoginFlowTest {
     fun enteringValidCredentials_logsIn_andShowsWorkspaceList() {
         composeTestRule.onNodeWithText("Email").performTextInput(TEST_EMAIL)
         composeTestRule.onNodeWithText("Password").performTextInput(TEST_PASSWORD)
+        // closing the keyboard before clicking Login avoids a real hang on API 33+ headless
+        // emulators: a still-animating IME inset transition can stall the main thread's
+        // Choreographer/message queue indefinitely, which starves viewModelScope.launch (main
+        // dispatcher) from ever running - Compose's own test-polling loop keeps ticking
+        // independently of that stall, so waitUntil below would otherwise spin until timeout
+        // with no app-visible progress at all, even though performClick() itself returns fine
+        Espresso.closeSoftKeyboard()
         composeTestRule.onNodeWithText("Login").performClick()
 
         // login -> setLoginState() -> getUserInfo() is a chain of suspend/async steps (see the
