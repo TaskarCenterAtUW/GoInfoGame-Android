@@ -6,6 +6,11 @@ on:
       - "add-unit-tests"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
 jobs:
   android-test:
     runs-on: [self-hosted, macOS]
@@ -66,3 +71,22 @@ jobs:
             test_exit_code=$?
             killall -INT crashpad_handler || true
             exit $test_exit_code
+
+      - name: Publish test summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Instrumentation test results (API ${{ matrix.api-level }})
+          path: "app/build/outputs/androidTest-results/connected/**/*.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-reports-api${{ matrix.api-level }}
+          path: |
+            app/build/reports/androidTests/connected
+            app/build/outputs/androidTest-results/connected
+          retention-days: 14

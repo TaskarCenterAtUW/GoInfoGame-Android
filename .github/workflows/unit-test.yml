@@ -6,6 +6,11 @@ on:
       - "add-unit-tests"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
 jobs:
   unit-test:
     runs-on: [self-hosted, macOS]
@@ -14,5 +19,44 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v3
 
+      # -PignoreTestFailures lets the build finish (and the Kover report tasks below still run)
+      # even if some tests fail - actual pass/fail is reported from the JUnit XML below, not this
+      # command's exit code
       - name: Run unit tests with Gradle
-        run: ./gradlew test
+        run: ./gradlew test koverHtmlReport koverXmlReport -PignoreTestFailures=true
+
+      - name: Publish test summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit test results
+          path: "app/build/test-results/testDebugUnitTest/*.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          report="app/build/reports/kover/report.xml"
+          if [ -f "$report" ]; then
+            line_counter=$(grep -o '<counter type="LINE" missed="[0-9]*" covered="[0-9]*"/>' "$report" | tail -1)
+            missed=$(echo "$line_counter" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+            covered=$(echo "$line_counter" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+            total=$((missed + covered))
+            if [ "$total" -gt 0 ]; then
+              pct=$(awk "BEGIN { printf \"%.1f\", ($covered/$total)*100 }")
+              echo "## Coverage" >> "$GITHUB_STEP_SUMMARY"
+              echo "Line coverage: **${pct}%** (${covered}/${total} lines)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+      - name: Upload test and coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/kover
+          retention-days: 14
