@@ -67,8 +67,20 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            mkdir -p test-artifacts
+            # screenrecord/screencap read from the virtual display buffer, so both work even
+            # headless (-no-window) - stopped with SIGINT (not killed) so the mp4 container gets
+            # finalized properly instead of ending up corrupt/unplayable
+            adb shell screenrecord --time-limit 300 /sdcard/test-recording.mp4 &
+            record_pid=$!
             ./gradlew :app:connectedDebugAndroidTest
             test_exit_code=$?
+            adb exec-out screencap -p > "test-artifacts/final-screenshot-api${{ matrix.api-level }}.png"
+            kill -INT $record_pid 2>/dev/null || true
+            wait $record_pid 2>/dev/null || true
+            sleep 2
+            adb pull /sdcard/test-recording.mp4 "test-artifacts/test-recording-api${{ matrix.api-level }}.mp4" || true
+            adb shell rm -f /sdcard/test-recording.mp4 || true
             killall -INT crashpad_handler || true
             exit $test_exit_code
 
@@ -81,12 +93,21 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
+      # zipped into one file before upload - see unit-test.yml for why (many small files, mostly
+      # the per-class androidTests HTML report, were timing out CreateArtifact on this runner)
+      - name: Zip test reports
+        if: always()
+        run: |
+          mkdir -p artifact-bundle
+          zip -rq "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip" \
+            app/build/reports/androidTests/connected \
+            app/build/outputs/androidTest-results/connected \
+            test-artifacts
+
       - name: Upload test reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: android-test-reports-api${{ matrix.api-level }}
-          path: |
-            app/build/reports/androidTests/connected
-            app/build/outputs/androidTest-results/connected
+          path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip"
           retention-days: 14
