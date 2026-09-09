@@ -44,6 +44,7 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 repositories {
@@ -516,4 +517,13 @@ tasks.register("copyDefaultStringsToEnStrings") {
         sourceStrings.copyTo(File("$projectDir/src/commonMain/composeResources/values-en/strings.xml"), true)
         sourceStrings.copyTo(File("$projectDir/src/commonMain/composeResources/values/strings.xml"), true)
     }
+}
+
+// off by default (a failing test still fails a local ./gradlew test as usual) - CI passes
+// -PignoreTestFailures=true so the test task itself doesn't fail the build, which lets the
+// downstream Kover report tasks still run and produce a coverage report even when some tests
+// fail; actual pass/fail reporting in CI comes from parsing the JUnit XML results, not this exit
+// code
+tasks.withType<Test>().configureEach {
+    ignoreFailures = project.hasProperty("ignoreTestFailures")
 }
