@@ -40,6 +40,12 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
+          # this is a self-hosted runner with a persistent disk (unlike GitHub-hosted runners,
+          # which start every job with an empty disk) - without a name derived from the actual
+          # config, the action's default fixed "test" AVD name means any future change to
+          # api-level/arch/target here would silently keep reusing a stale AVD built under the
+          # OLD config instead of picking up the new one, since force-avd-creation stays false
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -51,6 +57,7 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
