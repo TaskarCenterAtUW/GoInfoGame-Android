@@ -50,13 +50,22 @@ jobs:
             fi
           fi
 
+      # zipped into one file before upload - the unzipped reports (Kover's HTML report alone is
+      # one page per class) add up to 300+ individual files, which was timing out
+      # actions/upload-artifact's CreateArtifact call on this runner's connection
+      - name: Zip test and coverage reports
+        if: always()
+        run: |
+          mkdir -p artifact-bundle
+          zip -rq artifact-bundle/unit-test-reports.zip \
+            app/build/reports/tests/testDebugUnitTest \
+            app/build/test-results/testDebugUnitTest \
+            app/build/reports/kover
+
       - name: Upload test and coverage reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-reports
-          path: |
-            app/build/reports/tests/testDebugUnitTest
-            app/build/test-results/testDebugUnitTest
-            app/build/reports/kover
+          path: artifact-bundle/unit-test-reports.zip
           retention-days: 14
