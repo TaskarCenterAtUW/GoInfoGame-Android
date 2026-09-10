@@ -81,6 +81,11 @@ jobs:
             sleep 2
             adb pull /sdcard/test-recording.mp4 "test-artifacts/test-recording-api${{ matrix.api-level }}.mp4" || true
             adb shell rm -f /sdcard/test-recording.mp4 || true
+            # per-test screenshots written by UiTestScreenshot (one per @Test, taken in tearDown
+            # before the activity closes) - app package is hardcoded to match applicationId in
+            # app/build.gradle.kts, since there are no build flavors/suffixes to vary it
+            adb pull /sdcard/Android/data/net.opentoall.aviv.scoutroute/files/screenshots \
+              "test-artifacts/per-test-screenshots-api${{ matrix.api-level }}" || true
             killall -INT crashpad_handler || true
             exit $test_exit_code
 
@@ -104,10 +109,20 @@ jobs:
             app/build/outputs/androidTest-results/connected \
             test-artifacts
 
+      # wrapped in a retry - actions/upload-artifact's FinalizeArtifact call (a small metadata
+      # request made after the bytes are already uploaded) intermittently times out on this
+      # runner's connection regardless of artifact size (see actions/upload-artifact#531, #623,
+      # no fix from GitHub yet) - continue-on-error so exhausting retries doesn't fail the whole
+      # job, since pass/fail is already reported independently via dorny/test-reporter above
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: Wandalen/wretry.action@v3.8.0
         if: always()
+        continue-on-error: true
         with:
-          name: android-test-reports-api${{ matrix.api-level }}
-          path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip"
-          retention-days: 14
+          action: actions/upload-artifact@v4
+          attempt_limit: 3
+          attempt_delay: 15000
+          with: |
+            name: android-test-reports-api${{ matrix.api-level }}
+            path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip"
+            retention-days: 14
