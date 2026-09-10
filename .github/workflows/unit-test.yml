@@ -62,10 +62,20 @@ jobs:
             app/build/test-results/testDebugUnitTest \
             app/build/reports/kover
 
+      # wrapped in a retry - actions/upload-artifact's FinalizeArtifact call (a small metadata
+      # request made after the bytes are already uploaded) intermittently times out on this
+      # runner's connection regardless of artifact size (see actions/upload-artifact#531, #623,
+      # no fix from GitHub yet) - continue-on-error so exhausting retries doesn't fail the whole
+      # job, since pass/fail is already reported independently via dorny/test-reporter above
       - name: Upload test and coverage reports
-        uses: actions/upload-artifact@v4
+        uses: Wandalen/wretry.action@v3.8.0
         if: always()
+        continue-on-error: true
         with:
-          name: unit-test-reports
-          path: artifact-bundle/unit-test-reports.zip
-          retention-days: 14
+          action: actions/upload-artifact@v4
+          attempt_limit: 3
+          attempt_delay: 15000
+          with: |
+            name: unit-test-reports
+            path: artifact-bundle/unit-test-reports.zip
+            retention-days: 14

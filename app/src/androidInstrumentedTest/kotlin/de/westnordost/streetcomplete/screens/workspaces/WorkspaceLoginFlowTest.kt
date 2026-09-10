@@ -17,10 +17,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
+import de.westnordost.streetcomplete.testutils.UiTestScreenshot
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.loadKoinModules
@@ -58,6 +60,9 @@ class WorkspaceLoginFlowTest {
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
+    @get:Rule
+    val testName = TestName()
+
     private val preferences: Preferences = GlobalContext.get().get()
 
     private lateinit var scenario: ActivityScenario<WorkSpaceActivity>
@@ -81,6 +86,8 @@ class WorkspaceLoginFlowTest {
 
     @After
     fun tearDown() {
+        // before scenario.close() - see UiTestScreenshot's kdoc for why this can't be a rule
+        UiTestScreenshot.capture("${javaClass.simpleName}.${testName.methodName}")
         scenario.close()
         preferences.workspaceLogin = false
     }
