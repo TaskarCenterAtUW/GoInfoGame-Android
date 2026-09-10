@@ -68,26 +68,19 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p test-artifacts
-            # screenrecord/screencap read from the virtual display buffer, so both work even
-            # headless (-no-window) - stopped with SIGINT (not killed) so the mp4 container gets
-            # finalized properly instead of ending up corrupt/unplayable
-            adb shell screenrecord --time-limit 300 /sdcard/test-recording.mp4 &
-            record_pid=$!
-            ./gradlew :app:connectedDebugAndroidTest
-            test_exit_code=$?
-            adb exec-out screencap -p > "test-artifacts/final-screenshot-api${{ matrix.api-level }}.png"
-            kill -INT $record_pid 2>/dev/null || true
-            wait $record_pid 2>/dev/null || true
-            sleep 2
-            adb pull /sdcard/test-recording.mp4 "test-artifacts/test-recording-api${{ matrix.api-level }}.mp4" || true
-            adb shell rm -f /sdcard/test-recording.mp4 || true
-            # per-test screenshots written by UiTestScreenshot (one per @Test, taken in tearDown
-            # before the activity closes) - app package is hardcoded to match applicationId in
-            # app/build.gradle.kts, since there are no build flavors/suffixes to vary it
-            adb pull /sdcard/Android/data/net.opentoall.aviv.scoutroute/files/screenshots \
-              "test-artifacts/per-test-screenshots-api${{ matrix.api-level }}" || true
-            killall -INT crashpad_handler || true
-            exit $test_exit_code
+            # this action runs the script one line at a time, each in its OWN throwaway `sh -c`
+            # with no shared state between lines (see script-parser.ts in
+            # ReactiveCircus/android-emulator-runner - it splits on newline and execs each line
+            # separately) - so record_pid/test_exit_code would be empty/invisible on any later
+            # line, and everything that depends on them has to stay chained into this one line
+            # with ;/&. screenrecord/screencap read from the virtual display buffer, so both work
+            # even headless (-no-window) - stopped with SIGINT (not killed) so the mp4 container
+            # gets finalized properly instead of ending up corrupt/unplayable. Per-test
+            # screenshots (pulled below) are written by UiTestScreenshot (one per @Test, taken in
+            # tearDown before the activity closes) - written to /sdcard/test-screenshots (not an
+            # app-scoped dir) since AGP uninstalls both the app and test APK once
+            # connectedDebugAndroidTest finishes, which would wipe an app-scoped dir along with it
+            adb shell screenrecord --time-limit 180 /sdcard/test-recording.mp4 & record_pid=$!; ./gradlew :app:connectedDebugAndroidTest; test_exit_code=$?; adb exec-out screencap -p > "test-artifacts/final-screenshot-api${{ matrix.api-level }}.png"; kill -INT $record_pid 2>/dev/null || true; wait $record_pid 2>/dev/null || true; sleep 2; adb pull /sdcard/test-recording.mp4 "test-artifacts/test-recording-api${{ matrix.api-level }}.mp4" || true; adb shell rm -f /sdcard/test-recording.mp4 || true; adb pull /sdcard/test-screenshots "test-artifacts/per-test-screenshots-api${{ matrix.api-level }}" || true; adb shell rm -rf /sdcard/test-screenshots || true; killall -INT crashpad_handler || true; exit $test_exit_code
 
       - name: Publish test summary
         uses: dorny/test-reporter@v1
@@ -98,13 +91,15 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-      # zipped into one file before upload - see unit-test.yml for why (many small files, mostly
-      # the per-class androidTests HTML report, were timing out CreateArtifact on this runner)
-      - name: Zip test reports
+      # bundled into one file before upload - see unit-test.yml for why tar.gz, not zip (many
+      # small files, mostly the per-class androidTests HTML report, were timing out CreateArtifact
+      # on this runner; and a raw .zip here would come out as a same-named, indistinguishable-
+      # from-corrupt "...zip" nested inside GitHub's own container zip on download)
+      - name: Bundle test reports
         if: always()
         run: |
           mkdir -p artifact-bundle
-          zip -rq "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip" \
+          tar -czf "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz" \
             app/build/reports/androidTests/connected \
             app/build/outputs/androidTest-results/connected \
             test-artifacts
@@ -124,5 +119,5 @@ jobs:
           attempt_delay: 15000
           with: |
             name: android-test-reports-api${{ matrix.api-level }}
-            path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.zip"
+            path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz"
             retention-days: 14
