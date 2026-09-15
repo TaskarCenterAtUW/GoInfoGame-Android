@@ -442,15 +442,10 @@ private fun QuestList(
     onHideQuest: (questKey: QuestKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showArrivedBottomSheet by remember { mutableStateOf(false) }
-    var nearestQuest by remember { mutableStateOf<QuestUiModel?>(null) }
 
     LaunchedEffect(key1 = location) {
         val quest = quests.minByOrNull { it.distanceMeters } ?: return@LaunchedEffect
         if (quest.distanceMeters <= DISTANCE_FOR_ARRIVED_METERS) {
-            if (nearestQuest?.id == quest.id) return@LaunchedEffect
-            nearestQuest = quest
-            showArrivedBottomSheet = true
             return@LaunchedEffect
         }
     }
@@ -462,21 +457,6 @@ private fun QuestList(
         quests.forEachIndexed { index, quest ->
             if (index > 0) Spacer(Modifier.height(12.dp))
             QuestCard(quest, onHideQuest)
-        }
-    }
-
-    if (showArrivedBottomSheet) {
-        nearestQuest?.let {
-            ArrivedBottomSheet(
-                questType = it.questName,
-                onStartAnswering = {
-                    showArrivedBottomSheet = false
-                    it.onClick()
-                },
-                onHide = { onHideQuest(it.id) },
-                onNotNow = { showArrivedBottomSheet = false },
-                onClose = { showArrivedBottomSheet = false }
-            )
         }
     }
 }
