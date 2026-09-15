@@ -2,6 +2,8 @@ package de.westnordost.streetcomplete.screens.workspaces
 
 import android.Manifest
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -94,6 +96,22 @@ class WorkspaceLoginFlowTest {
 
     @Test
     fun enteringValidCredentials_logsIn_andShowsWorkspaceList() {
+        logInAndWaitForWorkspaceList()
+    }
+
+    // regression test for the toolbar wordmark ("AVIV" + " ScoutRoute") wrapping onto a second
+    // line once the search icon eats into the available width - caught from a per-test CI
+    // screenshot, not visible in the semantics tree by default (see WorkspaceTitleLineCount's
+    // kdoc in WorkspaceListScreen.kt for why)
+    @Test
+    fun toolbarTitle_rendersOnOneLine() {
+        logInAndWaitForWorkspaceList()
+        composeTestRule
+            .onNode(SemanticsMatcher("has workspace title") { it.config.contains(WorkspaceTitleLineCount) })
+            .assert(SemanticsMatcher.expectValue(WorkspaceTitleLineCount, 1))
+    }
+
+    private fun logInAndWaitForWorkspaceList() {
         composeTestRule.onNodeWithText("Email").performTextInput(TEST_EMAIL)
         composeTestRule.onNodeWithText("Password").performTextInput(TEST_PASSWORD)
         // closing the keyboard before clicking Login avoids a real hang on API 33+ headless
