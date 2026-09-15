@@ -57,6 +57,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -313,6 +315,14 @@ fun finishAndLaunchNewActivity(
     }
 }
 
+// exposed only for tests - the title Row below hides "AVIV"/"ScoutRoute" from accessibility
+// services via clearAndSetSemantics{} (a stylized wordmark, not meaningful for a screen reader to
+// read out), which also makes it invisible to ordinary Compose test assertions. This is the one
+// thing surfaced through that block, so a test can verify the title actually rendered on one line
+// instead of wrapping when the toolbar runs out of width (e.g. once the search icon appears).
+val WorkspaceTitleLineCount = SemanticsPropertyKey<Int>("WorkspaceTitleLineCount")
+var SemanticsPropertyReceiver.workspaceTitleLineCount by WorkspaceTitleLineCount
+
 @Composable
 fun WorkspaceToolbar(
     onProfileClick: () -> Unit,
@@ -377,11 +387,15 @@ fun WorkspaceToolbar(
                         .focusRequester(focusRequester)
                 )
             } else {
+                var aivLineCount by remember { mutableIntStateOf(1) }
+                var scoutRouteLineCount by remember { mutableIntStateOf(1) }
                 Row(
                     modifier = Modifier
                         .weight(1f)
                         .padding(start = 16.dp)
-                        .clearAndSetSemantics {},
+                        .clearAndSetSemantics {
+                            workspaceTitleLineCount = maxOf(aivLineCount, scoutRouteLineCount)
+                        },
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
@@ -390,7 +404,8 @@ fun WorkspaceToolbar(
                         fontWeight = FontWeight.Bold,
                         fontFamily = ProximaNovaFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.alignBy(LastBaseline)
+                        modifier = Modifier.alignBy(LastBaseline),
+                        onTextLayout = { aivLineCount = it.lineCount }
                     )
                     Text(
                         text = " ScoutRoute",
@@ -398,7 +413,8 @@ fun WorkspaceToolbar(
                         fontWeight = FontWeight.Bold,
                         fontFamily = ProximaNovaFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.alignBy(LastBaseline)
+                        modifier = Modifier.alignBy(LastBaseline),
+                        onTextLayout = { scoutRouteLineCount = it.lineCount }
                     )
                 }
             }
