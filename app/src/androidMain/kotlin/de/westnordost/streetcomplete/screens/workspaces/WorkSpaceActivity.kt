@@ -35,6 +35,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -185,7 +186,14 @@ class WorkSpaceActivity : AppCompatActivity() {
                 .windowInsetsPadding(WindowInsets.navigationBars),
             contentWindowInsets = WindowInsets.statusBars
         ) { innerPadding ->
-            var showDialog by remember { mutableStateOf(showAlert) }
+            // rememberSaveable, not remember: this Activity is relaunched with
+            // SHOW_LOGGED_OUT_ALERT=true once per forced logout, but the extra itself is never
+            // cleared from the Intent, so it stays true for the rest of this Activity instance's
+            // life. A theme change (or any other config change) recreates the Activity and reruns
+            // this composable - plain `remember` would start fresh from that still-true extra and
+            // re-show "Session Expired" even though the user already dismissed it and logged back
+            // in. rememberSaveable persists the dismissal across recreation instead.
+            var showDialog by rememberSaveable { mutableStateOf(showAlert) }
             val navController = rememberNavController()
 
             MyAlertDialog(

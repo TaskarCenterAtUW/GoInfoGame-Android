@@ -24,7 +24,6 @@ import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import com.google.android.material.snackbar.Snackbar
-import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
@@ -53,7 +52,6 @@ import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
-import de.westnordost.streetcomplete.osm.applyReplacePlaceTo
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
@@ -181,12 +179,20 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             val category = (osmElementQuestType as AddGenericLong).item.elementType
             // the category alone ("Sidewalk", "Kerb"...) doesn't distinguish between several
             // queued quests of the same type - add the OSM element type and id
-            val typeAndId = "${element.type.name.lowercase().replaceFirstChar { it.uppercase() }} #${element.id}"
+            val typeAndId = "${
+                element.type.name.lowercase().replaceFirstChar { it.uppercase() }
+            } #${element.id}"
             val intersectionData = element.tags["ext:intersection_at"]
+            val name = element.tags["name"]
             setTitle("$category — $typeAndId")
-            intersectionData?.apply {
-                setSmallTitle("Intersection : $intersectionData")
+            val smallTitle = StringBuilder()
+            if (name != null) {
+                smallTitle.append("Name : $name\n")
             }
+            if (intersectionData != null) {
+                smallTitle.append("Intersection : $intersectionData\n")
+            }
+            setSmallTitle(smallTitle.toString())
         }
 
         setHideQuestOnClick { hideQuest() }
@@ -326,7 +332,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             solve(
                                 UpdateElementTagsAction(
                                     element.first,
-                                    createQuestChanges(answer, extraTagList, element.first, element.second)
+                                    createQuestChanges(
+                                        answer,
+                                        extraTagList,
+                                        element.first,
+                                        element.second
+                                    )
                                 ), element.second
                             )
                         }
@@ -351,7 +362,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     ): StringMapChanges {
         val changesBuilder = StringMapChangesBuilder(forElement.tags)
         extraTagList.forEach { changesBuilder[it.first] = it.second }
-        osmElementQuestType.applyAnswerTo(answer, changesBuilder, forGeometry, forElement.timestampEdited)
+        osmElementQuestType.applyAnswerTo(
+            answer,
+            changesBuilder,
+            forGeometry,
+            forElement.timestampEdited
+        )
         val changes = changesBuilder.create()
         require(!changes.isEmpty()) {
             "${osmElementQuestType.name} was answered by the user but there are no changes!"
@@ -456,7 +472,11 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     LatLon(displayedLocation.latitude, displayedLocation.longitude),
                     bearing
                 )
-                showSnackBar("Image Uploaded Successfully", view, requireActivity() as ComponentActivity)
+                showSnackBar(
+                    "Image Uploaded Successfully",
+                    view,
+                    requireActivity() as ComponentActivity
+                )
                 onImageUrlReceived(urls.first())
             } catch (e: Exception) {
                 Log.e("KartViewFlow", "KartaView upload failed", e)
