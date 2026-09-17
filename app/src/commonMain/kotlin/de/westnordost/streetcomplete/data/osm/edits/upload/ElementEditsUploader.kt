@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.IsRevertAction
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -43,6 +44,7 @@ class ElementEditsUploader(
     private val discardedEditNoticesController: DiscardedEditNoticesController,
     private val imageUploader: KartaViewApiClient,
     private val featurePhotosController: FeaturePhotosController,
+    private val changesetManager: OpenChangesetsManager,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
 
@@ -50,22 +52,30 @@ class ElementEditsUploader(
     private val scope = CoroutineScope(SupervisorJob() + CoroutineName("ElementEditsUploader"))
 
     suspend fun upload() = mutex.withLock { withContext(Dispatchers.IO) {
-        while (true) {
-            val edit = elementEditsController.getOldestUnsynced() ?: break
-            val getIdProvider: () -> ElementIdProvider = { elementEditsController.getIdProvider(edit.id) }
-            try {
-                /* the sync of local change -> API and its response should not be cancellable
-                 * because otherwise an inconsistency in the data would occur. E.g. no "star" for
-                 * an uploaded change, a change could be uploaded twice etc */
-                withContext(scope.coroutineContext) { uploadEdit(edit, getIdProvider) }
-            } catch (e: KartaViewException) {
-                /* the edit's photos failed to upload (plain network failure) - leave the edit
-                 * unsynced for the next sync attempt instead of letting this bubble up and abort
-                 * uploading of any other edits still queued, e.g. note edits (see
-                 * uploadPendingPhotos KDoc) */
-                Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
-                break
+        try {
+            while (true) {
+                val edit = elementEditsController.getOldestUnsynced() ?: break
+                val getIdProvider: () -> ElementIdProvider = { elementEditsController.getIdProvider(edit.id) }
+                try {
+                    /* the sync of local change -> API and its response should not be cancellable
+                     * because otherwise an inconsistency in the data would occur. E.g. no "star" for
+                     * an uploaded change, a change could be uploaded twice etc */
+                    withContext(scope.coroutineContext) { uploadEdit(edit, getIdProvider) }
+                } catch (e: KartaViewException) {
+                    /* the edit's photos failed to upload (plain network failure) - leave the edit
+                     * unsynced for the next sync attempt instead of letting this bubble up and abort
+                     * uploading of any other edits still queued, e.g. note edits (see
+                     * uploadPendingPhotos KDoc) */
+                    Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
+                    break
+                }
             }
+        } finally {
+            // close immediately after every upload run (instead of waiting for the 20-minute
+            // inactivity auto-closer) so each batch of edits lands in its own closed changeset,
+            // for traceability - in a finally so whatever was uploaded before a break/exception
+            // above still gets its changeset closed
+            changesetManager.closeAllOpenChangesets()
         }
     } }
 
