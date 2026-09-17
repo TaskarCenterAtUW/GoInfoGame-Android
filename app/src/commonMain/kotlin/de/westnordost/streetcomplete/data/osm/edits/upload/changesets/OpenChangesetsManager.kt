@@ -48,7 +48,13 @@ class OpenChangesetsManager(
     suspend fun closeOldChangesets() {
         val timePassed = nowAsEpochMilliseconds() - prefs.lastEditTime
         if (timePassed < ApplicationConstants.CLOSE_CHANGESETS_AFTER_INACTIVITY_OF) return
+        closeAllOpenChangesets()
+    }
 
+    /** Closes every changeset still open, regardless of inactivity time. Called right after each
+     *  upload run so every batch of edits lands in its own closed changeset for traceability,
+     *  instead of being left open for reuse by a later batch within the inactivity window. */
+    suspend fun closeAllOpenChangesets() {
         val openChangesets = withContext(Dispatchers.IO) { openChangesetsDB.getAll() }
         openChangesets.forEach { closeChangeset(it) }
     }
