@@ -62,6 +62,15 @@ fun UserInput?.contentEquals(other: UserInput?): Boolean = when {
     else -> false
 }
 
+/** The follow-up prompt text (e.g. "Please take a photo of the obstruction.") of the first
+ *  currently-selected choice that has one, or null if none of the selected choices do. Used both
+ *  to show that prompt and, once a photo is attached, to know which question's row should show
+ *  the photo card in its place - see LongFormAdapter.ImageGridViewHolder.updateChoiceFollowUp. */
+fun LongFormQuest.activeChoiceFollowUp(): String? =
+    selectedIndex?.firstNotNullOfOrNull { index ->
+        questAnswerChoices?.get(index)?.choiceFollowUp?.takeIf { it.isNotBlank() }
+    }
+
 /** Pure evaluation of whether [this] question's questAnswerDependency conditions are satisfied,
  *  given a way to look up another question's currently-known answer value(s) by its questId. Used
  *  both for live in-form field visibility (LongFormAdapter, answers sourced from in-progress

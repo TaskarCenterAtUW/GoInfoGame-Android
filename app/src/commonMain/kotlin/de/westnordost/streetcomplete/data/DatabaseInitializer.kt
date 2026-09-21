@@ -33,7 +33,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 26
+    const val DB_VERSION = 27
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -334,6 +334,12 @@ object DatabaseInitializer {
         if (oldVersion <= 25 && newVersion >= 26) {
             // per-workspace conflict-resolution mode (WorkspaceDetailsResponse.overrideConflicts)
             db.tryExec("ALTER TABLE work_spaces ADD COLUMN overrideConflicts INTEGER NOT NULL DEFAULT 0")
+        }
+
+        if (oldVersion <= 26 && newVersion >= 27) {
+            // per-photo capture bearing, for KartaView uploads (long form first, other
+            // photo-attaching flows can start writing it too without a further migration)
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_BEARINGS} text")
         }
     }
 }

@@ -1,38 +1,42 @@
 package de.westnordost.streetcomplete.quests
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.Intent
+import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.hardware.SensorManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
+import android.os.Environment
 import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.PopupMenu
-import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
-import com.google.android.material.snackbar.Snackbar
+import androidx.exifinterface.media.ExifInterface
+import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION
+import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION_REF
 import de.westnordost.osmfeatures.FeatureDictionary
+import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.location.SurveyChecker
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.edits.delete.DeletePoiNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChangesBuilder
@@ -41,7 +45,6 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
-import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
@@ -54,8 +57,10 @@ import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
 import de.westnordost.streetcomplete.screens.main.map.Compass
+import de.westnordost.streetcomplete.util.decodeScaledBitmapAndNormalize
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.isSplittable
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.add
 import de.westnordost.streetcomplete.view.confirmIsSurvey
@@ -65,7 +70,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
-import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.Locale
 import kotlin.math.PI
 
@@ -81,8 +88,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private val surveyChecker: SurveyChecker by inject()
 
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
-    private val kartaViewApiClient: KartaViewApiClient by inject()
-    private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
+    private val featurePhotosController: FeaturePhotosController by inject()
+    private lateinit var takePhotoLauncher: ActivityResultLauncher<Uri>
+    private var pendingPhotoFile: File? = null
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
     var addElementEditsController: AddElementEditsController = elementEditsController
@@ -154,22 +162,30 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         if (getElement != null) {
             element = getElement
         }
-        cameraLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == Activity.RESULT_OK) {
-                    showProgressbar()
-                    // Handle the image capture result here
-                    val bitmap = result.data?.extras?.getParcelable<Bitmap>("data")
-                    startKartViewFlow(bitmap)
-                } else {
-
-                    // Handle the error state here
-                }
-            }
+        pendingPhotoFile = savedInstanceState?.getString(ARG_PENDING_PHOTO_FILE)?.let { File(it) }
+        takePhotoLauncher =
+            registerForActivityResult(ActivityResultContracts.TakePicture(), ::onTookPhoto)
     }
 
     private fun onCompassRotationChanged(rot: Float, tilt: Float) {
         compassBearing = rot * 180 / PI
+    }
+
+    /** The compass bearing (0-359, clockwise from north) to record for a photo captured right
+     *  now - the live GPS bearing if the map is currently pointed somewhere meaningful, otherwise
+     *  the device's own compass sensor reading. */
+    private fun capturedPhotoBearing(): Float {
+        val displayedLocation = listener?.displayedMapLocation
+        return if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
+            displayedLocation.bearing
+        } else {
+            compassBearing.toFloat()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingPhotoFile?.let { outState.putString(ARG_PENDING_PHOTO_FILE, it.path) }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -309,6 +325,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     protected fun applyAnswer(
         answer: T,
         extraTagList: MutableList<Pair<String, String>> = mutableListOf(),
+        removeTagKeys: List<String> = emptyList(),
+        photo: FeaturePhoto? = null,
     ) {
         viewLifecycleScope.launch {
             listener?.mutableMultiSelectQuests?.let { quests ->
@@ -328,26 +346,36 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                             }
                         }
 
-                        for (element in elements) {
-                            solve(
+                        elements.forEachIndexed { index, element ->
+                            val editId = solve(
                                 UpdateElementTagsAction(
                                     element.first,
                                     createQuestChanges(
                                         answer,
                                         extraTagList,
+                                        removeTagKeys,
                                         element.first,
                                         element.second
                                     )
                                 ), element.second
                             )
+                            // the same captured photo is attached to every resulting edit here -
+                            // each one re-uploads and re-attaches it independently on sync, same
+                            // simplification the app already makes for Add Feature's extraTagList
+                            if (editId != null && photo != null) {
+                                withContext(Dispatchers.IO) { attachPhoto(editId, photo, copy = index > 0) }
+                            }
                         }
                     } else {
-                        solve(
+                        val editId = solve(
                             UpdateElementTagsAction(
                                 element,
-                                createQuestChanges(answer, extraTagList)
+                                createQuestChanges(answer, extraTagList, removeTagKeys)
                             ), geometry
                         )
+                        if (editId != null && photo != null) {
+                            withContext(Dispatchers.IO) { attachPhoto(editId, photo, copy = false) }
+                        }
                     }
                 }
             }
@@ -357,11 +385,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     private fun createQuestChanges(
         answer: T,
         extraTagList: MutableList<Pair<String, String>> = mutableListOf(),
+        removeTagKeys: List<String> = emptyList(),
         forElement: Element = element,
         forGeometry: ElementGeometry = geometry,
     ): StringMapChanges {
         val changesBuilder = StringMapChangesBuilder(forElement.tags)
         extraTagList.forEach { changesBuilder[it.first] = it.second }
+        removeTagKeys.forEach { changesBuilder.remove(it) }
         osmElementQuestType.applyAnswerTo(
             answer,
             changesBuilder,
@@ -412,14 +442,16 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
     }
 
-    private suspend fun solve(action: ElementEditAction, geometry: ElementGeometry) {
+    /** Returns the id of the newly-added edit, or null if nothing was added (the user declined
+     *  the survey confirmation, or the changes were too long and went to a note instead). */
+    private suspend fun solve(action: ElementEditAction, geometry: ElementGeometry): Long? {
         setLocked(true)
         val isSurvey = surveyChecker.checkIsSurvey(geometry)
         if (!isSurvey && !confirmIsSurvey(requireContext())) {
             setLocked(false)
-            return
+            return null
         }
-        withContext(Dispatchers.IO) {
+        val editId = withContext(Dispatchers.IO) {
             if (action is UpdateElementTagsAction && !action.changes.isValid()) {
                 val questTitle =
                     englishResources.getString(osmElementQuestType.getTitle(element.tags))
@@ -430,6 +462,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     action.changes.changes
                 )
                 noteEditsController.add(0, NoteEditAction.CREATE, geometry.center, text)
+                null
             } else {
                 addElementEditsController.add(
                     osmElementQuestType,
@@ -441,68 +474,91 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             }
         }
         listener?.onEdited(osmElementQuestType, geometry)
+        return editId
+    }
+
+    /** Attaches [photo] to the edit [editId] - the actual upload (with its recorded bearing)
+     *  happens later, in the background sync (see ElementEditsUploader.uploadPendingPhotos).
+     *  [copy] should be true for every attachment after the first when the same captured photo is
+     *  being attached to several edits at once (multi-select survey): each edit's photo record
+     *  owns and later deletes its own file independently, so sharing one physical file across
+     *  edits would let the first edit to sync delete the file out from under the others still
+     *  waiting to upload it. */
+    private fun attachPhoto(editId: Long, photo: FeaturePhoto, copy: Boolean) {
+        val attached = if (!copy) photo else {
+            val original = File(photo.path)
+            val copyFile = File(original.parentFile, "edit${editId}_${original.name}")
+            original.copyTo(copyFile, overwrite = true)
+            photo.copy(path = copyFile.path)
+        }
+        featurePhotosController.add(editId, listOf(attached))
     }
 
     override fun setCameraIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val activity = activity ?: return
         try {
-            cameraLauncher.launch(takePictureIntent)
-        } catch (e: ActivityNotFoundException) {
+            val file = createLongFormPhotoFile(activity)
+            pendingPhotoFile = file
+            val uri = FileProvider.getUriForFile(activity, activity.getString(R.string.fileprovider_authority), file)
+            takePhotoLauncher.launch(uri)
+        } catch (e: Exception) {
+            pendingPhotoFile?.delete()
+            pendingPhotoFile = null
+            if (e !is ActivityNotFoundException) {
+                Log.e(TAG, "Unable to create photo", e)
+            }
             // Display error state to the user
         }
     }
 
-    private fun startKartViewFlow(bitmap: Bitmap?) {
-        viewLifecycleScope.launch {
-            val displayedLocation = listener?.displayedMapLocation
-            if (bitmap == null || displayedLocation == null) {
-                hideProgressbar()
-                return@launch
-            }
-            val bearing = if (displayedLocation.hasBearing() && displayedLocation.bearing != 0f) {
-                displayedLocation.bearing
-            } else {
-                compassBearing.toFloat()
-            }
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-            try {
-                val urls = kartaViewApiClient.uploadImages(
-                    listOf(byteArrayOutputStream.toByteArray()),
-                    LatLon(displayedLocation.latitude, displayedLocation.longitude),
-                    bearing
-                )
-                showSnackBar(
-                    "Image Uploaded Successfully",
-                    view,
-                    requireActivity() as ComponentActivity
-                )
-                onImageUrlReceived(urls.first())
-            } catch (e: Exception) {
-                Log.e("KartViewFlow", "KartaView upload failed", e)
-                showSnackBar(
-                    e.message ?: "Image upload failed. Please try again later.",
-                    view, requireActivity() as ComponentActivity
-                )
-            } finally {
-                hideProgressbar()
-            }
+    private fun onTookPhoto(hasSavedPhoto: Boolean) {
+        val file = pendingPhotoFile
+        pendingPhotoFile = null
+        if (!hasSavedPhoto || file == null) {
+            file?.delete()
+            return
         }
-    }
-
-    private fun showSnackBar(message: String, view: View?, componentActivity: ComponentActivity) {
-        if (view != null) {
-            Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show()
+        try {
+            val exif = ExifInterface(file)
+            rescalePhotoFile(file)
+            copyDirectionExifData(file, exif)
+            onPhotoCaptured(file.path, capturedPhotoBearing())
+        } catch (e: IOException) {
+            Log.e(TAG, "Unable to process photo", e)
+            file.delete()
         }
     }
 
     companion object {
+        private const val TAG = "AbstractOsmQuestForm"
         private const val ARG_ELEMENT = "element"
         private const val ARG_DISPLAYED_LOCATION = "displayedLocation"
+        private const val ARG_PENDING_PHOTO_FILE = "pendingPhotoFile"
 
         fun createArguments(element: Element, displayedLocation: Location? = null) = bundleOf(
             ARG_ELEMENT to Json.encodeToString(element),
             ARG_DISPLAYED_LOCATION to displayedLocation
         )
     }
+}
+
+private fun createLongFormPhotoFile(context: Context): File {
+    val directory = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val imageFileName = "long_form_photo_" + nowAsEpochMilliseconds() + ".jpg"
+    val file = File(directory, imageFileName)
+    if (!file.createNewFile()) throw IOException("Photo file with exactly the same name already exists")
+    return file
+}
+
+private fun rescalePhotoFile(file: File) {
+    val bitmap = decodeScaledBitmapAndNormalize(file.path, ApplicationConstants.ATTACH_PHOTO_MAX_SIZE, ApplicationConstants.ATTACH_PHOTO_MAX_SIZE) ?: throw IOException()
+    val out = FileOutputStream(file.path)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, ApplicationConstants.ATTACH_PHOTO_QUALITY, out)
+}
+
+private fun copyDirectionExifData(file: File, exif: ExifInterface) {
+    val newExif = ExifInterface(file.path)
+    newExif.setAttribute(TAG_GPS_IMG_DIRECTION, exif.getAttribute(TAG_GPS_IMG_DIRECTION))
+    newExif.setAttribute(TAG_GPS_IMG_DIRECTION_REF, exif.getAttribute(TAG_GPS_IMG_DIRECTION_REF))
+    newExif.saveAttributes()
 }

@@ -29,3 +29,17 @@ fun Element.changesApplied(changes: StringMapChanges): Element {
         timestampEdited = nowAsEpochMilliseconds()
     )
 }
+
+/** Returns a copy of [this] with [key] set to [value], merged in as an Add (if [existingTags]
+ *  doesn't already have that key) or a Modify (if it does). Used to fold a deferred photo's
+ *  uploaded URL into an already-recorded UpdateElementTagsAction's tags at upload time, since the
+ *  URL isn't known until the photo actually uploads - see
+ *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
+fun StringMapChanges.withTag(key: String, value: String, existingTags: Map<String, String>): StringMapChanges {
+    val entry = if (existingTags.containsKey(key)) {
+        StringMapEntryModify(key, existingTags.getValue(key), value)
+    } else {
+        StringMapEntryAdd(key, value)
+    }
+    return StringMapChanges(changes.filterNot { it.key == key }.toSet() + entry)
+}

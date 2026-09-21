@@ -29,37 +29,38 @@ class KartaViewApiClient(
     private val httpClient: HttpClient,
     private val prefs: Preferences,
 ) {
-    /** Uploads the image files at [imagePaths] into one new KartaView sequence at [position],
-     *  in list order. Paths that don't exist are skipped. Returns the lth photo URL for each
-     *  uploaded image, in the same order.
+    /** Uploads the image files at [photos] (path to the compass bearing, 0-359 clockwise from
+     *  north, the device was facing at capture time - 0f where a caller doesn't track it) into
+     *  one new KartaView sequence at [position], in list order. Paths that don't exist are
+     *  skipped, along with their bearing. Returns the lth photo URL for each uploaded image, in
+     *  the same order.
      *
      *  @throws KartaViewException naming the step that failed */
     suspend fun upload(
-        imagePaths: List<String>,
+        photos: List<Pair<String, Float>>,
         position: LatLon,
-        bearing: Float = 0f,
     ): List<String> {
-        val images = imagePaths.mapNotNull { path ->
+        val images = photos.mapNotNull { (path, bearing) ->
             val file = Path(path)
-            if (fileSystem.exists(file)) fileSystem.source(file).buffered()
-                .readByteArray() else null
+            if (fileSystem.exists(file)) {
+                fileSystem.source(file).buffered().readByteArray() to bearing
+            } else null
         }
-        return uploadImages(images, position, bearing)
+        return uploadImages(images, position)
     }
 
-    /** Uploads [images] (JPEG-encoded) into one new KartaView sequence at [position], in list
-     *  order (sequenceIndex 1..n), closes the sequence and returns the lth photo URL for each
-     *  image, in the same order.
+    /** Uploads [images] (JPEG-encoded bytes, paired with the capture bearing for each) into one
+     *  new KartaView sequence at [position], in list order (sequenceIndex 1..n), closes the
+     *  sequence and returns the lth photo URL for each image, in the same order.
      *
      *  @throws KartaViewException naming the step that failed */
     suspend fun uploadImages(
-        images: List<ByteArray>,
+        images: List<Pair<ByteArray, Float>>,
         position: LatLon,
-        bearing: Float = 0f,
     ): List<String> {
         if (images.isEmpty()) return emptyList()
         val sequenceId = createSequence()
-        val photoIds = images.mapIndexed { index, image ->
+        val photoIds = images.mapIndexed { index, (image, bearing) ->
             uploadPhoto(sequenceId, index + 1, image, position, bearing)
         }
         closeSequence(sequenceId)

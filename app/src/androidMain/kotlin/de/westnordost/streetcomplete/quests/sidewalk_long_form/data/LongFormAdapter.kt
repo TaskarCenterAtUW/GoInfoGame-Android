@@ -16,6 +16,7 @@ import android.widget.TextView
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.DiffUtil
@@ -29,6 +30,7 @@ import de.westnordost.streetcomplete.databinding.CellLongFormItemBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormTextEntryItemBinding
+import de.westnordost.streetcomplete.util.decodeScaledBitmapAndNormalize
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
@@ -39,14 +41,37 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.java.KoinJavaComponent.inject
 
-class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
-    RecyclerView.Adapter<ViewHolder>() {
+/** The state of the (at most one) photo attached to this long-form quest - see ALongForm. */
+sealed class PhotoAttachment {
+    data object None : PhotoAttachment()
+    /** Captured this visit, saved locally, not yet uploaded - uploads in the background sync.
+     *  [bearing] is the compass bearing (0-359, clockwise from north) the device was facing when
+     *  it was captured. */
+    data class Pending(val path: String, val bearing: Float = 0f) : PhotoAttachment()
+    /** Attached and synced on a previous visit, read back from the element's own tags. */
+    data class Uploaded(val url: String) : PhotoAttachment()
+}
+
+class LongFormAdapter<T>(
+    val cameraIntent: () -> Unit,
+    val onPhotoDeleted: () -> Unit,
+) : RecyclerView.Adapter<ViewHolder>() {
     var givenItems = emptyList<LongFormQuest>()
     var needRefreshIds = listOf<Int?>()
     private val erroredQuestionIds = mutableSetOf<Int>()
     private val _isErrorFree = MutableStateFlow(true)
     val isErrorFree: StateFlow<Boolean> = _isErrorFree.asStateFlow()
     val preferences: Preferences by inject(Preferences::class.java)
+
+    /** At most one question at a time shows a choiceFollowUp (see LongFormQuest.activeChoiceFollowUp) -
+     *  setting this refreshes just that row, swapping its gradient CTA for the photo card or back. */
+    var photoAttachment: PhotoAttachment = PhotoAttachment.None
+        set(value) {
+            field = value
+            val index = items.indexOfFirst { it.activeChoiceFollowUp() != null }
+            android.util.Log.d("PhotoDebug", "photoAttachment set to $value, items.size=${items.size}, index=$index")
+            if (index >= 0) notifyItemChanged(index)
+        }
     var items: List<LongFormQuest> = emptyList()
         set(value) {
             if (givenItems.isEmpty()) {
@@ -547,18 +572,52 @@ class LongFormAdapter<T>(val cameraIntent: () -> Unit) :
             }
         }
 
-        /** Show the follow-up prompt (e.g. "Please take a photo of the obstruction.") of the
-         *  first selected choice that has one, hide it if none of the selected choices do */
+        /** Shows the follow-up prompt (e.g. "Please take a photo of the obstruction.") of the
+         *  first selected choice that has one, or - once a photo has been attached (or existed
+         *  from a previous visit) - the photo card in its place instead. Hides both if none of
+         *  the selected choices have a follow-up. */
         private fun updateChoiceFollowUp(quest: LongFormQuest) {
-            quest.selectedIndex?.forEach { index ->
-                val followUp = quest.questAnswerChoices?.get(index)?.choiceFollowUp
-                if (!followUp.isNullOrBlank()) {
+            val followUp = quest.activeChoiceFollowUp()
+            android.util.Log.d("PhotoDebug", "updateChoiceFollowUp questId=${quest.questId} followUp=$followUp photoAttachment=$photoAttachment adapterPosition=$adapterPosition")
+            if (followUp == null) {
+                binding.choiceFollowUp.visibility = View.GONE
+                binding.photoCard.visibility = View.GONE
+                return
+            }
+            when (val attachment = photoAttachment) {
+                PhotoAttachment.None -> {
                     binding.choiceFollowUp.visibility = View.VISIBLE
                     binding.choiceFollowUp.text = followUp
-                    return
+                    binding.photoCard.visibility = View.GONE
                 }
+                is PhotoAttachment.Pending -> bindPhotoCard(
+                    title = "Photo attached",
+                    subtitle = "Uploads when you submit",
+                    showRetake = true,
+                ) {
+                    binding.photoThumb.doOnLayout {
+                        val bitmap = decodeScaledBitmapAndNormalize(attachment.path, it.width, it.height)
+                        binding.photoThumb.setImageBitmap(bitmap)
+                    }
+                }
+                is PhotoAttachment.Uploaded -> bindPhotoCard(
+                    title = "Photo from last visit",
+                    subtitle = "Tap ✕ to remove and take a new photo",
+                    showRetake = false,
+                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
             }
+        }
+
+        private fun bindPhotoCard(title: String, subtitle: String, showRetake: Boolean, loadThumb: () -> Unit) {
             binding.choiceFollowUp.visibility = View.GONE
+            binding.photoCard.visibility = View.VISIBLE
+            binding.photoTitle.text = title
+            binding.photoSubtitle.text = subtitle
+            binding.photoRetake.visibility = if (showRetake) View.VISIBLE else View.GONE
+            binding.photoThumbProgress.visibility = View.GONE
+            loadThumb()
+            binding.photoDelete.setOnClickListener { onPhotoDeleted() }
+            binding.photoRetake.setOnClickListener { cameraIntent() }
         }
 
         fun handleDeselection(

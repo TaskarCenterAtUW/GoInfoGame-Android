@@ -11,6 +11,8 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.IsRevertAction
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.withTag
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
@@ -149,22 +151,35 @@ class ElementEditsUploader(
         }
     }
 
-    /** If the edit is a node creation with photos still awaiting upload, uploads them to
-     *  KartaView and folds the resulting URLs into the action's tags as ext:image_url1,
-     *  ext:image_url2, ... (one per image, in attach order). The rewritten action is persisted
-     *  BEFORE the photo records/files are deleted, so a crash in between cannot lose the URLs or
-     *  upload the photos twice. Returns the edit whose action carries the URL tags. */
+    /** If the edit is a node creation or a long-form tag update with photo(s) still awaiting
+     *  upload, uploads them to KartaView and folds the resulting URL(s) into the action's tags -
+     *  ext:image_url1, ext:image_url2, ... (one per image, in attach order) for a node creation,
+     *  or the single ext:kartaview_url for a tag update (long form only ever attaches one photo
+     *  per edit - see ALongForm). The rewritten action is persisted BEFORE the photo records/files
+     *  are deleted, so a crash in between cannot lose the URL(s) or upload the photos twice.
+     *  Returns the edit whose action carries the URL tag(s). */
     private suspend fun uploadPendingPhotos(edit: ElementEdit): ElementEdit {
         val action = edit.action
-        if (action !is CreateNodeAction) return edit
-        val photoPaths = featurePhotosController.get(edit.id)
-        if (photoPaths.isEmpty()) return edit
+        if (action !is CreateNodeAction && action !is UpdateElementTagsAction) return edit
+        val photos = featurePhotosController.get(edit.id)
+        if (photos.isEmpty()) return edit
 
-        val urls = imageUploader.upload(photoPaths, edit.position)
+        val urls = imageUploader.upload(photos.map { it.path to it.bearing }, edit.position)
         var uploadedEdit = edit
         if (urls.isNotEmpty()) {
-            val urlTags = urls.mapIndexed { i, url -> "ext:image_url${i + 1}" to url }
-            uploadedEdit = edit.copy(action = action.copy(tags = action.tags + urlTags))
+            uploadedEdit = when (action) {
+                is CreateNodeAction -> {
+                    val urlTags = urls.mapIndexed { i, url -> "ext:image_url${i + 1}" to url }
+                    edit.copy(action = action.copy(tags = action.tags + urlTags))
+                }
+                is UpdateElementTagsAction -> {
+                    val changes = action.changes.withTag(
+                        KARTAVIEW_URL_TAG, urls.first(), action.originalElement.tags
+                    )
+                    edit.copy(action = action.copy(changes = changes))
+                }
+                else -> edit
+            }
             elementEditsController.updateAction(uploadedEdit)
         }
         featurePhotosController.markUploaded(edit.id)
@@ -180,5 +195,6 @@ class ElementEditsUploader(
 
     companion object {
         private const val TAG = "ElementEditsUploader"
+        private const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
     }
 }
