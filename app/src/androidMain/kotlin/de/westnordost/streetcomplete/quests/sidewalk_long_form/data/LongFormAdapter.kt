@@ -1,9 +1,12 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -13,6 +16,8 @@ import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -31,6 +36,7 @@ import de.westnordost.streetcomplete.databinding.CellLongFormItemImageGridBindin
 import de.westnordost.streetcomplete.databinding.CellLongFormItemInputBinding
 import de.westnordost.streetcomplete.databinding.CellLongFormTextEntryItemBinding
 import de.westnordost.streetcomplete.util.decodeScaledBitmapAndNormalize
+import de.westnordost.streetcomplete.util.ktx.toast
 import de.westnordost.streetcomplete.view.CharSequenceText
 import de.westnordost.streetcomplete.view.ImageUrl
 import de.westnordost.streetcomplete.view.image_select.ImageSelectAdapter
@@ -40,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.java.KoinJavaComponent.inject
+import java.io.File
 
 /** The state of the (at most one) photo attached to this long-form quest - see ALongForm. */
 sealed class PhotoAttachment {
@@ -50,11 +57,16 @@ sealed class PhotoAttachment {
     data class Pending(val path: String, val bearing: Float = 0f) : PhotoAttachment()
     /** Attached and synced on a previous visit, read back from the element's own tags. */
     data class Uploaded(val url: String) : PhotoAttachment()
+    /** Was [Uploaded] as [url], but the user tapped delete this visit - shown as a distinct,
+     *  reversible "marked for removal" state (rather than jumping straight back to [None]) so the
+     *  pending removal stays visible and undoable until Submit actually applies it. */
+    data class PendingRemoval(val url: String) : PhotoAttachment()
 }
 
 class LongFormAdapter<T>(
     val cameraIntent: () -> Unit,
     val onPhotoDeleted: () -> Unit,
+    val onPhotoUndoRemoval: () -> Unit,
 ) : RecyclerView.Adapter<ViewHolder>() {
     var givenItems = emptyList<LongFormQuest>()
     var needRefreshIds = listOf<Int?>()
@@ -68,8 +80,14 @@ class LongFormAdapter<T>(
     var photoAttachment: PhotoAttachment = PhotoAttachment.None
         set(value) {
             field = value
-            val index = items.indexOfFirst { it.activeChoiceFollowUp() != null }
-            android.util.Log.d("PhotoDebug", "photoAttachment set to $value, items.size=${items.size}, index=$index")
+            // items (the rendered snapshot list) is only resynced with givenItems (the live,
+            // in-place-mutated data) for questions listed in needRefreshIds - looking up the
+            // target row directly in items can find a stale snapshot whose selectedIndex predates
+            // the selection that made its choiceFollowUp active, so activeChoiceFollowUp() on it
+            // wrongly returns null. Find the question BY ID in the live givenItems first, then
+            // resolve that id to its current position in items to notify.
+            val questId = givenItems.firstOrNull { it.activeChoiceFollowUp() != null }?.questId
+            val index = items.indexOfFirst { it.questId == questId }
             if (index >= 0) notifyItemChanged(index)
         }
     var items: List<LongFormQuest> = emptyList()
@@ -439,6 +457,10 @@ class LongFormAdapter<T>(
         // changing this row's position or an unrelated selection elsewhere in the form
         private var boundQuestId: Int? = null
 
+        // captured before any bind() ever overrides it (for the "marked for removal" state),
+        // so there's always a real color to restore to - see bindPhotoCard
+        private val defaultPhotoTitleColor = binding.photoTitle.currentTextColor
+
         init {
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
             binding.list.isNestedScrollingEnabled = false
@@ -502,10 +524,7 @@ class LongFormAdapter<T>(
                 }
 
                 fun handleChoiceFollowUp() {
-                    // item is a snapshot taken at bind time - the selection that was just made
-                    // lives in givenItems, so read the follow-up state from there
-                    val live = givenItems.firstOrNull { it.questId == item.questId } ?: item
-                    updateChoiceFollowUp(live)
+                    updateChoiceFollowUp(item)
                 }
 
                 override fun onLongPress(index: Int, drawable: Drawable?) {
@@ -575,10 +594,16 @@ class LongFormAdapter<T>(
         /** Shows the follow-up prompt (e.g. "Please take a photo of the obstruction.") of the
          *  first selected choice that has one, or - once a photo has been attached (or existed
          *  from a previous visit) - the photo card in its place instead. Hides both if none of
-         *  the selected choices have a follow-up. */
+         *  the selected choices have a follow-up.
+         *
+         *  [quest] may be a snapshot taken at bind time - items (the rendered snapshot list) is
+         *  only resynced with givenItems (the live, in-place-mutated data) for questions listed
+         *  in needRefreshIds, so a snapshot's selectedIndex can predate a selection made after it
+         *  was taken. Always resolve to the live givenItems entry first so this never acts on a
+         *  stale selection. */
         private fun updateChoiceFollowUp(quest: LongFormQuest) {
-            val followUp = quest.activeChoiceFollowUp()
-            android.util.Log.d("PhotoDebug", "updateChoiceFollowUp questId=${quest.questId} followUp=$followUp photoAttachment=$photoAttachment adapterPosition=$adapterPosition")
+            val live = givenItems.firstOrNull { it.questId == quest.questId } ?: quest
+            val followUp = live.activeChoiceFollowUp()
             if (followUp == null) {
                 binding.choiceFollowUp.visibility = View.GONE
                 binding.photoCard.visibility = View.GONE
@@ -593,7 +618,10 @@ class LongFormAdapter<T>(
                 is PhotoAttachment.Pending -> bindPhotoCard(
                     title = "Photo attached",
                     subtitle = "Uploads when you submit",
+                    showDelete = true,
                     showRetake = true,
+                    showUndo = false,
+                    onThumbClick = { openLocalPhotoFullScreen(binding.root.context, attachment.path) },
                 ) {
                     binding.photoThumb.doOnLayout {
                         val bitmap = decodeScaledBitmapAndNormalize(attachment.path, it.width, it.height)
@@ -603,21 +631,56 @@ class LongFormAdapter<T>(
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
                     subtitle = "Tap ✕ to remove and take a new photo",
+                    showDelete = true,
                     showRetake = false,
+                    showUndo = false,
+                    onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
+                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
+                is PhotoAttachment.PendingRemoval -> bindPhotoCard(
+                    title = "Photo will be removed",
+                    subtitle = "Removed when you submit",
+                    showDelete = false,
+                    showRetake = false,
+                    showUndo = true,
+                    onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
                 ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
             }
         }
 
-        private fun bindPhotoCard(title: String, subtitle: String, showRetake: Boolean, loadThumb: () -> Unit) {
+        /** [showDelete]/[showRetake] can both be true at once (a not-yet-uploaded photo shows the
+         *  ✕ badge and the retake icon together); [showUndo] is mutually exclusive with both -
+         *  it's the single control for the "marked for removal" state (PhotoAttachment.
+         *  PendingRemoval), which hides the other two entirely. */
+        private fun bindPhotoCard(
+            title: String,
+            subtitle: String,
+            showDelete: Boolean,
+            showRetake: Boolean,
+            showUndo: Boolean,
+            onThumbClick: () -> Unit,
+            loadThumb: () -> Unit,
+        ) {
             binding.choiceFollowUp.visibility = View.GONE
             binding.photoCard.visibility = View.VISIBLE
+            binding.photoCard.setBackgroundResource(
+                if (showUndo) R.drawable.photo_card_removed_background else R.drawable.black_image_border
+            )
             binding.photoTitle.text = title
+            binding.photoTitle.setTextColor(
+                if (showUndo) ContextCompat.getColor(binding.root.context, R.color.traffic_red) else defaultPhotoTitleColor
+            )
             binding.photoSubtitle.text = subtitle
-            binding.photoRetake.visibility = if (showRetake) View.VISIBLE else View.GONE
+            binding.photoThumb.alpha = if (showUndo) 0.5f else 1f
             binding.photoThumbProgress.visibility = View.GONE
             loadThumb()
+            binding.photoThumb.setOnClickListener { onThumbClick() }
+
+            binding.photoDelete.visibility = if (showDelete) View.VISIBLE else View.GONE
+            binding.photoRetake.visibility = if (showRetake) View.VISIBLE else View.GONE
+            binding.photoUndo.visibility = if (showUndo) View.VISIBLE else View.GONE
             binding.photoDelete.setOnClickListener { onPhotoDeleted() }
             binding.photoRetake.setOnClickListener { cameraIntent() }
+            binding.photoUndo.setOnClickListener { onPhotoUndoRemoval() }
         }
 
         fun handleDeselection(
@@ -775,5 +838,31 @@ class LongFormAdapter<T>(
         if (holder is LongFormAdapter<*>.TextEntryViewHolder) {
             holder.bind(items[position], position)
         }
+    }
+}
+
+/** Opens [path] (a local file) full-screen in whatever app the device offers for viewing images -
+ *  the gallery/photos app, typically - via a plain ACTION_VIEW intent rather than a custom in-app
+ *  viewer, so pinch-zoom/share/etc. all come for free. */
+private fun openLocalPhotoFullScreen(context: Context, path: String) {
+    try {
+        val uri = FileProvider.getUriForFile(context, context.getString(R.string.fileprovider_authority), File(path))
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "image/jpeg")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        context.toast("No app found to view images")
+    }
+}
+
+/** Opens the KartaView photo at [url] full-screen via a plain ACTION_VIEW intent - the browser,
+ *  typically, since it's a plain https URL. */
+private fun openRemotePhotoFullScreen(context: Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: ActivityNotFoundException) {
+        context.toast("No app found to view images")
     }
 }

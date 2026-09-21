@@ -19,6 +19,7 @@ import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoAttachment
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.activeChoiceFollowUp
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.contentEquals
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.coroutines.launch
@@ -51,7 +52,11 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        adapter = LongFormAdapter(cameraIntent = { setCameraIntent() }, onPhotoDeleted = ::onPhotoDeleted)
+        adapter = LongFormAdapter(
+            cameraIntent = { setCameraIntent() },
+            onPhotoDeleted = ::onPhotoDeleted,
+            onPhotoUndoRemoval = ::onPhotoUndoRemoval,
+        )
     }
 
     // Gates the "resubmit every answered question on a no-diff recheck" behavior in onClickOk.
@@ -91,6 +96,17 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
                 val effective = if (quest.visible) quest else quest.copy(userInput = null)
                 effective.takeIf { !it.userInput.contentEquals(it.seededAnswer) }
             }
+        // If the choice this photo was attached to is no longer selected (the user changed their
+        // answer this visit), the photo is orphaned - the card is already hidden in that case
+        // (see LongFormAdapter.updateChoiceFollowUp), but without this the underlying tag/local
+        // file would silently survive unchanged. Discard it the same way an explicit delete
+        // would, using the final state at submit time - same principle as editedItems above.
+        if (photoAttachment != PhotoAttachment.None &&
+            adapter.givenItems.none { it.visible && it.activeChoiceFollowUp() != null }
+        ) {
+            onPhotoDeleted()
+        }
+
         // the photo's URL isn't known yet if it was just captured this visit (upload happens
         // later, in the background sync - see AbstractOsmQuestForm.applyAnswer) - only an
         // explicit removal of an already-synced photo (without a replacement) is a tag change we
@@ -124,12 +140,28 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         partialAnsweringRecheckEnabled = !isMultiSelectActive
         val isFullyAnswered = adapter.givenItems.none { it.visible && it.seededAnswer == null }
         val submittedItems = editedItems.ifEmpty {
-            if (isFullyAnswered && partialAnsweringRecheckEnabled) {
+            if (photo != null && partialAnsweringRecheckEnabled) {
+                // A still-pending photo capture has no tag value of its own yet (the URL only
+                // exists after upload - see the photo/removeTagKeys comment above), so attaching
+                // it to a real edit means riding along on some other tag change. Resubmit ONLY the
+                // one question this photo's follow-up is tied to (guaranteed to already have a
+                // seeded answer here, since editedItems being empty means that question's
+                // selection is unchanged from its seed - see the onPhotoDeleted guard above) rather
+                // than every answered question, so a photo-only submit doesn't silently bump every
+                // other tag on the element too.
+                adapter.givenItems.filter { it.visible && it.activeChoiceFollowUp() != null }
+            } else if (isFullyAnswered && partialAnsweringRecheckEnabled) {
                 adapter.givenItems.filter { it.visible && it.seededAnswer != null }
-            } else emptyList()
+            } else {
+                emptyList()
+            }
         }
 
-        if (submittedItems.isEmpty()) {
+        // removeTagKeys alone (an explicit photo removal, with no replacement and no question
+        // changes) is already a real, non-empty tag change on its own - createQuestChanges applies
+        // it regardless of how many items are in submittedItems - so it must also let the submit
+        // through even when submittedItems ends up empty.
+        if (submittedItems.isEmpty() && removeTagKeys.isEmpty()) {
             Toast.makeText(
                 context,
                 "No changes to submit. Please answer at least one question.",
@@ -211,14 +243,27 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         photoAttachment = PhotoAttachment.Pending(path, bearing)
     }
 
+    /** A not-yet-synced capture (never submitted) is discarded outright - there's nothing to
+     *  undo. An already-synced photo instead moves to PendingRemoval: visibly marked for removal
+     *  but reversible (see onPhotoUndoRemoval) until Submit actually applies it. */
     private fun onPhotoDeleted() {
-        android.util.Log.d("PhotoDebug", "onPhotoDeleted called, current=$photoAttachment")
-        when (val attachment = photoAttachment) {
-            is PhotoAttachment.Pending -> File(attachment.path).delete()
-            is PhotoAttachment.Uploaded -> existingPhotoRemoved = true
-            PhotoAttachment.None -> {}
+        photoAttachment = when (val attachment = photoAttachment) {
+            is PhotoAttachment.Pending -> {
+                File(attachment.path).delete()
+                PhotoAttachment.None
+            }
+            is PhotoAttachment.Uploaded -> {
+                existingPhotoRemoved = true
+                PhotoAttachment.PendingRemoval(attachment.url)
+            }
+            is PhotoAttachment.PendingRemoval, PhotoAttachment.None -> PhotoAttachment.None
         }
-        photoAttachment = PhotoAttachment.None
+    }
+
+    private fun onPhotoUndoRemoval() {
+        val attachment = photoAttachment as? PhotoAttachment.PendingRemoval ?: return
+        existingPhotoRemoved = false
+        photoAttachment = PhotoAttachment.Uploaded(attachment.url)
     }
 
     /** Called when the sheet is closed/discarded without submitting - a locally-captured photo
