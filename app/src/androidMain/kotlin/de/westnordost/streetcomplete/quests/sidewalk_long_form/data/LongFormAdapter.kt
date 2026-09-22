@@ -53,8 +53,12 @@ sealed class PhotoAttachment {
     data object None : PhotoAttachment()
     /** Captured this visit, saved locally, not yet uploaded - uploads in the background sync.
      *  [bearing] is the compass bearing (0-359, clockwise from north) the device was facing when
-     *  it was captured. */
-    data class Pending(val path: String, val bearing: Float = 0f) : PhotoAttachment()
+     *  it was captured. [replaces] is the [Uploaded] or [PendingRemoval] this capture would
+     *  replace, if any (never another [Pending] or [None] - see ALongForm.onPhotoCaptured) - kept
+     *  so cancelling this capture (the delete ✕) can revert to it instead of always dropping to
+     *  [None] and silently losing track of an already-synced photo that was never actually asked
+     *  to be removed. */
+    data class Pending(val path: String, val bearing: Float = 0f, val replaces: PhotoAttachment? = null) : PhotoAttachment()
     /** Attached and synced on a previous visit, read back from the element's own tags. */
     data class Uploaded(val url: String) : PhotoAttachment()
     /** Was [Uploaded] as [url], but the user tapped delete this visit - shown as a distinct,
@@ -617,9 +621,12 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Pending -> bindPhotoCard(
                     title = "Photo attached",
-                    subtitle = "Uploads when you submit",
+                    subtitle = if (attachment.replaces != null) {
+                        "Replaces previous photo — tap ✕ to keep it instead"
+                    } else {
+                        "Uploads when you submit"
+                    },
                     showDelete = true,
-                    showRetake = true,
                     showUndo = false,
                     onThumbClick = { openLocalPhotoFullScreen(binding.root.context, attachment.path) },
                 ) {
@@ -630,9 +637,8 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Tap ✕ to remove and take a new photo",
+                    subtitle = "Tap 📷 to replace it, or ✕ to remove it",
                     showDelete = true,
-                    showRetake = false,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
                 ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
@@ -640,22 +646,21 @@ class LongFormAdapter<T>(
                     title = "Photo will be removed",
                     subtitle = "Removed when you submit",
                     showDelete = false,
-                    showRetake = false,
                     showUndo = true,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
                 ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
             }
         }
 
-        /** [showDelete]/[showRetake] can both be true at once (a not-yet-uploaded photo shows the
-         *  ✕ badge and the retake icon together); [showUndo] is mutually exclusive with both -
-         *  it's the single control for the "marked for removal" state (PhotoAttachment.
-         *  PendingRemoval), which hides the other two entirely. */
+        /** The retake camera icon is always shown once any photo exists - capturing a new one
+         *  always supersedes whatever's there (see ALongForm.onPhotoCaptured), so there's never a
+         *  state where replacing needs an extra step first. [showDelete] (the ✕ badge on the
+         *  thumbnail) and [showUndo] (the pill button, for the "marked for removal" state -
+         *  PhotoAttachment.PendingRemoval) are mutually exclusive with each other. */
         private fun bindPhotoCard(
             title: String,
             subtitle: String,
             showDelete: Boolean,
-            showRetake: Boolean,
             showUndo: Boolean,
             onThumbClick: () -> Unit,
             loadThumb: () -> Unit,
@@ -676,7 +681,6 @@ class LongFormAdapter<T>(
             binding.photoThumb.setOnClickListener { onThumbClick() }
 
             binding.photoDelete.visibility = if (showDelete) View.VISIBLE else View.GONE
-            binding.photoRetake.visibility = if (showRetake) View.VISIBLE else View.GONE
             binding.photoUndo.visibility = if (showUndo) View.VISIBLE else View.GONE
             binding.photoDelete.setOnClickListener { onPhotoDeleted() }
             binding.photoRetake.setOnClickListener { cameraIntent() }

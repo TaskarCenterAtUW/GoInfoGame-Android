@@ -131,52 +131,52 @@
             android:layout_alignEnd="@id/photo_thumb"
             android:contentDescription="Remove photo" />
 
-        <!-- Invisible (not gone) so it keeps reserving the same end slot regardless of whether
-             photo_retake or photo_undo is the one actually shown there - keeps the text column's
-             layout_toStartOf below stable across all three photo-card states. -->
-        <View
-            android:id="@+id/photo_action_anchor"
-            android:layout_width="64dp"
-            android:layout_height="32dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:visibility="invisible" />
-
-        <ImageView
-            android:id="@+id/photo_retake"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="6dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:background="@drawable/background_white_circle"
-            app:srcCompat="@drawable/ic_camera_outlined"
-            app:tint="@color/primary"
-            android:contentDescription="Retake photo" />
-
-        <TextView
-            android:id="@+id/photo_undo"
+        <!-- The camera icon (photo_retake) is always shown alongside whichever badge/button
+             applies - capturing a new photo always supersedes whatever's there, whether it's a
+             not-yet-uploaded capture, an already-synced photo, or one already marked for removal
+             (photo_undo) - so there's never a dead end where replacing needs an UNDO first. -->
+        <LinearLayout
+            android:id="@+id/photo_actions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:background="@drawable/pill_button_primary"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:text="UNDO"
-            android:textColor="@color/button_white"
-            android:textSize="11.5sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
+            android:layout_alignParentEnd="true">
+
+            <ImageView
+                android:id="@+id/photo_retake"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="6dp"
+                android:background="@drawable/background_white_circle"
+                app:srcCompat="@drawable/ic_camera_outlined"
+                app:tint="@color/primary"
+                android:contentDescription="Retake photo" />
+
+            <TextView
+                android:id="@+id/photo_undo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/pill_button_primary"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:text="UNDO"
+                android:textColor="@color/button_white"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
 
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/photo_thumb"
-            android:layout_toStartOf="@id/photo_action_anchor"
+            android:layout_toStartOf="@id/photo_actions"
             android:layout_marginStart="12dp"
             android:layout_centerVertical="true">
 

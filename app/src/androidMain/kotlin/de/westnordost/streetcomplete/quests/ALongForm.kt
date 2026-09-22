@@ -99,12 +99,15 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         // If the choice this photo was attached to is no longer selected (the user changed their
         // answer this visit), the photo is orphaned - the card is already hidden in that case
         // (see LongFormAdapter.updateChoiceFollowUp), but without this the underlying tag/local
-        // file would silently survive unchanged. Discard it the same way an explicit delete
-        // would, using the final state at submit time - same principle as editedItems above.
+        // file would silently survive unchanged. Discard it entirely, using the final state at
+        // submit time - same principle as editedItems above. Deliberately NOT onPhotoDeleted():
+        // that reverts one step (back to whatever a pending capture would replace, or to a
+        // reversible "marked for removal"), which is right for the ✕ button but wrong here - the
+        // question itself is gone, so there's nothing left to revert to or keep undoable.
         if (photoAttachment != PhotoAttachment.None &&
             adapter.givenItems.none { it.visible && it.activeChoiceFollowUp() != null }
         ) {
-            onPhotoDeleted()
+            discardPhotoForOrphanedQuestion()
         }
 
         // the photo's URL isn't known yet if it was just captured this visit (upload happens
@@ -235,22 +238,37 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onPhotoCaptured(path: String, bearing: Float) {
-        // single-photo model: a new capture replaces whatever was pending before. If it's
-        // replacing an already-synced photo (from a previous visit) rather than a not-yet-synced
-        // local one, remember to remove that old tag on submit unless this new one ends up kept.
-        (photoAttachment as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
-        if (photoAttachment is PhotoAttachment.Uploaded) existingPhotoRemoved = true
-        photoAttachment = PhotoAttachment.Pending(path, bearing)
+        // single-photo model: a new capture replaces whatever was pending before. [replaces]
+        // records what that was (an already-synced photo, or one already marked for removal) so
+        // cancelling THIS capture (onPhotoDeleted, below) can revert to it instead of forgetting
+        // it ever existed. Retaking again before submitting (Pending -> camera -> new Pending)
+        // carries the ORIGINAL replaces forward, not the intermediate Pending, so no matter how
+        // many times the user retakes, cancelling always lands back on the true starting point.
+        val previous = photoAttachment
+        val replaces = when (previous) {
+            is PhotoAttachment.Pending -> previous.replaces
+            is PhotoAttachment.Uploaded, is PhotoAttachment.PendingRemoval -> previous
+            PhotoAttachment.None -> null
+        }
+        (previous as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
+        photoAttachment = PhotoAttachment.Pending(path, bearing, replaces)
     }
 
-    /** A not-yet-synced capture (never submitted) is discarded outright - there's nothing to
-     *  undo. An already-synced photo instead moves to PendingRemoval: visibly marked for removal
-     *  but reversible (see onPhotoUndoRemoval) until Submit actually applies it. */
+    /** A not-yet-synced capture is cancelled by reverting to whatever it was replacing (an
+     *  already-synced photo, or one already marked for removal) rather than always dropping to
+     *  [PhotoAttachment.None] - otherwise cancelling a retake would silently discard an
+     *  already-synced photo that was never actually asked to be removed. An already-synced photo
+     *  instead moves to PendingRemoval: visibly marked for removal but reversible (see
+     *  onPhotoUndoRemoval) until Submit actually applies it. */
     private fun onPhotoDeleted() {
         photoAttachment = when (val attachment = photoAttachment) {
             is PhotoAttachment.Pending -> {
                 File(attachment.path).delete()
-                PhotoAttachment.None
+                when (val prev = attachment.replaces) {
+                    is PhotoAttachment.Uploaded -> { existingPhotoRemoved = false; prev }
+                    is PhotoAttachment.PendingRemoval -> { existingPhotoRemoved = true; prev }
+                    is PhotoAttachment.Pending, PhotoAttachment.None, null -> PhotoAttachment.None
+                }
             }
             is PhotoAttachment.Uploaded -> {
                 existingPhotoRemoved = true
@@ -258,6 +276,22 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
             }
             is PhotoAttachment.PendingRemoval, PhotoAttachment.None -> PhotoAttachment.None
         }
+    }
+
+    /** Unlike onPhotoDeleted, always ends at [PhotoAttachment.None] regardless of history - used
+     *  when the photo's own question is no longer applicable at all (see the orphan check in
+     *  onClickOk), where there's nothing left to revert to or keep undoable. Still correctly
+     *  removes an already-synced photo's tag on submit if this was, or was replacing, one. */
+    private fun discardPhotoForOrphanedQuestion() {
+        val attachment = photoAttachment
+        (attachment as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
+        val wasEverSynced = when (attachment) {
+            is PhotoAttachment.Uploaded, is PhotoAttachment.PendingRemoval -> true
+            is PhotoAttachment.Pending -> attachment.replaces != null
+            PhotoAttachment.None -> false
+        }
+        if (wasEverSynced) existingPhotoRemoved = true
+        photoAttachment = PhotoAttachment.None
     }
 
     private fun onPhotoUndoRemoval() {
