@@ -49,8 +49,8 @@ class ElementEditsController(
     override fun getAllUnsynced(): List<ElementEdit> =
         editsDB.getAllUnsynced()
 
-    fun getOldestUnsynced(): ElementEdit? =
-        editsDB.getOldestUnsynced()
+    fun getOldestUnsynced(excludeIds: Set<Long> = emptySet()): ElementEdit? =
+        editsDB.getOldestUnsynced(excludeIds)
 
     fun getIdProvider(id: Long): ElementIdProvider =
         elementIdProviderDB.get(id)

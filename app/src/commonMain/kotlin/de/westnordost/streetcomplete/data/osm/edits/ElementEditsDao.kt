@@ -70,14 +70,21 @@ class ElementEditsDao(
             where = "$ID = $id AND $WORKSPACE_ID = $workspaceId"
         ) { it.toElementEdit() }
 
-    fun getOldestUnsynced(): ElementEdit? =
-        db.queryOne(
+    /** [excludeIds] - edits already found to fail uploading earlier in the same upload run (e.g.
+     *  a KartaView photo upload failure - see ElementEditsUploader.upload) are skipped so they
+     *  don't get retried in a tight loop and block every other edit behind them, without writing
+     *  anything to the DB for it: the edit is otherwise a completely normal unsynced edit, so the
+     *  very next upload run (auto-triggered often - QuestAutoSyncer) retries it fresh. */
+    fun getOldestUnsynced(excludeIds: Set<Long> = emptySet()): ElementEdit? {
+        val excludeClause = if (excludeIds.isEmpty()) "" else " AND $ID NOT IN (${excludeIds.joinToString(",")})"
+        return db.queryOne(
             NAME,
             // edits blocked on unresolved tag conflicts are skipped by the upload queue but stay
             // unsynced (still counted, still applied to the local map view)
-            where = "$IS_SYNCED = 0 AND $IS_BLOCKED = 0 AND $WORKSPACE_ID = $workspaceId",
+            where = "$IS_SYNCED = 0 AND $IS_BLOCKED = 0 AND $WORKSPACE_ID = $workspaceId$excludeClause",
             orderBy = CREATED_TIMESTAMP
         ) { it.toElementEdit() }
+    }
 
     fun getUnsyncedCount(): Int =
         db.queryOne(

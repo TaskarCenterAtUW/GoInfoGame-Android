@@ -54,9 +54,16 @@ class ElementEditsUploader(
     private val scope = CoroutineScope(SupervisorJob() + CoroutineName("ElementEditsUploader"))
 
     suspend fun upload() = mutex.withLock { withContext(Dispatchers.IO) {
+        // KartaView is a third-party service outside our control, and can be down/flaky
+        // independently of everything else - a photo upload failure here must never block every
+        // OTHER queued edit (e.g. plain tag-only quests with no photo at all) from uploading.
+        // Tracked only in memory, for this one upload() run: nothing is written to the DB for a
+        // failed edit, so it's a completely normal unsynced edit again afterwards, and the very
+        // next upload run (auto-triggered often - see QuestAutoSyncer) retries it fresh.
+        val failedEditIds = mutableSetOf<Long>()
         try {
             while (true) {
-                val edit = elementEditsController.getOldestUnsynced() ?: break
+                val edit = elementEditsController.getOldestUnsynced(failedEditIds) ?: break
                 val getIdProvider: () -> ElementIdProvider = { elementEditsController.getIdProvider(edit.id) }
                 try {
                     /* the sync of local change -> API and its response should not be cancellable
@@ -67,16 +74,18 @@ class ElementEditsUploader(
                     /* the edit's photos failed to upload (plain network failure) - leave the edit
                      * unsynced for the next sync attempt instead of letting this bubble up and abort
                      * uploading of any other edits still queued, e.g. note edits (see
-                     * uploadPendingPhotos KDoc) */
-                    Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
-                    break
+                     * uploadPendingPhotos KDoc). Skip past it for the REST of this run too (instead
+                     * of retrying the same failing edit in a tight loop, or breaking out and
+                     * abandoning every other queued edit behind it - see the failedEditIds KDoc). */
+                    Log.w(TAG, "Failed to upload photos for edit ${edit.id}, will retry on next sync: ${e.message}")
+                    failedEditIds += edit.id
                 }
             }
         } finally {
             // close immediately after every upload run (instead of waiting for the 20-minute
             // inactivity auto-closer) so each batch of edits lands in its own closed changeset,
-            // for traceability - in a finally so whatever was uploaded before a break/exception
-            // above still gets its changeset closed
+            // for traceability - in a finally so whatever was uploaded before an exception above
+            // still gets its changeset closed
             changesetManager.closeAllOpenChangesets()
         }
     } }
