@@ -52,6 +52,7 @@ import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNotice
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -65,6 +66,7 @@ import de.westnordost.streetcomplete.resources.ic_undo_24
 import de.westnordost.streetcomplete.resources.location_dot_small
 import de.westnordost.streetcomplete.resources.map_attribution_osm
 import de.westnordost.streetcomplete.screens.main.conflicts.DiscardedEditNoticeEffect
+import de.westnordost.streetcomplete.screens.main.conflicts.StuckPhotoUploadNoticeEffect
 import de.westnordost.streetcomplete.screens.main.conflicts.TagConflictResolutionEffect
 import de.westnordost.streetcomplete.screens.main.controls.AttributionButton
 import de.westnordost.streetcomplete.screens.main.controls.AttributionLink
@@ -169,6 +171,7 @@ fun MainScreen(
     val pendingConflictsCount by viewModel.pendingConflictsCount.collectAsState()
     val conflictReviewRequests by viewModel.conflictReviewRequests.collectAsState()
     val discardedNoticesCount by viewModel.discardedNoticesCount.collectAsState()
+    val stuckPhotoUploadNoticesCount by viewModel.stuckPhotoUploadNoticesCount.collectAsState()
 
     var showOverlaysDropdown by remember { mutableStateOf(false) }
     var showTeamModeWizard by remember { mutableStateOf(false) }
@@ -535,6 +538,13 @@ fun MainScreen(
         onDismissDiscardedNotice = { viewModel.dismissDiscardedNotice(it) },
         onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
     )
+    StuckPhotoUploadNoticeEffect(
+        stuckPhotoUploadNoticesCount = stuckPhotoUploadNoticesCount,
+        onPopNextStuckPhotoUploadNotice = { viewModel.popNextStuckPhotoUploadNotice() },
+        onRemoveStuckPhoto = { viewModel.removeStuckPhoto(it) },
+        onKeepTryingStuckPhoto = { viewModel.keepTryingStuckPhoto(it) },
+        onGetElementLabel = { type, id -> viewModel.getElementLabel(type, id) }
+    )
     lastCrashReport?.let { report ->
         LastCrashEffect(lastReport = report, onReport = { context.sendErrorReportEmail(it) })
     }
@@ -717,6 +727,11 @@ object PreviewMainViewModel : MainViewModel() {
 
     override suspend fun popNextDiscardedNotice(): DiscardedEditNotice? = null
     override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) {}
+    override val stuckPhotoUploadNoticesCount: StateFlow<Int>
+        get() = MutableStateFlow(0)
+    override suspend fun popNextStuckPhotoUploadNotice(): StuckPhotoUploadNotice? = null
+    override suspend fun removeStuckPhoto(notice: StuckPhotoUploadNotice) {}
+    override suspend fun keepTryingStuckPhoto(notice: StuckPhotoUploadNotice) {}
     override suspend fun getElementLabel(type: ElementType, id: Long): String? = null
     override val isUserInitiatedDownloadInProgress: Boolean
         get() = TODO("Not yet implemented")

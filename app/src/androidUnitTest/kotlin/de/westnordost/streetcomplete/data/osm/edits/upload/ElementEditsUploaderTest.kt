@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesControll
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -40,6 +41,7 @@ class ElementEditsUploaderTest {
     private lateinit var discardedEditNoticesController: DiscardedEditNoticesController
     private lateinit var imageUploader: KartaViewApiClient
     private lateinit var featurePhotosController: FeaturePhotosController
+    private lateinit var stuckPhotoUploadNoticesController: StuckPhotoUploadNoticesController
     private lateinit var changesetManager: OpenChangesetsManager
 
     private lateinit var uploader: ElementEditsUploader
@@ -56,6 +58,7 @@ class ElementEditsUploaderTest {
         discardedEditNoticesController = mock()
         imageUploader = mock()
         featurePhotosController = mock()
+        stuckPhotoUploadNoticesController = mock()
         changesetManager = mock()
 
         listener = mock()
@@ -70,6 +73,7 @@ class ElementEditsUploaderTest {
             discardedEditNoticesController,
             imageUploader,
             featurePhotosController,
+            stuckPhotoUploadNoticesController,
             changesetManager,
         )
         uploader.uploadedChangeListener = listener

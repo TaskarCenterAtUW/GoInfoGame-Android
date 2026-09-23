@@ -8,6 +8,7 @@ import de.westnordost.streetcomplete.data.osm.edits.EditElementsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsTable
 import de.westnordost.streetcomplete.data.osm.edits.ElementIdProviderTable
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesTable
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsTable
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsTable
 import de.westnordost.streetcomplete.data.osm.geometry.RelationGeometryTable
@@ -33,7 +34,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 27
+    const val DB_VERSION = 28
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -81,6 +82,9 @@ object DatabaseInitializer {
 
         // photos attached to not-yet-synced create-feature edits
         db.exec(FeaturePhotosTable.CREATE)
+
+        // notices that an edit's photo(s) repeatedly failed to upload to KartaView
+        db.exec(StuckPhotoUploadNoticesTable.CREATE)
 
         // quests
         db.exec(VisibleEditTypeTable.CREATE)
@@ -340,6 +344,13 @@ object DatabaseInitializer {
             // per-photo capture bearing, for KartaView uploads (long form first, other
             // photo-attaching flows can start writing it too without a further migration)
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_BEARINGS} text")
+        }
+
+        if (oldVersion <= 27 && newVersion >= 28) {
+            // consecutive-failure counter for a pending photo upload, and notices raised once it
+            // crosses the threshold - see ElementEditsUploader.onPhotoUploadFailed
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0")
+            db.exec(StuckPhotoUploadNoticesTable.CREATE)
         }
     }
 }

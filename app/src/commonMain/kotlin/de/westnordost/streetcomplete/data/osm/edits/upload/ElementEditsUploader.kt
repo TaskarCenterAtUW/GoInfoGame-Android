@@ -11,6 +11,8 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementIdProvider
 import de.westnordost.streetcomplete.data.osm.edits.IsRevertAction
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNotice
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.withTag
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
@@ -46,6 +48,7 @@ class ElementEditsUploader(
     private val discardedEditNoticesController: DiscardedEditNoticesController,
     private val imageUploader: KartaViewApiClient,
     private val featurePhotosController: FeaturePhotosController,
+    private val stuckPhotoUploadNoticesController: StuckPhotoUploadNoticesController,
     private val changesetManager: OpenChangesetsManager,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
@@ -79,6 +82,7 @@ class ElementEditsUploader(
                      * abandoning every other queued edit behind it - see the failedEditIds KDoc). */
                     Log.w(TAG, "Failed to upload photos for edit ${edit.id}, will retry on next sync: ${e.message}")
                     failedEditIds += edit.id
+                    onPhotoUploadFailed(edit)
                 }
             }
         } finally {
@@ -89,6 +93,29 @@ class ElementEditsUploader(
             changesetManager.closeAllOpenChangesets()
         }
     } }
+
+    /** Bumps the edit's photo-upload-failure streak and, once it reaches [STUCK_PHOTO_UPLOAD_ATTEMPTS]
+     *  (KartaView failing this many times in a row - not just a one-off network blip), raises a
+     *  notice so the user can choose to keep waiting or drop the photo and submit without it.
+     *  Only fires once per streak: as long as the notice is still unresolved, further failures
+     *  keep incrementing past the threshold without adding duplicate notices for the same edit. */
+    private fun onPhotoUploadFailed(edit: ElementEdit) {
+        val attempts = featurePhotosController.incrementUploadAttempts(edit.id)
+        if (attempts != STUCK_PHOTO_UPLOAD_ATTEMPTS) return
+        val elementKey = edit.action.elementKeys.firstOrNull()
+        stuckPhotoUploadNoticesController.add(
+            StuckPhotoUploadNotice(
+                id = 0,
+                editId = edit.id,
+                editType = edit.type,
+                elementType = elementKey?.type,
+                elementId = elementKey?.id,
+                position = edit.position,
+                createdTimestamp = nowAsEpochMilliseconds(),
+                workspaceId = edit.workspaceId
+            )
+        )
+    }
 
     private suspend fun uploadEdit(edit: ElementEdit, getIdProvider: () -> ElementIdProvider) {
         /* photos attached to a create-feature edit are uploaded first, OUTSIDE the conflict
@@ -205,5 +232,7 @@ class ElementEditsUploader(
     companion object {
         private const val TAG = "ElementEditsUploader"
         private const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
+        /** consecutive KartaView upload failures for the same edit before nagging the user about it */
+        private const val STUCK_PHOTO_UPLOAD_ATTEMPTS = 3
     }
 }

@@ -41,6 +41,13 @@ class FeaturePhotosController(
 
     fun markUploaded(editId: Long) = deletePhotos(editId)
 
+    /** Record another failed upload attempt for this edit's photo(s), returning the new streak
+     *  count - see [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader] */
+    fun incrementUploadAttempts(editId: Long): Int = dao.incrementUploadAttempts(editId)
+
+    /** Reset the failed-upload streak, e.g. once the user chooses to keep trying */
+    fun resetUploadAttempts(editId: Long) = dao.resetUploadAttempts(editId)
+
     private fun deletePhotos(editId: Long) {
         for (photo in dao.get(editId)) {
             fileSystem.delete(Path(photo.path), mustExist = false)

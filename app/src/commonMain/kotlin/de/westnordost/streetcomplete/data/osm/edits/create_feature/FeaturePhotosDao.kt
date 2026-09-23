@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.NAME
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -42,4 +43,18 @@ class FeaturePhotosDao(
 
     fun delete(editId: Long): Boolean =
         db.delete(NAME, "$WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId") > 0
+
+    /** Increment the upload-failure streak for this edit's photo(s) and return the new count */
+    fun incrementUploadAttempts(editId: Long): Int {
+        db.exec("UPDATE $NAME SET $UPLOAD_ATTEMPTS = $UPLOAD_ATTEMPTS + 1 WHERE $WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId")
+        return getUploadAttempts(editId)
+    }
+
+    fun getUploadAttempts(editId: Long): Int =
+        db.queryOne(NAME, where = "$WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId") { it.getInt(UPLOAD_ATTEMPTS) } ?: 0
+
+    /** Reset the upload-failure streak, e.g. when the user chooses to keep trying */
+    fun resetUploadAttempts(editId: Long) {
+        db.update(NAME, listOf(UPLOAD_ATTEMPTS to 0), "$WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId")
+    }
 }
