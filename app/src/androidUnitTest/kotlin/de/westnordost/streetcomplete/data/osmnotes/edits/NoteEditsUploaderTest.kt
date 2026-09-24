@@ -20,7 +20,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.SystemFileSystem
-import org.mockito.ArgumentMatchers.anyFloat
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -163,7 +162,7 @@ class NoteEditsUploaderTest {
 
         on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
         on(notesApi.comment(anyLong(), any())).thenReturn(note)
-        on(imageUploader.upload(any(), any(), anyFloat())).thenReturn(listOf("x", "y", "z"))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf("x", "y", "z"))
 
         upload()
 
@@ -171,7 +170,7 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a", "b", "c"), pos, 0f)
+        verify(imageUploader).upload(listOf("a" to 0f, "b" to 0f, "c" to 0f), pos)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
@@ -188,7 +187,7 @@ class NoteEditsUploaderTest {
 
         on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
         on(notesApi.create(any(), any())).thenReturn(note)
-        on(imageUploader.upload(any(), any(), anyFloat())).thenReturn(listOf("x", "y", "z"))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf("x", "y", "z"))
 
         upload()
 
@@ -196,7 +195,7 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a", "b", "c"), pos, 0f)
+        verify(imageUploader).upload(listOf("a" to 0f, "b" to 0f, "c" to 0f), pos)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 

@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNotice
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
@@ -75,6 +76,13 @@ abstract class MainViewModel : ViewModel() {
     abstract val discardedNoticesCount: StateFlow<Int>
     abstract suspend fun popNextDiscardedNotice(): DiscardedEditNotice?
     abstract suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice)
+
+    /* notices that an edit's photo(s) repeatedly failed to upload to KartaView, to be resolved
+     * (keep trying, or drop the photo) one at a time */
+    abstract val stuckPhotoUploadNoticesCount: StateFlow<Int>
+    abstract suspend fun popNextStuckPhotoUploadNotice(): StuckPhotoUploadNotice?
+    abstract suspend fun removeStuckPhoto(notice: StuckPhotoUploadNotice)
+    abstract suspend fun keepTryingStuckPhoto(notice: StuckPhotoUploadNotice)
 
     /** A short, human-readable label identifying an element (id, and name/ref if it has one), for
      *  display in the conflict/discard dialogs so the user can recognize which feature they're about */

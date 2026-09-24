@@ -13,6 +13,9 @@ import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesControll
 import de.westnordost.streetcomplete.data.osm.edits.EditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNotice
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
@@ -79,6 +82,8 @@ class MainViewModelImpl(
     private val prefs: Preferences,
     private val pendingTagConflictsController: PendingTagConflictsController,
     private val discardedEditNoticesController: DiscardedEditNoticesController,
+    private val stuckPhotoUploadNoticesController: StuckPhotoUploadNoticesController,
+    private val featurePhotosController: FeaturePhotosController,
 ) : MainViewModel() {
 
     /* error handling */
@@ -348,6 +353,38 @@ class MainViewModelImpl(
 
     override suspend fun dismissDiscardedNotice(notice: DiscardedEditNotice) = withContext(IO) {
         discardedEditNoticesController.dismiss(notice)
+    }
+
+    /* notices that an edit's photo(s) repeatedly failed to upload to KartaView */
+
+    override val stuckPhotoUploadNoticesCount: StateFlow<Int> = callbackFlow {
+        send(stuckPhotoUploadNoticesController.getCount())
+        val listener = object : StuckPhotoUploadNoticesController.Listener {
+            override fun onAdded(notice: StuckPhotoUploadNotice) { trySend(stuckPhotoUploadNoticesController.getCount()) }
+            override fun onRemoved(notice: StuckPhotoUploadNotice) { trySend(stuckPhotoUploadNoticesController.getCount()) }
+        }
+        stuckPhotoUploadNoticesController.addListener(listener)
+        awaitClose { stuckPhotoUploadNoticesController.removeListener(listener) }
+    }.stateIn(viewModelScope + IO, SharingStarted.Eagerly, 0)
+
+    override suspend fun popNextStuckPhotoUploadNotice(): StuckPhotoUploadNotice? = withContext(IO) {
+        stuckPhotoUploadNoticesController.getOldest()
+    }
+
+    override suspend fun removeStuckPhoto(notice: StuckPhotoUploadNotice) = withContext(IO) {
+        // reusing markUploaded here isn't "it uploaded" - it's "the user chose to drop it", but
+        // either way the photo record/file should be gone and the edit's tags left untouched, so
+        // the same cleanup applies
+        featurePhotosController.markUploaded(notice.editId)
+        stuckPhotoUploadNoticesController.dismiss(notice)
+        // the edit itself was never blocked from uploading (see ElementEditsUploader) - only its
+        // photo was holding it up - so kick off an immediate upload now that the photo is gone
+        upload()
+    }
+
+    override suspend fun keepTryingStuckPhoto(notice: StuckPhotoUploadNotice) = withContext(IO) {
+        featurePhotosController.resetUploadAttempts(notice.editId)
+        stuckPhotoUploadNoticesController.dismiss(notice)
     }
 
     override suspend fun getElementLabel(type: ElementType, id: Long): String? =

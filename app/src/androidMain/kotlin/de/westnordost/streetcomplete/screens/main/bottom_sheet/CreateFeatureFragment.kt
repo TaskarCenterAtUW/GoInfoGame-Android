@@ -24,6 +24,7 @@ import coil.load
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
@@ -284,7 +285,9 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
                 // photos are NOT deleted here - they live on disk until the edit syncs, at which
                 // point they are uploaded and cleaned up (or deleted with the edit if it is undone)
                 if (imagePaths.isNotEmpty()) {
-                    featurePhotosController.add(editId, imagePaths)
+                    // no capture bearing tracked here yet - see FeaturePhoto/ALongForm for the
+                    // long-form equivalent this could follow if Add Feature gains it later
+                    featurePhotosController.add(editId, imagePaths.map { FeaturePhoto(it) })
                 }
             }
             listener?.onCreatedFeature(position)
