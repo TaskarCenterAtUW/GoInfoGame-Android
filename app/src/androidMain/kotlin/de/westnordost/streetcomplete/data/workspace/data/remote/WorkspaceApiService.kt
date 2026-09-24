@@ -287,6 +287,11 @@ class WorkspaceApiService(
             // not just after the ViewModel's own redundant preferences write
             updateTokens(loginResponse.access_token, loginResponse.refresh_token)
             return loginResponse
+        } else if (response.status.value in 500..599 || response.status == HttpStatusCode.TooManyRequests) {
+            // still failing after retryOnTransientHttpFailure gave up - the server is having
+            // trouble, it did NOT reject the refresh token, so this must not force a logout
+            // (WorkspaceViewModel only logs out on WorkspaceAuthRejectedException)
+            throw Exception(httpErrorMessage(response.status))
         } else {
             // the server actively responded that the refresh token is no longer valid - this is
             // the only case that legitimately means "session expired, log out"

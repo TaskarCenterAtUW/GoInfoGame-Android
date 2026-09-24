@@ -279,6 +279,8 @@ kotlin {
             dependencies {
                 implementation("org.mockito:mockito-core:5.20.0")
                 implementation(kotlin("test"))
+                // in-memory ObservableSettings (MapSettings), so tests can use a real Preferences
+                implementation("com.russhwolf:multiplatform-settings-test:1.3.0")
             }
         }
         androidInstrumentedTest {

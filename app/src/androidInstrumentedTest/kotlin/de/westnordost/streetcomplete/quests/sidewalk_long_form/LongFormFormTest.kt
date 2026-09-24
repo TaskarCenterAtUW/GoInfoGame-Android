@@ -50,6 +50,7 @@ import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AbstractQuestForm
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
+import de.westnordost.streetcomplete.testutils.ToastWatcher
 import de.westnordost.streetcomplete.testutils.UiTestScreenshot
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import org.hamcrest.Matchers.not
@@ -86,6 +87,7 @@ class LongFormFormTest {
     private val firstEditId = RecordingEditsController.FIRST_EDIT_ID + 1
 
     private val edits = RecordingEditsController()
+    private lateinit var toasts: ToastWatcher
     private lateinit var questType: AddGenericLong
     private lateinit var scenario: FragmentScenario<LongFormTestHost>
     private lateinit var originalTags: Map<String, String>
@@ -120,6 +122,7 @@ class LongFormFormTest {
         previousAnimationScales = ANIMATION_SCALES.map { shell("settings get global $it").trim() }
         ANIMATION_SCALES.forEach { shell("settings put global $it 0") }
         Intents.init()
+        toasts = ToastWatcher()
     }
 
     @After
@@ -128,6 +131,7 @@ class LongFormFormTest {
         UiTestScreenshot.capture("${javaClass.simpleName}.${testName.methodName}")
         if (::scenario.isInitialized) scenario.close()
         Intents.release()
+        toasts.close()
         // edit ids are fake (RecordingEditsController) but photos attached to them are real rows
         featurePhotosController.markUploaded(firstEditId)
         preferences.isLowBandwidthModeEnabled = wasLowBandwidth
@@ -236,6 +240,7 @@ class LongFormFormTest {
         onView(inRowOf(WIDTH_Q, R.id.input)).check(matches(hasInputError("Value should be less than 240")))
         onView(withId(R.id.submitButton)).perform(scrollIntoView()).check(matches(hasAlpha(0.5f)))
         onView(withId(R.id.submitButton)).perform(click())
+        toasts.awaitToast("Please correct the errors before submitting.")
         assertNoEdit()
 
         typeInto(WIDTH_Q, "60")
@@ -301,6 +306,7 @@ class LongFormFormTest {
     fun untouchedPartiallyAnsweredFormSubmitsNothing() {
         open(mapOf("ext:surface" to "asphalt"))
         onView(withId(R.id.submitButton)).perform(scrollIntoView(), click())
+        toasts.awaitToast("No changes to submit. Please answer at least one question.")
         assertNoEdit()
         onView(questionRow(SURFACE_Q)).check(matches(isDisplayed()))
     }

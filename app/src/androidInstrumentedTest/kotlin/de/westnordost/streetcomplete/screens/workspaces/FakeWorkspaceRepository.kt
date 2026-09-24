@@ -16,8 +16,25 @@ import kotlinx.coroutines.flow.flowOf
  * In-memory stand-in for [WorkspaceRepository] used by [WorkspaceLoginFlowTest] so the login ->
  * workspace-list UI flow can be exercised without a real backend. Registered into Koin in place
  * of [de.westnordost.streetcomplete.data.workspace.data.repository.WorkspaceRepositoryImpl].
+ *
+ * Every auth call succeeds by default; tests swap in failures via [login], [userInfo] and
+ * [refresh] (e.g. `userInfo = { flow { throw Exception("User profile not found.") } }`).
  */
 class FakeWorkspaceRepository : WorkspaceRepository {
+
+    var login: (username: String) -> Flow<LoginResponse> = { flowOf(TEST_LOGIN_RESPONSE) }
+    var userInfo: (email: String) -> Flow<UserInfoResponse> = { email ->
+        flowOf(
+            UserInfoResponse(
+                id = TEST_USER_ID,
+                email = email,
+                firstName = "Test",
+                lastName = "User",
+                username = email,
+            )
+        )
+    }
+    var refresh: (refreshToken: String) -> Flow<LoginResponse> = { flowOf(TEST_LOGIN_RESPONSE) }
 
     override fun getWorkspaces(location: Location): Flow<List<Workspace>> = flowOf(
         listOf(
@@ -35,26 +52,11 @@ class FakeWorkspaceRepository : WorkspaceRepository {
 
     override fun getWorkspaceDetails(workspaceId: Int): Flow<WorkspaceDetailsResponse> = emptyFlow()
 
-    override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = flowOf(
-        LoginResponse(
-            access_token = "fake-access-token",
-            expires_in = 3600,
-            refresh_expires_in = 7200,
-            refresh_token = "fake-refresh-token",
-        )
-    )
+    override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = login(username)
 
-    override fun getUserInfo(userEmail: String): Flow<UserInfoResponse> = flowOf(
-        UserInfoResponse(
-            id = "fake-user-id",
-            email = userEmail,
-            firstName = "Test",
-            lastName = "User",
-            username = userEmail,
-        )
-    )
+    override fun getUserInfo(userEmail: String): Flow<UserInfoResponse> = userInfo(userEmail)
 
-    override fun refreshToken(refreshToken: String): Flow<LoginResponse> = loginToWorkspace("", "")
+    override fun refreshToken(refreshToken: String): Flow<LoginResponse> = refresh(refreshToken)
 
     // no-op - this in-memory fake has no real HttpClient/BearerAuthProvider to clear
     override fun clearCachedAuthTokens() {}
@@ -73,5 +75,12 @@ class FakeWorkspaceRepository : WorkspaceRepository {
 
     companion object {
         const val TEST_WORKSPACE_TITLE = "Test Workspace"
+        const val TEST_USER_ID = "fake-user-id"
+        val TEST_LOGIN_RESPONSE = LoginResponse(
+            access_token = "fake-access-token",
+            expires_in = 3600,
+            refresh_expires_in = 7200,
+            refresh_token = "fake-refresh-token",
+        )
     }
 }
