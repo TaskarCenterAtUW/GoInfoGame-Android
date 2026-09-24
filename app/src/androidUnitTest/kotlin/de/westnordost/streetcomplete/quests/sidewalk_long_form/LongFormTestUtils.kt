@@ -93,26 +93,39 @@ fun LongFormAdapter<*>.positionOf(questId: Int): Int {
     return position
 }
 
-/** Simulates the user typing into a TextEntry row, the way TextEntryViewHolder wires its watcher. */
-fun LongFormAdapter<*>.typeText(questId: Int, text: String) {
+/** A TextEntry row's watcher as TextEntryViewHolder binds it: once, when the row is bound - it is
+ *  NOT rebound when the row merely moves, so tests can keep using it after the rows shift. */
+fun LongFormAdapter<*>.boundTextEntryWatcher(questId: Int): (String) -> Unit {
+    positionOf(questId) // the row must be shown to be bound at all
     val watcher = TextEntryTextWatcher()
-    watcher.updatePosition(positionOf(questId))
-    watcher.beforeTextChanged(text, 0, 0, text.length)
-    watcher.onTextChanged(text, 0, 0, text.length)
-    watcher.afterTextChanged(editable(text))
+    watcher.updateQuestId(questId)
+    return { text ->
+        watcher.beforeTextChanged(text, 0, 0, text.length)
+        watcher.onTextChanged(text, 0, 0, text.length)
+        watcher.afterTextChanged(editable(text))
+    }
 }
 
-/** Simulates the user typing into a Numeric row, the way InputViewHolder wires its watcher. */
-fun LongFormAdapter<*>.typeNumber(questId: Int, text: String) {
+/** A Numeric row's watcher as InputViewHolder binds it - see [boundTextEntryWatcher]. */
+fun LongFormAdapter<*>.boundNumericWatcher(questId: Int): (String) -> Unit {
+    positionOf(questId)
     val watcher = CustomTextWatcher()
-    watcher.updatePosition(positionOf(questId))
+    watcher.updateQuestId(questId)
     val validation = live(questId).questAnswerValidation
     // no TextInputLayout on the JVM - the watcher null-checks it and still reports errors via isErrorFree
     watcher.javaClass.getDeclaredField("minValue").apply { isAccessible = true }.set(watcher, validation?.min)
     watcher.javaClass.getDeclaredField("maxValue").apply { isAccessible = true }.setInt(watcher, validation?.max ?: Int.MAX_VALUE)
-    watcher.onTextChanged(text, 0, 0, text.length)
-    watcher.afterTextChanged(editable(text))
+    return { text ->
+        watcher.onTextChanged(text, 0, 0, text.length)
+        watcher.afterTextChanged(editable(text))
+    }
 }
+
+/** Simulates the user typing into a TextEntry row. */
+fun LongFormAdapter<*>.typeText(questId: Int, text: String) = boundTextEntryWatcher(questId)(text)
+
+/** Simulates the user typing into a Numeric row. */
+fun LongFormAdapter<*>.typeNumber(questId: Int, text: String) = boundNumericWatcher(questId)(text)
 
 /** Simulates tapping a choice tile on/off, the way ImageGridViewHolder's selection listener does. */
 fun LongFormAdapter<*>.tapChoice(questId: Int, value: String) {

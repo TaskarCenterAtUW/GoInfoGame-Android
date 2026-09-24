@@ -290,6 +290,9 @@ kotlin {
                 implementation("androidx.test.ext:junit:1.3.0")
                 implementation("androidx.test.espresso:espresso-core:3.7.0")
                 implementation("androidx.compose.ui:ui-test-junit4:1.9.3")
+                // hosting a quest form in isolation (FragmentScenario) and stubbing the camera
+                implementation("androidx.fragment:fragment-testing:1.8.9")
+                implementation("androidx.test.espresso:espresso-intents:3.7.0")
             }
         }
     }
@@ -369,6 +372,12 @@ android {
     dependencies {
         debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
         debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.3")
+        // empty host activity FragmentScenario launches fragments into (long-form UI tests)
+        debugImplementation("androidx.fragment:fragment-testing-manifest:1.8.9")
+        // annotations-only; bumped from what Firebase pulls in (2.26.0) for the same "consistent
+        // resolution" reason as concurrent-futures-ktx above - fragment-testing (androidTest)
+        // needs espresso's 2.30.0, and androidTest's classpath must match this debug one
+        debugImplementation("com.google.errorprone:error_prone_annotations:2.30.0")
     }
 }
 

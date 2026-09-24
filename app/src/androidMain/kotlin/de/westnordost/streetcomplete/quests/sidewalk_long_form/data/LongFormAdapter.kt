@@ -228,13 +228,17 @@ class LongFormAdapter<T>(
         }
     }
 
+    /** Writes into the live [givenItems] entry of the question it is bound to. Bound by questId,
+     *  not adapter position: a row that merely moves (e.g. a dependent question appearing above
+     *  it) is not rebound by DiffUtil, so a position captured at bind time would go stale and the
+     *  typed value would be written into whichever question now occupies that old position. */
     inner class CustomTextWatcher : TextWatcher {
-        private var position = 0
+        private var questId: Int? = null
         private var textInputLayout: TextInputLayout? = null
         private var minValue: Int? = null
         private var maxValue: Int = Int.MAX_VALUE
-        fun updatePosition(position: Int) {
-            this.position = position
+        fun updateQuestId(questId: Int?) {
+            this.questId = questId
         }
 
         fun updateInputLayout(
@@ -251,11 +255,7 @@ class LongFormAdapter<T>(
         }
 
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            val item = items[position]
-
-            val index =
-                givenItems.indexOfFirst { it.questId == item.questId }
-            givenItems[index].userInput = UserInput.Single(s.toString())
+            givenItems.firstOrNull { it.questId == questId }?.userInput = UserInput.Single(s.toString())
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -278,27 +278,26 @@ class LongFormAdapter<T>(
             } else {
                 textInputLayout?.error = null
             }
-            items.getOrNull(position)?.questId?.let { setFieldError(it, hasError) }
+            questId?.let { setFieldError(it, hasError) }
         }
     }
 
     /** Same live-target-resolution as [CustomTextWatcher] (writes into [givenItems] by questId,
-     *  not the snapshot `item` a rebind hands to `bind()`) but without the numeric validation -
+     *  not the snapshot `item` a rebind hands to `bind()`, nor by a bind-time adapter position that
+     *  goes stale when the row moves) but without the numeric validation -
      *  kept separate rather than reusing/generalizing [CustomTextWatcher] since that class also
      *  owns min/max validation and [TextInputLayout] error state that don't apply to TextEntry. */
     inner class TextEntryTextWatcher : TextWatcher {
-        private var position = 0
-        fun updatePosition(position: Int) {
-            this.position = position
+        private var questId: Int? = null
+        fun updateQuestId(questId: Int?) {
+            this.questId = questId
         }
 
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
         }
 
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            val item = items[position]
-            val index = givenItems.indexOfFirst { it.questId == item.questId }
-            givenItems[index].userInput = UserInput.Single(s.toString())
+            givenItems.firstOrNull { it.questId == questId }?.userInput = UserInput.Single(s.toString())
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -350,7 +349,7 @@ class LongFormAdapter<T>(
             } else {
                 binding.questImage.visibility = View.GONE
             }
-            customTextWatcher.updatePosition(position)
+            customTextWatcher.updateQuestId(item.questId)
             customTextWatcher.updateInputLayout(
                 binding.input,
                 item.questAnswerValidation?.min,
@@ -403,7 +402,7 @@ class LongFormAdapter<T>(
             } else {
                 binding.questImage.visibility = View.GONE
             }
-            textEntryTextWatcher.updatePosition(position)
+            textEntryTextWatcher.updateQuestId(item.questId)
             binding.input.editText?.addTextChangedListener(textEntryTextWatcher)
         }
     }

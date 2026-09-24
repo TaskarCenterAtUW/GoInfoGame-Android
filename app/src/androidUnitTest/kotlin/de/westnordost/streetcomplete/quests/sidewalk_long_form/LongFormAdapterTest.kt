@@ -149,6 +149,32 @@ class LongFormAdapterTest {
         assertEquals(UserInput.Single("cobbles"), adapter.live(SURFACE_DESCRIPTION).userInput)
     }
 
+    @Test fun `a watcher bound before its row moved still writes to its own question`() {
+        // regression: watchers used to remember the bind-time adapter position, and a row that
+        // only moves isn't rebound - typing into width after the description appeared above it
+        // overwrote the description instead
+        val adapter = openForm()
+        val widthWatcher = adapter.boundNumericWatcher(WIDTH)
+        adapter.tapChoice(SURFACE, "other") // inserts SURFACE_DESCRIPTION above WIDTH, no rebind
+        val descriptionWatcher = adapter.boundTextEntryWatcher(SURFACE_DESCRIPTION)
+
+        widthWatcher("60")
+        descriptionWatcher("cobbles")
+        widthWatcher("72")
+        assertEquals(UserInput.Single("72"), adapter.live(WIDTH).userInput)
+        assertEquals(UserInput.Single("cobbles"), adapter.live(SURFACE_DESCRIPTION).userInput)
+    }
+
+    @Test fun `a moved numeric row reports validation errors for its own question`() {
+        val adapter = openForm()
+        val widthWatcher = adapter.boundNumericWatcher(WIDTH)
+        adapter.tapChoice(SURFACE, "other")
+        widthWatcher("999")
+        assertFalse(adapter.isErrorFree.value)
+        adapter.tapChoice(SURFACE, "asphalt") // hides the description - must not clear width's error
+        assertFalse(adapter.isErrorFree.value)
+    }
+
     @Test fun `text entry is not numerically validated`() {
         val adapter = openForm(mapOf("ext:surface" to "other"))
         adapter.typeText(SURFACE_DESCRIPTION, "not a number")
