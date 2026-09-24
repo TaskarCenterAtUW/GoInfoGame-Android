@@ -191,6 +191,15 @@ class LongFormAdapter<T>(
         itemCopy.forEach {
             if (!it.visible) {
                 it.selectedIndex = null
+                // a choice question's answer lives in both selectedIndex (the highlighted tiles)
+                // and userInput (what gets submitted) - clearing only the former left a hidden
+                // choice's answer invisible yet still submitted once the question was re-shown,
+                // and merged into any new selection. Text/numeric answers are deliberately kept
+                // instead: their field is re-filled from userInput when re-shown, so toggling the
+                // controlling answer back restores exactly what was typed.
+                if (it.questType == "ExclusiveChoice" || it.questType == "MultipleChoice") {
+                    it.userInput = null
+                }
             }
         }
         return itemCopy
@@ -509,20 +518,22 @@ class LongFormAdapter<T>(
             val listener = object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    handleSelection(
+                    selectChoice(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        index
+                        index,
+                        allowMultiChoice
                     )
                     handleChoiceFollowUp()
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
-                    handleDeselection(
+                    deselectChoice(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        index
+                        index,
+                        allowMultiChoice
                     )
                     handleChoiceFollowUp()
                 }
@@ -686,64 +697,70 @@ class LongFormAdapter<T>(
             binding.photoRetake.setOnClickListener { cameraIntent() }
             binding.photoUndo.setOnClickListener { onPhotoUndoRemoval() }
         }
+    }
 
-        fun handleDeselection(
-            questId: Int,
-            userInput: String,
-            imageIndex: Int,
-        ) {
-            val index =
-                givenItems.indexOfFirst { it.questId == questId }
-            if (allowMultiChoice) {
-                val multiple = givenItems[index].userInput as? UserInput.Multiple
-
-                multiple?.let {
-                    if (!it.isEmpty()) {
-                        multiple.answers.remove(userInput)
-                    }
-                }
-                givenItems[index].userInput = multiple
+    /** Records the choice at [choiceIndex] (with [value]) as selected for question [questId] in
+     *  the live [givenItems] - called by [ImageGridViewHolder] on a tap. Lives on the adapter
+     *  rather than the view holder since it only touches adapter state. */
+    fun selectChoice(
+        questId: Int,
+        value: String,
+        choiceIndex: Int,
+        allowMultiChoice: Boolean,
+    ) {
+        val index =
+            givenItems.indexOfFirst { it.questId == questId }
+        if (allowMultiChoice) {
+            var multiple = givenItems[index].userInput as? UserInput.Multiple
+            if (multiple == null) {
+                multiple = UserInput.Multiple(mutableListOf(value))
             } else {
-                givenItems[index].userInput = null
+                multiple.answers.add(value)
             }
-            givenItems[index].selectedIndex?.remove(imageIndex)
-            if (questId in needRefreshIds) {
-                items = givenItems
+            givenItems[index].userInput = multiple
+        } else {
+            var single = givenItems[index].userInput as? UserInput.Single
+            if (single == null) {
+                single = UserInput.Single(value)
+            } else {
+                single.answer = value
             }
+            givenItems[index].userInput = single
         }
+        if (givenItems[index].selectedIndex == null) {
+            givenItems[index].selectedIndex = mutableListOf(choiceIndex)
+        } else {
+            givenItems[index].selectedIndex?.add(choiceIndex)
+        }
+        if (questId in needRefreshIds) {
+            items = givenItems
+        }
+    }
 
-        fun handleSelection(
-            questId: Int,
-            userInput: String,
-            imageIndex: Int,
-        ) {
-            val index =
-                givenItems.indexOfFirst { it.questId == questId }
-            if (allowMultiChoice) {
-                var multiple = givenItems[index].userInput as? UserInput.Multiple
-                if (multiple == null) {
-                    multiple = UserInput.Multiple(mutableListOf(userInput))
-                } else {
-                    multiple.answers.add(userInput)
+    /** Counterpart of [selectChoice]. */
+    fun deselectChoice(
+        questId: Int,
+        value: String,
+        choiceIndex: Int,
+        allowMultiChoice: Boolean,
+    ) {
+        val index =
+            givenItems.indexOfFirst { it.questId == questId }
+        if (allowMultiChoice) {
+            val multiple = givenItems[index].userInput as? UserInput.Multiple
+
+            multiple?.let {
+                if (!it.isEmpty()) {
+                    multiple.answers.remove(value)
                 }
-                givenItems[index].userInput = multiple
-            } else {
-                var single = givenItems[index].userInput as? UserInput.Single
-                if (single == null) {
-                    single = UserInput.Single(userInput)
-                } else {
-                    single.answer = userInput
-                }
-                givenItems[index].userInput = single
             }
-            if (givenItems[index].selectedIndex == null) {
-                givenItems[index].selectedIndex = mutableListOf(imageIndex)
-            } else {
-                givenItems[index].selectedIndex?.add(imageIndex)
-            }
-            if (questId in needRefreshIds) {
-                items = givenItems
-            }
+            givenItems[index].userInput = multiple
+        } else {
+            givenItems[index].userInput = null
+        }
+        givenItems[index].selectedIndex?.remove(choiceIndex)
+        if (questId in needRefreshIds) {
+            items = givenItems
         }
     }
 
