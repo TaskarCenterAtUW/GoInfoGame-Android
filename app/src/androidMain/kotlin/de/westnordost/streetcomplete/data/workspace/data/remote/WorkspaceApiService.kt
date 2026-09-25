@@ -28,6 +28,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.serialization.ContentConvertException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -68,6 +69,9 @@ class WorkspaceApiService(
         is UnresolvedAddressException -> "Please check your internet connection and try again."
         is java.net.SocketTimeoutException -> "The server took too long to respond. Please try again."
         is SerializationException -> "Received an unexpected response from the server. Please contact your workspace admin if this continues."
+        // what body<T>() actually throws for a malformed/incomplete JSON body - Ktor's converter
+        // wraps the SerializationException, so without this the raw "Illegal input: ..." was shown
+        is ContentConvertException -> "Received an unexpected response from the server. Please contact your workspace admin if this continues."
         is java.io.IOException -> "Please check your internet connection and try again."
         else -> message?.takeIf { it.isNotBlank() } ?: "Something went wrong. Please try again."
     }
@@ -157,7 +161,13 @@ class WorkspaceApiService(
                 }
                 throw Exception(message)
             }
-            return response.body<UserInfoResponse>()
+            // same all-null problem for a 200 whose body isn't a profile - without an id the user
+            // would be logged in with no workspaceUserId, so fail (setLoginState rolls back)
+            val userInfo = response.body<UserInfoResponse>()
+            if (userInfo.id.isNullOrBlank()) {
+                throw Exception("Received an unexpected response from the server. Please contact your workspace admin if this continues.")
+            }
+            return userInfo
         } catch (e: Exception) {
             throw Exception(e.toWorkspaceErrorMessage())
         }
@@ -186,6 +196,12 @@ class WorkspaceApiService(
 
             return response.body<WorkspaceDetailsResponse>()
         } catch (e: SerializationException) {
+            throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")
+        }
+        // what body() actually throws for a malformed/incomplete body - Ktor's JSON converter
+        // wraps the SerializationException, so the catch above never saw it and the raw
+        // "Illegal input: Fields [...] are required ..." reached the user
+        catch (e: ContentConvertException) {
             throw Exception("Workspace is not configured properly. Please contact the Admin for the workspace")
         } catch (e: Exception) {
             throw Exception(e.toWorkspaceErrorMessage())
@@ -308,7 +324,14 @@ class WorkspaceApiService(
                 if (System.currentTimeMillis() - it < 6.hours.toLong(DurationUnit.MILLISECONDS)) {
                     val cachedConfig = preferences.configJson
                     cachedConfig?.let { configString ->
-                        return json.decodeFromString<AppUpdateCheckerResponse>(configString)
+                        // a cached copy that doesn't parse (e.g. stored by an older version,
+                        // which cached before parsing) is refetched instead of failing every
+                        // check until it expires
+                        try {
+                            return json.decodeFromString<AppUpdateCheckerResponse>(configString)
+                        } catch (e: SerializationException) {
+                            preferences.configJson = null
+                        }
                     }
                 }
             }
@@ -322,12 +345,15 @@ class WorkspaceApiService(
             if (!response.status.isSuccess()) {
                 throw Exception(httpErrorMessage(response.status))
             }
+            val body = response.bodyAsText()
+            // parsed before caching - caching first meant a malformed response was served from
+            // the cache, failing every update check for the next 6 hours
+            val updateInfo = json.decodeFromString<AppUpdateCheckerResponse>(body)
             if (response.status == HttpStatusCode.OK) {
                 preferences.configLastFetchTime = System.currentTimeMillis()
-                preferences.configJson = response.bodyAsText()
+                preferences.configJson = body
             }
-
-            return json.decodeFromString<AppUpdateCheckerResponse>(response.bodyAsText())
+            return updateInfo
         } catch (e: Exception) {
             throw Exception(e.toWorkspaceErrorMessage())
         }

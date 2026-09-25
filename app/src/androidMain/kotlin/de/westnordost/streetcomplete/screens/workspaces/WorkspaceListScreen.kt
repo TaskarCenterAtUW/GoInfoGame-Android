@@ -95,7 +95,7 @@ fun WorkSpaceListScreen(
     var isLongFormLoading by remember { mutableStateOf(false) }
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarMessage by remember { mutableStateOf<String?>(null) }
-    // what "Refresh" on the snackbar actually retries - set alongside snackBarMessage by
+    // what "Retry" on the snackbar actually retries - set alongside snackBarMessage by
     // whichever of the three error sources below fired, so it retries the thing that actually
     // failed instead of always just refetching the workspace list
     var retryAction by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -220,7 +220,7 @@ fun WorkSpaceListScreen(
 
         snackBarMessage?.let {
             LaunchedEffect(snackBarHostState) {
-                snackBarHostState.showSnackbar(it, actionLabel = "Refresh").let {
+                snackBarHostState.showSnackbar(it, actionLabel = "Retry").let {
                     if (it == SnackbarResult.ActionPerformed) {
                         retryAction?.invoke()
                     }
@@ -277,7 +277,14 @@ fun WorkSpaceListScreen(
                             // Handle error state
                             //Show snack bar
                             snackBarMessage = "Error: ${longFormState.error}"
-                            retryAction = { longFormRetryTrigger++ }
+                            // the ViewModel clears the selection right after a failure, and this
+                            // effect then restarts with null - bumping the trigger alone would
+                            // retry nothing. Re-select (as a second tap would), and still bump it
+                            // for when the selection hasn't been cleared yet (same value = no-op)
+                            retryAction = {
+                                viewModel.setSelectedWorkspace(workspace)
+                                longFormRetryTrigger++
+                            }
                         }
                     }
                 }

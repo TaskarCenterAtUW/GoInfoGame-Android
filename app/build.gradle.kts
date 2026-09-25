@@ -295,6 +295,9 @@ kotlin {
                 // hosting a quest form in isolation (FragmentScenario) and stubbing the camera
                 implementation("androidx.fragment:fragment-testing:1.8.9")
                 implementation("androidx.test.espresso:espresso-intents:3.7.0")
+                // serving canned workspace API responses to the real WorkspaceApiService (same
+                // version as the app's ktor-client-core, see androidMain)
+                implementation("io.ktor:ktor-client-mock:3.3.3")
             }
         }
     }

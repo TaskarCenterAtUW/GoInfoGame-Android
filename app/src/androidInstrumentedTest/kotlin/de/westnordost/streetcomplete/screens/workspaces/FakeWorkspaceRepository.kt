@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.flowOf
  * of [de.westnordost.streetcomplete.data.workspace.data.repository.WorkspaceRepositoryImpl].
  *
  * Every auth call succeeds by default; tests swap in failures via [login], [userInfo] and
- * [refresh] (e.g. `userInfo = { flow { throw Exception("User profile not found.") } }`).
+ * [refresh] (e.g. `userInfo = { flow { throw Exception("User profile not found.") } }`), and
+ * what the workspace list / a tapped workspace returns via [workspaces] and [workspaceDetails].
  */
 class FakeWorkspaceRepository : WorkspaceRepository {
 
@@ -36,21 +37,31 @@ class FakeWorkspaceRepository : WorkspaceRepository {
     }
     var refresh: (refreshToken: String) -> Flow<LoginResponse> = { flowOf(TEST_LOGIN_RESPONSE) }
 
-    override fun getWorkspaces(location: Location): Flow<List<Workspace>> = flowOf(
-        listOf(
-            Workspace(
-                id = 1,
-                title = TEST_WORKSPACE_TITLE,
-                type = "osw",
-                externalAppAccess = 1,
-                createdAt = "2025-01-01T00:00:00Z",
+    var workspaces: (location: Location) -> Flow<List<Workspace>> = {
+        flowOf(
+            listOf(
+                Workspace(
+                    id = 1,
+                    title = TEST_WORKSPACE_TITLE,
+                    type = "osw",
+                    externalAppAccess = 1,
+                    createdAt = "2025-01-01T00:00:00Z",
+                )
             )
         )
-    )
+    }
+    // nothing by default - the login tests never open a workspace
+    var workspaceDetails: (workspaceId: Int) -> Flow<WorkspaceDetailsResponse> = { emptyFlow() }
+    val workspaceDetailsRequests = mutableListOf<Int>()
+
+    override fun getWorkspaces(location: Location): Flow<List<Workspace>> = workspaces(location)
 
     override fun getUserProjectGroups(): Flow<List<UserProjectGroupItem>> = flowOf(emptyList())
 
-    override fun getWorkspaceDetails(workspaceId: Int): Flow<WorkspaceDetailsResponse> = emptyFlow()
+    override fun getWorkspaceDetails(workspaceId: Int): Flow<WorkspaceDetailsResponse> {
+        workspaceDetailsRequests.add(workspaceId)
+        return workspaceDetails(workspaceId)
+    }
 
     override fun loginToWorkspace(username: String, password: String): Flow<LoginResponse> = login(username)
 

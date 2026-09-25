@@ -8,6 +8,7 @@ import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.user.WorkspaceConfigProvider
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceApiService
 import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceAuthRejectedException
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -34,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -205,6 +207,148 @@ class WorkspaceApiServiceTest {
         // WorkspaceViewModel relies on this to tell "offline" (keep the session) from "rejected"
         assertFailsWith<UnresolvedAddressException> { service(networkDown()).refreshToken("r") }
         assertEquals(3, requests.size)
+    }
+
+    //endregion
+
+    //region unexpected response bodies
+
+    // regression: Ktor wraps the parse error in a JsonConvertException, which wasn't recognized,
+    // so the raw "Illegal input: Fields [...] are required ..." was shown to the user
+    @Test fun `a response body that doesn't parse gives a friendly message on every endpoint`() = runTest {
+        val expected = "Received an unexpected response from the server. Please contact your workspace admin if this continues."
+        val calls: List<Pair<String, suspend WorkspaceApiService.() -> Unit>> = listOf(
+            "login" to { loginToWorkspace("u", "p") },
+            "user profile" to { getTDEIUserDetails("u") },
+            "workspace list" to { getWorkspaces(Mockito.mock(android.location.Location::class.java)) },
+            "project groups" to { getUserProjectGroups() },
+        )
+        for ((name, call) in calls) {
+            for (body in listOf("""{"unexpected":true}""", "not json at all")) {
+                requests.clear()
+                val e = assertFailsWith<Exception>("$name, body $body") {
+                    service(json(HttpStatusCode.OK, body)).call()
+                }
+                assertEquals(expected, e.message, "$name, body $body")
+            }
+        }
+    }
+
+    //endregion
+
+    //region app update info (cached for 6 hours)
+
+    private val updateInfoJson = """{"android":{
+        "dev":{"latest_version":"1.2.0","min_required_version":"1.0.0"},
+        "prod":{"latest_version":"1.2.0","min_required_version":"1.0.0"},
+        "stage":{"latest_version":"1.2.0","min_required_version":"1.0.0"}}}"""
+
+    @Test fun `update info is fetched once and then served from the cache`() = runTest {
+        val service = service(json(HttpStatusCode.OK, updateInfoJson))
+        assertEquals("1.2.0", service.getForceUpdateInfo().android.prod.latestVersion)
+        assertEquals("1.2.0", service.getForceUpdateInfo().android.prod.latestVersion)
+        assertEquals(1, requests.size)
+    }
+
+    // regression: the response was cached before being parsed, so a malformed one was served
+    // from the cache and failed every update check for the next 6 hours
+    @Test fun `a malformed update info response is not cached`() = runTest {
+        val service = service(json(HttpStatusCode.OK, """{"unexpected":true}"""), json(HttpStatusCode.OK, updateInfoJson))
+
+        val e = assertFailsWith<Exception> { service.getForceUpdateInfo() }
+        assertEquals("Received an unexpected response from the server. Please contact your workspace admin if this continues.", e.message)
+        assertNull(preferences.configJson)
+        assertNull(preferences.configLastFetchTime)
+
+        assertEquals("1.2.0", service.getForceUpdateInfo().android.prod.latestVersion)
+        assertEquals(2, requests.size)
+    }
+
+    @Test fun `a cached update info that doesn't parse is fetched again`() = runTest {
+        // left behind by a version that cached before parsing
+        preferences.configLastFetchTime = System.currentTimeMillis()
+        preferences.configJson = """{"unexpected":true}"""
+
+        assertEquals("1.2.0", service(json(HttpStatusCode.OK, updateInfoJson)).getForceUpdateInfo().android.prod.latestVersion)
+        assertEquals(1, requests.size)
+        assertEquals(updateInfoJson, preferences.configJson)
+    }
+
+    //endregion
+
+    //region workspace details (tapping a workspace in the list)
+
+    @Test fun `workspace details are fetched for the tapped workspace with the stored token`() = runTest {
+        service(json(HttpStatusCode.OK, workspaceDetailsJson(id = 7))).getWorkspaceDetails(7)
+
+        val request = requests.single()
+        assertEquals(HttpMethod.Get, request.method)
+        assertEquals(
+            EnvironmentManager(preferences).currentEnvironment.workspaceBaseUrl + "/7",
+            request.url.toString()
+        )
+        assertEquals("Bearer stored-access", request.headers[HttpHeaders.Authorization])
+    }
+
+    @Test fun `workspace details carry a valid long form`() = runTest {
+        val details = service(json(HttpStatusCode.OK, workspaceDetailsJson(id = 7))).getWorkspaceDetails(7)
+
+        assertEquals(7, details.id)
+        assertEquals("Test Workspace", details.title)
+        val longForm = Json { ignoreUnknownKeys = true }
+            .decodeFromJsonElement(LongFormResponse.serializer(), assertNotNull(details.longFormQuestDef))
+        assertEquals("3.2.0", longForm.version)
+        assertEquals(30, longForm.recencyPeriodInDays)
+        assertEquals(listOf("Bench"), longForm.featurePresets.map { it.name })
+        assertEquals(listOf("streetlight"), longForm.customIcons.map { it.name })
+        assertValidLongForm(longForm.elements)
+        assertEquals(listOf(101, 102, 103, 104), longForm.elements.single().quests.map { it?.questId })
+    }
+
+    @Test fun `overrideConflicts is read from the workspace details`() = runTest {
+        for ((raw, expected) in listOf("true" to true, "false" to false, "null" to null)) {
+            requests.clear()
+            val details = service(json(HttpStatusCode.OK, workspaceDetailsJson(overrideConflicts = raw)))
+                .getWorkspaceDetails(7)
+            assertEquals(expected, details.overrideConflicts, "for \"overrideConflicts\": $raw")
+        }
+    }
+
+    @Test fun `overrideConflicts missing from the workspace details is null, not an error`() = runTest {
+        val details = service(json(HttpStatusCode.OK, workspaceDetailsJson(overrideConflicts = null)))
+            .getWorkspaceDetails(7)
+        assertNull(details.overrideConflicts)
+    }
+
+    @Test fun `unknown workspace says which one`() = runTest {
+        val e = assertFailsWith<Exception> {
+            service(status(HttpStatusCode.NotFound)).getWorkspaceDetails(42)
+        }
+        assertEquals("Failed. Workspace not found with ID : 42", e.message)
+    }
+
+    @Test fun `workspace details errors give friendly messages`() = runTest {
+        val expired = assertFailsWith<Exception> { service(status(HttpStatusCode.Unauthorized)).getWorkspaceDetails(7) }
+        assertEquals("Your session has expired. Please log in again.", expired.message)
+
+        requests.clear()
+        val forbidden = assertFailsWith<Exception> { service(status(HttpStatusCode.Forbidden)).getWorkspaceDetails(7) }
+        assertEquals("You don't have permission to perform this action.", forbidden.message)
+
+        requests.clear()
+        val down = assertFailsWith<Exception> { service(status(HttpStatusCode.InternalServerError)).getWorkspaceDetails(7) }
+        assertEquals("The server is temporarily unavailable. Please try again later.", down.message)
+
+        requests.clear()
+        val offline = assertFailsWith<Exception> { service(networkDown()).getWorkspaceDetails(7) }
+        assertEquals("Please check your internet connection and try again.", offline.message)
+    }
+
+    @Test fun `workspace details missing a required field is reported as a misconfigured workspace`() = runTest {
+        val e = assertFailsWith<Exception> {
+            service(json(HttpStatusCode.OK, """{"id":7,"title":"Test Workspace"}""")).getWorkspaceDetails(7)
+        }
+        assertEquals("Workspace is not configured properly. Please contact the Admin for the workspace", e.message)
     }
 
     //endregion

@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -240,6 +241,16 @@ class WorkspaceViewModelImpl(
             )
         } catch (parseException: ParseException) {
             return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
+        }
+        // a long form of the wrong shape (e.g. "quests" not a list). This runs inside the
+        // collect{} of getWorkspaceDetails, downstream of its catch{}, so anything thrown here
+        // would escape into viewModelScope and crash instead of showing an error
+        catch (e: SerializationException) {
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + e.message)
+        }
+        // thrown by the custom required_value/dependency serializers for unexpected JSON
+        catch (e: IllegalStateException) {
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + e.message)
         }
     }
 
