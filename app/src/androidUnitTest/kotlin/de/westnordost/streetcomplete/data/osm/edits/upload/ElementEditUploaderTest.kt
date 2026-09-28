@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConfli
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflictsController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryDelete
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryModify
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
@@ -197,6 +198,50 @@ class ElementEditUploaderTest {
         uploader.upload(conflictingEdit(workspaceId = 7), { mock() })
 
         verify(workspaceDao, never()).get(anyLong())
+        verify(mapDataApi).uploadChanges(eq(1L), any(), any())
+    }
+
+    @Test fun `element deleted on the server discards the edit in either mode`(): Unit = runBlocking {
+        for (override in listOf(true, false)) {
+            on(mapDataController.get(any(), anyLong())).thenReturn(null)
+            on(mapDataApi.getNode(1)).thenReturn(null)
+            givenWorkspace(7, overrideConflicts = override)
+
+            assertFailsWith<ConflictException>("overrideConflicts=$override") {
+                uploader.upload(conflictingEdit(workspaceId = 7), { mock() })
+            }
+        }
+        verify(pendingTagConflict, never()).add(any())
+        verify(mapDataApi, never()).uploadChanges(anyLong(), any(), any())
+    }
+
+    @Test fun `OVERRIDE re-asserts a deletion the server undid`(): Unit = runBlocking {
+        // app deleted "surface"; meanwhile someone changed it to gravel
+        val original = node(id = 1, tags = mapOf("surface" to "asphalt", "width" to "50"))
+        val edit = edit(action = UpdateElementTagsAction(original, StringMapChanges(listOf(
+            StringMapEntryDelete("surface", "asphalt"),
+        )))).also { it.workspaceId = 7 }
+        givenServerChangedSurface()
+        on(mapDataApi.getNode(1)).thenReturn(node(id = 1, tags = mapOf("surface" to "gravel", "width" to "50"), version = 2))
+        givenWorkspace(7, overrideConflicts = true)
+
+        uploader.upload(edit, { mock() })
+
+        val uploaded = argumentCaptor<MapDataChanges>()
+        verify(mapDataApi).uploadChanges(eq(1L), capture(uploaded), any())
+        assertEquals(mapOf("width" to "50"), uploaded.value.modifications.single().tags)
+    }
+
+    @Test fun `the mode is read at upload time, so a change of mode applies to queued edits`(): Unit = runBlocking {
+        givenServerChangedSurface()
+        givenWorkspace(7, overrideConflicts = false)
+        assertFailsWith<HeldForConflictResolutionException> {
+            uploader.upload(conflictingEdit(workspaceId = 7), { mock() })
+        }
+
+        // the workspace was reopened and its details now say OVERRIDE
+        givenWorkspace(7, overrideConflicts = true)
+        uploader.upload(conflictingEdit(workspaceId = 7), { mock() })
         verify(mapDataApi).uploadChanges(eq(1L), any(), any())
     }
 

@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload
 
+import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
@@ -25,10 +26,12 @@ import de.westnordost.streetcomplete.testutils.on
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class ElementEditsUploaderTest {
 
@@ -134,4 +137,58 @@ class ElementEditsUploaderTest {
             deleted = listOf(ElementKey(ElementType.WAY, 1))
         )))
     }
+
+    //region conflict handling and changesets
+
+    // RESOLVE mode: ElementEditUploader held the edit because a tag collided with a remote edit
+    @Test fun `an edit held for conflict resolution is blocked, not synced and not discarded`() = runBlocking {
+        val edit = edit()
+        val serverVersion = node(id = 1, tags = mapOf("surface" to "gravel"), version = 2)
+        on(elementEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
+        on(singleUploader.upload(any(), any())).thenThrow(HeldForConflictResolutionException(serverVersion))
+
+        uploader.upload()
+
+        verify(elementEditsController).markBlockedOnConflict(edit)
+        // the local map now shows what the conflict was detected against
+        verify(mapDataController).updateAll(eq(MapDataUpdates(updated = listOf(serverVersion))))
+        verify(elementEditsController, never()).markSynced(any(), any())
+        verify(elementEditsController, never()).markSyncFailed(any())
+        verifyNoInteractions(discardedEditNoticesController, statisticsController, listener)
+    }
+
+    @Test fun `a held edit doesn't stop the edits queued behind it`() = runBlocking {
+        val held = edit(id = 1)
+        val next = edit(id = 2)
+        val updates = MapDataUpdates()
+        on(elementEditsController.getOldestUnsynced()).thenReturn(held).thenReturn(next).thenReturn(null)
+        on(singleUploader.upload(eq(held), any())).thenThrow(HeldForConflictResolutionException(node()))
+        on(singleUploader.upload(eq(next), any())).thenReturn(updates)
+
+        uploader.upload()
+
+        verify(elementEditsController).markBlockedOnConflict(held)
+        verify(elementEditsController).markSynced(next, updates)
+    }
+
+    @Test fun `open changesets are closed after every upload run`() = runBlocking {
+        on(elementEditsController.getOldestUnsynced()).thenReturn(edit()).thenReturn(null)
+        on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
+
+        uploader.upload()
+
+        verify(changesetManager).closeAllOpenChangesets()
+    }
+
+    @Test fun `open changesets are closed even when the upload run fails`() = runBlocking {
+        on(elementEditsController.getOldestUnsynced()).thenReturn(edit()).thenReturn(null)
+        on(singleUploader.upload(any(), any())).thenThrow(AuthorizationException())
+
+        assertFailsWith<AuthorizationException> { uploader.upload() }
+
+        verify(changesetManager).closeAllOpenChangesets()
+    }
+
+    //endregion
 }
+
