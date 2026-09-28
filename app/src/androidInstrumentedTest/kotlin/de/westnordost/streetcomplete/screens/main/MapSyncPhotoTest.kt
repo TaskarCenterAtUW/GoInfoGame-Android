@@ -145,29 +145,6 @@ class MapSyncPhotoTest : MapSyncTestBase() {
         assertTrue(MockOsmServer.snapshot().uploads.isEmpty())
     }
 
-    /** The camera is stubbed to "take" a small real JPEG (the form reads its EXIF). */
-    private fun capturePhoto() {
-        intending(hasAction(MediaStore.ACTION_IMAGE_CAPTURE)).respondWithFunction { intent ->
-            val uri = IntentCompat.getParcelableExtra(intent, MediaStore.EXTRA_OUTPUT, Uri::class.java)!!
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            context.contentResolver.openOutputStream(uri)!!.use {
-                Bitmap.createBitmap(64, 48, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 90, it)
-            }
-            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
-        }
-        onView(inRowOf(OBSTRUCTION_Q, R.id.choice_follow_up)).perform(scrollIntoView(), click())
-        // the camera result comes back asynchronously - submitting before the photo card shows
-        // would submit the answer without its photo
-        waitUntil("photo attached") {
-            try {
-                onView(inRowOf(OBSTRUCTION_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo attached")))
-                true
-            } catch (e: Throwable) {
-                false
-            }
-        }
-    }
-
     //endregion
 
     private companion object {

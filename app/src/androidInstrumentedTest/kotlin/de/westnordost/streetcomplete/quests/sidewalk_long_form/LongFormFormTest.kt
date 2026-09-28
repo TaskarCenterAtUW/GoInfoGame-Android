@@ -1,6 +1,19 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form
 
 import android.app.Activity
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.view.View
+import android.widget.ImageView
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasData
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
+import androidx.test.espresso.matcher.BoundedMatcher
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
+import androidx.test.espresso.matcher.ViewMatchers.withParent
+import org.hamcrest.Description
+import org.hamcrest.Matcher
 import android.app.Instrumentation
 import android.graphics.Bitmap
 import android.net.Uri
@@ -397,6 +410,110 @@ class LongFormFormTest {
 
     //endregion
 
+    //region more input and photo cases
+
+    @Test
+    fun numberBelowTheMinimumBlocksSubmitUntilFixed() {
+        open()
+        typeInto(WIDTH_Q, "5")
+        onView(inRowOf(WIDTH_Q, R.id.input)).check(matches(hasInputError("Value should be greater than 12")))
+        onView(withId(R.id.submitButton)).perform(scrollIntoView()).check(matches(hasAlpha(0.5f)))
+        onView(withId(R.id.submitButton)).perform(click())
+        toasts.awaitToast("Please correct the errors before submitting.")
+        assertTrue(edits.actions.isEmpty())
+
+        // the bounds themselves are allowed
+        typeInto(WIDTH_Q, "12")
+        onView(inRowOf(WIDTH_Q, R.id.input)).check(matches(hasInputError(null)))
+        submit()
+        assertEquals("12", edits.resultingTags(originalTags)["width"])
+    }
+
+    @Test
+    fun retakeReplacesThePhoto_andDeletesTheFirstOne() {
+        open(mapOf("ext:obstruction" to "yes"))
+        tap(OBSTRUCTION_TYPE_Q, OTHER_OBSTRUCTION)
+        capturePhoto()
+        onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo attached")))
+
+        capturePhoto(button = R.id.photo_retake)
+        onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo attached")))
+        assertEquals(2, capturedUris.size)
+        assertFalse("the first capture is deleted", exists(capturedUris[0]))
+        assertTrue(exists(capturedUris[1]))
+
+        submit()
+        val photo = waitForPhotos(firstEditId).single()
+        assertTrue(File(photo.path).exists())
+        assertEquals(capturedUris[1].lastPathSegment, File(photo.path).name)
+    }
+
+    @Test
+    fun tappingANewPhotoShowsItFullScreen() {
+        open(mapOf("ext:obstruction" to "yes"))
+        tap(OBSTRUCTION_TYPE_Q, OTHER_OBSTRUCTION)
+        capturePhoto()
+        intending(hasAction(Intent.ACTION_VIEW)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+
+        onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_thumb)).perform(scrollIntoView(), click())
+
+        intended(allOf(hasAction(Intent.ACTION_VIEW), hasType("image/jpeg"), hasData(capturedUris.single())))
+    }
+
+    @Test
+    fun tappingThePhotoFromLastVisitShowsItFullScreen() {
+        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "other", KARTAVIEW_URL_TAG to PHOTO_URL))
+        intending(hasAction(Intent.ACTION_VIEW)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+
+        onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_thumb)).perform(scrollIntoView(), click())
+
+        intended(allOf(hasAction(Intent.ACTION_VIEW), hasData(PHOTO_URL)))
+    }
+
+    // the other tests run in low-bandwidth mode; here the images are local files, so no network
+    @Test
+    fun questionAndChoiceImagesAreShown() {
+        val image = testImageUrl()
+        questType = AddGenericLong(
+            Elements(elementType = QUEST_TYPE_NAME, questQuery = "ways with highway=footway", quests = sidewalkQuests().map { quest ->
+                quest.copy(
+                    questImageUrl = if (quest.questId == 101 || quest.questId == 103) image else null,
+                    questAnswerChoices = quest.questAnswerChoices?.map { it?.copy(imageUrl = image) },
+                )
+            }),
+            recencyPeriodInDays = 90
+        )
+        questTypeRegistry.addItem(listOf(0 to questType))
+        preferences.isLowBandwidthModeEnabled = false
+        open()
+        Thread.sleep(4000)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val activity = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED).first()
+            fun walk(v: View, depth: Int) {
+                if (v is android.widget.ProgressBar && v.isShown) {
+                    val res = try { v.resources.getResourceEntryName(v.id) } catch (e: Exception) { "?" }
+                    val parent = (v.parent as? View)?.let { p -> try { p.resources.getResourceEntryName(p.id) } catch (e: Exception) { p.javaClass.simpleName } }
+                    android.util.Log.e("DIAG", "visible ProgressBar id=$res parent=$parent indeterminate=${v.isIndeterminate} anim=${v.isAnimating}")
+                }
+                if (v is android.view.ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i), depth + 1)
+            }
+            walk(activity.window.decorView, 0)
+            android.util.Log.e("DIAG", "scan done")
+        }
+
+        // on a choice question and on a numeric question
+        awaitShowsTestImage(allOf(withId(R.id.imageView), withParent(questionRow(SURFACE_Q))))
+        awaitShowsTestImage(inRowOf(WIDTH_Q, R.id.quest_image))
+        // on the choice tiles
+        awaitShowsTestImage(allOf(withId(R.id.imageView), isDescendantOfA(tileOf(SURFACE_Q, "Concrete"))))
+        tap(SURFACE_Q, "Concrete")
+        submit()
+        assertEquals("concrete", edits.resultingTags(originalTags)["ext:surface"])
+    }
+
+    //endregion
+
     //region helpers
 
     private fun open(tags: Map<String, String> = emptyMap(), multiSelect: Boolean = false) {
@@ -456,16 +573,62 @@ class LongFormFormTest {
 
     /** Taps the photo prompt (or retake) with the camera stubbed to "take" a small real JPEG -
      *  onTookPhoto reads its EXIF and rescales it, so an empty file wouldn't do. */
-    private fun capturePhoto() {
+    private fun capturePhoto(button: Int = R.id.choice_follow_up) {
         intending(hasAction(MediaStore.ACTION_IMAGE_CAPTURE)).respondWithFunction { intent ->
             val uri = IntentCompat.getParcelableExtra(intent, MediaStore.EXTRA_OUTPUT, Uri::class.java)!!
+            capturedUris.add(uri)
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             context.contentResolver.openOutputStream(uri)!!.use {
                 Bitmap.createBitmap(64, 48, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 90, it)
             }
             Instrumentation.ActivityResult(Activity.RESULT_OK, null)
         }
-        onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.choice_follow_up)).perform(scrollIntoView(), click())
+        onView(inRowOf(OBSTRUCTION_TYPE_Q, button)).perform(scrollIntoView(), click())
+    }
+
+    private val capturedUris = mutableListOf<Uri>()
+
+    private fun exists(uri: Uri): Boolean = try {
+        InstrumentationRegistry.getInstrumentation().targetContext.contentResolver.openInputStream(uri)!!.close()
+        true
+    } catch (e: java.io.FileNotFoundException) {
+        false
+    }
+
+    /** A solid red PNG in the app's cache - served to the image loader as a file:// URL, so no
+     *  network is involved. */
+    private fun testImageUrl(): String {
+        val file = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "long_form_test_image.png")
+        file.outputStream().use {
+            Bitmap.createBitmap(40, 30, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        return "file://${file.path}"
+    }
+
+    /** Shows the red test image - not the (also bitmap) blank placeholder shown while loading or on error. */
+    private fun showsTestImage(): Matcher<View> = object : BoundedMatcher<View, ImageView>(ImageView::class.java) {
+        override fun describeTo(description: Description) { description.appendText("shows the red test image") }
+        override fun matchesSafely(item: ImageView): Boolean {
+            val drawn = (item.drawable as? BitmapDrawable)?.bitmap ?: return false
+            // the image loader hands out HARDWARE bitmaps, whose pixels can't be read directly
+            val bitmap = if (drawn.config == Bitmap.Config.HARDWARE) drawn.copy(Bitmap.Config.ARGB_8888, false) else drawn
+            val pixel = bitmap.getPixel(bitmap.width / 2, bitmap.height / 2)
+            return Color.red(pixel) > 200 && Color.green(pixel) < 60 && Color.blue(pixel) < 60
+        }
+    }
+
+    private fun awaitShowsTestImage(view: Matcher<View>) {
+        val deadline = SystemClock.uptimeMillis() + EDIT_TIMEOUT_MS
+        while (true) {
+            try {
+                onView(view).perform(scrollIntoView()).check(matches(allOf(isDisplayed(), showsTestImage())))
+                return
+            } catch (e: Throwable) {
+                if (SystemClock.uptimeMillis() > deadline) throw e
+                Thread.sleep(100)
+            }
+        }
     }
 
     private fun waitForPhotos(editId: Long): List<FeaturePhoto> {

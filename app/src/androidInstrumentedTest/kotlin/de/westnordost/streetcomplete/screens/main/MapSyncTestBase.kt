@@ -2,13 +2,19 @@ package de.westnordost.streetcomplete.screens.main
 
 import android.Manifest
 import android.app.Activity
+import android.app.Instrumentation
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.provider.MediaStore
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.core.content.IntentCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.CoordinatesProvider
@@ -20,6 +26,8 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -56,6 +64,7 @@ import de.westnordost.streetcomplete.data.workspace.data.remote.WorkspaceApiServ
 import de.westnordost.streetcomplete.data.workspace.data.repository.WorkspaceRepositoryImpl
 import de.westnordost.streetcomplete.data.workspace.domain.WorkspaceRepository
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.fieldOf
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.tileOf
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
@@ -136,7 +145,7 @@ abstract class MapSyncTestBase {
         saveValidSession()
 
         MockOsmServer.reset()
-        MockOsmServer.put(*sidewalkNodes.toTypedArray(), sidewalk)
+        MockOsmServer.put(*sidewalkNodes.toTypedArray(), sidewalk, *otherElements.toTypedArray())
         MockKartaView.reset()
 
         val realRepository = WorkspaceRepositoryImpl(workspaceApiService(), workspaceDao)
@@ -150,6 +159,11 @@ abstract class MapSyncTestBase {
         // photo uploads must never reach the real KartaView either
         MockKartaView.attachTo(koin.get(named("kartaViewClient")))
         MockKartaView.isActive = true
+
+        // photo thumbnails of existing answers are real https URLs (loaded by Coil, which the
+        // network guard doesn't cover) - never fetch them in tests
+        wasLowBandwidth = preferences.isLowBandwidthModeEnabled
+        preferences.isLowBandwidthModeEnabled = true
 
         gps = MockGps(userPosition.latitude, userPosition.longitude)
         gps.start()
@@ -173,6 +187,7 @@ abstract class MapSyncTestBase {
         clearAppState()
         MockOsmServer.isActive = false
         MockKartaView.isActive = false
+        preferences.isLowBandwidthModeEnabled = wasLowBandwidth
     }
 
     /** Where the (mock) GPS puts the user, and the sidewalk the tests answer - overridable for a
@@ -181,6 +196,9 @@ abstract class MapSyncTestBase {
     protected open val sidewalkNodes: List<MockNode> = SIDEWALK_NODES
     protected open val sidewalk: MockWay = SIDEWALK
     protected open val area: BoundingBox = AREA
+    /** More map data around the sidewalk (e.g. another sidewalk). */
+    protected open val otherElements: List<Any> = emptyList()
+    private var wasLowBandwidth = false
 
     //region flow helpers
 
@@ -220,39 +238,51 @@ abstract class MapSyncTestBase {
     protected fun isShown(text: String): Boolean =
         composeTestRule.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
 
-    protected fun awaitSidewalkQuest(): Quest {
+    protected fun awaitSidewalkQuest(): Quest = awaitQuestFor(sidewalk.id)
+
+    protected fun awaitQuestFor(wayId: Long): Quest {
         val source: VisibleQuestsSource = koin.get()
         var quest: Quest? = null
-        waitUntil("sidewalk quest on the map") {
-            quest = source.getAll(area).firstOrNull {
-                val key = it.key
-                key is OsmQuestKey && key.elementType == ElementType.WAY && key.elementId == sidewalk.id
-            }
+        waitUntil("quest for way $wayId on the map") {
+            quest = questFor(source, wayId)
             quest != null
         }
         return quest!!
     }
 
+    protected fun questFor(source: VisibleQuestsSource, wayId: Long): Quest? =
+        source.getAll(area).firstOrNull {
+            val key = it.key
+            key is OsmQuestKey && key.elementType == ElementType.WAY && key.elementId == wayId
+        }
+
     /** Taps the quest's pin on the map, where a finger would (the pin is drawn just above its
      *  anchor), rather than calling the map's click listener. */
     protected fun tapQuestPin(activity: MainActivity, quest: Quest) {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        // pins are only drawn at street level - zoom in on the quest, as the user would
-        instrumentation.runOnMainSync {
+        zoomTo(activity, quest.position)
+        val (x, y) = pinOnScreen(activity, quest)
+        press(x, y, long = false)
+    }
+
+    /** Pins are only drawn at street level - zoom in on [position], as the user would. */
+    protected fun zoomTo(activity: MainActivity, position: LatLon) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val mapFragment = activity.supportFragmentManager.findFragmentById(R.id.mapFragment) as MainMapFragment
             mapFragment.isFollowingPosition = false
             mapFragment.updateCameraPosition {
-                position = quest.position
+                this.position = position
                 zoom = 19.0
             }
         }
         SystemClock.sleep(2_000) // let the pins render at the new zoom
-        UiTestScreenshot.capture("${javaClass.simpleName}.${testName.methodName}.zoomed")
+    }
+
+    protected fun pinOnScreen(activity: MainActivity, quest: Quest): Pair<Float, Float> {
         var x = 0f
         var y = 0f
-        waitUntil("map projection ready") {
+        waitUntil("pin of ${quest.key} on screen") {
             var ok = false
-            instrumentation.runOnMainSync {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 val mapFragment = activity.supportFragmentManager.findFragmentById(R.id.mapFragment) as MainMapFragment?
                 val point = mapFragment?.getPointOf(quest.position)
                 val view = mapFragment?.view
@@ -267,9 +297,39 @@ abstract class MapSyncTestBase {
             }
             ok
         }
+        return x to y
+    }
+
+    /** A finger on the screen at [x],[y] - a tap, or held long enough to count as a long press. */
+    protected fun press(x: Float, y: Float, long: Boolean) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
         val downTime = SystemClock.uptimeMillis()
         instrumentation.sendPointerSync(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0))
+        if (long) SystemClock.sleep(ViewConfiguration.getLongPressTimeout() * 2L)
         instrumentation.sendPointerSync(MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0))
+    }
+
+    /** Needs Intents.init(). The camera is stubbed to "take" a small real JPEG (the form reads its EXIF). */
+    protected fun capturePhoto() {
+        intending(hasAction(MediaStore.ACTION_IMAGE_CAPTURE)).respondWithFunction { intent ->
+            val uri = IntentCompat.getParcelableExtra(intent, MediaStore.EXTRA_OUTPUT, Uri::class.java)!!
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            context.contentResolver.openOutputStream(uri)!!.use {
+                Bitmap.createBitmap(64, 48, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 90, it)
+            }
+            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+        }
+        onView(inRowOf(OBSTRUCTION_Q, R.id.choice_follow_up)).perform(scrollIntoView(), click())
+        // the camera result comes back asynchronously - submitting before the photo card shows
+        // would submit the answer without its photo
+        waitUntil("photo attached") {
+            try {
+                onView(inRowOf(OBSTRUCTION_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo attached")))
+                true
+            } catch (e: Throwable) {
+                false
+            }
+        }
     }
 
     protected fun answerConcreteAndWidth60() {
@@ -467,6 +527,7 @@ abstract class MapSyncTestBase {
         const val SURFACE_Q = "What is the surface?"
         const val WIDTH_Q = "How wide is it, in inches?"
         const val OBSTRUCTION_Q = "Any obstructions?"
+        const val NOTES_Q = "Anything else to note?"
         const val PHOTO_FOLLOW_UP = "Please take a photo of the obstruction."
 
         val USER_POSITION = LatLon(47.65530, -122.30350)
@@ -499,7 +560,8 @@ abstract class MapSyncTestBase {
                "quest_answer_validation": {"min": 12, "max": 240}},
               {"quest_id": 103, "quest_title": "$OBSTRUCTION_Q", "quest_type": "MultipleChoice", "quest_tag": "obstacle",
                "quest_answer_choices": [{"value": "bollard", "choice_text": "Bollard"},
-                                        {"value": "other", "choice_text": "Other obstruction", "choice_follow_up": "$PHOTO_FOLLOW_UP"}]}
+                                        {"value": "other", "choice_text": "Other obstruction", "choice_follow_up": "$PHOTO_FOLLOW_UP"}]},
+              {"quest_id": 104, "quest_title": "$NOTES_Q", "quest_type": "TextEntry", "quest_tag": "note"}
             ]
           }]
         }"""

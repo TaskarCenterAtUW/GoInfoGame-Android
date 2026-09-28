@@ -48,7 +48,14 @@ object MockOsmServer {
     }
 
     data class MockNode(val id: Long, val lat: Double, val lon: Double, val version: Int = 1, val tags: Map<String, String> = emptyMap())
-    data class MockWay(val id: Long, val nodeIds: List<Long>, val version: Int = 1, val tags: Map<String, String> = emptyMap())
+    /** [timestamp] is the way's OSM "last edited" time (ISO 8601) - what long-form recheck goes by. */
+    data class MockWay(
+        val id: Long,
+        val nodeIds: List<Long>,
+        val version: Int = 1,
+        val tags: Map<String, String> = emptyMap(),
+        val timestamp: String = TIMESTAMP,
+    )
 
     data class Changeset(val id: Long, val tags: Map<String, String>, var isOpen: Boolean = true)
     /** One accepted `changeset/{id}/upload`: the modified ways as the app sent them. */
@@ -237,7 +244,7 @@ object MockOsmServer {
             sb.append("</node>")
         }
         for (w in ways) {
-            sb.append("<way id=\"${w.id}\" version=\"${w.version}\" timestamp=\"$TIMESTAMP\">")
+            sb.append("<way id=\"${w.id}\" version=\"${w.version}\" timestamp=\"${w.timestamp}\">")
             w.nodeIds.forEach { sb.append("<nd ref=\"$it\"/>") }
             sb.appendTags(w.tags)
             sb.append("</way>")
@@ -301,5 +308,5 @@ object MockOsmServer {
 
     //endregion
 
-    private const val TIMESTAMP = "2025-01-01T00:00:00Z"
+    const val TIMESTAMP = "2025-01-01T00:00:00Z"
 }
