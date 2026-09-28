@@ -165,8 +165,10 @@ class SettingsActivity : BaseActivity(), AbstractOsmQuestForm.Listener {
                     geometry: ElementGeometry,
                     source: String,
                     action: ElementEditAction,
-                    isNearUserLocation: Boolean
+                    isNearUserLocation: Boolean,
+                    beforeAnnouncing: (editId: Long) -> Unit,
                 ): Long {
+                    // a preview - no edit is stored, so nothing (e.g. a photo) is attached to one
                     when (action) {
                         is DeletePoiNodeAction -> {
                             message("Deleted node")

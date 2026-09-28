@@ -17,6 +17,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.io.buffered
 import kotlinx.io.files.FileSystem
@@ -59,12 +60,26 @@ class KartaViewApiClient(
         position: LatLon,
     ): List<String> {
         if (images.isEmpty()) return emptyList()
-        val sequenceId = createSequence()
-        val photoIds = images.mapIndexed { index, (image, bearing) ->
-            uploadPhoto(sequenceId, index + 1, image, position, bearing)
+        try {
+            val sequenceId = createSequence()
+            val photoIds = images.mapIndexed { index, (image, bearing) ->
+                uploadPhoto(sequenceId, index + 1, image, position, bearing)
+            }
+            closeSequence(sequenceId)
+            return photoIds.map { photoId -> getPhotoLthUrl(photoId) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: KartaViewException) {
+            throw e
         }
-        closeSequence(sequenceId)
-        return photoIds.map { photoId -> getPhotoLthUrl(photoId) }
+        // KartaView not answering at all (no connection, DNS failure - an
+        // UnresolvedAddressException, which isn't an IOException - timeout, reset) is a photo
+        // upload failure like any error status: callers treat KartaViewException as "leave the
+        // edit for the next sync" and count it towards the stuck-photo notice. Anything else
+        // escaped them and aborted the whole upload run with a generic "Upload error" dialog.
+        catch (e: Exception) {
+            throw KartaViewException("Could not reach KartaView. Image upload failed. Please try again later: $e")
+        }
     }
 
     private suspend fun createSequence(): String {

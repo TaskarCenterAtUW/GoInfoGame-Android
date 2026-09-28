@@ -76,6 +76,7 @@ object MockOsmServer {
         nodes.clear(); ways.clear()
         changesets.clear(); uploads.clear(); rejectedUploads.clear()
         requests.clear(); unexpectedRequests.clear()
+        failure = null
         nextChangesetId = 1L
     }
 
@@ -87,6 +88,32 @@ object MockOsmServer {
     }
 
     fun way(id: Long): MockWay? = synchronized(lock) { ways[id] }
+
+    sealed interface Failure {
+        /** the request never reaches a server (IOException, as with no connectivity) */
+        data object Offline : Failure
+        data class Status(val code: HttpStatusCode) : Failure {
+            init {
+                // the app's bearer-auth plugin answers a 401 by calling the REAL refresh-token
+                // endpoint with its own HttpClient, which this mock can't intercept
+                require(code != HttpStatusCode.Unauthorized) {
+                    "401 would make the app call the real TDEI refresh endpoint - use 403 to test auth errors"
+                }
+            }
+        }
+    }
+
+    /** Decides per request ("GET map", "POST changeset/1/upload", ...) whether it fails; null = answer normally. */
+    @Volatile var failure: ((request: String) -> Failure?)? = null
+
+    /** Someone else deleted the way. */
+    fun deleteWay(id: Long) = synchronized(lock) { ways.remove(id) }
+
+    /** Someone else changed which nodes the way consists of (e.g. extended it), version bumped. */
+    fun changeWayNodes(id: Long, nodeIds: List<Long>) = synchronized(lock) {
+        val way = ways.getValue(id)
+        ways[id] = way.copy(version = way.version + 1, nodeIds = nodeIds)
+    }
 
     /** Someone else edits the way on the server: new tags, version bumped. */
     fun editWayConcurrently(id: Long, tagChanges: Map<String, String?>) = synchronized(lock) {
@@ -115,6 +142,11 @@ object MockOsmServer {
         val path = request.url.encodedPath.substringAfter("/api/0.6/")
         val line = "${request.method.value} $path"
         requests.add(line)
+        when (val f = failure?.invoke(line)) {
+            Failure.Offline -> throw java.io.IOException("mock OSM: network down ()")
+            is Failure.Status -> return respond("mock OSM failure", f.code)
+            null -> {}
+        }
 
         val segments = path.split('/')
         return when {

@@ -22,6 +22,8 @@ import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.verify
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class ElementEditsControllerTest {
 
@@ -54,6 +56,32 @@ class ElementEditsControllerTest {
         ctrl.add(QUEST_TYPE, pGeom(), "test", action, true)
 
         verifyAdd(ElementEdit(0, QUEST_TYPE, pGeom(), "test", nowAsEpochMilliseconds(), false, action, true))
+    }
+
+    // regression: a long-form answer's photo was attached only after add() returned, but add()
+    // had already announced the edit - an immediate auto-upload could send it without its photo
+    @Test fun `add stores what must go up with the edit before announcing it`() {
+        val action = mock<ElementEditAction>()
+        on(action.newElementsCount).thenReturn(NewElementsCount(0, 0, 0))
+        on(action.elementKeys).thenReturn(listOf(ElementKey(WAY, 2)))
+        val order = mutableListOf<String>()
+        on(db.put(any())).thenAnswer { order.add("stored"); null }
+        on(listener.onAddedEdit(any())).thenAnswer { order.add("announced"); null }
+
+        ctrl.add(QUEST_TYPE, pGeom(), "test", action, true) { order.add("photo attached") }
+
+        assertEquals(listOf("stored", "photo attached", "announced"), order)
+    }
+
+    @Test fun `add still announces the edit if attaching fails`() {
+        val action = mock<ElementEditAction>()
+        on(action.newElementsCount).thenReturn(NewElementsCount(0, 0, 0))
+        on(action.elementKeys).thenReturn(listOf(ElementKey(WAY, 2)))
+
+        assertFailsWith<IllegalStateException> {
+            ctrl.add(QUEST_TYPE, pGeom(), "test", action, true) { throw IllegalStateException("disk full") }
+        }
+        verify(listener).onAddedEdit(any())
     }
 
     @Test fun markSyncFailed() {

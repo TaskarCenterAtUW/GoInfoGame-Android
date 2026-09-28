@@ -60,9 +60,12 @@ class RecordingEditsController : AddElementEditsController {
         source: String,
         action: ElementEditAction,
         isNearUserLocation: Boolean,
+        beforeAnnouncing: (editId: Long) -> Unit,
     ): Long {
         actions.add(action)
-        return FIRST_EDIT_ID + actions.size
+        val id = FIRST_EDIT_ID + actions.size
+        beforeAnnouncing(id)
+        return id
     }
 
     /** The element's tags after applying the single recorded tag edit. */

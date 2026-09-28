@@ -313,7 +313,7 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "de.westnordost.streetcomplete.testutils.SandboxedTestRunner"
     }
 
     compileOptions {
