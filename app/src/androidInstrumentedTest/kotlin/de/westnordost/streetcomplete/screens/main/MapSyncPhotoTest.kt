@@ -18,6 +18,8 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.Database
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
@@ -49,6 +51,30 @@ class MapSyncPhotoTest : MapSyncTestBase() {
     @After
     fun releaseCamera() {
         Intents.release()
+    }
+
+    // the normal case: KartaView takes the photo, and the answer goes up carrying its public URL
+    @Test
+    fun photoUploads_andTheAnswerCarriesItsUrl() {
+        MockKartaView.failure = null
+        openWorkspaceAndSidewalkQuest()
+        answerWithPhoto()
+
+        val way = awaitUploads(1).single().modifiedWays.single()
+        assertEquals(
+            SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other", "ext:kartaview_url" to MockKartaView.PHOTO_URL),
+            way.tags
+        )
+        // uploaded the way the real API expects it, before the answer
+        assertEquals(
+            listOf("POST /1.0/sequence/", "POST /1.0/photo/", "POST /1.0/sequence/finished-uploading/", "GET /2.0/photo/mock-photo-1"),
+            MockKartaView.requests.toList()
+        )
+        // the photo is done with: its record (and file) are gone, nothing is left queued
+        waitUntil("answer synced") { unsyncedEditsCount() == 0 }
+        assertEquals(0, koin.get<Database>().query(FeaturePhotosTable.NAME) { 1 }.size)
+        assertFalse(isShown(STUCK_PHOTO_TITLE))
+        awaitChangesetsClosed()
     }
 
     @Test
