@@ -321,7 +321,9 @@ class LongFormFormTest {
         onView(withId(R.id.submitButton)).perform(scrollIntoView(), click())
         toasts.awaitToast("No changes to submit. Please answer at least one question.")
         assertNoEdit()
-        onView(questionRow(SURFACE_Q)).check(matches(isDisplayed()))
+        // still showing the form - scrolled back up first: on a small screen the first question is
+        // no longer on screen once Submit (at the bottom) has been scrolled to
+        onView(questionRow(SURFACE_Q)).perform(scrollIntoView()).check(matches(isDisplayed()))
     }
 
     @Test

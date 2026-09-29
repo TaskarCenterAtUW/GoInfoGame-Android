@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,18 +57,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.workspace.Workspace
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.CustomIcon
@@ -394,36 +400,32 @@ fun WorkspaceToolbar(
                         .focusRequester(focusRequester)
                 )
             } else {
-                var aivLineCount by remember { mutableIntStateOf(1) }
-                var scoutRouteLineCount by remember { mutableIntStateOf(1) }
-                Row(
+                var titleLineCount by remember { mutableIntStateOf(1) }
+                val titleStyle = MaterialTheme.typography.headlineSmall
+                // one line, shrinking to fit where the bar is too narrow (small screens, large
+                // font scale) instead of wrapping and getting cut off by the fixed bar height.
+                // "ScoutRoute" keeps its smaller titleLarge size relative to "AVIV" via em
+                BasicText(
+                    text = buildAnnotatedString {
+                        append("AVIV")
+                        withStyle(SpanStyle(fontSize = (MaterialTheme.typography.titleLarge.fontSize.value / titleStyle.fontSize.value).em)) {
+                            append(" ScoutRoute")
+                        }
+                    },
+                    style = titleStyle.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = ProximaNovaFontFamily,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = titleStyle.fontSize),
+                    // cut off even at the smallest size counts as not fitting on one line
+                    onTextLayout = { titleLineCount = if (it.hasVisualOverflow) 2 else it.lineCount },
                     modifier = Modifier
                         .weight(1f)
                         .padding(start = 16.dp)
-                        .clearAndSetSemantics {
-                            workspaceTitleLineCount = maxOf(aivLineCount, scoutRouteLineCount)
-                        },
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Text(
-                        text = "AVIV",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = ProximaNovaFontFamily,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.alignBy(LastBaseline),
-                        onTextLayout = { aivLineCount = it.lineCount }
-                    )
-                    Text(
-                        text = " ScoutRoute",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = ProximaNovaFontFamily,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.alignBy(LastBaseline),
-                        onTextLayout = { scoutRouteLineCount = it.lineCount }
-                    )
-                }
+                        .clearAndSetSemantics { workspaceTitleLineCount = titleLineCount },
+                )
             }
 
             if (showSearch) {

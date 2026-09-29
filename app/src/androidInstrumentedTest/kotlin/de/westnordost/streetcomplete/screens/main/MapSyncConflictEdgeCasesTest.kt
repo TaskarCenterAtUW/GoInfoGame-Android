@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import de.westnordost.streetcomplete.testutils.MockOsmServer
 import org.junit.Assert.assertEquals
@@ -40,8 +41,10 @@ class MapSyncConflictEdgeCasesTest : MapSyncTestBase() {
         assertTrue(isShown("Existing value: gravel"))
         assertTrue(isShown("Your answer: 60"))
         // keep "concrete" (preselected), but take the other edit's width
-        composeTestRule.onNode(hasText("Existing value: 55")).performClick()
-        composeTestRule.onNodeWithText("Confirm").performClick()
+        // scrolled to first - on a small screen it is below the part of the sheet that is on
+        // screen, and Confirm (the header scrolls along) is then above it
+        composeTestRule.onNode(hasText("Existing value: 55")).performScrollTo().performClick()
+        composeTestRule.onNodeWithText("Confirm").performScrollTo().performClick()
 
         val way = awaitUploads(1).single().modifiedWays.single()
         assertEquals(SIDEWALK.tags + mapOf("surface" to "concrete", "width" to "55"), way.tags)

@@ -3,7 +3,6 @@ package de.westnordost.streetcomplete.screens.main.conflicts
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.PendingTagConflict
@@ -169,22 +169,22 @@ fun TagConflictResolutionEffect(
                 .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TextButton(
-                    onClick = ::postpone,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
+            // a Row, not a Box with three aligned children: with large fonts the title wraps
+            // between the buttons instead of overlapping them
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = ::postpone) {
                     Text("Cancel")
                 }
                 Text(
                     "Resolve Conflicts",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.align(Alignment.Center)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
-                TextButton(
-                    onClick = ::apply,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
+                TextButton(onClick = ::apply) {
                     Text("Confirm", fontWeight = FontWeight.Bold)
                 }
             }
