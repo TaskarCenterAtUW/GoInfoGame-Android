@@ -116,7 +116,7 @@ class MapSyncErrorsTest : MapSyncTestBase() {
     @Test
     fun downloadNotAuthorized_logsOut_toTheLoginScreen() {
         MockOsmServer.failure = { if (it == "GET map") Failure.Status(HttpStatusCode.Forbidden) else null }
-        openWorkspace()
+        tapWorkspace()
 
         assertSessionExpiredOnTheLoginScreen()
     }

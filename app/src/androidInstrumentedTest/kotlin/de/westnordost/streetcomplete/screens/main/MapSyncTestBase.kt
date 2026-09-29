@@ -209,10 +209,16 @@ abstract class MapSyncTestBase {
 
     /** From the workspace list (saved session) into the map screen of the workspace. */
     protected fun openWorkspace(): MainActivity {
+        tapWorkspace()
+        return awaitActivity(MainActivity::class.java)
+    }
+
+    /** Like [openWorkspace], without waiting for MainActivity - for a test where it doesn't stay
+     *  (e.g. the first download logs out right away), so it may be gone before it's seen resumed. */
+    protected fun tapWorkspace() {
         scenario = ActivityScenario.launch(WorkSpaceActivity::class.java)
         waitForText(FakeWorkspaceRepository.TEST_WORKSPACE_TITLE)
         composeTestRule.onNodeWithText(FakeWorkspaceRepository.TEST_WORKSPACE_TITLE).performClick()
-        return awaitActivity(MainActivity::class.java)
     }
 
     protected fun openSidewalkQuest(activity: MainActivity) {
