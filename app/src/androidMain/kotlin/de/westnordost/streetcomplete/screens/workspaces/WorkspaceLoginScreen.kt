@@ -48,6 +48,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -594,7 +595,7 @@ fun UserInfoComponent() {
         val context = LocalContext.current
         Text(
             "I'm a new user",
-            modifier = Modifier.clickable {
+            modifier = Modifier.minimumInteractiveComponentSize().clickable {
                 val url = "http://tinyurl.com/OTP2026Walk"
                 val intent = Intent(Intent.ACTION_VIEW)
                 intent.data = url.toUri()
@@ -609,6 +610,7 @@ fun UserInfoComponent() {
         Text(
             "Questions? Contact Us",
             modifier = Modifier
+                .minimumInteractiveComponentSize()
                 .clickable {
                     val intent = Intent(Intent.ACTION_SENDTO).apply {
                         data = "mailto:".toUri() // Only email apps should handle this
@@ -635,7 +637,7 @@ fun UserInfoComponent() {
 
         Text(
             "Looking for AccessMap Route?",
-            modifier = Modifier.clickable {
+            modifier = Modifier.minimumInteractiveComponentSize().clickable {
                 val url =
                     "https://www.accessmap.app/dir?wp=-122.3346457_47.6059712%27-122.3310313_47.6062336&region=wa.seattle&lon=-122.3331631&lat=47.6070952&z=15.6&sa=1&mu=0.12&md=0.15&ab=1&aps=0"
                 val intent = Intent(Intent.ACTION_VIEW)
@@ -690,6 +692,9 @@ fun DebuggableBuild(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .padding(8.dp)
+                    // plain text for screen readers: the tap is a hidden 7-tap debug trigger, not
+                    // an action - as a "button" it announced an activation that visibly does nothing
+                    .clearAndSetSemantics { contentDescription = "Version ${BuildConfig.VERSION_NAME}" }
                     .clickable {
                         clickCount++
                         if (clickCount == 7) {

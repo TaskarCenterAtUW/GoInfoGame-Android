@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- background_white_circle drawn 8dp smaller than its view: lets a 32dp-looking button have a 48dp
+     touch target -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/background_white_circle"
+    android:inset="8dp" />

@@ -206,7 +206,7 @@ private fun DateTimeHeader(
 ) {
     CompositionLocalProvider(
         LocalTextStyle provides MaterialTheme.typography.titleSmall,
-        LocalContentColor provides MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        LocalContentColor provides MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

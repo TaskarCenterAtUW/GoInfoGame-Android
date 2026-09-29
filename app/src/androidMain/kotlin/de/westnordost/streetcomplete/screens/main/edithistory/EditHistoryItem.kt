@@ -19,8 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.data.edithistory.Edit
@@ -84,24 +87,22 @@ fun EditHistoryItem(
                 }
             }
             .clearAndSetSemantics { // Isolate parent semantics for accessibility
-                contentDescription = if (selected) {
-                    "Selected, $name edit. Triple tap to undo this edit"
-                } else {
-                    "$name edit"
-                }
+                contentDescription = "$name edit"
+                this.selected = selected
 
-                // Selection action for accessibility users
+                // double-tap selects/deselects, as for touch users' single tap
                 onClick(label = if (selected) "deselect" else "select") {
                     onSelect()
                     true
                 }
 
-                // Undo action available when selected for accessibility users
+                // undo is a separate action (TalkBack's actions menu) - it used to be a second
+                // onClick, which replaced "deselect", so a double-tap on the selected edit undid it
                 if (selected) {
-                    onClick(label = "undo") {
+                    customActions = listOf(CustomAccessibilityAction("Undo this edit") {
                         onUndo()
                         true
-                    }
+                    })
                 }
             }
 

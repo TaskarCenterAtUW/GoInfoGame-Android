@@ -243,7 +243,7 @@ fun MainScreen(
                 onClick = onClickLocationPointer,
                 rotate = rotation.toFloat(),
                 modifier = Modifier.absoluteOffset(offset.x.pxToDp(), offset.y.pxToDp()),
-            ) { Image(painterResource(Res.drawable.location_dot_small), null) }
+            ) { Image(painterResource(Res.drawable.location_dot_small), "Show my location") }
         }
 
         Column(
@@ -428,7 +428,7 @@ fun MainScreen(
                                     modifier = Modifier.semantics(mergeDescendants = true) {
                                         // This provides a "flat" string for TalkBack to read
                                         // while the visual remains styled.
-                                        contentDescription = "Undo Edits Button"
+                                        contentDescription = "Undo edits"
                                         traversalIndex = 0f
                                     }) {
                                     Icon(painterResource(Res.drawable.ic_undo_24), null)

@@ -37,6 +37,7 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import androidx.work.WorkManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.download.DownloadProgressSource
@@ -133,7 +134,7 @@ abstract class MapSyncTestBase {
     protected val workspaceDao: WorkspaceDao = koin.get()
     private lateinit var gps: MockGps
     protected lateinit var toasts: ToastWatcher
-    private val fakeRepository = FakeWorkspaceRepository()
+    protected val fakeRepository = FakeWorkspaceRepository()
     protected lateinit var scenario: ActivityScenario<WorkSpaceActivity>
 
     @Volatile protected var overrideConflicts: String = "null"
@@ -363,6 +364,15 @@ abstract class MapSyncTestBase {
         }
         onView(withText(containsString("Way #${sidewalk.id}")))
             .perform(GeneralSwipeAction(Swipe.SLOW, GeneralLocation.CENTER, toTop, Press.FINGER))
+        // the sheet keeps settling after the finger lifts (ViewDragHelper - not an animation
+        // Espresso waits for), and a tap on a settling sheet only stops it: the next click (e.g.
+        // Submit) would be swallowed. Whether it settles at all depends on the sheet's height, i.e.
+        // on the navigation bar - it did with 3-button navigation, not with gesture navigation.
+        waitUntil("quest sheet expanded") {
+            var state = BottomSheetBehavior.STATE_SETTLING
+            onView(withId(R.id.bottomSheet)).check { view, _ -> state = BottomSheetBehavior.from(view).state }
+            state == BottomSheetBehavior.STATE_EXPANDED
+        }
     }
 
     protected fun submit() {
@@ -547,6 +557,7 @@ abstract class MapSyncTestBase {
         val LONG_FORM = """{
           "version": "3.2.0",
           "recency_period": 90,
+          "feature-presets": [{"name": "Bench", "icon": "preset_temaki_bench", "tags": {"amenity": "bench"}}],
           "elements": [{
             "element_type": "Sidewalks",
             "element_type_icon": "sidewalk",

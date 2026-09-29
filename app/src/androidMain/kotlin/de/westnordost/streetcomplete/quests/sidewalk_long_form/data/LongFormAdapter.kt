@@ -55,7 +55,7 @@ sealed class PhotoAttachment {
      *  [bearing] is the compass bearing (0-359, clockwise from north) the device was facing when
      *  it was captured. [replaces] is the [Uploaded] or [PendingRemoval] this capture would
      *  replace, if any (never another [Pending] or [None] - see ALongForm.onPhotoCaptured) - kept
-     *  so cancelling this capture (the delete ✕) can revert to it instead of always dropping to
+     *  so cancelling this capture (the remove button) can revert to it instead of always dropping to
      *  [None] and silently losing track of an already-synced photo that was never actually asked
      *  to be removed. */
     data class Pending(val path: String, val bearing: Float = 0f, val replaces: PhotoAttachment? = null) : PhotoAttachment()
@@ -329,6 +329,7 @@ class LongFormAdapter<T>(
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
@@ -383,6 +384,7 @@ class LongFormAdapter<T>(
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(textEntryTextWatcher)
@@ -483,9 +485,9 @@ class LongFormAdapter<T>(
 
             binding.title.text = item.questTitle
             binding.title.contentDescription = if (allowMultiChoice) {
-                "${item.questTitle}. Multiple items can be selected"
+                "${item.questTitle} (choose one or more)"
             } else {
-                "${item.questTitle}. Only one item can be selected"
+                "${item.questTitle} (choose one)"
             }
             if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.imageView.setImage(
@@ -503,6 +505,7 @@ class LongFormAdapter<T>(
             }
 
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
@@ -632,7 +635,7 @@ class LongFormAdapter<T>(
                 is PhotoAttachment.Pending -> bindPhotoCard(
                     title = "Photo attached",
                     subtitle = if (attachment.replaces != null) {
-                        "Replaces previous photo — tap ✕ to keep it instead"
+                        "Replaces previous photo — tap 🗑 to keep it instead"
                     } else {
                         "Uploads when you submit"
                     },
@@ -647,7 +650,7 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Tap 📷 to replace it, or ✕ to remove it",
+                    subtitle = "Tap 📷 to replace it, or 🗑 to remove it",
                     showDelete = true,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
@@ -664,8 +667,8 @@ class LongFormAdapter<T>(
 
         /** The retake camera icon is always shown once any photo exists - capturing a new one
          *  always supersedes whatever's there (see ALongForm.onPhotoCaptured), so there's never a
-         *  state where replacing needs an extra step first. [showDelete] (the ✕ badge on the
-         *  thumbnail) and [showUndo] (the pill button, for the "marked for removal" state -
+         *  state where replacing needs an extra step first. [showDelete] (the remove button,
+         *  next to it) and [showUndo] (the pill button, for the "marked for removal" state -
          *  PhotoAttachment.PendingRemoval) are mutually exclusive with each other. */
         private fun bindPhotoCard(
             title: String,
@@ -885,4 +888,10 @@ private fun openRemotePhotoFullScreen(context: Context, url: String) {
     } catch (e: ActivityNotFoundException) {
         context.toast("No app found to view images")
     }
+}
+
+/** An empty text is nothing to read out - but it keeps its place in the layout. */
+private fun TextView.hideFromScreenReadersIfEmpty() {
+    importantForAccessibility =
+        if (text.isNullOrBlank()) View.IMPORTANT_FOR_ACCESSIBILITY_NO else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
 }

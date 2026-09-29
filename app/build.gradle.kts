@@ -298,6 +298,9 @@ kotlin {
                 // serving canned workspace API responses to the real WorkspaceApiService (same
                 // version as the app's ktor-client-core, see androidMain)
                 implementation("io.ktor:ktor-client-mock:3.3.3")
+                // Google's Accessibility Test Framework - the checks behind Accessibility Scanner and
+                // Espresso/Compose accessibility checks; run directly by testutils/A11yScanner
+                implementation("com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:4.1.1")
             }
         }
     }

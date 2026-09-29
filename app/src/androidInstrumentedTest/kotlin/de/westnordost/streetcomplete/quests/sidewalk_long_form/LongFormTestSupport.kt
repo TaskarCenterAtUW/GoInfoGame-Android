@@ -2,6 +2,8 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form
 
 import android.graphics.Rect
 import android.view.View
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.NestedScrollView
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
@@ -109,12 +111,34 @@ fun hasAlpha(alpha: Float): Matcher<View> =
 //endregion
 
 /** Brings a view inside the quest sheet's NestedScrollView on screen - Espresso's own scrollTo()
- *  only knows ScrollView/HorizontalScrollView/ListView ancestors. */
+ *  only knows ScrollView/HorizontalScrollView/ListView ancestors.
+ *  The scroll view is edge-to-edge, i.e. extends under the navigation bar: "inside the scroll view"
+ *  can still be behind a 3-button navigation bar, where a tap hits e.g. Home instead. So the view
+ *  is then scrolled on until it is clear of the bar too (the sheet's bottom padding for the bar
+ *  makes room for that). A no-op with gesture navigation, whose bar doesn't cover it. */
 fun scrollIntoView(): ViewAction = object : ViewAction {
     override fun getConstraints(): Matcher<View> = isDescendantOfA(isAssignableFrom(NestedScrollView::class.java))
-    override fun getDescription() = "scroll into view inside NestedScrollView"
+    override fun getDescription() = "scroll into view inside NestedScrollView, clear of the navigation bar"
     override fun perform(uiController: UiController, view: View) {
         view.requestRectangleOnScreen(Rect(0, 0, view.width, view.height), true)
         uiController.loopMainThreadUntilIdle()
+
+        val navigationBarHeight = ViewCompat.getRootWindowInsets(view)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: return
+        val root = view.rootView
+        val rootLocation = IntArray(2).also { root.getLocationOnScreen(it) }
+        val viewLocation = IntArray(2).also { view.getLocationOnScreen(it) }
+        val coveredByNavigationBar =
+            viewLocation[1] + view.height - (rootLocation[1] + root.height - navigationBarHeight)
+        if (coveredByNavigationBar > 0) {
+            view.findScrollViewAncestor()?.scrollBy(0, coveredByNavigationBar)
+            uiController.loopMainThreadUntilIdle()
+        }
     }
+}
+
+private fun View.findScrollViewAncestor(): NestedScrollView? {
+    var parent = parent
+    while (parent != null && parent !is NestedScrollView) parent = parent.parent
+    return parent as? NestedScrollView
 }

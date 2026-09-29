@@ -37,6 +37,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
@@ -1287,7 +1290,9 @@ class MainActivity :
                 UserInitialsAvatar(
                     name = prefs.workspaceUserName?.split("\n")?.getOrNull(1)?.trim(),
                     size = 48.dp,
-                    modifier = Modifier.clickable {
+                    modifier = Modifier
+                        .semantics { contentDescription = getString(R.string.profile_icon) }
+                        .clickable(role = Role.Button) {
                         startActivity(
                             Intent(
                                 this@MainActivity,

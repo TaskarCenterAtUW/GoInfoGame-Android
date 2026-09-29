@@ -130,7 +130,7 @@ fun computeLongFormSubmission(
     // file would silently survive unchanged. Discard it entirely, using the final state at
     // submit time - same principle as editedItems above. Deliberately NOT afterPhotoDeleted():
     // that reverts one step (back to whatever a pending capture would replace, or to a
-    // reversible "marked for removal"), which is right for the ✕ button but wrong here - the
+    // reversible "marked for removal"), which is right for the remove button but wrong here - the
     // question itself is gone, so there's nothing left to revert to or keep undoable.
     val photoTransition =
         if (photoState.attachment != PhotoAttachment.None &&
