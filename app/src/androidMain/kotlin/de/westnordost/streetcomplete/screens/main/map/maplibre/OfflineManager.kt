@@ -5,6 +5,7 @@ import org.maplibre.android.offline.OfflineRegion
 import org.maplibre.android.offline.OfflineRegionDefinition
 import org.maplibre.android.offline.OfflineRegionError
 import org.maplibre.android.offline.OfflineRegionStatus
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -62,7 +63,9 @@ suspend fun OfflineRegion.awaitDelete(): Unit = suspendCoroutine { cont ->
     })
 }
 
-suspend fun OfflineRegion.awaitDownload(): OfflineRegionStatus = suspendCoroutine { cont ->
+/** Cancellable: cancelling stops the download - otherwise it would go on fetching tiles (and
+ *  the download would count as in progress) after e.g. the user cancelled it. */
+suspend fun OfflineRegion.awaitDownload(): OfflineRegionStatus = suspendCancellableCoroutine { cont ->
     var observing = true
 
     fun shouldContinue(): Boolean = synchronized(this) {
@@ -95,6 +98,11 @@ suspend fun OfflineRegion.awaitDownload(): OfflineRegionStatus = suspendCoroutin
             }
         }
     })
+    cont.invokeOnCancellation {
+        if (!shouldContinue()) return@invokeOnCancellation
+        setObserver(null)
+        setDownloadState(OfflineRegion.STATE_INACTIVE)
+    }
     setDownloadState(OfflineRegion.STATE_ACTIVE)
 }
 

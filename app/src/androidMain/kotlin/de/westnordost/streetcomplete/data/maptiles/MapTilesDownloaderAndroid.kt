@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import org.maplibre.android.MapLibre
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.offline.OfflineManager
@@ -51,6 +52,8 @@ class MapTilesDownloaderAndroid(private val context: Context) : MapTilesDownload
             // note that the numbers include tiles that were already on device
             //  no idea how to check which tiles were really downloaded (other than in android log for MapLibre)
             // status.requiredResourceCount and status.completedResourceSize might be interesting too
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, e.message.orEmpty(), e)
         }
