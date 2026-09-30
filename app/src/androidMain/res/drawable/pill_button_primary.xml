@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/primary" />
+    <!-- primary_on_white, not primary: the long form's UNDO pill sits on the always-light
+         photo_card_removed_background, where night's light primary under white text is unreadable -->
+    <solid android:color="@color/primary_on_white" />
     <corners android:radius="16dp"/>
 </shape>

@@ -474,6 +474,7 @@ class LongFormAdapter<T>(
         // captured before any bind() ever overrides it (for the "marked for removal" state),
         // so there's always a real color to restore to - see bindPhotoCard
         private val defaultPhotoTitleColor = binding.photoTitle.currentTextColor
+        private val defaultPhotoSubtitleColor = binding.photoSubtitle.currentTextColor
 
         init {
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
@@ -635,7 +636,7 @@ class LongFormAdapter<T>(
                 is PhotoAttachment.Pending -> bindPhotoCard(
                     title = "Photo attached",
                     subtitle = if (attachment.replaces != null) {
-                        "Replaces previous photo — tap 🗑 to keep it instead"
+                        "Replaces the previous photo. Remove it to keep the old one."
                     } else {
                         "Uploads when you submit"
                     },
@@ -650,7 +651,7 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Tap 📷 to replace it, or 🗑 to remove it",
+                    subtitle = "Retake or remove it",
                     showDelete = true,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
@@ -688,6 +689,11 @@ class LongFormAdapter<T>(
                 if (showUndo) ContextCompat.getColor(binding.root.context, R.color.traffic_red) else defaultPhotoTitleColor
             )
             binding.photoSubtitle.text = subtitle
+            // the removed card's background is light in dark mode too, where the default
+            // secondary text color is a light grey - so a fixed dark grey there instead
+            binding.photoSubtitle.setTextColor(
+                if (showUndo) ContextCompat.getColor(binding.root.context, R.color.traffic_gray_b) else defaultPhotoSubtitleColor
+            )
             binding.photoThumb.alpha = if (showUndo) 0.5f else 1f
             binding.photoThumbProgress.visibility = View.GONE
             loadThumb()

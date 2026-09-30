@@ -124,9 +124,12 @@
              to be a 24dp badge on the thumbnail, too small to hit and on top of the thumbnail's
              own tap (full screen). All are 48dp touch targets drawn at 32dp (inset backgrounds);
              the retake circle's inset is also the gap to the next one.
-             android:src/android:tint, not app:srcCompat/app:tint - the app: ones are only applied
-             when inflated inside an AppCompatActivity, so the icons were missing when the form is
-             hosted elsewhere (e.g. fragment-testing's plain FragmentActivity in LongFormFormTest). -->
+             android:src, not app:srcCompat - app: attributes are only applied when inflated inside
+             an AppCompatActivity, so the icons were missing when the form is hosted elsewhere
+             (e.g. fragment-testing's plain FragmentActivity in LongFormFormTest); there, only
+             app:tint is skipped and the icons fall back to their own black.
+             Tinted primary_on_white, not primary - the circle is white in dark mode too, where
+             primary is a light lavender that's barely visible on it. -->
         <LinearLayout
             android:id="@+id/photo_actions"
             android:layout_width="wrap_content"
@@ -143,8 +146,8 @@
                 android:padding="14dp"
                 android:background="@drawable/background_white_circle_inset_8dp"
                 android:src="@drawable/ic_camera_outlined"
-                android:tint="@color/primary"
-                android:contentDescription="Retake photo" />
+                android:contentDescription="Retake photo"
+                app:tint="@color/primary_on_white" />
 
             <ImageView
                 android:id="@+id/photo_delete"
@@ -153,7 +156,7 @@
                 android:padding="14dp"
                 android:background="@drawable/background_white_circle_inset_8dp"
                 android:src="@drawable/ic_delete_24dp"
-                android:tint="@color/primary"
+                app:tint="@color/primary_on_white"
                 android:contentDescription="Remove photo" />
 
             <TextView
