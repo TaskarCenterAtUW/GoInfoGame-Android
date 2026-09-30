@@ -290,7 +290,10 @@ fun ShowSaveCredsDialog(
     val coroutineScope = rememberCoroutineScope()
     if (openDialog.value) {
         AlertDialog(
-            onDismissRequest = { openDialog.value = false },
+            onDismissRequest = {
+                openDialog.value = false
+                navToNextPage()
+            },
             title = { Text(stringResource(R.string.save_credentials)) },
             text = { Text(stringResource(R.string.save_credentials_message)) },
             confirmButton = {
@@ -301,7 +304,11 @@ fun ShowSaveCredsDialog(
                             activity = activity
                         )
                         if (!authenticated) {
-                            Toast.makeText(context, "Logging in without saving credentials", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                context,
+                                "Logging in without saving credentials",
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         } else {
                             val credsMap = SecureCredentialStorage.loadCredentials(context)
@@ -411,7 +418,7 @@ fun LoginCard(
                         .weight(1f)
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 48.dp)
+                        .padding(horizontal = 36.dp)
                         .semantics {
                             contentDescription = screenTitle
                         }
@@ -419,7 +426,8 @@ fun LoginCard(
                     val context = LocalContext.current
                     var visibility by rememberSaveable { mutableStateOf(false) }
                     OutlinedTextField(
-                        value = email.value, onValueChange = { newText -> email.value = newText.trim() },
+                        value = email.value,
+                        onValueChange = { newText -> email.value = newText.trim() },
                         label = {
                             Text(
                                 text = stringResource(
@@ -589,18 +597,19 @@ fun LoginCard(
 fun UserInfoComponent() {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val context = LocalContext.current
         Text(
             "I'm a new user",
-            modifier = Modifier.minimumInteractiveComponentSize().clickable {
-                val url = "http://tinyurl.com/OTP2026Walk"
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.data = url.toUri()
-                context.startActivity(intent)
-            },
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .clickable {
+                    val url = "http://tinyurl.com/OTP2026Walk"
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.data = url.toUri()
+                    context.startActivity(intent)
+                },
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
@@ -637,13 +646,15 @@ fun UserInfoComponent() {
 
         Text(
             "Looking for AccessMap Route?",
-            modifier = Modifier.minimumInteractiveComponentSize().clickable {
-                val url =
-                    "https://www.accessmap.app/dir?wp=-122.3346457_47.6059712%27-122.3310313_47.6062336&region=wa.seattle&lon=-122.3331631&lat=47.6070952&z=15.6&sa=1&mu=0.12&md=0.15&ab=1&aps=0"
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.data = url.toUri()
-                context.startActivity(intent)
-            },
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .clickable {
+                    val url =
+                        "https://www.accessmap.app/dir?wp=-122.3346457_47.6059712%27-122.3310313_47.6062336&region=wa.seattle&lon=-122.3331631&lat=47.6070952&z=15.6&sa=1&mu=0.12&md=0.15&ab=1&aps=0"
+                    val intent = Intent(Intent.ACTION_VIEW)
+                    intent.data = url.toUri()
+                    context.startActivity(intent)
+                },
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
@@ -694,7 +705,9 @@ fun DebuggableBuild(
                     .padding(8.dp)
                     // plain text for screen readers: the tap is a hidden 7-tap debug trigger, not
                     // an action - as a "button" it announced an activation that visibly does nothing
-                    .clearAndSetSemantics { contentDescription = "Version ${BuildConfig.VERSION_NAME}" }
+                    .clearAndSetSemantics {
+                        contentDescription = "Version ${BuildConfig.VERSION_NAME}"
+                    }
                     .clickable {
                         clickCount++
                         if (clickCount == 7) {

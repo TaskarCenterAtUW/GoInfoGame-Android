@@ -26,6 +26,18 @@ jobs:
           - 34 # close to targetSdk, well-supported arm64-v8a image
         arch:
           - arm64-v8a
+        # screen per API level: API 30 keeps the emulator's default small screen (320x640 @ 160dpi
+        # = 320x640dp, smaller than nearly any real phone) as the small-screen check; API 34 runs
+        # on a normal Full HD phone (pixel_6: 1080x2400 @ 420dpi, ~411x914dp).
+        # avd-suffix goes into the AVD name and cache key - the runner's disk keeps AVDs between
+        # runs and reuses one by name (force-avd-creation: false), so a new screen needs a new name
+        include:
+          - api-level: 30
+            profile: ""
+            avd-suffix: ""
+          - api-level: 34
+            profile: pixel_6
+            avd-suffix: "-pixel6"
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +50,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader
+          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader${{ matrix.avd-suffix }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -47,12 +59,13 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
+          profile: ${{ matrix.profile }}
           # this is a self-hosted runner with a persistent disk (unlike GitHub-hosted runners,
           # which start every job with an empty disk) - without a name derived from the actual
           # config, the action's default fixed "test" AVD name means any future change to
-          # api-level/arch/target here would silently keep reusing a stale AVD built under the
-          # OLD config instead of picking up the new one, since force-avd-creation stays false
-          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
+          # api-level/arch/target/profile here would silently keep reusing a stale AVD built under
+          # the OLD config instead of picking up the new one, since force-avd-creation stays false
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ matrix.avd-suffix }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -64,7 +77,8 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
-          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
+          profile: ${{ matrix.profile }}
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ matrix.avd-suffix }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true

@@ -6,7 +6,7 @@ import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,13 +48,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
@@ -94,9 +100,8 @@ fun ProfileScreenNewContent(
     // called before the deferred setTheme() below has a chance to run), killing the pending
     // theme change before it ever executes
     val themeSelectCoroutineScope = rememberCoroutineScope()
-    val isDebugModeEnabled by preferences.isDebugModeEnabled.collectAsState()
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
@@ -105,212 +110,220 @@ fun ProfileScreenNewContent(
             // (same insets handling WorkSpaceActivity's Scaffold already applies)
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .background(colorResource(R.color.light_purple_background))
-                .padding(bottom = 32.dp)
-        ) {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.user_profile),
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(R.color.light_purple_background)
-                ),
-                navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
-            )
-
-            UserInitialsAvatar(
-                name = userName?.split("\n")?.getOrNull(1)?.trim(),
-                size = 75.dp,
-            )
-            Text(
-                text = userName.orEmpty(),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.semantics {
-                    val info = userName?.split("\n") ?: emptyList()
-                    val email = info.getOrNull(0) ?: "Unknown"
-                    val name = info.getOrNull(1) ?: "Unknown"
-
-                    contentDescription = "Email: $email, User name: $name"
-                }
-            )
-        }
-
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .fillMaxSize()
-                .padding(16.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            val localContext = LocalContext.current
-            Text(
-                "Preferences".uppercase(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-            var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
-            var followMode by remember { mutableStateOf<Boolean?>(null) }
-            var lowBandwidth by remember { mutableStateOf<Boolean?>(null) }
-
-            LaunchedEffect(biometricLogin) {
-                biometricLogin?.let { newValue ->
-                    val success = onBiometricEnabledChanged(newValue)
-                    if (success) {
-                        preferences.isBiometricEnabled = newValue
-                        isBiometricEnabled = newValue
-                        if (!newValue) {
-                            SecureCredentialStorage.deleteCredential(
-                                localContext,
-                                preferences.environment
-                            )
-                        }
-                    } else {
-                        // Don't update preference; revert UI
-                        isBiometricEnabled = !newValue
-                    }
-                    biometricLogin = null // reset
-                }
-            }
-
-            LaunchedEffect(followMode) {
-                followMode?.let { newValue ->
-                    preferences.isFollowModeEnabled = newValue
-                    followMode = null // reset
-                    isFollowModeEnabled = newValue
-                }
-            }
-
-            LaunchedEffect(lowBandwidth) {
-                lowBandwidth?.let { newValue ->
-                    preferences.isLowBandwidthModeEnabled = newValue
-                    lowBandwidthModeEnabled = newValue
-                    lowBandwidth = null
-                }
-            }
-
-            if (showThemeSelect) {
-                SimpleListPickerDialog(
-                    onDismissRequest = { showThemeSelect = false },
-                    items = Theme.entries,
-                    onItemSelected = { newTheme ->
-                        // setTheme() triggers AppCompatDelegate.setDefaultNightMode(), which
-                        // recreates this Activity when the mode actually changes - if that
-                        // happens synchronously, it tears down the Compose state before the
-                        // radio-button highlight or the dialog's own dismiss ever gets to render,
-                        // making the tap look like it did nothing. Wait two frames first so both
-                        // have actually been drawn before triggering the recreate. Must launch on
-                        // the scope hoisted above (not one scoped to this `if` block), since
-                        // showThemeSelect flips to false and removes this block from composition
-                        // before these two frames elapse, which would cancel a scope declared here.
-                        themeSelectCoroutineScope.launch {
-                            withFrameNanos {}
-                            withFrameNanos {}
-                            settingsViewModel.setTheme(newTheme)
-                        }
+        // scrollable so that on small screens (or with large font sizes) everything down to the
+        // version stays reachable. The preferences card below still fills the rest of the screen
+        // when there's room (min height = viewport - header), with the version at its bottom -
+        // fillMaxSize() can't do that inside a vertically scrolling Column (unbounded height)
+        val viewportHeight = maxHeight
+        var headerHeight by remember { mutableStateOf(0.dp) }
+        val density = LocalDensity.current
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .onSizeChanged { headerHeight = with(density) { it.height.toDp() } }
+                    .background(colorResource(R.color.light_purple_background))
+                    .padding(bottom = 32.dp)
+            ) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(R.string.user_profile),
+                        )
                     },
-                    title = { Text(stringResource(Res.string.pref_title_theme_select)) },
-                    selectedItem = theme,
-                    getItemName = { stringResource(it.title) }
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = colorResource(R.color.light_purple_background)
+                    ),
+                    navigationIcon = { IconButton(onClick = onClickBack) { BackIcon() } },
+                )
+
+                UserInitialsAvatar(
+                    name = userName?.split("\n")?.getOrNull(1)?.trim(),
+                    size = 75.dp,
+                )
+                Text(
+                    text = userName.orEmpty(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics {
+                        val info = userName?.split("\n") ?: emptyList()
+                        val email = info.getOrNull(0) ?: "Unknown"
+                        val name = info.getOrNull(1) ?: "Unknown"
+
+                        contentDescription = "Email: $email, User name: $name"
+                    }
                 )
             }
 
-            PreferenceRow(
-                stringResource(R.string.diable_biometric_title),
-                stringResource(R.string.disable_biometric_message),
-                isBiometricEnabled,
-                onCheckedChange = { newValue ->
-                    biometricLogin = newValue // trigger LaunchedEffect
-                })
-
-            PreferenceRow(
-                stringResource(R.string.low_band_width),
-                stringResource(R.string.low_band_width_message),
-                lowBandwidthModeEnabled,
-                onCheckedChange = { newValue ->
-                    lowBandwidth = newValue // trigger LaunchedEffect
-                })
-
-            Preference(
-                name = stringResource(Res.string.pref_title_theme_select),
-                onClick = { showThemeSelect = true },
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .padding(bottom = 16.dp)
+                    .fillMaxWidth()
+                    .heightIn(min = (viewportHeight - headerHeight - 16.dp).coerceAtLeast(0.dp))
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text(stringResource(theme.title))
-            }
+                val localContext = LocalContext.current
+                Text(
+                    "Preferences".uppercase(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
+                var followMode by remember { mutableStateOf<Boolean?>(null) }
+                var lowBandwidth by remember { mutableStateOf<Boolean?>(null) }
 
+                LaunchedEffect(biometricLogin) {
+                    biometricLogin?.let { newValue ->
+                        val success = onBiometricEnabledChanged(newValue)
+                        if (success) {
+                            preferences.isBiometricEnabled = newValue
+                            isBiometricEnabled = newValue
+                            if (!newValue) {
+                                SecureCredentialStorage.deleteCredential(
+                                    localContext,
+                                    preferences.environment
+                                )
+                            }
+                        } else {
+                            // Don't update preference; revert UI
+                            isBiometricEnabled = !newValue
+                        }
+                        biometricLogin = null // reset
+                    }
+                }
 
-            if (isDebugModeEnabled) {
+                LaunchedEffect(followMode) {
+                    followMode?.let { newValue ->
+                        preferences.isFollowModeEnabled = newValue
+                        followMode = null // reset
+                        isFollowModeEnabled = newValue
+                    }
+                }
+
+                LaunchedEffect(lowBandwidth) {
+                    lowBandwidth?.let { newValue ->
+                        preferences.isLowBandwidthModeEnabled = newValue
+                        lowBandwidthModeEnabled = newValue
+                        lowBandwidth = null
+                    }
+                }
+
+                if (showThemeSelect) {
+                    SimpleListPickerDialog(
+                        onDismissRequest = { showThemeSelect = false },
+                        items = Theme.entries,
+                        onItemSelected = { newTheme ->
+                            // setTheme() triggers AppCompatDelegate.setDefaultNightMode(), which
+                            // recreates this Activity when the mode actually changes - if that
+                            // happens synchronously, it tears down the Compose state before the
+                            // radio-button highlight or the dialog's own dismiss ever gets to render,
+                            // making the tap look like it did nothing. Wait two frames first so both
+                            // have actually been drawn before triggering the recreate. Must launch on
+                            // the scope hoisted above (not one scoped to this `if` block), since
+                            // showThemeSelect flips to false and removes this block from composition
+                            // before these two frames elapse, which would cancel a scope declared here.
+                            themeSelectCoroutineScope.launch {
+                                withFrameNanos {}
+                                withFrameNanos {}
+                                settingsViewModel.setTheme(newTheme)
+                            }
+                        },
+                        title = { Text(stringResource(Res.string.pref_title_theme_select)) },
+                        selectedItem = theme,
+                        getItemName = { stringResource(it.title) }
+                    )
+                }
+
+                PreferenceRow(
+                    stringResource(R.string.diable_biometric_title),
+                    stringResource(R.string.disable_biometric_message),
+                    isBiometricEnabled,
+                    onCheckedChange = { newValue ->
+                        biometricLogin = newValue // trigger LaunchedEffect
+                    })
+
+                PreferenceRow(
+                    stringResource(R.string.low_band_width),
+                    stringResource(R.string.low_band_width_message),
+                    lowBandwidthModeEnabled,
+                    onCheckedChange = { newValue ->
+                        lowBandwidth = newValue // trigger LaunchedEffect
+                    })
+
+                Preference(
+                    name = stringResource(Res.string.pref_title_theme_select),
+                    onClick = { showThemeSelect = true },
+                ) {
+                    Text(stringResource(theme.title))
+                }
+
                 PreferenceCategory("Debug") {
                     Preference(
                         name = "Show Quest Forms",
                         onClick = onClickShowQuestForms
                     ) { NextScreenIcon() }
                 }
-            }
 
-            // PreferenceRow(
-            //     stringResource(R.string.follow_mode),
-            //     stringResource(R.string.enable_follow_mode),
-            //     isFollowModeEnabled,
-            //     onCheckedChange = { newValue ->
-            //         followMode = newValue // trigger LaunchedEffect
-            //     })
+                // PreferenceRow(
+                //     stringResource(R.string.follow_mode),
+                //     stringResource(R.string.enable_follow_mode),
+                //     isFollowModeEnabled,
+                //     onCheckedChange = { newValue ->
+                //         followMode = newValue // trigger LaunchedEffect
+                //     })
 
-            DottedDivider(
-                color = Color.Gray,
-                modifier = Modifier.padding(16.dp)
-            )
+                DottedDivider(
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp)
+                )
 
-            val context = LocalContext.current
+                val context = LocalContext.current
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.logOutUser()
-                        settingsViewModel.deleteCache()
-                        finishAndLaunchNewActivity(context)
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,      // Background
-                        contentColor = MaterialTheme.colorScheme.onPrimary,      // Text/Icon color
-                    ),
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_outline_logout_24),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        stringResource(R.string.user_logout).uppercase(),
-                        color = MaterialTheme.colorScheme.onSecondary
-                    )
+                    Button(
+                        onClick = {
+                            viewModel.logOutUser()
+                            settingsViewModel.deleteCache()
+                            finishAndLaunchNewActivity(context)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,      // Background
+                            contentColor = MaterialTheme.colorScheme.onPrimary,      // Text/Icon color
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_outline_logout_24),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.user_logout).uppercase(),
+                            color = MaterialTheme.colorScheme.onSecondary
+                        )
+                    }
                 }
-            }
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
+                // pushes the version to the bottom of the card when it's taller than its content;
+                // takes no space when the content already overflows (weight in an unbounded Column
+                // only distributes the space up to its min height)
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "Version ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
                         .padding(8.dp)
                 )
             }

@@ -3,7 +3,9 @@ package de.westnordost.streetcomplete.screens.main
 import android.content.Intent
 import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelected
@@ -22,7 +24,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.work.WorkManager
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.download.Downloader
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
@@ -197,11 +201,9 @@ class AccessibilityScanTest : MapSyncTestBase() {
         openWorkspaceAndSidewalkQuest()
         answerConcreteAndWidth60()
         awaitUploads(1)
-        awaitSyncIdle() // the button is disabled while uploading/downloading
-        composeTestRule.onNodeWithContentDescription("Undo edits").performClick()
         // the sidebar lists edits as date/time + icon only (no text label)
         val timeLabel = hasText(" PM", substring = true) or hasText(" AM", substring = true)
-        waitUntil("edit history sidebar") { composeTestRule.onAllNodes(timeLabel).fetchSemanticsNodes().isNotEmpty() }
+        openEditHistorySidebar(timeLabel)
         SystemClock.sleep(500)
         scan("Edit history (from map)")
 
@@ -382,11 +384,28 @@ class AccessibilityScanTest : MapSyncTestBase() {
         A11yScanner.scan(screen)
     }
 
-    private fun awaitSyncIdle() {
-        val uploads: UploadProgressSource = koin.get()
-        val downloads: de.westnordost.streetcomplete.data.download.DownloadProgressSource = koin.get()
-        waitUntil("no upload/download running") { !uploads.isUploadInProgress && !downloads.isDownloadInProgress }
-        SystemClock.sleep(500)
+    /** Taps Undo until the edit history sidebar ([sidebarItem]) shows. Undo is disabled while any
+     *  upload or download runs, and the app starts new downloads by itself (e.g. the surrounding
+     *  area right after the first one) - whose map tiles come from the REAL tile server, which no
+     *  mock can answer (once 55s on CI). Waiting for sync to be idle once and then tapping lost
+     *  that race: a new download disabled Undo again and the tap did nothing. So this keeps
+     *  cancelling downloads (like the sync notification's cancel button - the map data the test
+     *  needs is in by now) and taps whenever Undo is enabled. */
+    private fun openEditHistorySidebar(sidebarItem: SemanticsMatcher) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val enabledUndo = hasContentDescription("Undo edits") and isEnabled()
+        var lastTap = 0L
+        waitUntil("edit history sidebar") {
+            if (composeTestRule.onAllNodes(sidebarItem).fetchSemanticsNodes().isNotEmpty()) return@waitUntil true
+            WorkManager.getInstance(context).cancelUniqueWork(Downloader.TAG)
+            // not again right away - give a tap that went through time to open the sidebar
+            val now = SystemClock.uptimeMillis()
+            if (now - lastTap > 2_000 && composeTestRule.onAllNodes(enabledUndo).fetchSemanticsNodes().isNotEmpty()) {
+                composeTestRule.onNode(enabledUndo).performClick()
+                lastTap = now
+            }
+            false
+        }
     }
 
     private fun awaitDownload() {
