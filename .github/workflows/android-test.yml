@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # attaching the report bundle to the ci-reports pre-release (publish-reports.sh)
   actions: read
   checks: write
 
@@ -104,30 +104,13 @@ jobs:
             app/build/outputs/androidTest-results/connected \
             test-artifacts
 
-      # uploaded once, then retried once in a separate step with overwrite: true - see
-      # unit-test.yml for why (FinalizeArtifact timeouts on this runner, and why
-      # Wandalen/wretry.action could never succeed against immutable v4 artifacts).
+      # attached to the ci-reports pre-release and linked from the job summary, not uploaded with
+      # actions/upload-artifact - see unit-test.yml for why.
       # continue-on-error so a failed upload doesn't fail the whole job, since pass/fail is
       # already reported independently via dorny/test-reporter above
-      - name: Upload test reports
-        id: upload-reports
-        uses: actions/upload-artifact@v4
+      - name: Publish test reports
         if: always()
         continue-on-error: true
-        with:
-          name: android-test-reports-api${{ matrix.api-level }}
-          path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz"
-          retention-days: 14
-          overwrite: true
-          compression-level: 0
-
-      - name: Upload test reports (retry)
-        uses: actions/upload-artifact@v4
-        if: always() && steps.upload-reports.outcome == 'failure'
-        continue-on-error: true
-        with:
-          name: android-test-reports-api${{ matrix.api-level }}
-          path: "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz"
-          retention-days: 14
-          overwrite: true
-          compression-level: 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/publish-reports.sh "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz"

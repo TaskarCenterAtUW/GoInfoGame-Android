@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # attaching the report bundle to the ci-reports pre-release (publish-reports.sh)
   actions: read
   checks: write
 
@@ -68,36 +68,15 @@ jobs:
             app/build/test-results/testDebugUnitTest \
             app/build/reports/kover
 
-      # uploaded once, then retried once in a separate step - actions/upload-artifact's
-      # FinalizeArtifact call (a small metadata request made after the bytes are already
-      # uploaded) intermittently times out on this runner's connection regardless of artifact
-      # size (see actions/upload-artifact#531, #623, no fix from GitHub yet).
-      # Not Wandalen/wretry.action: v4 artifacts are immutable and a failed attempt has already
-      # run CreateArtifact, so the name is taken for this run and every re-attempt with the same
-      # name was rejected ("an artifact with this name already exists") - the retry could never
-      # succeed. overwrite: true lets the retry replace that half-created artifact.
-      # compression-level: 0 since the bundle is already .tar.gz.
+      # attached to the ci-reports pre-release and linked from the job summary (see
+      # .github/scripts/publish-reports.sh), not uploaded with actions/upload-artifact - its very
+      # first request (CreateArtifact, before any bytes are sent) timed out from this runner on
+      # every attempt, so no artifact was ever created.
       # continue-on-error so a failed upload doesn't fail the whole job, since pass/fail is
       # already reported independently via dorny/test-reporter above
-      - name: Upload test and coverage reports
-        id: upload-reports
-        uses: actions/upload-artifact@v4
+      - name: Publish test and coverage reports
         if: always()
         continue-on-error: true
-        with:
-          name: unit-test-reports
-          path: artifact-bundle/unit-test-reports.tar.gz
-          retention-days: 14
-          overwrite: true
-          compression-level: 0
-
-      - name: Upload test and coverage reports (retry)
-        uses: actions/upload-artifact@v4
-        if: always() && steps.upload-reports.outcome == 'failure'
-        continue-on-error: true
-        with:
-          name: unit-test-reports
-          path: artifact-bundle/unit-test-reports.tar.gz
-          retention-days: 14
-          overwrite: true
-          compression-level: 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/publish-reports.sh artifact-bundle/unit-test-reports.tar.gz
