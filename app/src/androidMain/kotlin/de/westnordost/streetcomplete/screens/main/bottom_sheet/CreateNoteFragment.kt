@@ -113,10 +113,12 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         contentBinding.descriptionLabel.text = getString(R.string.create_new_note_description)
     }
 
-    // full-width confirmNoteButton stays visible, just dims when there's no text yet - unlike the
-    // shared base's default (okButtonContainer popping in/out of existence), see floatingBottomView
+    // full-width confirmNoteButton stays visible, just disabled while there's no text yet - unlike
+    // the shared base's default (okButtonContainer popping in/out of existence), see
+    // floatingBottomView. Disabled, not only dimmed: tapping it without text crashed (onClickOk's
+    // noteText!!), and screen readers announced it as an active button
     override fun updateOkButtonEnablement() {
-        contentBinding.confirmNoteButton.alpha = if (noteText != null) 1f else 0.5f
+        contentBinding.confirmNoteButton.isEnabled = noteText != null
     }
 
     override fun onDestroyView() {

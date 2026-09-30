@@ -1,24 +1,85 @@
 name: Gradle unit tests
 
 on:
-  push:
+  pull_request:
     branches:
-      - "master"
+      - "aviv-dev-latest"
   workflow_dispatch:
+
+permissions:
+  contents: write # attaching the report bundle to the ci-reports pre-release (publish-reports.sh)
+  actions: read
+  checks: write
 
 jobs:
   unit-test:
-    runs-on: ubuntu-latest
+    # not for PRs from forks: this is a public repo on a self-hosted runner, so a fork's PR would
+    # run outside code on that Mac (and its read-only token couldn't publish the reports anyway)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS]
     steps:
       - uses: actions/checkout@v4
 
-      - name: set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
       - uses: gradle/actions/setup-gradle@v3
 
+      # -PignoreTestFailures lets the build finish (and the Kover report tasks below still run)
+      # even if some tests fail - actual pass/fail is reported from the JUnit XML below, not this
+      # command's exit code
       - name: Run unit tests with Gradle
-        run: ./gradlew test
+        run: ./gradlew test koverHtmlReport koverXmlReport -PignoreTestFailures=true
+
+      - name: Publish test summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit test results
+          path: "app/build/test-results/testDebugUnitTest/*.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          report="app/build/reports/kover/report.xml"
+          if [ -f "$report" ]; then
+            line_counter=$(grep -o '<counter type="LINE" missed="[0-9]*" covered="[0-9]*"/>' "$report" | tail -1)
+            missed=$(echo "$line_counter" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+            covered=$(echo "$line_counter" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+            total=$((missed + covered))
+            if [ "$total" -gt 0 ]; then
+              pct=$(awk "BEGIN { printf \"%.1f\", ($covered/$total)*100 }")
+              echo "## Coverage" >> "$GITHUB_STEP_SUMMARY"
+              echo "Line coverage: **${pct}%** (${covered}/${total} lines)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+      # bundled into one file before upload - the unbundled reports (Kover's HTML report alone is
+      # one page per class) add up to 300+ individual files, which was timing out
+      # actions/upload-artifact's CreateArtifact call on this runner's connection.
+      # tar.gz, not zip - actions/upload-artifact always wraps whatever it uploads in its own
+      # container zip on download, so a raw .zip here became a same-named "unit-test-reports.zip"
+      # nested inside GitHub's own "unit-test-reports.zip" wrapper - indistinguishable from a
+      # corrupt/invalid file to anyone extracting it without realizing there's a second layer.
+      # tar.gz doesn't collide with that outer zip, so what you get after one extract is
+      # unambiguous.
+      - name: Bundle test and coverage reports
+        if: always()
+        run: |
+          mkdir -p artifact-bundle
+          tar -czf artifact-bundle/unit-test-reports.tar.gz \
+            app/build/reports/tests/testDebugUnitTest \
+            app/build/test-results/testDebugUnitTest \
+            app/build/reports/kover
+
+      # attached to the ci-reports pre-release and linked from the job summary (see
+      # .github/scripts/publish-reports.sh), not uploaded with actions/upload-artifact - its very
+      # first request (CreateArtifact, before any bytes are sent) timed out from this runner on
+      # every attempt, so no artifact was ever created.
+      # continue-on-error so a failed upload doesn't fail the whole job, since pass/fail is
+      # already reported independently via dorny/test-reporter above
+      - name: Publish test and coverage reports
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/publish-reports.sh artifact-bundle/unit-test-reports.tar.gz

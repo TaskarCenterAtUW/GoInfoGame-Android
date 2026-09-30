@@ -42,6 +42,10 @@ class QuestsHiddenControllerTest {
         on(osmDb.getAll()).thenReturn(listOf(OsmQuestHiddenAt(q1, 123L)))
         on(notesDb.getAll()).thenReturn(listOf(NoteQuestHiddenAt(q3.noteId, 124L, 0)))
         on(notesDb.getTimestamp(q4.noteId)).thenReturn(null)
+        // get()/getAllNewerThan()/countAll() all read from an in-memory cache populated once at
+        // construction time (see QuestsHiddenController.init), not from the DAOs directly - the
+        // DAO stubs above only take effect once the cache is rebuilt from them
+        ctrl.refreshCache()
 
         assertEquals(ctrl.get(q1), 123L)
         assertNull(ctrl.get(q2))
@@ -57,6 +61,7 @@ class QuestsHiddenControllerTest {
 
         on(osmDb.getAll()).thenReturn(listOf(h1, h2))
         on(notesDb.getAll()).thenReturn(listOf(h3, h4))
+        ctrl.refreshCache()
 
         assertEquals(
             listOf(
@@ -73,6 +78,7 @@ class QuestsHiddenControllerTest {
 
         on(osmDb.getAll()).thenReturn(listOf(h1))
         on(notesDb.getAll()).thenReturn(listOf(h2))
+        ctrl.refreshCache()
         assertEquals(2, ctrl.countAll())
     }
 

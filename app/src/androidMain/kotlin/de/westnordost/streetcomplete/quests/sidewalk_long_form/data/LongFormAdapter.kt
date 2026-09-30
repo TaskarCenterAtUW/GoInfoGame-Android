@@ -55,7 +55,7 @@ sealed class PhotoAttachment {
      *  [bearing] is the compass bearing (0-359, clockwise from north) the device was facing when
      *  it was captured. [replaces] is the [Uploaded] or [PendingRemoval] this capture would
      *  replace, if any (never another [Pending] or [None] - see ALongForm.onPhotoCaptured) - kept
-     *  so cancelling this capture (the delete ✕) can revert to it instead of always dropping to
+     *  so cancelling this capture (the remove button) can revert to it instead of always dropping to
      *  [None] and silently losing track of an already-synced photo that was never actually asked
      *  to be removed. */
     data class Pending(val path: String, val bearing: Float = 0f, val replaces: PhotoAttachment? = null) : PhotoAttachment()
@@ -191,6 +191,15 @@ class LongFormAdapter<T>(
         itemCopy.forEach {
             if (!it.visible) {
                 it.selectedIndex = null
+                // a choice question's answer lives in both selectedIndex (the highlighted tiles)
+                // and userInput (what gets submitted) - clearing only the former left a hidden
+                // choice's answer invisible yet still submitted once the question was re-shown,
+                // and merged into any new selection. Text/numeric answers are deliberately kept
+                // instead: their field is re-filled from userInput when re-shown, so toggling the
+                // controlling answer back restores exactly what was typed.
+                if (it.questType == "ExclusiveChoice" || it.questType == "MultipleChoice") {
+                    it.userInput = null
+                }
             }
         }
         return itemCopy
@@ -219,13 +228,17 @@ class LongFormAdapter<T>(
         }
     }
 
+    /** Writes into the live [givenItems] entry of the question it is bound to. Bound by questId,
+     *  not adapter position: a row that merely moves (e.g. a dependent question appearing above
+     *  it) is not rebound by DiffUtil, so a position captured at bind time would go stale and the
+     *  typed value would be written into whichever question now occupies that old position. */
     inner class CustomTextWatcher : TextWatcher {
-        private var position = 0
+        private var questId: Int? = null
         private var textInputLayout: TextInputLayout? = null
         private var minValue: Int? = null
         private var maxValue: Int = Int.MAX_VALUE
-        fun updatePosition(position: Int) {
-            this.position = position
+        fun updateQuestId(questId: Int?) {
+            this.questId = questId
         }
 
         fun updateInputLayout(
@@ -242,11 +255,7 @@ class LongFormAdapter<T>(
         }
 
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            val item = items[position]
-
-            val index =
-                givenItems.indexOfFirst { it.questId == item.questId }
-            givenItems[index].userInput = UserInput.Single(s.toString())
+            givenItems.firstOrNull { it.questId == questId }?.userInput = UserInput.Single(s.toString())
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -269,27 +278,26 @@ class LongFormAdapter<T>(
             } else {
                 textInputLayout?.error = null
             }
-            items.getOrNull(position)?.questId?.let { setFieldError(it, hasError) }
+            questId?.let { setFieldError(it, hasError) }
         }
     }
 
     /** Same live-target-resolution as [CustomTextWatcher] (writes into [givenItems] by questId,
-     *  not the snapshot `item` a rebind hands to `bind()`) but without the numeric validation -
+     *  not the snapshot `item` a rebind hands to `bind()`, nor by a bind-time adapter position that
+     *  goes stale when the row moves) but without the numeric validation -
      *  kept separate rather than reusing/generalizing [CustomTextWatcher] since that class also
      *  owns min/max validation and [TextInputLayout] error state that don't apply to TextEntry. */
     inner class TextEntryTextWatcher : TextWatcher {
-        private var position = 0
-        fun updatePosition(position: Int) {
-            this.position = position
+        private var questId: Int? = null
+        fun updateQuestId(questId: Int?) {
+            this.questId = questId
         }
 
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
         }
 
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            val item = items[position]
-            val index = givenItems.indexOfFirst { it.questId == item.questId }
-            givenItems[index].userInput = UserInput.Single(s.toString())
+            givenItems.firstOrNull { it.questId == questId }?.userInput = UserInput.Single(s.toString())
         }
 
         override fun afterTextChanged(s: Editable?) {
@@ -321,6 +329,7 @@ class LongFormAdapter<T>(
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(customTextWatcher)
@@ -341,7 +350,7 @@ class LongFormAdapter<T>(
             } else {
                 binding.questImage.visibility = View.GONE
             }
-            customTextWatcher.updatePosition(position)
+            customTextWatcher.updateQuestId(item.questId)
             customTextWatcher.updateInputLayout(
                 binding.input,
                 item.questAnswerValidation?.min,
@@ -375,6 +384,7 @@ class LongFormAdapter<T>(
                 View.VISIBLE else binding.container.visibility = View.GONE
             binding.title.text = item.questTitle
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.input.editText?.clearFocus()
             binding.input.clearFocus()
             binding.input.editText?.removeTextChangedListener(textEntryTextWatcher)
@@ -394,7 +404,7 @@ class LongFormAdapter<T>(
             } else {
                 binding.questImage.visibility = View.GONE
             }
-            textEntryTextWatcher.updatePosition(position)
+            textEntryTextWatcher.updateQuestId(item.questId)
             binding.input.editText?.addTextChangedListener(textEntryTextWatcher)
         }
     }
@@ -464,6 +474,7 @@ class LongFormAdapter<T>(
         // captured before any bind() ever overrides it (for the "marked for removal" state),
         // so there's always a real color to restore to - see bindPhotoCard
         private val defaultPhotoTitleColor = binding.photoTitle.currentTextColor
+        private val defaultPhotoSubtitleColor = binding.photoSubtitle.currentTextColor
 
         init {
             binding.list.layoutManager = GridLayoutManager(binding.root.context, 3)
@@ -475,9 +486,9 @@ class LongFormAdapter<T>(
 
             binding.title.text = item.questTitle
             binding.title.contentDescription = if (allowMultiChoice) {
-                "${item.questTitle}. Multiple items can be selected"
+                "${item.questTitle} (choose one or more)"
             } else {
-                "${item.questTitle}. Only one item can be selected"
+                "${item.questTitle} (choose one)"
             }
             if (!item.questImageUrl.isNullOrBlank() && !preferences.isLowBandwidthModeEnabled) {
                 binding.imageView.setImage(
@@ -495,6 +506,7 @@ class LongFormAdapter<T>(
             }
 
             binding.description.text = item.questDescription
+            binding.description.hideFromScreenReadersIfEmpty()
             binding.choiceFollowUp.setOnClickListener {
                 cameraIntent()
             }
@@ -509,20 +521,22 @@ class LongFormAdapter<T>(
             val listener = object : ImageSelectAdapter.OnItemSelectionListener {
                 override fun onIndexSelected(index: Int) {
                     // checkIsFormComplete()
-                    handleSelection(
+                    selectChoice(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        index
+                        index,
+                        allowMultiChoice
                     )
                     handleChoiceFollowUp()
                 }
 
                 override fun onIndexDeselected(index: Int) {
                     // checkIsFormComplete()
-                    handleDeselection(
+                    deselectChoice(
                         item.questId!!,
                         item.questAnswerChoices?.get(index)?.value!!,
-                        index
+                        index,
+                        allowMultiChoice
                     )
                     handleChoiceFollowUp()
                 }
@@ -622,7 +636,7 @@ class LongFormAdapter<T>(
                 is PhotoAttachment.Pending -> bindPhotoCard(
                     title = "Photo attached",
                     subtitle = if (attachment.replaces != null) {
-                        "Replaces previous photo — tap ✕ to keep it instead"
+                        "Replaces the previous photo. Remove it to keep the old one."
                     } else {
                         "Uploads when you submit"
                     },
@@ -637,7 +651,7 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Tap 📷 to replace it, or ✕ to remove it",
+                    subtitle = "Retake or remove it",
                     showDelete = true,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
@@ -654,8 +668,8 @@ class LongFormAdapter<T>(
 
         /** The retake camera icon is always shown once any photo exists - capturing a new one
          *  always supersedes whatever's there (see ALongForm.onPhotoCaptured), so there's never a
-         *  state where replacing needs an extra step first. [showDelete] (the ✕ badge on the
-         *  thumbnail) and [showUndo] (the pill button, for the "marked for removal" state -
+         *  state where replacing needs an extra step first. [showDelete] (the remove button,
+         *  next to it) and [showUndo] (the pill button, for the "marked for removal" state -
          *  PhotoAttachment.PendingRemoval) are mutually exclusive with each other. */
         private fun bindPhotoCard(
             title: String,
@@ -675,6 +689,11 @@ class LongFormAdapter<T>(
                 if (showUndo) ContextCompat.getColor(binding.root.context, R.color.traffic_red) else defaultPhotoTitleColor
             )
             binding.photoSubtitle.text = subtitle
+            // the removed card's background is light in dark mode too, where the default
+            // secondary text color is a light grey - so a fixed dark grey there instead
+            binding.photoSubtitle.setTextColor(
+                if (showUndo) ContextCompat.getColor(binding.root.context, R.color.traffic_gray_b) else defaultPhotoSubtitleColor
+            )
             binding.photoThumb.alpha = if (showUndo) 0.5f else 1f
             binding.photoThumbProgress.visibility = View.GONE
             loadThumb()
@@ -686,64 +705,70 @@ class LongFormAdapter<T>(
             binding.photoRetake.setOnClickListener { cameraIntent() }
             binding.photoUndo.setOnClickListener { onPhotoUndoRemoval() }
         }
+    }
 
-        fun handleDeselection(
-            questId: Int,
-            userInput: String,
-            imageIndex: Int,
-        ) {
-            val index =
-                givenItems.indexOfFirst { it.questId == questId }
-            if (allowMultiChoice) {
-                val multiple = givenItems[index].userInput as? UserInput.Multiple
-
-                multiple?.let {
-                    if (!it.isEmpty()) {
-                        multiple.answers.remove(userInput)
-                    }
-                }
-                givenItems[index].userInput = multiple
+    /** Records the choice at [choiceIndex] (with [value]) as selected for question [questId] in
+     *  the live [givenItems] - called by [ImageGridViewHolder] on a tap. Lives on the adapter
+     *  rather than the view holder since it only touches adapter state. */
+    fun selectChoice(
+        questId: Int,
+        value: String,
+        choiceIndex: Int,
+        allowMultiChoice: Boolean,
+    ) {
+        val index =
+            givenItems.indexOfFirst { it.questId == questId }
+        if (allowMultiChoice) {
+            var multiple = givenItems[index].userInput as? UserInput.Multiple
+            if (multiple == null) {
+                multiple = UserInput.Multiple(mutableListOf(value))
             } else {
-                givenItems[index].userInput = null
+                multiple.answers.add(value)
             }
-            givenItems[index].selectedIndex?.remove(imageIndex)
-            if (questId in needRefreshIds) {
-                items = givenItems
+            givenItems[index].userInput = multiple
+        } else {
+            var single = givenItems[index].userInput as? UserInput.Single
+            if (single == null) {
+                single = UserInput.Single(value)
+            } else {
+                single.answer = value
             }
+            givenItems[index].userInput = single
         }
+        if (givenItems[index].selectedIndex == null) {
+            givenItems[index].selectedIndex = mutableListOf(choiceIndex)
+        } else {
+            givenItems[index].selectedIndex?.add(choiceIndex)
+        }
+        if (questId in needRefreshIds) {
+            items = givenItems
+        }
+    }
 
-        fun handleSelection(
-            questId: Int,
-            userInput: String,
-            imageIndex: Int,
-        ) {
-            val index =
-                givenItems.indexOfFirst { it.questId == questId }
-            if (allowMultiChoice) {
-                var multiple = givenItems[index].userInput as? UserInput.Multiple
-                if (multiple == null) {
-                    multiple = UserInput.Multiple(mutableListOf(userInput))
-                } else {
-                    multiple.answers.add(userInput)
+    /** Counterpart of [selectChoice]. */
+    fun deselectChoice(
+        questId: Int,
+        value: String,
+        choiceIndex: Int,
+        allowMultiChoice: Boolean,
+    ) {
+        val index =
+            givenItems.indexOfFirst { it.questId == questId }
+        if (allowMultiChoice) {
+            val multiple = givenItems[index].userInput as? UserInput.Multiple
+
+            multiple?.let {
+                if (!it.isEmpty()) {
+                    multiple.answers.remove(value)
                 }
-                givenItems[index].userInput = multiple
-            } else {
-                var single = givenItems[index].userInput as? UserInput.Single
-                if (single == null) {
-                    single = UserInput.Single(userInput)
-                } else {
-                    single.answer = userInput
-                }
-                givenItems[index].userInput = single
             }
-            if (givenItems[index].selectedIndex == null) {
-                givenItems[index].selectedIndex = mutableListOf(imageIndex)
-            } else {
-                givenItems[index].selectedIndex?.add(imageIndex)
-            }
-            if (questId in needRefreshIds) {
-                items = givenItems
-            }
+            givenItems[index].userInput = multiple
+        } else {
+            givenItems[index].userInput = null
+        }
+        givenItems[index].selectedIndex?.remove(choiceIndex)
+        if (questId in needRefreshIds) {
+            items = givenItems
         }
     }
 
@@ -869,4 +894,10 @@ private fun openRemotePhotoFullScreen(context: Context, url: String) {
     } catch (e: ActivityNotFoundException) {
         context.toast("No app found to view images")
     }
+}
+
+/** An empty text is nothing to read out - but it keeps its place in the layout. */
+private fun TextView.hideFromScreenReadersIfEmpty() {
+    importantForAccessibility =
+        if (text.isNullOrBlank()) View.IMPORTANT_FOR_ACCESSIBILITY_NO else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
 }

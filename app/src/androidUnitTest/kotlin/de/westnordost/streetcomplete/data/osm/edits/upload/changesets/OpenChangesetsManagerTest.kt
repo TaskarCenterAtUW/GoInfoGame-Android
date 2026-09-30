@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload.changesets
 
 import de.westnordost.streetcomplete.ApplicationConstants
+import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -97,8 +98,40 @@ class OpenChangesetsManagerTest {
             "created_by" to ApplicationConstants.USER_AGENT,
             "comment" to "test me",
             "locale" to "es-AR",
-            "StreetComplete:quest_type" to questType.name
+            ApplicationConstants.QUESTTYPE_TAG_KEY to questType.name
         ))
         verify(openChangesetsDB).put(any())
+    }
+
+    @Test fun `closing all open changesets closes each one and forgets it`(): Unit = runBlocking {
+        on(openChangesetsDB.getAll()).thenReturn(listOf(
+            OpenChangeset("A", "survey", 1, LatLon(0.0, 0.0)),
+            OpenChangeset("B", "survey", 2, LatLon(0.0, 0.0)),
+        ))
+
+        manager.closeAllOpenChangesets()
+
+        verify(changesetApiClient).close(1)
+        verify(changesetApiClient).close(2)
+        verify(openChangesetsDB).delete("A", "survey")
+        verify(openChangesetsDB).delete("B", "survey")
+    }
+
+    @Test fun `a changeset the server already closed is forgotten too`(): Unit = runBlocking {
+        on(openChangesetsDB.getAll()).thenReturn(listOf(OpenChangeset("A", "survey", 1, LatLon(0.0, 0.0))))
+        on(changesetApiClient.close(1)).thenThrow(ConflictException())
+
+        manager.closeAllOpenChangesets()
+
+        verify(openChangesetsDB).delete("A", "survey")
+    }
+
+    @Test fun `the next upload after closing opens a new changeset`(): Unit = runBlocking {
+        on(openChangesetsDB.getAll()).thenReturn(listOf(OpenChangeset(questType.name, "survey", 1, LatLon(0.0, 0.0))))
+        manager.closeAllOpenChangesets()
+
+        on(openChangesetsDB.get(questType.name, "survey")).thenReturn(null)
+        on(changesetApiClient.open(any())).thenReturn(2L)
+        assertEquals(2L, manager.getOrCreateChangeset(questType, "survey", LatLon(0.0, 0.0), true))
     }
 }

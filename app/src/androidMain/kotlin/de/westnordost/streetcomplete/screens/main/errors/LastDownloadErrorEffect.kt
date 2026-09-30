@@ -12,7 +12,6 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConnectionException
 import de.westnordost.streetcomplete.resources.Res
-import de.westnordost.streetcomplete.resources.auth_error
 import de.westnordost.streetcomplete.resources.download_error
 import de.westnordost.streetcomplete.resources.download_server_error
 import de.westnordost.streetcomplete.util.ktx.toast
@@ -35,7 +34,7 @@ fun LastDownloadErrorEffect(
                 context.toast(R.string.download_server_error, Toast.LENGTH_LONG)
             }
             is AuthorizationException -> {
-                context.toast(R.string.auth_error, Toast.LENGTH_LONG)
+                context.showSessionExpired()
             }
             else -> {
                 showDownloadErrorDialog = true

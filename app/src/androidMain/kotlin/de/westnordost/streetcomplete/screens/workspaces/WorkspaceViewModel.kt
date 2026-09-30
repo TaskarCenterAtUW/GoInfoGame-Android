@@ -23,6 +23,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.WorkspaceDet
 import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.getEmailFromJWT
 import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -240,6 +242,16 @@ class WorkspaceViewModelImpl(
         } catch (parseException: ParseException) {
             return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + parseException.message)
         }
+        // a long form of the wrong shape (e.g. "quests" not a list). This runs inside the
+        // collect{} of getWorkspaceDetails, downstream of its catch{}, so anything thrown here
+        // would escape into viewModelScope and crash instead of showing an error
+        catch (e: SerializationException) {
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + e.message)
+        }
+        // thrown by the custom required_value/dependency serializers for unexpected JSON
+        catch (e: IllegalStateException) {
+            return WorkspaceLongFormState.error("Workspace is not configured properly. Please contact the admin for this workspace,  " + e.message)
+        }
     }
 
     // debug-only: lets test-data JSON be edited on-device (`adb push` to testLongFormJsonFile's
@@ -374,7 +386,23 @@ class WorkspaceViewModelImpl(
             preferences.workspaceLastLogin + preferences.refreshTokenExpiryInterval
         preferences.accessTokenExpiryTime =
             preferences.workspaceLastLogin + preferences.accessTokenExpiryInterval
-        getUserInfo(email)
+        // the tokens have to be persisted before this (the user-profile call authenticates with
+        // them), but a failure here must not leave a half-logged-in session behind - with
+        // workspaceLogin already true and no workspaceUserId, the next app start would skip the
+        // login screen and carry on without a user id. Roll back to logged out (same shared call
+        // as every other forced-logout path), surface the error through loginState, and still
+        // rethrow so the caller doesn't proceed as if logged in.
+        try {
+            getUserInfo(email)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e("AuthExpiry", "Fetching user info after login failed - rolling back the session", e)
+            userLoginController.logOut()
+            workspaceRepository.clearCachedAuthTokens()
+            _loginState.value = WorkspaceLoginState.error(e.message)
+            throw e
+        }
     }
 
     override fun setIsLongForm(isLongForm: Boolean) {

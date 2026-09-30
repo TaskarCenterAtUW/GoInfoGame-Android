@@ -1,39 +1,35 @@
 name: Gradle Android tests
 
 on:
-  push:
+  pull_request:
     branches:
-      - "master"
+      - "aviv-dev-latest"
   workflow_dispatch:
+
+permissions:
+  contents: write # attaching the report bundle to the ci-reports pre-release (publish-reports.sh)
+  actions: read
+  checks: write
 
 jobs:
   android-test:
-    runs-on: ubuntu-latest
+    # not for PRs from forks - see unit-test.yml
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS]
     strategy:
+      max-parallel: 1 # multiple runners are registered on the same physical Mac - without this,
+      # matrix legs can run concurrently and contend for the same real GPU, which is what was
+      # causing "Failed to find ColorBuffer" emulator errors regardless of the -gpu backend used
       matrix:
         api-level:
-          - 25 # minSdk
-          - 35 # targetSdk
-        jdk-version:
-          - 21
+          - 30 # min API with arm64-v8a system images
+          - 34 # close to targetSdk, well-supported arm64-v8a image
         arch:
-          - x86_64
+          - arm64-v8a
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ matrix.jdk-version }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: '${{ matrix.jdk-version }}'
-          distribution: 'temurin'
-
       - uses: gradle/actions/setup-gradle@v3
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
         uses: actions/cache@v4
@@ -42,7 +38,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.jdk-version }}-${{ matrix.api-level }}
+          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -50,6 +46,13 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
+          target: google_apis
+          # this is a self-hosted runner with a persistent disk (unlike GitHub-hosted runners,
+          # which start every job with an empty disk) - without a name derived from the actual
+          # config, the action's default fixed "test" AVD name means any future change to
+          # api-level/arch/target here would silently keep reusing a stale AVD built under the
+          # OLD config instead of picking up the new one, since force-avd-creation stays false
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -60,7 +63,56 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
+          target: google_apis
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest && killall -INT crashpad_handler || true
+          script: |
+            mkdir -p test-artifacts
+            # this action runs the script one line at a time, each in its OWN throwaway `sh -c`
+            # with no shared state between lines (see script-parser.ts in
+            # ReactiveCircus/android-emulator-runner - it splits on newline and execs each line
+            # separately) - so record_pid/test_exit_code would be empty/invisible on any later
+            # line, and everything that depends on them has to stay chained into this one line
+            # with ;/&. screenrecord/screencap read from the virtual display buffer, so both work
+            # even headless (-no-window) - stopped with SIGINT (not killed) so the mp4 container
+            # gets finalized properly instead of ending up corrupt/unplayable. Per-test
+            # screenshots (pulled below) are written by UiTestScreenshot (one per @Test, taken in
+            # tearDown before the activity closes) - written to /sdcard/test-screenshots (not an
+            # app-scoped dir) since AGP uninstalls both the app and test APK once
+            # connectedDebugAndroidTest finishes, which would wipe an app-scoped dir along with it
+            adb shell screenrecord --time-limit 180 /sdcard/test-recording.mp4 & record_pid=$!; ./gradlew :app:connectedDebugAndroidTest; test_exit_code=$?; adb exec-out screencap -p > "test-artifacts/final-screenshot-api${{ matrix.api-level }}.png"; kill -INT $record_pid 2>/dev/null || true; wait $record_pid 2>/dev/null || true; sleep 2; adb pull /sdcard/test-recording.mp4 "test-artifacts/test-recording-api${{ matrix.api-level }}.mp4" || true; adb shell rm -f /sdcard/test-recording.mp4 || true; adb pull /sdcard/test-screenshots "test-artifacts/per-test-screenshots-api${{ matrix.api-level }}" || true; adb shell rm -rf /sdcard/test-screenshots || true; killall -INT crashpad_handler || true; exit $test_exit_code
+
+      - name: Publish test summary
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Instrumentation test results (API ${{ matrix.api-level }})
+          path: "app/build/outputs/androidTest-results/connected/**/*.xml"
+          reporter: java-junit
+          fail-on-error: true
+
+      # bundled into one file before upload - see unit-test.yml for why tar.gz, not zip (many
+      # small files, mostly the per-class androidTests HTML report, were timing out CreateArtifact
+      # on this runner; and a raw .zip here would come out as a same-named, indistinguishable-
+      # from-corrupt "...zip" nested inside GitHub's own container zip on download)
+      - name: Bundle test reports
+        if: always()
+        run: |
+          mkdir -p artifact-bundle
+          tar -czf "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz" \
+            app/build/reports/androidTests/connected \
+            app/build/outputs/androidTest-results/connected \
+            test-artifacts
+
+      # attached to the ci-reports pre-release and linked from the job summary, not uploaded with
+      # actions/upload-artifact - see unit-test.yml for why.
+      # continue-on-error so a failed upload doesn't fail the whole job, since pass/fail is
+      # already reported independently via dorny/test-reporter above
+      - name: Publish test reports
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/publish-reports.sh "artifact-bundle/android-test-reports-api${{ matrix.api-level }}.tar.gz"

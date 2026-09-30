@@ -204,6 +204,30 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
         assertEquals(e4, dao.getOldestUnsynced())
     }
 
+    // RESOLVE mode: an edit held back for conflict resolution is skipped by the upload queue...
+    @Test
+    fun peekUnsynced_skipsEditsBlockedOnConflict() {
+        val blocked = updateTags(timestamp = 500).copy(isBlockedOnConflict = true)
+        val next = updateTags(timestamp = 1000)
+        dao.addAll(blocked, next)
+        assertEquals(next, dao.getOldestUnsynced())
+
+        dao.put(dao.get(next.id)!!.copy(isSynced = true))
+        assertNull(dao.getOldestUnsynced())
+    }
+
+    // ...but is still unsynced, and uploads again once unblocked
+    @Test
+    fun blockedEdit_staysUnsynced_andIsQueuedAgainOnceUnblocked() {
+        val blocked = updateTags(timestamp = 500).copy(isBlockedOnConflict = true)
+        dao.put(blocked)
+        assertEquals(1, dao.getUnsyncedCount())
+        assertTrue(dao.get(blocked.id)!!.isBlockedOnConflict)
+
+        dao.put(dao.get(blocked.id)!!.copy(isBlockedOnConflict = false))
+        assertEquals(blocked.id, dao.getOldestUnsynced()?.id)
+    }
+
     @Test
     fun getUnsyncedCount() {
         assertEquals(0, dao.getUnsyncedCount())

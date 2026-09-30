@@ -65,13 +65,14 @@ class Downloader(
 
             val time = nowAsEpochMilliseconds()
 
-            mutex.withLock {
-                coroutineScope {
-                    // all downloaders run concurrently
-                    // launch { notesDownloader.download(tilesBbox) }
-                    launch { mapDataDownloader.download(tilesBbox) }
-                    launch { mapTilesDownloader.download(tilesBbox) }
-                }
+            coroutineScope {
+                // all downloaders run concurrently. Only the map data download holds the lock
+                // shared with the uploader (both write OSM data) - map tiles don't touch it, and
+                // MapLibre's tile download waits for connectivity rather than failing, so with the
+                // tile server unreachable it would otherwise block uploads indefinitely
+                // launch { notesDownloader.download(tilesBbox) }
+                launch { mutex.withLock { mapDataDownloader.download(tilesBbox) } }
+                launch { mapTilesDownloader.download(tilesBbox) }
             }
             putDownloadedAlready(tiles)
 

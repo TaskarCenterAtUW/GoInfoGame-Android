@@ -10,6 +10,7 @@ plugins {
     id("com.google.gms.google-services") version "4.4.4" apply false
     id("com.google.firebase.crashlytics") version "3.0.6" apply false
     id("com.google.firebase.firebase-perf") version "2.0.2" apply false
+    id("org.jetbrains.kotlinx.kover") version "0.9.9" apply false
 }
 
 val poEditorProjectId = "97843"
@@ -101,6 +102,6 @@ tasks.register("updateStreetCompleteData") {
 
 subprojects {
     tasks.withType<Test>().configureEach {
-        enabled = false
+        enabled = true
     }
 }

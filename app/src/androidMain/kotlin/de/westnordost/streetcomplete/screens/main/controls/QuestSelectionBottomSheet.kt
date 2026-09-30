@@ -14,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -79,6 +80,9 @@ fun QuestSelectionBottomSheet(
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         containerColor = MaterialTheme.colorScheme.surface,
+        // the default handle is 32dp wide - too small a touch target for its accessibility
+        // actions (expand/collapse/dismiss); padded to 48dp, looks the same
+        dragHandle = { BottomSheetDefaults.DragHandle(Modifier.padding(horizontal = 8.dp)) },
     ) {
         Column(
             modifier = Modifier

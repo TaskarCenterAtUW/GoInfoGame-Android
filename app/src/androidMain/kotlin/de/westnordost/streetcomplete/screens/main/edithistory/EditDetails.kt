@@ -53,12 +53,12 @@ fun EditDetails(
                         .getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
                         .format(edit.createdTimestamp),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = LocalContentColor.current.copy(alpha = 0.6f),
+                    color = LocalContentColor.current.copy(alpha = 0.7f),
                 )
                 Text(
                     text = edit.getName(),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = LocalContentColor.current.copy(alpha = 0.6f),
+                    color = LocalContentColor.current.copy(alpha = 0.7f),
                 )
                 // if (element != null) {
                 //     val nameAndLocation = remember(element, context.resources) {
@@ -69,7 +69,7 @@ fun EditDetails(
                 //         Text(
                 //             text = nameAndLocation.toAnnotatedString(),
                 //             style = MaterialTheme.typography.bodyMedium,
-                //             color = LocalContentColor.current.copy(alpha = 0.6f),
+                //             color = LocalContentColor.current.copy(alpha = 0.7f),
                 //         )
                 //     }
                 // }

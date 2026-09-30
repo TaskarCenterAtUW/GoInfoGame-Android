@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary">#FF32006E</color>
+    <!-- primary for icons on an always-white background (e.g. background_white_circle) - no night
+         override, since night's light primary would be near-invisible on white -->
+    <color name="primary_on_white">#FF32006E</color>
     <color name="primary_variant">#FFB7A57A</color>
     <color name="accent">#FFB5007A</color>
     <color name="accent_variant">#FFC5B4E3</color>

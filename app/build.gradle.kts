@@ -44,6 +44,7 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 repositories {
@@ -133,8 +134,8 @@ kotlin {
                 implementation("org.kotlincrypto.hash:sha2:0.8.0")
 
                 // XML
-                implementation("io.github.pdvrieze.xmlutil:core:0.91.2")
-                implementation("io.github.pdvrieze.xmlutil:core-io:0.91.2")
+                implementation("io.github.pdvrieze.xmlutil:core:0.91.3")
+                implementation("io.github.pdvrieze.xmlutil:core-io:0.91.3")
 
                 // YAML
                 implementation("com.charleskorn.kaml:kaml:0.97.0")
@@ -219,6 +220,12 @@ kotlin {
 
                 // scheduling background jobs
                 implementation("androidx.work:work-runtime-ktx:2.11.0")
+                // bumped from whatever work-runtime-ktx pulls in transitively (1.1.0) so its
+                // version matches what androidx.test.ext:junit 1.3.0 requires (androidTest's
+                // classpath is forced by AGP's "consistent resolution" to match this app's
+                // runtime classpath exactly, so a mismatch here fails androidTest dependency
+                // resolution, not just this module's own build)
+                implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 
                 // HTTP Client
                 implementation("io.ktor:ktor-client-core:3.3.3")
@@ -261,12 +268,19 @@ kotlin {
                 implementation(kotlin("test"))
 
                 implementation("io.ktor:ktor-client-mock:3.3.1")
+                // virtual-time coroutine test scheduler (runTest, Dispatchers.setMain) - needed
+                // for ViewModels using viewModelScope.launch/async
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                // StateFlow/Flow emission-sequence assertions (awaitItem/expectNoEvents etc.)
+                implementation("app.cash.turbine:turbine:1.2.0")
             }
         }
         androidUnitTest {
             dependencies {
                 implementation("org.mockito:mockito-core:5.20.0")
                 implementation(kotlin("test"))
+                // in-memory ObservableSettings (MapSettings), so tests can use a real Preferences
+                implementation("com.russhwolf:multiplatform-settings-test:1.3.0")
             }
         }
         androidInstrumentedTest {
@@ -275,6 +289,18 @@ kotlin {
                 // android tests
                 implementation("androidx.test:runner:1.7.0")
                 implementation("androidx.test:rules:1.7.0")
+                implementation("androidx.test.ext:junit:1.3.0")
+                implementation("androidx.test.espresso:espresso-core:3.7.0")
+                implementation("androidx.compose.ui:ui-test-junit4:1.9.3")
+                // hosting a quest form in isolation (FragmentScenario) and stubbing the camera
+                implementation("androidx.fragment:fragment-testing:1.8.9")
+                implementation("androidx.test.espresso:espresso-intents:3.7.0")
+                // serving canned workspace API responses to the real WorkspaceApiService (same
+                // version as the app's ktor-client-core, see androidMain)
+                implementation("io.ktor:ktor-client-mock:3.3.3")
+                // Google's Accessibility Test Framework - the checks behind Accessibility Scanner and
+                // Espresso/Compose accessibility checks; run directly by testutils/A11yScanner
+                implementation("com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:4.1.1")
             }
         }
     }
@@ -290,7 +316,7 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "de.westnordost.streetcomplete.testutils.SandboxedTestRunner"
     }
 
     compileOptions {
@@ -353,6 +379,13 @@ android {
 
     dependencies {
         debugImplementation("androidx.compose.ui:ui-tooling:1.9.3")
+        debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.3")
+        // empty host activity FragmentScenario launches fragments into (long-form UI tests)
+        debugImplementation("androidx.fragment:fragment-testing-manifest:1.8.9")
+        // annotations-only; bumped from what Firebase pulls in (2.26.0) for the same "consistent
+        // resolution" reason as concurrent-futures-ktx above - fragment-testing (androidTest)
+        // needs espresso's 2.30.0, and androidTest's classpath must match this debug one
+        debugImplementation("com.google.errorprone:error_prone_annotations:2.30.0")
     }
 }
 
@@ -501,4 +534,13 @@ tasks.register("copyDefaultStringsToEnStrings") {
         sourceStrings.copyTo(File("$projectDir/src/commonMain/composeResources/values-en/strings.xml"), true)
         sourceStrings.copyTo(File("$projectDir/src/commonMain/composeResources/values/strings.xml"), true)
     }
+}
+
+// off by default (a failing test still fails a local ./gradlew test as usual) - CI passes
+// -PignoreTestFailures=true so the test task itself doesn't fail the build, which lets the
+// downstream Kover report tasks still run and produce a coverage report even when some tests
+// fail; actual pass/fail reporting in CI comes from parsing the JUnit XML results, not this exit
+// code
+tasks.withType<Test>().configureEach {
+    ignoreFailures = project.hasProperty("ignoreTestFailures")
 }

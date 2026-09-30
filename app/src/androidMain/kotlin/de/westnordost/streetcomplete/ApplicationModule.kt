@@ -60,6 +60,7 @@ private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
     preferences: Preferences,
     environmentManager: EnvironmentManager,
     userLoginController: UserLoginController,
+    refreshClient: HttpClient,
 ) {
     install(Auth) {
         bearer {
@@ -83,7 +84,7 @@ private fun HttpClientConfig<*>.installWorkspaceBearerAuth(
                 if (!preferences.workspaceLogin)
                     return@refreshTokens null
                 val newAccessToken =
-                    refreshJwtToken(preferences, environmentManager)
+                    refreshJwtToken(preferences, environmentManager, refreshClient)
 
                 if (newAccessToken == null) {
                     Log.w(
@@ -133,7 +134,7 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController)
+            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController, get(named("refreshClient")))
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -159,7 +160,7 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController)
+            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController, get(named("refreshClient")))
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
@@ -170,6 +171,21 @@ val appModule = module {
             }
             defaultRequest {
                 userAgent(ApplicationConstants.USER_AGENT)
+            }
+        }
+    }
+
+    // used only by refreshJwtToken() - deliberately without the bearer-auth plugin (it would
+    // recurse into another refresh). One instance instead of a new, never-closed HttpClient per
+    // 401, and a Koin single so instrumented tests can keep it off the real network like the others
+    single(named("refreshClient")) {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+            install(Logging) {
+                logger = Logger.DEFAULT
+                level = LogLevel.ALL
             }
         }
     }
@@ -206,24 +222,15 @@ val appModule = module {
 suspend fun refreshJwtToken(
     preferences: Preferences,
     environmentManager: EnvironmentManager,
+    httpClient: HttpClient,
 ): String? {
     return try {
-
-        val tempClient = HttpClient {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.ALL
-            }
-        }
 
         // a transient failure here (network blip, backend 5xx, rate limit) must not be treated
         // the same as an actually invalid/expired refresh token - both used to fall through to
         // the same "refresh failed -> force logout" path below with zero retry.
         val response = retryOnTransientHttpFailure {
-            tempClient.post(environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token") {
+            httpClient.post(environmentManager.currentEnvironment.tdeiBaseUrl + "/refresh-token") {
                 // the API takes the refresh token as the "refresh_token" header, not the body
                 // (confirmed against the API's own curl example) - body must stay empty.
                 header("refresh_token", preferences.workspaceRefreshToken)

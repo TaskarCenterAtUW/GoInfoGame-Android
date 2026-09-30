@@ -32,11 +32,12 @@ class ElementEditsController(
         geometry: ElementGeometry,
         source: String,
         action: ElementEditAction,
-        isNearUserLocation: Boolean
+        isNearUserLocation: Boolean,
+        beforeAnnouncing: (editId: Long) -> Unit,
     ): Long {
         Log.d(TAG, "Add ${type.name} for ${action.elementKeys.joinToString()}")
         val edit = ElementEdit(0, type, geometry, source, nowAsEpochMilliseconds(), false, action, isNearUserLocation, workspaceId)
-        add(edit)
+        add(edit, beforeAnnouncing)
         return edit.id
     }
 
@@ -153,7 +154,7 @@ class ElementEditsController(
 
     /* ------------------------------------ add/sync/delete ------------------------------------- */
 
-    private fun add(edit: ElementEdit) {
+    private fun add(edit: ElementEdit, beforeAnnouncing: (editId: Long) -> Unit = {}) {
         lock.withLock {
             editsDB.put(edit)
             editElementsDB.put(edit.id, edit.action.elementKeys)
@@ -165,7 +166,14 @@ class ElementEditsController(
                 createdElementsCount.relations
             )
         }
-        onAddedEdit(edit)
+        // announcing the edit makes the upload queue pick it up, possibly right away - whatever
+        // must go up with it (its photo) is stored first. Announced even if that fails, so the
+        // edit itself isn't left invisible to the UI and the queue
+        try {
+            beforeAnnouncing(edit.id)
+        } finally {
+            onAddedEdit(edit)
+        }
     }
 
     private fun delete(edit: ElementEdit) {

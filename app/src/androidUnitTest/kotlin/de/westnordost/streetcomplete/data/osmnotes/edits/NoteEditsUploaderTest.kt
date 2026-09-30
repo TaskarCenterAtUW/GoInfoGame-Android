@@ -166,7 +166,7 @@ class NoteEditsUploaderTest {
 
         upload()
 
-        verify(notesApi).comment(1L, "test\n\nAttached photo(s):\nx\ny\nz")
+        verify(notesApi).comment(1L, "test\n\nAttached photo:\nx\ny\nz")
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
@@ -191,7 +191,7 @@ class NoteEditsUploaderTest {
 
         upload()
 
-        verify(notesApi).create(pos, "test\n\nAttached photo(s):\nx\ny\nz")
+        verify(notesApi).create(pos, "test\n\nAttached photo:\nx\ny\nz")
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)

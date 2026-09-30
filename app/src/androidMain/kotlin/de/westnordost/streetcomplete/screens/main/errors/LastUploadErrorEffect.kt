@@ -38,7 +38,7 @@ fun LastUploadErrorEffect(
                 context.toast(R.string.upload_server_error, Toast.LENGTH_LONG)
             }
             is AuthorizationException -> {
-                context.toast(R.string.auth_error, Toast.LENGTH_LONG)
+                context.showSessionExpired()
             }
             else -> {
                 showUploadErrorDialog = true

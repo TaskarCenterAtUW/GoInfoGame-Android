@@ -24,19 +24,34 @@ class OutlinedTextView @JvmOverloads constructor(
         strokePaint.isAntiAlias = true
     }
 
+    private var isDrawing = false
+
+    /** setTextColor() - used in onDraw to switch between outline and fill - invalidates the view.
+     *  Letting that through scheduled another draw from within every draw, so the view redrew
+     *  itself on every frame for as long as it was shown (e.g. image-select tile labels): CPU/GPU
+     *  and battery busy while nothing changes (and Espresso never saw the app idle). */
+    override fun invalidate() {
+        if (!isDrawing) super.invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
-        // Draw outline
-        val originalTextColor = currentTextColor
+        isDrawing = true
+        try {
+            // Draw outline
+            val originalTextColor = currentTextColor
 
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 4f
-        setTextColor(Color.BLACK)
-        super.onDraw(canvas)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 4f
+            setTextColor(Color.BLACK)
+            super.onDraw(canvas)
 
-        // Draw fill
-        paint.style = Paint.Style.FILL
-        setTextColor(originalTextColor)
-        super.onDraw(canvas)
+            // Draw fill
+            paint.style = Paint.Style.FILL
+            setTextColor(originalTextColor)
+            super.onDraw(canvas)
+        } finally {
+            isDrawing = false
+        }
     }
 }
 

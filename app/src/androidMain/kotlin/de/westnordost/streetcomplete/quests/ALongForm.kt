@@ -14,13 +14,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import de.westnordost.streetcomplete.R
-import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.KARTAVIEW_URL_TAG
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoAttachment
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.activeChoiceFollowUp
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.contentEquals
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoState
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoTransition
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoCaptured
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoDeleted
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoUndoRemoval
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.computeLongFormSubmission
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.coroutines.launch
 import java.io.File
@@ -37,18 +41,14 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     /** The (at most one) photo attached to this quest - either just captured locally this visit
      *  (not yet uploaded - upload happens in the background sync, see AbstractOsmQuestForm) or
      *  read back from the element's own ext:kartaview_url tag on open (already synced from a
-     *  previous visit). Mirrored onto the adapter so the row showing the relevant
-     *  choiceFollowUp can render it - see LongFormAdapter.updateChoiceFollowUp. */
-    private var photoAttachment: PhotoAttachment = PhotoAttachment.None
+     *  previous visit) - plus whether an already-synced one was removed. The attachment is
+     *  mirrored onto the adapter so the row showing the relevant choiceFollowUp can render it -
+     *  see LongFormAdapter.updateChoiceFollowUp. Transitions live in LongFormSubmission.kt. */
+    private var photoState = PhotoState()
         set(value) {
             field = value
-            adapter.photoAttachment = value
+            adapter.photoAttachment = value.attachment
         }
-
-    /** Set when the user deletes an already-synced photo (from a previous visit) without
-     *  attaching a replacement - signals onClickOk to actually remove the tag on submit. Reset
-     *  whenever a fresh photo is captured, since that supersedes the removal. */
-    private var existingPhotoRemoved = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,100 +78,26 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
 
     override fun onClickOk() {
-        // No null/isEmpty guard here on purpose: a question the user deselected/cleared back to
-        // nothing (userInput null or empty) after it had a seeded answer must still be included -
-        // otherwise the clear is silently dropped and the stale tag from before never gets
-        // removed (contentEquals(null, null) already excludes a question that was never touched,
-        // so this alone is sufficient to also exclude untouched blanks).
-        //
-        // A question currently hidden by questAnswerDependency (its controlling answer no longer
-        // satisfies the dependency - e.g. the user deselected/changed the controlling answer this
-        // visit) is submitted as cleared too, via a .copy() used ONLY for this comparison/submit -
-        // the live item in adapter.givenItems is left untouched. This matters: if the user flips
-        // the controlling answer back before submitting, the dependent question must still show
-        // whatever was already entered, not something wiped out mid-edit. Only the final state at
-        // submit time decides whether a hidden question's old value actually gets removed.
-        val editedItems =
-            adapter.givenItems.mapNotNull { quest ->
-                val effective = if (quest.visible) quest else quest.copy(userInput = null)
-                effective.takeIf { !it.userInput.contentEquals(it.seededAnswer) }
-            }
-        // If the choice this photo was attached to is no longer selected (the user changed their
-        // answer this visit), the photo is orphaned - the card is already hidden in that case
-        // (see LongFormAdapter.updateChoiceFollowUp), but without this the underlying tag/local
-        // file would silently survive unchanged. Discard it entirely, using the final state at
-        // submit time - same principle as editedItems above. Deliberately NOT onPhotoDeleted():
-        // that reverts one step (back to whatever a pending capture would replace, or to a
-        // reversible "marked for removal"), which is right for the ✕ button but wrong here - the
-        // question itself is gone, so there's nothing left to revert to or keep undoable.
-        if (photoAttachment != PhotoAttachment.None &&
-            adapter.givenItems.none { it.visible && it.activeChoiceFollowUp() != null }
-        ) {
-            discardPhotoForOrphanedQuestion()
-        }
-
-        // the photo's URL isn't known yet if it was just captured this visit (upload happens
-        // later, in the background sync - see AbstractOsmQuestForm.applyAnswer) - only an
-        // explicit removal of an already-synced photo (without a replacement) is a tag change we
-        // can express right away
-        val photo = (photoAttachment as? PhotoAttachment.Pending)?.let { FeaturePhoto(it.path, it.bearing) }
-        val removeTagKeys = if (photo == null && existingPhotoRemoved) {
-            listOf(KARTAVIEW_URL_TAG)
-        } else {
-            emptyList()
-        }
-
-        // a "recheck" of an already fully-answered element - reopened purely because
-        // AddGenericLong.isApplicableTo's recency check resurfaced it - has nothing to actually change, so editedItems above is
-        // empty and this used to always be blocked with the "No changes" toast, leaving the pin
-        // stuck reappearing forever (submitting never bumped the element's OSM timestamp).
-        //
-        // Only when EVERY currently-visible question already has a seeded answer (i.e. there is no
-        // genuinely unanswered question left - the same condition AddGenericLong.isApplicableTo's
-        // recency branch itself gates on) do we resubmit every already-answered question's OWN
-        // existing value unchanged, purely to force a real, non-empty edit through so the element's
-        // timestamp bumps. StringMapChangesBuilder records a same-value set as a real change
-        // regardless of value equality, so this produces one Modify(key, x, x) per question - undo
-        // reverts each back to the same value, so this is safe. If a real gap remains (some visible
-        // question was never answered), this is NOT a recheck - fall through to the "No changes"
-        // toast as before, so the user is still nudged to actually answer it.
-        //
-        // partialAnsweringRecheckEnabled is off in multi-select mode: resubmitting every answered
-        // field there would apply to every selected element, and an element whose field genuinely
-        // differs from the primary/session value would get silently overwritten. In that case a
-        // no-diff recheck just falls through to the "No changes" toast instead.
         partialAnsweringRecheckEnabled = !isMultiSelectActive
-        val isFullyAnswered = adapter.givenItems.none { it.visible && it.seededAnswer == null }
-        val submittedItems = editedItems.ifEmpty {
-            if (photo != null && partialAnsweringRecheckEnabled) {
-                // A still-pending photo capture has no tag value of its own yet (the URL only
-                // exists after upload - see the photo/removeTagKeys comment above), so attaching
-                // it to a real edit means riding along on some other tag change. Resubmit ONLY the
-                // one question this photo's follow-up is tied to (guaranteed to already have a
-                // seeded answer here, since editedItems being empty means that question's
-                // selection is unchanged from its seed - see the onPhotoDeleted guard above) rather
-                // than every answered question, so a photo-only submit doesn't silently bump every
-                // other tag on the element too.
-                adapter.givenItems.filter { it.visible && it.activeChoiceFollowUp() != null }
-            } else if (isFullyAnswered && partialAnsweringRecheckEnabled) {
-                adapter.givenItems.filter { it.visible && it.seededAnswer != null }
-            } else {
-                emptyList()
-            }
-        }
+        val submission = computeLongFormSubmission(
+            adapter.givenItems,
+            photoState,
+            recheckEnabled = partialAnsweringRecheckEnabled
+        )
+        submission.photoTransition?.let(::applyPhotoTransition)
 
-        // removeTagKeys alone (an explicit photo removal, with no replacement and no question
-        // changes) is already a real, non-empty tag change on its own - createQuestChanges applies
-        // it regardless of how many items are in submittedItems - so it must also let the submit
-        // through even when submittedItems ends up empty.
-        if (submittedItems.isEmpty() && removeTagKeys.isEmpty()) {
+        if (submission.isEmpty) {
             Toast.makeText(
                 context,
                 "No changes to submit. Please answer at least one question.",
                 Toast.LENGTH_SHORT
             ).show()
         } else {
-            applyAnswer(submittedItems as T, removeTagKeys = removeTagKeys, photo = photo)
+            applyAnswer(
+                submission.items as T,
+                removeTagKeys = submission.removeTagKeys,
+                photo = submission.photo
+            )
         }
     }
 
@@ -202,7 +128,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         // LongFormQuest.seedFrom for individual questions - not shown in multi-select, since
         // that's about to be applied to several elements that may not share the same photo
         if (!isMultiSelectActive) {
-            element.tags[KARTAVIEW_URL_TAG]?.let { photoAttachment = PhotoAttachment.Uploaded(it) }
+            element.tags[KARTAVIEW_URL_TAG]?.let { photoState = PhotoState(PhotoAttachment.Uploaded(it)) }
         }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(activity)
@@ -238,81 +164,31 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onPhotoCaptured(path: String, bearing: Float) {
-        // single-photo model: a new capture replaces whatever was pending before. [replaces]
-        // records what that was (an already-synced photo, or one already marked for removal) so
-        // cancelling THIS capture (onPhotoDeleted, below) can revert to it instead of forgetting
-        // it ever existed. Retaking again before submitting (Pending -> camera -> new Pending)
-        // carries the ORIGINAL replaces forward, not the intermediate Pending, so no matter how
-        // many times the user retakes, cancelling always lands back on the true starting point.
-        val previous = photoAttachment
-        val replaces = when (previous) {
-            is PhotoAttachment.Pending -> previous.replaces
-            is PhotoAttachment.Uploaded, is PhotoAttachment.PendingRemoval -> previous
-            PhotoAttachment.None -> null
-        }
-        (previous as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
-        photoAttachment = PhotoAttachment.Pending(path, bearing, replaces)
+        applyPhotoTransition(photoState.afterPhotoCaptured(path, bearing))
     }
 
-    /** A not-yet-synced capture is cancelled by reverting to whatever it was replacing (an
-     *  already-synced photo, or one already marked for removal) rather than always dropping to
-     *  [PhotoAttachment.None] - otherwise cancelling a retake would silently discard an
-     *  already-synced photo that was never actually asked to be removed. An already-synced photo
-     *  instead moves to PendingRemoval: visibly marked for removal but reversible (see
-     *  onPhotoUndoRemoval) until Submit actually applies it. */
     private fun onPhotoDeleted() {
-        photoAttachment = when (val attachment = photoAttachment) {
-            is PhotoAttachment.Pending -> {
-                File(attachment.path).delete()
-                when (val prev = attachment.replaces) {
-                    is PhotoAttachment.Uploaded -> { existingPhotoRemoved = false; prev }
-                    is PhotoAttachment.PendingRemoval -> { existingPhotoRemoved = true; prev }
-                    is PhotoAttachment.Pending, PhotoAttachment.None, null -> PhotoAttachment.None
-                }
-            }
-            is PhotoAttachment.Uploaded -> {
-                existingPhotoRemoved = true
-                PhotoAttachment.PendingRemoval(attachment.url)
-            }
-            is PhotoAttachment.PendingRemoval, PhotoAttachment.None -> PhotoAttachment.None
-        }
-    }
-
-    /** Unlike onPhotoDeleted, always ends at [PhotoAttachment.None] regardless of history - used
-     *  when the photo's own question is no longer applicable at all (see the orphan check in
-     *  onClickOk), where there's nothing left to revert to or keep undoable. Still correctly
-     *  removes an already-synced photo's tag on submit if this was, or was replacing, one. */
-    private fun discardPhotoForOrphanedQuestion() {
-        val attachment = photoAttachment
-        (attachment as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
-        val wasEverSynced = when (attachment) {
-            is PhotoAttachment.Uploaded, is PhotoAttachment.PendingRemoval -> true
-            is PhotoAttachment.Pending -> attachment.replaces != null
-            PhotoAttachment.None -> false
-        }
-        if (wasEverSynced) existingPhotoRemoved = true
-        photoAttachment = PhotoAttachment.None
+        applyPhotoTransition(photoState.afterPhotoDeleted())
     }
 
     private fun onPhotoUndoRemoval() {
-        val attachment = photoAttachment as? PhotoAttachment.PendingRemoval ?: return
-        existingPhotoRemoved = false
-        photoAttachment = PhotoAttachment.Uploaded(attachment.url)
+        photoState = photoState.afterPhotoUndoRemoval()
+    }
+
+    private fun applyPhotoTransition(transition: PhotoTransition) {
+        transition.fileToDelete?.let { File(it).delete() }
+        photoState = transition.state
     }
 
     /** Called when the sheet is closed/discarded without submitting - a locally-captured photo
      *  that was never attached to an edit would otherwise leak on disk forever. */
     override fun onDiscard() {
         super.onDiscard()
-        (photoAttachment as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
+        (photoState.attachment as? PhotoAttachment.Pending)?.let { File(it.path).delete() }
     }
 
     private fun setVisibilityOfItems() {
         val itemCopy = items
         adapter.items = itemCopy as List<LongFormQuest>
-    }
-
-    companion object {
-        private const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
     }
 }

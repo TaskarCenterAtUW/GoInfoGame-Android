@@ -347,7 +347,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                         }
 
                         elements.forEachIndexed { index, element ->
-                            val editId = solve(
+                            solve(
                                 UpdateElementTagsAction(
                                     element.first,
                                     createQuestChanges(
@@ -357,25 +357,21 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                                         element.first,
                                         element.second
                                     )
-                                ), element.second
+                                ), element.second,
+                                // the same captured photo is attached to every resulting edit here -
+                                // each one re-uploads and re-attaches it independently on sync, same
+                                // simplification the app already makes for Add Feature's extraTagList
+                                photo?.let { p -> { editId -> attachPhoto(editId, p, copy = index > 0) } }
                             )
-                            // the same captured photo is attached to every resulting edit here -
-                            // each one re-uploads and re-attaches it independently on sync, same
-                            // simplification the app already makes for Add Feature's extraTagList
-                            if (editId != null && photo != null) {
-                                withContext(Dispatchers.IO) { attachPhoto(editId, photo, copy = index > 0) }
-                            }
                         }
                     } else {
-                        val editId = solve(
+                        solve(
                             UpdateElementTagsAction(
                                 element,
                                 createQuestChanges(answer, extraTagList, removeTagKeys)
-                            ), geometry
+                            ), geometry,
+                            photo?.let { p -> { editId -> attachPhoto(editId, p, copy = false) } }
                         )
-                        if (editId != null && photo != null) {
-                            withContext(Dispatchers.IO) { attachPhoto(editId, photo, copy = false) }
-                        }
                     }
                 }
             }
@@ -444,7 +440,14 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     /** Returns the id of the newly-added edit, or null if nothing was added (the user declined
      *  the survey confirmation, or the changes were too long and went to a note instead). */
-    private suspend fun solve(action: ElementEditAction, geometry: ElementGeometry): Long? {
+    /** [attachPhotos] is run for the new edit before the upload queue learns about it - attaching
+     *  the photo only after this returned let an immediate auto-upload send the answer without
+     *  its photo (the photo record then pointed at an already-synced edit and never went up). */
+    private suspend fun solve(
+        action: ElementEditAction,
+        geometry: ElementGeometry,
+        attachPhotos: ((editId: Long) -> Unit)? = null,
+    ): Long? {
         setLocked(true)
         val isSurvey = surveyChecker.checkIsSurvey(geometry)
         if (!isSurvey && !confirmIsSurvey(requireContext())) {
@@ -469,7 +472,8 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
                     geometry,
                     "survey",
                     action,
-                    isSurvey
+                    isSurvey,
+                    beforeAnnouncing = attachPhotos ?: {},
                 )
             }
         }

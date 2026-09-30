@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- pill_button_primary drawn 8dp short at top and bottom: lets a 32dp-high-looking button have a
+     48dp touch target -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/pill_button_primary"
+    android:insetTop="8dp"
+    android:insetBottom="8dp" />
