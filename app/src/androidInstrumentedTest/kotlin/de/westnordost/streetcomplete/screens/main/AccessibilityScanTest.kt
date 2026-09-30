@@ -22,7 +22,9 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.work.WorkManager
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.download.Downloader
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
@@ -382,7 +384,13 @@ class AccessibilityScanTest : MapSyncTestBase() {
         A11yScanner.scan(screen)
     }
 
+    /** Cancels whatever download is still running (like the sync notification's cancel button),
+     *  then waits for sync to be idle. By the time this is called the map data the test needs is
+     *  in, and the rest of a download is MapLibre fetching map tiles from the REAL tile server
+     *  (no mock can answer it) - once 55s on CI - which would keep Undo disabled past the timeout. */
     private fun awaitSyncIdle() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        WorkManager.getInstance(context).cancelUniqueWork(Downloader.TAG).result.get()
         val uploads: UploadProgressSource = koin.get()
         val downloads: de.westnordost.streetcomplete.data.download.DownloadProgressSource = koin.get()
         waitUntil("no upload/download running") { !uploads.isUploadInProgress && !downloads.isDownloadInProgress }
