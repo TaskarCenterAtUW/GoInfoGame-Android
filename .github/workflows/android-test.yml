@@ -1,9 +1,9 @@
 name: Gradle Android tests
 
 on:
-  push:
+  pull_request:
     branches:
-      - "add-unit-tests"
+      - "aviv-dev-latest"
   workflow_dispatch:
 
 permissions:
@@ -13,6 +13,8 @@ permissions:
 
 jobs:
   android-test:
+    # not for PRs from forks - see unit-test.yml
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, macOS]
     strategy:
       max-parallel: 1 # multiple runners are registered on the same physical Mac - without this,
