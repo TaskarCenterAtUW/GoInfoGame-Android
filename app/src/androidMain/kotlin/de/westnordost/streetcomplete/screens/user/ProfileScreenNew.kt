@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,33 +49,41 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import de.westnordost.streetcomplete.ApplicationConstants.DELETE_OLD_DATA_AFTER
+import de.westnordost.streetcomplete.ApplicationConstants.REFRESH_DATA_AFTER
 import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.preferences.Theme
 import de.westnordost.streetcomplete.resources.Res
+import de.westnordost.streetcomplete.resources.delete_cache_dialog_message
+import de.westnordost.streetcomplete.resources.delete_confirmation
+import de.westnordost.streetcomplete.resources.pref_title_delete_cache
+import de.westnordost.streetcomplete.resources.pref_title_delete_cache_summary
+import de.westnordost.streetcomplete.resources.pref_title_keep_screen_on
 import de.westnordost.streetcomplete.resources.pref_title_theme_select
+import de.westnordost.streetcomplete.resources.pref_title_zoom_buttons
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
 import de.westnordost.streetcomplete.screens.settings.title
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.ui.common.BackIcon
 import de.westnordost.streetcomplete.ui.common.NextScreenIcon
 import de.westnordost.streetcomplete.ui.common.UserInitialsAvatar
+import de.westnordost.streetcomplete.ui.common.dialogs.ConfirmationDialog
 import de.westnordost.streetcomplete.ui.common.dialogs.SimpleListPickerDialog
 import de.westnordost.streetcomplete.ui.common.settings.Preference
 import de.westnordost.streetcomplete.ui.common.settings.PreferenceCategory
 import de.westnordost.streetcomplete.util.creds_manager.SecureCredentialStorage
+import de.westnordost.streetcomplete.util.locale.NumberFormatter
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KSuspendFunction1
@@ -100,8 +109,11 @@ fun ProfileScreenNewContent(
     // called before the deferred setTheme() below has a chance to run), killing the pending
     // theme change before it ever executes
     val themeSelectCoroutineScope = rememberCoroutineScope()
+    val keepScreenOn by settingsViewModel.keepScreenOn.collectAsState()
+    val showZoomButtons by settingsViewModel.showZoomButtons.collectAsState()
+    var showDeleteCacheConfirmation by remember { mutableStateOf(false) }
 
-    BoxWithConstraints(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
@@ -110,19 +122,15 @@ fun ProfileScreenNewContent(
             // (same insets handling WorkSpaceActivity's Scaffold already applies)
             .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        // scrollable so that on small screens (or with large font sizes) everything down to the
-        // version stays reachable. The preferences card below still fills the rest of the screen
-        // when there's room (min height = viewport - header), with the version at its bottom -
-        // fillMaxSize() can't do that inside a vertically scrolling Column (unbounded height)
-        val viewportHeight = maxHeight
-        var headerHeight by remember { mutableStateOf(0.dp) }
-        val density = LocalDensity.current
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        // the header (back button + user details) stays put; only the preferences card's content
+        // scrolls, so on small screens (or with large font sizes) everything down to the version
+        // stays reachable
+        Column(modifier = Modifier.fillMaxSize()) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
-                    .onSizeChanged { headerHeight = with(density) { it.height.toDp() } }
+                    .fillMaxWidth()
                     .background(colorResource(R.color.light_purple_background))
                     .padding(bottom = 32.dp)
             ) {
@@ -157,176 +165,224 @@ fun ProfileScreenNewContent(
                 )
             }
 
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            BoxWithConstraints(
                 modifier = Modifier
+                    .weight(1f)
                     .padding(bottom = 16.dp)
                     .fillMaxWidth()
-                    .heightIn(min = (viewportHeight - headerHeight - 16.dp).coerceAtLeast(0.dp))
                     .padding(16.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                val localContext = LocalContext.current
-                Text(
-                    "Preferences".uppercase(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-                var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
-                var followMode by remember { mutableStateOf<Boolean?>(null) }
-                var lowBandwidth by remember { mutableStateOf<Boolean?>(null) }
+                // min height = the card's height, so the version sits at the card's bottom when there's
+                // room - fillMaxSize() can't do that inside a vertically scrolling Column
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .heightIn(min = maxHeight)
+                ) {
+                    val localContext = LocalContext.current
+                    Text(
+                        "Preferences".uppercase(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    var biometricLogin by remember { mutableStateOf<Boolean?>(null) }
+                    var followMode by remember { mutableStateOf<Boolean?>(null) }
+                    var lowBandwidth by remember { mutableStateOf<Boolean?>(null) }
 
-                LaunchedEffect(biometricLogin) {
-                    biometricLogin?.let { newValue ->
-                        val success = onBiometricEnabledChanged(newValue)
-                        if (success) {
-                            preferences.isBiometricEnabled = newValue
-                            isBiometricEnabled = newValue
-                            if (!newValue) {
-                                SecureCredentialStorage.deleteCredential(
-                                    localContext,
-                                    preferences.environment
-                                )
+                    LaunchedEffect(biometricLogin) {
+                        biometricLogin?.let { newValue ->
+                            val success = onBiometricEnabledChanged(newValue)
+                            if (success) {
+                                preferences.isBiometricEnabled = newValue
+                                isBiometricEnabled = newValue
+                                if (!newValue) {
+                                    SecureCredentialStorage.deleteCredential(
+                                        localContext,
+                                        preferences.environment
+                                    )
+                                }
+                            } else {
+                                // Don't update preference; revert UI
+                                isBiometricEnabled = !newValue
                             }
-                        } else {
-                            // Don't update preference; revert UI
-                            isBiometricEnabled = !newValue
+                            biometricLogin = null // reset
                         }
-                        biometricLogin = null // reset
                     }
-                }
 
-                LaunchedEffect(followMode) {
-                    followMode?.let { newValue ->
-                        preferences.isFollowModeEnabled = newValue
-                        followMode = null // reset
-                        isFollowModeEnabled = newValue
+                    LaunchedEffect(followMode) {
+                        followMode?.let { newValue ->
+                            preferences.isFollowModeEnabled = newValue
+                            followMode = null // reset
+                            isFollowModeEnabled = newValue
+                        }
                     }
-                }
 
-                LaunchedEffect(lowBandwidth) {
-                    lowBandwidth?.let { newValue ->
-                        preferences.isLowBandwidthModeEnabled = newValue
-                        lowBandwidthModeEnabled = newValue
-                        lowBandwidth = null
+                    LaunchedEffect(lowBandwidth) {
+                        lowBandwidth?.let { newValue ->
+                            preferences.isLowBandwidthModeEnabled = newValue
+                            lowBandwidthModeEnabled = newValue
+                            lowBandwidth = null
+                        }
                     }
-                }
 
-                if (showThemeSelect) {
-                    SimpleListPickerDialog(
-                        onDismissRequest = { showThemeSelect = false },
-                        items = Theme.entries,
-                        onItemSelected = { newTheme ->
-                            // setTheme() triggers AppCompatDelegate.setDefaultNightMode(), which
-                            // recreates this Activity when the mode actually changes - if that
-                            // happens synchronously, it tears down the Compose state before the
-                            // radio-button highlight or the dialog's own dismiss ever gets to render,
-                            // making the tap look like it did nothing. Wait two frames first so both
-                            // have actually been drawn before triggering the recreate. Must launch on
-                            // the scope hoisted above (not one scoped to this `if` block), since
-                            // showThemeSelect flips to false and removes this block from composition
-                            // before these two frames elapse, which would cancel a scope declared here.
-                            themeSelectCoroutineScope.launch {
-                                withFrameNanos {}
-                                withFrameNanos {}
-                                settingsViewModel.setTheme(newTheme)
-                            }
-                        },
-                        title = { Text(stringResource(Res.string.pref_title_theme_select)) },
-                        selectedItem = theme,
-                        getItemName = { stringResource(it.title) }
+                    if (showThemeSelect) {
+                        SimpleListPickerDialog(
+                            onDismissRequest = { showThemeSelect = false },
+                            items = Theme.entries,
+                            onItemSelected = { newTheme ->
+                                // setTheme() triggers AppCompatDelegate.setDefaultNightMode(), which
+                                // recreates this Activity when the mode actually changes - if that
+                                // happens synchronously, it tears down the Compose state before the
+                                // radio-button highlight or the dialog's own dismiss ever gets to render,
+                                // making the tap look like it did nothing. Wait two frames first so both
+                                // have actually been drawn before triggering the recreate. Must launch on
+                                // the scope hoisted above (not one scoped to this `if` block), since
+                                // showThemeSelect flips to false and removes this block from composition
+                                // before these two frames elapse, which would cancel a scope declared here.
+                                themeSelectCoroutineScope.launch {
+                                    withFrameNanos {}
+                                    withFrameNanos {}
+                                    settingsViewModel.setTheme(newTheme)
+                                }
+                            },
+                            title = { Text(stringResource(Res.string.pref_title_theme_select)) },
+                            selectedItem = theme,
+                            getItemName = { stringResource(it.title) }
+                        )
+                    }
+
+                    PreferenceRow(
+                        stringResource(R.string.diable_biometric_title),
+                        stringResource(R.string.disable_biometric_message),
+                        isBiometricEnabled,
+                        onCheckedChange = { newValue ->
+                            biometricLogin = newValue // trigger LaunchedEffect
+                        })
+
+                    PreferenceRow(
+                        stringResource(R.string.low_band_width),
+                        stringResource(R.string.low_band_width_message),
+                        lowBandwidthModeEnabled,
+                        onCheckedChange = { newValue ->
+                            lowBandwidth = newValue // trigger LaunchedEffect
+                        })
+
+                    PreferenceRow(
+                        stringResource(Res.string.pref_title_zoom_buttons),
+                        stringResource(R.string.zoom_buttons_message),
+                        showZoomButtons,
+                        onCheckedChange = { newValue ->
+                            settingsViewModel.setShowZoomButtons(newValue)
+                        })
+
+                    PreferenceRow(
+                        stringResource(Res.string.pref_title_keep_screen_on),
+                        stringResource(R.string.keep_screen_on_message),
+                        keepScreenOn,
+                        onCheckedChange = { newValue ->
+                            settingsViewModel.setKeepScreenOn(newValue)
+                        })
+
+                    Preference(
+                        name = stringResource(Res.string.pref_title_theme_select),
+                        onClick = { showThemeSelect = true },
+                    ) {
+                        Text(stringResource(theme.title))
+                    }
+
+                    Preference(
+                        name = stringResource(Res.string.pref_title_delete_cache),
+                        onClick = { showDeleteCacheConfirmation = true },
+                        description = stringResource(Res.string.pref_title_delete_cache_summary)
+                    )
+
+                    PreferenceCategory("Debug") {
+                        Preference(
+                            name = "Show Quest Forms",
+                            onClick = onClickShowQuestForms
+                        ) { NextScreenIcon() }
+                    }
+
+                    // PreferenceRow(
+                    //     stringResource(R.string.follow_mode),
+                    //     stringResource(R.string.enable_follow_mode),
+                    //     isFollowModeEnabled,
+                    //     onCheckedChange = { newValue ->
+                    //         followMode = newValue // trigger LaunchedEffect
+                    //     })
+
+                    DottedDivider(
+                        color = Color.Gray,
+                        modifier = Modifier.padding(16.dp)
+                    )
+
+                    val context = LocalContext.current
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = {
+                                viewModel.logOutUser()
+                                settingsViewModel.deleteCache()
+                                finishAndLaunchNewActivity(context)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,      // Background
+                                contentColor = MaterialTheme.colorScheme.onPrimary,      // Text/Icon color
+                            ),
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_outline_logout_24),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                stringResource(R.string.user_logout).uppercase(),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                        }
+                    }
+
+                    // pushes the version to the bottom of the card when it's taller than its content;
+                    // takes no space when the content already overflows (weight in an unbounded Column
+                    // only distributes the space up to its min height)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "Version ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(8.dp)
                     )
                 }
-
-                PreferenceRow(
-                    stringResource(R.string.diable_biometric_title),
-                    stringResource(R.string.disable_biometric_message),
-                    isBiometricEnabled,
-                    onCheckedChange = { newValue ->
-                        biometricLogin = newValue // trigger LaunchedEffect
-                    })
-
-                PreferenceRow(
-                    stringResource(R.string.low_band_width),
-                    stringResource(R.string.low_band_width_message),
-                    lowBandwidthModeEnabled,
-                    onCheckedChange = { newValue ->
-                        lowBandwidth = newValue // trigger LaunchedEffect
-                    })
-
-                Preference(
-                    name = stringResource(Res.string.pref_title_theme_select),
-                    onClick = { showThemeSelect = true },
-                ) {
-                    Text(stringResource(theme.title))
-                }
-
-                PreferenceCategory("Debug") {
-                    Preference(
-                        name = "Show Quest Forms",
-                        onClick = onClickShowQuestForms
-                    ) { NextScreenIcon() }
-                }
-
-                // PreferenceRow(
-                //     stringResource(R.string.follow_mode),
-                //     stringResource(R.string.enable_follow_mode),
-                //     isFollowModeEnabled,
-                //     onCheckedChange = { newValue ->
-                //         followMode = newValue // trigger LaunchedEffect
-                //     })
-
-                DottedDivider(
-                    color = Color.Gray,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                val context = LocalContext.current
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Button(
-                        onClick = {
-                            viewModel.logOutUser()
-                            settingsViewModel.deleteCache()
-                            finishAndLaunchNewActivity(context)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,      // Background
-                            contentColor = MaterialTheme.colorScheme.onPrimary,      // Text/Icon color
-                        ),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_outline_logout_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            stringResource(R.string.user_logout).uppercase(),
-                            color = MaterialTheme.colorScheme.onSecondary
-                        )
-                    }
-                }
-
-                // pushes the version to the bottom of the card when it's taller than its content;
-                // takes no space when the content already overflows (weight in an unbounded Column
-                // only distributes the space up to its min height)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "Version ${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(8.dp)
-                )
             }
+        }
+
+        if (showDeleteCacheConfirmation) {
+            ConfirmationDialog(
+                onDismissRequest = { showDeleteCacheConfirmation = false },
+                onConfirmed = { settingsViewModel.deleteCache() },
+                text = {
+                    val numberFormatter = NumberFormatter(Locale.current, maxFractionDigits = 1)
+                    Text(
+                        stringResource(
+                            Res.string.delete_cache_dialog_message,
+                            numberFormatter.format(1.0 * REFRESH_DATA_AFTER / (24 * 60 * 60 * 1000)),
+                            numberFormatter.format(1.0 * DELETE_OLD_DATA_AFTER / (24 * 60 * 60 * 1000))
+                        )
+                    )
+                },
+                confirmButtonText = stringResource(Res.string.delete_confirmation)
+            )
         }
     }
 }
