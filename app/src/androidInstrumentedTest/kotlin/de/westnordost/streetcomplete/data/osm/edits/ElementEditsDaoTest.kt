@@ -40,14 +40,14 @@ import kotlin.test.assertTrue
 
 class ElementEditsDaoTest : ApplicationDbTestCase() {
     private lateinit var dao: ElementEditsDao
+    private lateinit var allEditTypes: AllEditTypes
     private val workspaceId = 0
     @BeforeTest
     fun createDao() {
         val list = listOf(1 to TEST_QUEST_TYPE, 2 to TEST_QUEST_TYPE2)
         val list2 = listOf(1 to TestOverlay)
-        dao = ElementEditsDao(
-            database, AllEditTypes(mutableListOf(QuestTypeRegistry(list), OverlayRegistry(list2)))
-        )
+        allEditTypes = AllEditTypes(mutableListOf(QuestTypeRegistry(list), OverlayRegistry(list2)))
+        dao = ElementEditsDao(database, allEditTypes)
     }
 
     @Test
@@ -158,6 +158,25 @@ class ElementEditsDaoTest : ApplicationDbTestCase() {
 
         // sorted by timestamp ascending
         assertEquals(listOf(e1, e2, e3), dao.getAll())
+    }
+
+    @Test
+    fun getAll_editOfTypeNoLongerRegistered_loadsViaFallback() {
+        val edit = updateTags()
+        dao.put(edit)
+
+        // like MainActivity.doLongForm when the workspace's long form dropped/renamed an element type
+        allEditTypes.registries.clear()
+        allEditTypes.registries.add(QuestTypeRegistry(listOf(2 to TEST_QUEST_TYPE2)))
+        allEditTypes.updateByName()
+        allEditTypes.unknownTypeFallback = { NamedQuestType(it) }
+
+        val dbEdit = dao.getAll().single()
+        assertTrue(dbEdit.type is NamedQuestType)
+        assertEquals(TEST_QUEST_TYPE.name, dbEdit.type.name)
+        assertEquals(edit.action, dbEdit.action)
+        // still queued for upload
+        assertEquals(edit.id, dao.getOldestUnsynced()?.id)
     }
 
     @Test
@@ -384,6 +403,8 @@ private val geom = ElementPointGeometry(p)
 
 private val TEST_QUEST_TYPE = TestQuestType()
 private val TEST_QUEST_TYPE2 = TestQuestType2()
+
+private class NamedQuestType(override val name: String) : TestQuestType()
 
 private object TestOverlay : Overlay {
     override fun getStyledElements(mapData: MapDataWithGeometry) =
