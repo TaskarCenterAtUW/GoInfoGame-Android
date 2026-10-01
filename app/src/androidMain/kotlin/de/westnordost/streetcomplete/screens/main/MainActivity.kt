@@ -1791,6 +1791,11 @@ class MainActivity :
         allEditTypes.registries.addAll(listOf(overlayRegistry))
         allEditTypes.registries.addAll(listOf(createFeatureRegistry))
         allEditTypes.updateByName()
+        // edits stored under a long-form element type that is no longer in this long form still
+        // need to load (edit history, upload queue) - stand in a bare quest type of that name
+        allEditTypes.unknownTypeFallback = { name ->
+            AddGenericLong(Elements(elementType = name), recencyPeriodInDays)
+        }
 
         editHistoryViewModel.refreshForNewWorkspace()
     }
