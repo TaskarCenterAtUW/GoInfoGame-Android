@@ -181,7 +181,11 @@ fun LoginScreen(
                 }
 
                 if (userInfoReady) {
-                    if (preferences.isBiometricEnabled && !state.expediteLogin) {
+                    // only offer to save credentials if the device can actually authenticate -
+                    // otherwise "Save" would just fail with "Biometric authentication not available"
+                    if (preferences.isBiometricEnabled && !state.expediteLogin &&
+                        BiometricHelper.canAuthenticate(context)
+                    ) {
                         val creds = SecureCredentialStorage.getCredential(
                             context,
                             selectedEnvironment.value.name

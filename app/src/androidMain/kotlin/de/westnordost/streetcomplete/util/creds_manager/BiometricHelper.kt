@@ -58,16 +58,8 @@ class BiometricHelper(
         }
     )
 
-    private fun canAuthenticate(): Boolean {
-        val biometricManager = BiometricManager.from(context)
-        return biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        ) == BiometricManager.BIOMETRIC_SUCCESS
-    }
-
     fun authenticate() {
-        if (!canAuthenticate()) {
+        if (!canAuthenticate(context)) {
             Toast.makeText(context, "Biometric authentication not available", Toast.LENGTH_SHORT)
                 .show()
             onFailure?.invoke()
@@ -75,6 +67,15 @@ class BiometricHelper(
         }
 
         biometricPrompt.authenticate(promptInfo)
+    }
+
+    companion object {
+        /** Whether the device has strong biometrics or a screen lock (PIN/pattern/password) set up */
+        fun canAuthenticate(context: Context): Boolean =
+            BiometricManager.from(context).canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+            ) == BiometricManager.BIOMETRIC_SUCCESS
     }
 }
 
