@@ -216,6 +216,24 @@ class WorkspaceLoginFlowTest {
         assertEquals(FakeWorkspaceRepository.TEST_USER_ID, preferences.workspaceUserId)
     }
 
+    // the scanned login QR carries ?env= as well, and switching environment resets the session
+    // (logs out, which clears the stored refresh token) - the link's code must survive that
+    @Test
+    fun deepLink_withValidCodeAndEnv_logsIn() {
+        val refreshed = mutableListOf<String>()
+        fakeRepository.refresh = { token ->
+            refreshed.add(token)
+            flowOf(FakeWorkspaceRepository.TEST_LOGIN_RESPONSE.copy(access_token = jwtWithEmail(TEST_EMAIL)))
+        }
+        // the environment the app is already on, so the test doesn't leave another one behind
+        launch(deepLink("deep-link-code", env = preferences.environment.lowercase()))
+
+        waitForWorkspaceListToolbar()
+        assertEquals(listOf("deep-link-code"), refreshed)
+        assertEquals(TEST_EMAIL, preferences.workspaceUserEmail)
+        assertTrue(preferences.workspaceLogin)
+    }
+
     @Test
     fun deepLink_withRejectedCode_showsError_onLogin() {
         fakeRepository.refresh = { flow { throw WorkspaceAuthRejectedException("Your session has expired. Please log in again.") } }
@@ -349,9 +367,9 @@ class WorkspaceLoginFlowTest {
         preferences.refreshTokenExpiryTime = 0L
     }
 
-    private fun deepLink(code: String) = Intent(
+    private fun deepLink(code: String, env: String? = null) = Intent(
         Intent.ACTION_VIEW,
-        Uri.parse("avivscr://login?code=$code"),
+        Uri.parse("avivscr://login?code=$code" + if (env != null) "&env=$env" else ""),
         InstrumentationRegistry.getInstrumentation().targetContext,
         WorkSpaceActivity::class.java
     )
