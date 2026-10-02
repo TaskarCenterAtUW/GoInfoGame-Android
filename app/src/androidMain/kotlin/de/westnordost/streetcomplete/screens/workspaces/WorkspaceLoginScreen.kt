@@ -249,7 +249,6 @@ fun checkForIntent(
     data?.let {
         val refreshToken = it.getQueryParameter("code") // e.g. ?code=123
         val env = it.getQueryParameter("env") // e.g. ?env=staging
-        preferences.workspaceRefreshToken = refreshToken
         if (!preferences.workspaceLogin) {
             if (env != null) {
                 try {
@@ -266,6 +265,10 @@ fun checkForIntent(
                     ).show()
                 }
             }
+            // must be stored after the env handling above, not before it -
+            // resetSessionForEnvironmentChange() logs out, which clears workspaceRefreshToken,
+            // so a link carrying ?env= lost its code and failed with "No refresh token found"
+            preferences.workspaceRefreshToken = refreshToken
             viewModel.refreshToken(true)
         } else {
             Toast.makeText(
