@@ -90,7 +90,7 @@ import kotlin.reflect.KSuspendFunction1
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreenNewContent(
+fun UserProfileScreen(
     viewModel: ProfileViewModel,
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
@@ -287,19 +287,17 @@ fun ProfileScreenNewContent(
                         onCheckedChange = { newValue ->
                             settingsViewModel.setKeepScreenOn(newValue)
                         })
-
+                    Preference(
+                        name = stringResource(Res.string.pref_title_delete_cache),
+                        onClick = { showDeleteCacheConfirmation = true },
+                        description = stringResource(Res.string.pref_title_delete_cache_summary)
+                    )
                     Preference(
                         name = stringResource(Res.string.pref_title_theme_select),
                         onClick = { showThemeSelect = true },
                     ) {
                         Text(stringResource(theme.title))
                     }
-
-                    Preference(
-                        name = stringResource(Res.string.pref_title_delete_cache),
-                        onClick = { showDeleteCacheConfirmation = true },
-                        description = stringResource(Res.string.pref_title_delete_cache_summary)
-                    )
 
                     PreferenceCategory("Debug") {
                         Preference(
