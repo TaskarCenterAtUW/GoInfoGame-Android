@@ -71,5 +71,4 @@ fun questTypeRegistry(
 
     /* always first: notes - they mark a mistake in the data so potentially every quest for that
     element is based on wrong data while the note is not resolved */
-    0 to OsmNoteQuestType,
 ))

@@ -20,7 +20,8 @@ open class ObjectTypeRegistry<T>(var ordinalsAndEntries: MutableList<Pair<Int, T
 
     private fun initFunc(ordinalsAndEntries: List<Pair<Int, T & Any>>) {
         val byNameMap = mutableMapOf<String, T>()
-        val highestOrdinal = ordinalsAndEntries.maxBy { it.first }.first
+        // may be empty, e.g. the quest registry before a workspace's long form quests are added
+        val highestOrdinal = ordinalsAndEntries.maxOfOrNull { it.first } ?: -1
         val byOrdinalMap = HashMap<Int, T>(highestOrdinal + 1)
         for ((ordinal, objectType) in ordinalsAndEntries) {
             val typeName = if (objectType is HasName){

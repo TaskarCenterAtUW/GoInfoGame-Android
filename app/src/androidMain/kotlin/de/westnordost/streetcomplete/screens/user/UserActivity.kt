@@ -30,7 +30,7 @@ class UserActivity : BaseActivity() {
         setContent {
             AppTheme {
                 Surface {
-                    ProfileScreenNewContent(
+                    UserProfileScreen(
                         viewModel,
                         settingsViewModel,
                         preferences,

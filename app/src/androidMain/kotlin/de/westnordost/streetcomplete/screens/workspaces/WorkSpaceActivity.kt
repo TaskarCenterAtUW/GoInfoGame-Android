@@ -62,6 +62,8 @@ import de.westnordost.streetcomplete.util.firebase.FirebaseAnalyticsHelper
 import de.westnordost.streetcomplete.util.location.FineLocationManager
 import de.westnordost.streetcomplete.util.logs.Log
 import org.koin.android.ext.android.inject
+import de.westnordost.streetcomplete.data.AllEditTypes
+import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import org.koin.androidx.compose.koinViewModel
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
@@ -74,6 +76,8 @@ class WorkSpaceActivity : AppCompatActivity() {
     private val preferences: Preferences by inject()
     private val environmentManager: EnvironmentManager by inject()
     private val userLoginController: UserLoginController by inject()
+    private val questTypeRegistry: QuestTypeRegistry by inject()
+    private val allEditTypes: AllEditTypes by inject()
     private val _isLocationEnabled = mutableStateOf(false)
     private val isLocationEnabled: State<Boolean> get() = _isLocationEnabled
     private val workspaceViewModel by viewModel<WorkspaceViewModel>()
@@ -92,6 +96,7 @@ class WorkSpaceActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        clearWorkspaceQuestTypes()
         isLocationEnabled()
         setContent {
             AppTheme {
@@ -151,6 +156,14 @@ class WorkSpaceActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         workspaceViewModel.getAppUpdateInfo()
+    }
+
+    /** The quest types are the previously opened workspace's long form quests (see
+     *  MainActivity.doLongForm) - drop them so they don't linger while no workspace is open. The
+     *  edit type fallback stays set, so that workspace's stored edits still load (e.g. on upload). */
+    private fun clearWorkspaceQuestTypes() {
+        questTypeRegistry.addItem(emptyList())
+        allEditTypes.updateByName()
     }
 
     @Composable
