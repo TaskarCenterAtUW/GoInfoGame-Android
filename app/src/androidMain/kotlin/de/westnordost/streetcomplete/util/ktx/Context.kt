@@ -69,10 +69,10 @@ fun Context.sendErrorReportEmail(errorReport: String) = sendEmail(
 // an intent extra must fit in the ~1MB binder transaction buffer (TransactionTooLargeException
 // otherwise) - the attached log can be far larger. Keep the head (device info + stack trace) and
 // the newest log lines.
-private const val MAX_REPORT_HEAD_LENGTH = 20_000
-private const val MAX_REPORT_TAIL_LENGTH = 80_000
+internal const val MAX_REPORT_HEAD_LENGTH = 20_000
+internal const val MAX_REPORT_TAIL_LENGTH = 80_000
 
-private fun String.truncatedForIntent(): String =
+internal fun String.truncatedForIntent(): String =
     if (length <= MAX_REPORT_HEAD_LENGTH + MAX_REPORT_TAIL_LENGTH) {
         this
     } else {

@@ -138,6 +138,8 @@ abstract class MapSyncTestBase {
     protected lateinit var scenario: ActivityScenario<WorkSpaceActivity>
 
     @Volatile protected var overrideConflicts: String = "null"
+    /** The quest definition the workspace API returns - a test can change it, like an admin would. */
+    @Volatile protected var longForm: String = LONG_FORM
     private var previousAnimationScales: List<String> = emptyList()
 
     @Before
@@ -463,7 +465,7 @@ abstract class MapSyncTestBase {
         "id": $WORKSPACE_ID, "title": "${FakeWorkspaceRepository.TEST_WORKSPACE_TITLE}", "type": "osw",
         "description": null, "createdAt": "2025-01-01T00:00:00Z", "createdBy": "user-1",
         "createdByName": "Jane Doe", "externalAppAccess": 1, "overrideConflicts": $overrideConflicts,
-        "imageryListDef": null, "kartaViewToken": null, "longFormQuestDef": $LONG_FORM,
+        "imageryListDef": null, "kartaViewToken": null, "longFormQuestDef": $longForm,
         "tdeiMetadata": null, "tdeiProjectGroupId": null, "tdeiRecordId": null, "tdeiServiceId": null
     }"""
 
