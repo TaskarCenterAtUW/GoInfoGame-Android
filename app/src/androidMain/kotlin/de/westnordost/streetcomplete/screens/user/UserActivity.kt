@@ -7,6 +7,7 @@ import androidx.compose.material3.Surface
 import androidx.core.app.ActivityCompat
 import com.russhwolf.settings.SettingsListener
 import de.westnordost.streetcomplete.data.preferences.Preferences
+import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.screens.BaseActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsActivity
 import de.westnordost.streetcomplete.screens.settings.SettingsViewModel
@@ -17,11 +18,20 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
+/** The registry is only filled once a workspace is loaded (it's emptied again whenever the
+ *  workspace list opens) - before that, the quest forms screen could only ever show "Nothing
+ *  found", so the entry is hidden (null) instead */
+internal fun showQuestFormsActionOrNull(
+    questTypeRegistry: QuestTypeRegistry,
+    showQuestForms: () -> Unit,
+): (() -> Unit)? = if (questTypeRegistry.isNotEmpty()) showQuestForms else null
+
 class UserActivity : BaseActivity() {
 
     private val viewModel by viewModel<ProfileViewModel>()
     private val settingsViewModel by viewModel<SettingsViewModel>()
     private val preferences: Preferences by inject()
+    private val questTypeRegistry: QuestTypeRegistry by inject()
 
     private val listeners = mutableListOf<SettingsListener>()
 
@@ -35,7 +45,7 @@ class UserActivity : BaseActivity() {
                         settingsViewModel,
                         preferences,
                         onClickBack = { finish() },
-                        onClickShowQuestForms = {
+                        onClickShowQuestForms = showQuestFormsActionOrNull(questTypeRegistry) {
                             startActivity(SettingsActivity.createLaunchShowQuestFormsIntent(this))
                         },
                         onBiometricEnabledChanged = ::onBiometricEnabledChanged

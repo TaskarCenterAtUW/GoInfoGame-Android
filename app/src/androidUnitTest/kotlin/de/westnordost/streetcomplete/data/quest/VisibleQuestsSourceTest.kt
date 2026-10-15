@@ -27,6 +27,7 @@ import org.mockito.Mockito.verifyNoInteractions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class VisibleQuestsSourceTest {
@@ -153,6 +154,28 @@ class VisibleQuestsSourceTest {
 
         val quests = source.getAll(bbox)
         assertEquals(1, quests.size)
+    }
+
+    // regression: the workspace's long form changed (element type "Sidewalk" -> "Sidewalks") while
+    // its quests were cached - the stale quest's form crashed looking its type up in the registry
+    @Test fun `clearAllCaches drops cached quests whose type is no longer registered`() {
+        val bboxCacheWillRequest = bbox.asBoundingBoxOfEnclosingTiles(16)
+        val staleQuest = OsmQuest(TestQuestTypeA(), ElementType.NODE, 1L, pGeom())
+        on(osmQuestSource.getAllInBBox(bboxCacheWillRequest, questTypeNames)).thenReturn(listOf(staleQuest))
+        on(questsHiddenSource.get(any())).thenReturn(null)
+        assertEquals(listOf<Quest>(staleQuest), source.getAll(bbox))
+
+        val newQuestType = TestQuestTypeD()
+        val newQuest = OsmQuest(newQuestType, ElementType.NODE, 1L, pGeom())
+        questTypeRegistry.addItem(listOf(0 to newQuestType))
+        on(osmQuestSource.getAllInBBox(bboxCacheWillRequest, listOf(newQuestType.name))).thenReturn(listOf(newQuest))
+        // the cache alone doesn't know the registry changed
+        assertEquals(staleQuest, source.get(staleQuest.key))
+
+        source.clearAllCaches()
+
+        assertNull(source.get(staleQuest.key))
+        assertEquals(listOf<Quest>(newQuest), source.getAll(bbox))
     }
 
     @Test fun `osm quests added or removed triggers listener`() {

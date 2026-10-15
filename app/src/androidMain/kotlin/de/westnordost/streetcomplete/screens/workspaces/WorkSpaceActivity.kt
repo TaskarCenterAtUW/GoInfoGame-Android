@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -177,6 +178,7 @@ class WorkSpaceActivity : AppCompatActivity() {
                 "$APP_NAME needs location to be enabled to fetch workspaces nearby",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = TextStyle(fontSize = 20.sp)
             )
             if (!isLocationEnabled.value) {

@@ -1608,6 +1608,8 @@ class MainActivity :
     private suspend fun showQuestDetails(quest: Quest) {
         val mapFragment = mapFragment ?: return
         if (isQuestDetailsCurrentlyDisplayedFor(quest.key)) return
+        // AbstractQuestForm resolves its quest type by name from the registry
+        if (questTypeRegistry.getByName(quest.type.name) == null) return
 
         var checkResult: GigQuestCheckResult = GigQuestCheckResult.NotChecked
         if (quest is OsmQuest) {
@@ -1785,6 +1787,9 @@ class MainActivity :
             questTypes.add(index to AddGenericLong(item, recencyPeriodInDays))
         }
         questTypeRegistry.addItem(questTypes)
+        // the quest cache outlives this activity - quests cached under the previous long form
+        // would show stale pins whose quest type is no longer registered (form crashes on open)
+        visibleQuestsSource.clearAllCaches()
 
         allEditTypes.registries.clear()
         allEditTypes.registries.addAll(listOf(questTypeRegistry))

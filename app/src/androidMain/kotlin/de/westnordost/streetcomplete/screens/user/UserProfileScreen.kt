@@ -95,7 +95,8 @@ fun UserProfileScreen(
     settingsViewModel: SettingsViewModel,
     preferences: Preferences,
     onClickBack: () -> Unit,
-    onClickShowQuestForms: () -> Unit,
+    /** null hides the entry - there are no quest forms to show until a workspace is loaded */
+    onClickShowQuestForms: (() -> Unit)?,
     onBiometricEnabledChanged: KSuspendFunction1<Boolean, Boolean>,
 ) {
     var isBiometricEnabled by remember { mutableStateOf(preferences.isBiometricEnabled) }
@@ -299,11 +300,13 @@ fun UserProfileScreen(
                         Text(stringResource(theme.title))
                     }
 
-                    PreferenceCategory("Debug") {
-                        Preference(
-                            name = "Show Quest Forms",
-                            onClick = onClickShowQuestForms
-                        ) { NextScreenIcon() }
+                    if (onClickShowQuestForms != null) {
+                        PreferenceCategory("Debug") {
+                            Preference(
+                                name = "Show Quest Forms",
+                                onClick = onClickShowQuestForms
+                            ) { NextScreenIcon() }
+                        }
                     }
 
                     // PreferenceRow(

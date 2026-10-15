@@ -203,6 +203,10 @@ class VisibleQuestsSource(
 
     fun clearCache() = cache.clear()
 
+    /** Cached quests hold the quest type instances they were created with - drop every
+     *  workspace's cache when the quest type registry is rebuilt (see MainActivity.doLongForm) */
+    fun clearAllCaches() = lock.withLock { workSpaceCache.clear() }
+
     fun trimCache() = cache.trim(SPATIAL_CACHE_TILES / 3)
 
     private fun updateVisibleQuests(
