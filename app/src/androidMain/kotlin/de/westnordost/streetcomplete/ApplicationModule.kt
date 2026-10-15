@@ -22,12 +22,12 @@ import de.westnordost.streetcomplete.util.network.retryOnTransientHttpFailure
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
@@ -36,6 +36,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.userAgent
 import io.ktor.serialization.kotlinx.json.json
@@ -134,14 +135,21 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController, get(named("refreshClient")))
+            installWorkspaceBearerAuth(
+                context,
+                preferences,
+                environmentManager,
+                userLoginController,
+                get(named("refreshClient"))
+            )
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
                         Log.d("OsmClient", message) // Avoid System.err
                     }
                 }
-                level = LogLevel.ALL
+                level = HTTP_LOG_LEVEL
+                sanitizeHeader { it == HttpHeaders.Authorization }
             }
         }
     }
@@ -160,14 +168,21 @@ val appModule = module {
             install(ContentEncoding) {
                 gzip()
             }
-            installWorkspaceBearerAuth(context, preferences, environmentManager, userLoginController, get(named("refreshClient")))
+            installWorkspaceBearerAuth(
+                context,
+                preferences,
+                environmentManager,
+                userLoginController,
+                get(named("refreshClient"))
+            )
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
                         Log.d("KtorClient", message) // Avoid System.err
                     }
                 }
-                level = LogLevel.ALL
+                level = HTTP_LOG_LEVEL
+                sanitizeHeader { it == HttpHeaders.Authorization }
             }
             defaultRequest {
                 userAgent(ApplicationConstants.USER_AGENT)
@@ -185,7 +200,8 @@ val appModule = module {
             }
             install(Logging) {
                 logger = Logger.DEFAULT
-                level = LogLevel.ALL
+                level = HTTP_LOG_LEVEL
+                sanitizeHeader { it == HttpHeaders.Authorization }
             }
         }
     }
@@ -201,7 +217,8 @@ val appModule = module {
                         Log.d("KtorClient", message) // Avoid System.err
                     }
                 }
-                level = LogLevel.ALL
+                level = HTTP_LOG_LEVEL
+                sanitizeHeader { it == HttpHeaders.Authorization }
             }
             install(HttpRequestRetry) {
                 retryOnServerErrors(maxRetries = 3)
@@ -274,3 +291,7 @@ suspend fun refreshJwtToken(
         null
     }
 }
+
+// HTTP logs end up in the log database and from there in emailed crash reports - full bodies
+// (map data, long forms) make those multi-MB, so only log them in debug builds
+private val HTTP_LOG_LEVEL = if (BuildConfig.DEBUG) LogLevel.ALL else LogLevel.INFO
