@@ -8,6 +8,10 @@
 # Needs the gh CLI on the runner and GH_TOKEN with contents: write (to create the release/tag and
 # upload/delete its assets).
 #
+# With REPORTS_TAG set (release-test-report.yml), the bundle goes to that version's pre-release
+# instead, under its plain name and without the retention cleanup - that release is created by the
+# calling workflow and kept until deleted by hand.
+#
 # Usage: publish-reports.sh <bundle file>
 set -euo pipefail
 
@@ -16,6 +20,16 @@ tag="ci-reports"
 retention_days=14
 
 command -v gh >/dev/null || { echo "::error::gh CLI not found on this runner (brew install gh)"; exit 1; }
+
+if [ -n "${REPORTS_TAG:-}" ]; then
+  name="$(basename "$file")"
+  gh release upload "$REPORTS_TAG" "$file" --clobber
+  {
+    echo "## Reports: $name"
+    echo "[Download $name]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$REPORTS_TAG/$name) - attached to the [$REPORTS_TAG]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$REPORTS_TAG) pre-release"
+  } >> "$GITHUB_STEP_SUMMARY"
+  exit 0
+fi
 
 # unit-test.yml and android-test.yml run at the same time, so both may try to create the release on
 # the first run - if the create fails, the other job has won the race, as long as it exists now
