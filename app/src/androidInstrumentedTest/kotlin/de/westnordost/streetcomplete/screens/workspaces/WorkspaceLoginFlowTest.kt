@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Base64
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
@@ -327,15 +328,20 @@ class WorkspaceLoginFlowTest {
     }
 
     private fun waitForText(text: String) {
-        composeTestRule.waitUntil(timeoutMillis = 20_000) {
-            composeTestRule.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        composeTestRule.waitUntil(timeoutMillis = 20_000) { hasNodes(hasText(text, substring = true)) }
     }
 
     private fun waitForWorkspaceListToolbar() {
-        composeTestRule.waitUntil(timeoutMillis = 20_000) {
-            composeTestRule.onAllNodesWithContentDescription(PROFILE_NAV_DESCRIPTION).fetchSemanticsNodes().isNotEmpty()
-        }
+        composeTestRule.waitUntil(timeoutMillis = 20_000) { hasNodes(hasContentDescription(PROFILE_NAV_DESCRIPTION)) }
+    }
+
+    // fetchSemanticsNodes throws while no compose hierarchy exists, e.g. for a moment while one
+    // activity replaces another (opening a workspace, the forced logout restarting
+    // WorkSpaceActivity) - that is "not there yet", not a reason to end the wait early
+    private fun hasNodes(matcher: SemanticsMatcher): Boolean = try {
+        composeTestRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
+    } catch (_: IllegalStateException) {
+        false
     }
 
     private fun waitUntil(condition: () -> Boolean) {

@@ -301,13 +301,15 @@ class MainActivity :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        // before super.onCreate: that restores the fragments, and a quest form restored after
+        // process death looks up its quest type in the registry, which is still empty until then
+        doLongForm()
         super.onCreate(savedInstanceState)
+        editHistoryViewModel.refreshForNewWorkspace()
 
         if (savedInstanceState == null) {
             handleIntent(intent)
         }
-
-        doLongForm()
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
             requestLocationPermissionResultReceiver,
@@ -1801,8 +1803,6 @@ class MainActivity :
         allEditTypes.unknownTypeFallback = { name ->
             AddGenericLong(Elements(elementType = name), recencyPeriodInDays)
         }
-
-        editHistoryViewModel.refreshForNewWorkspace()
     }
 
     private fun onClickImageryLayerButton() {
