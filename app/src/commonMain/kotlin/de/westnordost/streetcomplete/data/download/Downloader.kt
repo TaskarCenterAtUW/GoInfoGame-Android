@@ -64,6 +64,7 @@ class Downloader(
             Log.i(TAG, "Starting download ($sqkm km², bbox: $bboxString)")
 
             val time = nowAsEpochMilliseconds()
+            val invalidationCount = downloadedTilesController.invalidationCount
 
             coroutineScope {
                 // all downloaders run concurrently. Only the map data download holds the lock
@@ -74,7 +75,13 @@ class Downloader(
                 launch { mutex.withLock { mapDataDownloader.download(tilesBbox) } }
                 launch { mapTilesDownloader.download(tilesBbox) }
             }
-            putDownloadedAlready(tiles)
+            // invalidated while downloading (e.g. workspace switched): the next auto-download
+            // (triggered by onSuccess below) has to fetch it again instead of skipping it as fresh
+            if (downloadedTilesController.invalidationCount == invalidationCount) {
+                putDownloadedAlready(tiles)
+            } else {
+                Log.i(TAG, "Downloaded tiles were invalidated during the download, not marking them as downloaded")
+            }
 
             val seconds = (nowAsEpochMilliseconds() - time) / 1000.0
             Log.i(TAG, "Finished download ($sqkm km², bbox: $bboxString) in ${seconds.format(1)}s")

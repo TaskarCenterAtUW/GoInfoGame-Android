@@ -3,12 +3,19 @@ package de.westnordost.streetcomplete.data.download.tiles
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.util.Listeners
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import kotlin.concurrent.Volatile
 
 class DownloadedTilesController(
     private val dao: DownloadedTilesDao
 ) : DownloadedTilesSource {
 
     private val listeners = Listeners<DownloadedTilesSource.Listener>()
+
+    /** Goes up on every invalidate/clear - a download that was already running when this changed
+     *  fetched data that is no longer wanted (e.g. of the previous workspace), so it must not mark
+     *  its tiles as downloaded, see [Downloader] */
+    @Volatile var invalidationCount: Int = 0
+        private set
 
     override fun contains(tilesRect: TilesRect, ignoreOlderThan: Long): Boolean =
         dao.contains(tilesRect, ignoreOlderThan)
@@ -22,16 +29,19 @@ class DownloadedTilesController(
     }
 
     fun clear() {
+        invalidationCount++
         dao.deleteAll()
         onUpdated()
     }
 
     fun invalidate(tilePos: TilePos) {
+        invalidationCount++
         dao.updateTimeNewerThan(tilePos, getOldTime())
         onUpdated()
     }
 
     fun invalidateAll() {
+        invalidationCount++
         dao.updateAllTimesNewerThan(getOldTime())
         onUpdated()
     }
