@@ -1,9 +1,12 @@
 package de.westnordost.streetcomplete.data.maptiles
 
 import android.content.Context
+import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitCreateOfflineRegion
 import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitDownload
+import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitGetOfflineRegions
+import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitGetStatus
 import de.westnordost.streetcomplete.screens.main.map.maplibre.awaitResetDatabase
 import de.westnordost.streetcomplete.screens.main.map.maplibre.toLatLng
 import de.westnordost.streetcomplete.util.ktx.format
@@ -44,6 +47,12 @@ class MapTilesDownloaderAndroid(private val context: Context) : MapTilesDownload
         // (could also be done directly from the long)
         val metadata = nowAsEpochMilliseconds().toString().toByteArray(Charsets.UTF_8)
         try {
+            // the map tiles don't depend on the workspace - when only the map data needs to be
+            // downloaded again (e.g. workspace switched), don't fetch the same tiles again
+            if (hasFreshTiles(bounds)) {
+                Log.i(TAG, "Not downloading tiles, already downloaded recently")
+                return@withContext
+            }
             val offlineRegion = OfflineManager.getInstance(context).awaitCreateOfflineRegion(regionDefinition, metadata)
             val time = nowAsEpochMilliseconds()
             val status = offlineRegion.awaitDownload()
@@ -59,8 +68,28 @@ class MapTilesDownloaderAndroid(private val context: Context) : MapTilesDownload
         }
     }
 
+    /** Whether a completed download of the same map style within [REFRESH_TILES_AFTER] covers
+     *  [bounds]. Its timestamp is stored when the region is created, so whether it completed
+     *  (rather than failed or was cancelled) is checked separately. */
+    private suspend fun hasFreshTiles(bounds: LatLngBounds): Boolean {
+        val freshAfter = nowAsEpochMilliseconds() - REFRESH_TILES_AFTER
+        return OfflineManager.getInstance(context).awaitGetOfflineRegions().any { region ->
+            val timestamp = region.metadata.toString(Charsets.UTF_8).toLongOrNull() ?: 0
+            val definition = region.definition as? OfflineTilePyramidRegionDefinition
+            timestamp > freshAfter
+                && definition?.styleURL == styleUrl
+                && definition.bounds?.contains(bounds) == true
+                && region.awaitGetStatus().isComplete
+        }
+    }
+
     companion object {
         private const val TAG = "MapTilesDownload"
+
+        /** The base map hardly changes - much less often than the map data
+         *  ([ApplicationConstants.REFRESH_DATA_AFTER]), and well before the downloaded regions are
+         *  deleted ([ApplicationConstants.DELETE_OLD_DATA_AFTER]) */
+        private const val REFRESH_TILES_AFTER = 7L * 24 * 60 * 60 * 1000 // 7 days in ms
 
         private const val styleUrl = "https://streetcomplete.app/map-jawg/streetcomplete.json"
     }

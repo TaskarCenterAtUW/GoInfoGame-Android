@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.download
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
+import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
 import de.westnordost.streetcomplete.data.maptiles.MapTilesDownloader
@@ -15,10 +16,14 @@ import de.westnordost.streetcomplete.util.ktx.format
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.Log
 import de.westnordost.streetcomplete.util.math.area
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.max
 
@@ -39,6 +44,25 @@ class Downloader(
 
     override var isDownloadInProgress: Boolean = false
         private set
+
+    /** The running download and DownloadedTilesController.invalidationCount when it started. */
+    @Volatile private var runningDownload: Job? = null
+    @Volatile private var invalidationCountAtStart = 0
+
+    // all tiles invalidated while downloading (e.g. workspace switched): the running download is
+    // outdated - cancel it rather than wait for it, a hanging map tiles download (tile server
+    // unreachable) would otherwise keep the next workspace from downloading anything
+    private val downloadedTilesListener = object : DownloadedTilesSource.Listener {
+        override fun onUpdated() {
+            if (downloadedTilesController.invalidationCount != invalidationCountAtStart) {
+                runningDownload?.cancel()
+            }
+        }
+    }
+
+    init {
+        downloadedTilesController.addListener(downloadedTilesListener)
+    }
 
     suspend fun download(bbox: BoundingBox, isUserInitiated: Boolean) {
         var hasError = false
@@ -65,8 +89,10 @@ class Downloader(
 
             val time = nowAsEpochMilliseconds()
             val invalidationCount = downloadedTilesController.invalidationCount
+            invalidationCountAtStart = invalidationCount
 
             coroutineScope {
+                runningDownload = coroutineContext[Job]
                 // all downloaders run concurrently. Only the map data download holds the lock
                 // shared with the uploader (both write OSM data) - map tiles don't touch it, and
                 // MapLibre's tile download waits for connectivity rather than failing, so with the
@@ -86,8 +112,14 @@ class Downloader(
             val seconds = (nowAsEpochMilliseconds() - time) / 1000.0
             Log.i(TAG, "Finished download ($sqkm km², bbox: $bboxString) in ${seconds.format(1)}s")
         } catch (e: CancellationException) {
-            hasError = true
-            Log.i(TAG, "Download cancelled")
+            if (currentCoroutineContext().isActive) {
+                // only the download itself was cancelled, as outdated (see downloadedTilesListener)
+                // - not an error: onSuccess below lets the auto-download start a fresh one
+                Log.i(TAG, "Download cancelled, tiles were invalidated during the download")
+            } else {
+                hasError = true
+                Log.i(TAG, "Download cancelled")
+            }
         } catch (e: Exception) {
             hasError = true
             Log.e(TAG, "Unable to download", e)
@@ -97,6 +129,7 @@ class Downloader(
             listeners.forEach { it.onError(e) }
             throw e
         } finally {
+            runningDownload = null
             isDownloadInProgress = false
             isUserInitiatedDownloadInProgress = false
             listeners.forEach { it.onFinished() }

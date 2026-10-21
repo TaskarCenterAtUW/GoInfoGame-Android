@@ -55,15 +55,15 @@ class DownloadedTilesControllerTest {
         verify(listener).onUpdated()
     }
 
-    @Test fun `invalidating or clearing increases invalidationCount`() {
+    @Test fun `invalidating all or clearing increases invalidationCount`() {
         ctrl.invalidateAll()
-        ctrl.invalidate(TilePos(0, 0))
         ctrl.clear()
-        assertEquals(3, ctrl.invalidationCount)
+        assertEquals(2, ctrl.invalidationCount)
     }
 
-    @Test fun `put and deleteOlderThan do not change invalidationCount`() {
+    @Test fun `put, invalidating a single tile and deleteOlderThan do not change invalidationCount`() {
         ctrl.put(TilesRect(0, 0, 1, 1))
+        ctrl.invalidate(TilePos(0, 0))
         ctrl.deleteOlderThan(123L)
         assertEquals(0, ctrl.invalidationCount)
     }

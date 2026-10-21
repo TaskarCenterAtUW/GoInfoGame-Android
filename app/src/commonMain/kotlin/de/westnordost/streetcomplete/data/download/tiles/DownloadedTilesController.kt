@@ -11,9 +11,10 @@ class DownloadedTilesController(
 
     private val listeners = Listeners<DownloadedTilesSource.Listener>()
 
-    /** Goes up on every invalidate/clear - a download that was already running when this changed
-     *  fetched data that is no longer wanted (e.g. of the previous workspace), so it must not mark
-     *  its tiles as downloaded, see [Downloader] */
+    /** Goes up whenever all tiles are invalidated or cleared (workspace switched, new app version
+     *  etc.) - a download that was already running when this changed fetches data that is no
+     *  longer wanted, see [Downloader]. Not for a single invalidated tile (after an upload), for
+     *  which the rest of a running download is still good. */
     @Volatile var invalidationCount: Int = 0
         private set
 
@@ -35,7 +36,6 @@ class DownloadedTilesController(
     }
 
     fun invalidate(tilePos: TilePos) {
-        invalidationCount++
         dao.updateTimeNewerThan(tilePos, getOldTime())
         onUpdated()
     }

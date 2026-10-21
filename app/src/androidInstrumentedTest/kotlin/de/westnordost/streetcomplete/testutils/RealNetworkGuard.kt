@@ -18,8 +18,9 @@ import java.util.Collections
  *
  * Why: tests once reached the production OSM proxy (and most likely the production TDEI refresh
  * endpoint) because a mock was bypassed - see MockOsmServer.attachTo. This makes that impossible
- * instead of relying on every test being set up right. (Map tiles are fetched by MapLibre, not
- * these clients, and still go out.)
+ * instead of relying on every test being set up right. (MapLibre fetches map tiles itself, not
+ * through these clients: tiles for showing the map still go out, downloading them for offline use
+ * is replaced by [OfflineMapTilesDownloader].)
  */
 object RealNetworkGuard {
     const val TAG = "RealNetworkGuard"
