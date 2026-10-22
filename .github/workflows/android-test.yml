@@ -12,6 +12,10 @@ on:
       release-tag:
         type: string
         default: ""
+      # JSON list of the API levels to test, so it can leave out the ones that already passed
+      api-levels:
+        type: string
+        default: "[30, 34]"
 
 permissions:
   contents: write # attaching the report bundle to the ci-reports pre-release (publish-reports.sh)
@@ -23,28 +27,27 @@ jobs:
     # not for PRs from forks - see unit-test.yml
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, macOS]
+    # screen per API level: API 30 keeps the emulator's default small screen (320x640 @ 160dpi
+    # = 320x640dp, smaller than nearly any real phone) as the small-screen check; API 34 runs
+    # on a normal Full HD phone (pixel_6: 1080x2400 @ 420dpi, ~411x914dp).
+    # AVD_SUFFIX goes into the AVD name and cache key - the runner's disk keeps AVDs between
+    # runs and reuses one by name (force-avd-creation: false), so a new screen needs a new name.
+    # Set here rather than with matrix include entries, since an include entry for an API level
+    # left out by the api-levels input would be added as a job of its own
+    env:
+      AVD_PROFILE: ${{ matrix.api-level == 34 && 'pixel_6' || '' }}
+      AVD_SUFFIX: ${{ matrix.api-level == 34 && '-pixel6' || '' }}
     strategy:
       max-parallel: 1 # multiple runners are registered on the same physical Mac - without this,
       # matrix legs can run concurrently and contend for the same real GPU, which is what was
       # causing "Failed to find ColorBuffer" emulator errors regardless of the -gpu backend used
       matrix:
-        api-level:
-          - 30 # min API with arm64-v8a system images
-          - 34 # close to targetSdk, well-supported arm64-v8a image
+        # 30: min API with arm64-v8a system images; 34: close to targetSdk, well-supported
+        # arm64-v8a image. When not called by release-test-report.yml (pull_request,
+        # workflow_dispatch), there's no api-levels input, so both are tested
+        api-level: ${{ fromJSON(inputs.api-levels || '[30, 34]') }}
         arch:
           - arm64-v8a
-        # screen per API level: API 30 keeps the emulator's default small screen (320x640 @ 160dpi
-        # = 320x640dp, smaller than nearly any real phone) as the small-screen check; API 34 runs
-        # on a normal Full HD phone (pixel_6: 1080x2400 @ 420dpi, ~411x914dp).
-        # avd-suffix goes into the AVD name and cache key - the runner's disk keeps AVDs between
-        # runs and reuses one by name (force-avd-creation: false), so a new screen needs a new name
-        include:
-          - api-level: 30
-            profile: ""
-            avd-suffix: ""
-          - api-level: 34
-            profile: pixel_6
-            avd-suffix: "-pixel6"
     steps:
       - uses: actions/checkout@v4
 
@@ -57,7 +60,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader${{ matrix.avd-suffix }}
+          key: avd-${{ matrix.arch }}-${{ matrix.api-level }}-google-apis-swiftshader${{ env.AVD_SUFFIX }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -66,13 +69,13 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
-          profile: ${{ matrix.profile }}
+          profile: ${{ env.AVD_PROFILE }}
           # this is a self-hosted runner with a persistent disk (unlike GitHub-hosted runners,
           # which start every job with an empty disk) - without a name derived from the actual
           # config, the action's default fixed "test" AVD name means any future change to
           # api-level/arch/target/profile here would silently keep reusing a stale AVD built under
           # the OLD config instead of picking up the new one, since force-avd-creation stays false
-          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ matrix.avd-suffix }}
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ env.AVD_SUFFIX }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -84,8 +87,8 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: ${{ matrix.arch }}
           target: google_apis
-          profile: ${{ matrix.profile }}
-          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ matrix.avd-suffix }}
+          profile: ${{ env.AVD_PROFILE }}
+          avd-name: ci-${{ matrix.arch }}-api${{ matrix.api-level }}-google-apis${{ env.AVD_SUFFIX }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true

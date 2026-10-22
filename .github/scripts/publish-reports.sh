@@ -8,9 +8,15 @@
 # Needs the gh CLI on the runner and GH_TOKEN with contents: write (to create the release/tag and
 # upload/delete its assets).
 #
-# With REPORTS_TAG set (release-test-report.yml), the bundle goes to that version's pre-release
-# instead, under its plain name and without the retention cleanup - that release is created by the
-# calling workflow and kept until deleted by hand.
+# With REPORTS_TAG set (release-test-report.yml), the bundle also goes to that version's
+# pre-release, under its plain name - that release is created by the calling workflow and kept
+# until deleted by hand.
+#
+# The name on ci-reports holds the git tree of the tested code, so a later release report run on
+# the same code can reuse a passing bundle instead of running the tests again (see
+# reuse-verified-reports.sh). The tree, not the commit: a PR run tests GitHub's merge preview
+# commit, and the merge commit made when merging the PR has the same tree as long as the base
+# branch hasn't changed in between.
 #
 # Usage: publish-reports.sh <bundle file>
 set -euo pipefail
@@ -28,7 +34,6 @@ if [ -n "${REPORTS_TAG:-}" ]; then
     echo "## Reports: $name"
     echo "[Download $name]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$REPORTS_TAG/$name) - attached to the [$REPORTS_TAG]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$REPORTS_TAG) pre-release"
   } >> "$GITHUB_STEP_SUMMARY"
-  exit 0
 fi
 
 # unit-test.yml and android-test.yml run at the same time, so both may try to create the release on
@@ -41,7 +46,8 @@ fi
 
 # run id + attempt in the name, since all runs share this one release (a re-run gets its own file
 # instead of replacing the reports of the attempt before it)
-name="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(basename "$file")"
+tree=$(git rev-parse 'HEAD^{tree}')
+name="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-tree-${tree}-$(basename "$file")"
 staged="$RUNNER_TEMP/$name"
 cp "$file" "$staged"
 gh release upload "$tag" "$staged" --clobber

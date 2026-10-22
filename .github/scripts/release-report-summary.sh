@@ -3,6 +3,9 @@
 # results (and unit test line coverage) per suite, and writes them as the release notes and the
 # job summary. Used by release-test-report.yml after the test jobs have uploaded their bundles.
 #
+# REUSED_UNIT, REUSED_API30 and REUSED_API34 hold the id of the earlier run whose bundle was reused
+# for that suite (see reuse-verified-reports.sh), empty if this run tested it.
+#
 # Needs the gh CLI on the runner and GH_TOKEN with contents: write.
 #
 # Usage: release-report-summary.sh <release tag> <version>
@@ -26,53 +29,52 @@ run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   echo "- Run: [$GITHUB_RUN_ID]($run_url)"
   echo "- Date: $(date -u +%Y-%m-%d) (UTC)"
   echo
-  echo "| Suite | Result | Tests | Passed | Failed | Skipped | Report |"
-  echo "|---|---|---:|---:|---:|---:|---|"
+  echo "| Suite | Result | Tests | Passed | Failed | Skipped | Tested in | Report |"
+  echo "|---|---|---:|---:|---:|---:|---|---|"
 } > "$notes"
 
 failures="$work/failures.md"
 : > "$failures"
 coverage=""
 
-for suite in "Unit tests:unit-test-reports.tar.gz" \
-             "Instrumentation tests (API 30, small screen):android-test-reports-api30.tar.gz" \
-             "Instrumentation tests (API 34, Pixel 6):android-test-reports-api34.tar.gz"; do
-  label="${suite%%:*}"
-  bundle="${suite#*:}"
+for suite in "${REUSED_UNIT:-}:Unit tests:unit-test-reports.tar.gz" \
+             "${REUSED_API30:-}:Instrumentation tests (API 30, small screen):android-test-reports-api30.tar.gz" \
+             "${REUSED_API34:-}:Instrumentation tests (API 34, Pixel 6):android-test-reports-api34.tar.gz"; do
+  reused_from="${suite%%:*}"
+  rest="${suite#*:}"
+  label="${rest%%:*}"
+  bundle="${rest#*:}"
+  tested_in="this run"
+  if [ -n "$reused_from" ]; then
+    tested_in="[run $reused_from]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$reused_from), same code"
+  fi
   if [ ! -f "$work/bundles/$bundle" ]; then
-    echo "| $label | ⚠️ no report | | | | | |" >> "$notes"
+    echo "| $label | ⚠️ no report | | | | | $tested_in | |" >> "$notes"
     continue
   fi
   dir="$work/extract/${bundle%.tar.gz}"
   mkdir -p "$dir"
   tar -xzf "$work/bundles/$bundle" -C "$dir"
 
-  # JUnit XML from both Gradle (test-results) and AGP (androidTest-results): one <testsuite> per
-  # file with tests/failures/errors/skipped attributes, failing <testcase>s followed by <failure>
-  # or <error>
-  xmls=$(find "$dir" -path '*-results/*' -name '*.xml' | sort)
-  if [ -z "$xmls" ]; then
-    echo "| $label | ⚠️ no results | | | | | |" >> "$notes"
+  if [ -z "$(find "$dir" -path '*-results/*' -name '*.xml')" ]; then
+    echo "| $label | ⚠️ no results | | | | | $tested_in | |" >> "$notes"
     continue
   fi
-  # shellcheck disable=SC2086
-  read -r tests failed skipped < <(awk '
-    function attr(name,   m) { return match($0, name "=\"[0-9]+\"") ? substr($0, RSTART + length(name) + 2, RLENGTH - length(name) - 3) + 0 : 0 }
-    /<testsuite[ >]/ { t += attr("tests"); f += attr("failures") + attr("errors"); s += attr("skipped") }
-    END { print t + 0, f + 0, s + 0 }' $xmls)
+  read -r tests failed skipped < <(bash "$(dirname "$0")/junit-totals.sh" "$dir")
   passed=$((tests - failed - skipped))
   result="✅ passed"
   [ "$failed" -gt 0 ] && result="❌ failed"
   url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag/$bundle"
-  echo "| $label | $result | $tests | $passed | $failed | $skipped | [$bundle]($url) |" >> "$notes"
+  echo "| $label | $result | $tests | $passed | $failed | $skipped | $tested_in | [$bundle]($url) |" >> "$notes"
 
   if [ "$failed" -gt 0 ]; then
     echo "**$label**" >> "$failures"
-    # shellcheck disable=SC2086
-    awk '
+    # failing <testcase>s are followed by <failure> or <error>; the AGP file names contain spaces,
+    # see junit-totals.sh
+    find "$dir" -path '*-results/*' -name '*.xml' -exec cat {} + | awk '
       function attr(name,   m) { return match($0, name "=\"[^\"]*\"") ? substr($0, RSTART + length(name) + 2, RLENGTH - length(name) - 3) : "" }
       /<testcase[ >]/ { tc = attr("classname") "." attr("name") }
-      /<failure[ >]|<error[ >]/ { if (tc != "") print "- `" tc "`"; tc = "" }' $xmls | sort -u >> "$failures"
+      /<failure[ >]|<error[ >]/ { if (tc != "") print "- `" tc "`"; tc = "" }' | sort -u >> "$failures"
     echo >> "$failures"
   fi
 
