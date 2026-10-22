@@ -34,7 +34,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 28
+    const val DB_VERSION = 29
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -352,8 +352,18 @@ object DatabaseInitializer {
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0")
             db.exec(StuckPhotoUploadNoticesTable.CREATE)
         }
+
+        if (oldVersion <= 28 && newVersion >= 29) {
+            // the HTTP clients' logs (whole requests and responses, e.g. several MB of map data
+            // per download) used to be stored here, kept for 14 days - they go to logcat only now
+            // (see LogcatHttpLogger), drop the ones already stored
+            db.delete(LogsTable.NAME, where = "${LogsTable.Columns.TAG} IN ($HTTP_LOG_TAGS)")
+        }
     }
 }
+
+/** Tags the HTTP clients logged under while their logs were still stored in the logs table */
+private const val HTTP_LOG_TAGS = "'OsmClient', 'KtorClient'"
 
 /* E.g. when upgrading directly from a version below 10, it will create the ElementEditsTable
    directly in the latest schema because we use the constant from EditElementsTable.CREATE to create

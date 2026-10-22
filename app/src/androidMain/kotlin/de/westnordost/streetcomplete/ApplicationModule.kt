@@ -18,6 +18,7 @@ import de.westnordost.streetcomplete.util.ResourceProvider
 import de.westnordost.streetcomplete.util.SoundFx
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
+import de.westnordost.streetcomplete.util.logs.LogcatHttpLogger
 import de.westnordost.streetcomplete.util.network.retryOnTransientHttpFailure
 import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import io.ktor.client.HttpClient
@@ -29,9 +30,7 @@ import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -143,11 +142,7 @@ val appModule = module {
                 get(named("refreshClient"))
             )
             install(Logging) {
-                logger = object : Logger {
-                    override fun log(message: String) {
-                        Log.d("OsmClient", message) // Avoid System.err
-                    }
-                }
+                logger = LogcatHttpLogger("OsmClient")
                 level = HTTP_LOG_LEVEL
                 sanitizeHeader { it == HttpHeaders.Authorization }
             }
@@ -176,11 +171,7 @@ val appModule = module {
                 get(named("refreshClient"))
             )
             install(Logging) {
-                logger = object : Logger {
-                    override fun log(message: String) {
-                        Log.d("KtorClient", message) // Avoid System.err
-                    }
-                }
+                logger = LogcatHttpLogger("KtorClient")
                 level = HTTP_LOG_LEVEL
                 sanitizeHeader { it == HttpHeaders.Authorization }
             }
@@ -199,7 +190,7 @@ val appModule = module {
                 json(Json { ignoreUnknownKeys = true })
             }
             install(Logging) {
-                logger = Logger.DEFAULT
+                logger = LogcatHttpLogger("RefreshClient")
                 level = HTTP_LOG_LEVEL
                 sanitizeHeader { it == HttpHeaders.Authorization }
             }
@@ -212,11 +203,7 @@ val appModule = module {
                 json(Json { ignoreUnknownKeys = true })
             }
             install(Logging) {
-                logger = object : Logger {
-                    override fun log(message: String) {
-                        Log.d("KtorClient", message) // Avoid System.err
-                    }
-                }
+                logger = LogcatHttpLogger("KtorClient")
                 level = HTTP_LOG_LEVEL
                 sanitizeHeader { it == HttpHeaders.Authorization }
             }
@@ -292,6 +279,7 @@ suspend fun refreshJwtToken(
     }
 }
 
-// HTTP logs end up in the log database and from there in emailed crash reports - full bodies
-// (map data, long forms) make those multi-MB, so only log them in debug builds
+// full bodies (map data, long forms) are read into one string each just for the log - several MB
+// per map data download - so only log them in debug builds. Either way they only go to logcat,
+// not to the log database (see LogcatHttpLogger)
 private val HTTP_LOG_LEVEL = if (BuildConfig.DEBUG) LogLevel.ALL else LogLevel.INFO
