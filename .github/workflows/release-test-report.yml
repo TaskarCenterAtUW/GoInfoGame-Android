@@ -4,6 +4,12 @@ name: Release test report
 # the unit + instrumentation test reports for a release build. They're attached to a
 # "v<version>-test-reports" pre-release titled "<version> release test reports summary", whose
 # notes hold the pass/fail summary. Running again for the same version replaces that pre-release.
+#
+# A suite that already passed on exactly this code (same git tree) isn't tested again: its bundle
+# from that run (usually the PR's, or an earlier run of this workflow) is reused, see
+# reuse-verified-reports.sh. So after a merged PR whose tests passed, or a run where only some
+# suites failed, only what's missing runs. The "tested in" column of the summary says which run
+# each suite's reports come from.
 
 on:
   workflow_dispatch:
@@ -12,6 +18,10 @@ on:
         description: "Version name (leave empty to use appVersionName from app/build.gradle.kts)"
         type: string
         default: ""
+      retest:
+        description: "Run all tests again, even if they already passed on this code"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # creating the pre-release and attaching the report bundles
@@ -27,6 +37,10 @@ jobs:
     outputs:
       version: ${{ steps.release.outputs.version }}
       tag: ${{ steps.release.outputs.tag }}
+      reused-unit: ${{ steps.reuse.outputs.unit }}
+      reused-api30: ${{ steps.reuse.outputs.api30 }}
+      reused-api34: ${{ steps.reuse.outputs.api34 }}
+      api-levels: ${{ steps.reuse.outputs.api-levels }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,17 +67,44 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
+      - name: Reuse reports of suites that already passed on this code
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETEST: ${{ inputs.retest }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          unit="" api30="" api34=""
+          # a failing lookup only means testing again
+          if [ "$RETEST" != "true" ]; then
+            unit=$(bash .github/scripts/reuse-verified-reports.sh "$TAG" unit-test-reports.tar.gz || true)
+            api30=$(bash .github/scripts/reuse-verified-reports.sh "$TAG" android-test-reports-api30.tar.gz || true)
+            api34=$(bash .github/scripts/reuse-verified-reports.sh "$TAG" android-test-reports-api34.tar.gz || true)
+          fi
+          levels=""
+          [ -z "$api30" ] && levels="$levels,30"
+          [ -z "$api34" ] && levels="$levels,34"
+          {
+            echo "unit=$unit"
+            echo "api30=$api30"
+            echo "api34=$api34"
+            echo "api-levels=[${levels#,}]"
+          } >> "$GITHUB_OUTPUT"
+
   unit-test:
     needs: prepare
+    if: needs.prepare.outputs.reused-unit == ''
     uses: ./.github/workflows/unit-test.yml
     with:
       release-tag: ${{ needs.prepare.outputs.tag }}
 
   android-test:
     needs: prepare
+    if: needs.prepare.outputs.api-levels != '[]'
     uses: ./.github/workflows/android-test.yml
     with:
       release-tag: ${{ needs.prepare.outputs.tag }}
+      api-levels: ${{ needs.prepare.outputs.api-levels }}
 
   summary:
     needs: [prepare, unit-test, android-test]
@@ -76,4 +117,7 @@ jobs:
       - name: Write release notes
         env:
           GH_TOKEN: ${{ github.token }}
+          REUSED_UNIT: ${{ needs.prepare.outputs.reused-unit }}
+          REUSED_API30: ${{ needs.prepare.outputs.reused-api30 }}
+          REUSED_API34: ${{ needs.prepare.outputs.reused-api34 }}
         run: bash .github/scripts/release-report-summary.sh "${{ needs.prepare.outputs.tag }}" "${{ needs.prepare.outputs.version }}"
