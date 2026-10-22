@@ -51,6 +51,19 @@ suspend fun OfflineManager.awaitResetDatabase(): Unit = suspendCoroutine { cont 
     })
 }
 
+suspend fun OfflineRegion.awaitGetStatus(): OfflineRegionStatus = suspendCoroutine { cont ->
+    getStatus(object : OfflineRegion.OfflineRegionStatusCallback {
+        override fun onStatus(status: OfflineRegionStatus?) {
+            if (status != null) cont.resume(status)
+            else cont.resumeWithException(OfflineManagerException("No status"))
+        }
+
+        override fun onError(error: String?) {
+            cont.resumeWithException(OfflineManagerException(error.orEmpty()))
+        }
+    })
+}
+
 suspend fun OfflineRegion.awaitDelete(): Unit = suspendCoroutine { cont ->
     delete(object : OfflineRegion.OfflineRegionDeleteCallback {
         override fun onDelete() {

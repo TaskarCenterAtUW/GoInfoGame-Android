@@ -55,6 +55,19 @@ class DownloadedTilesControllerTest {
         verify(listener).onUpdated()
     }
 
+    @Test fun `invalidating all or clearing increases invalidationCount`() {
+        ctrl.invalidateAll()
+        ctrl.clear()
+        assertEquals(2, ctrl.invalidationCount)
+    }
+
+    @Test fun `put, invalidating a single tile and deleteOlderThan do not change invalidationCount`() {
+        ctrl.put(TilesRect(0, 0, 1, 1))
+        ctrl.invalidate(TilePos(0, 0))
+        ctrl.deleteOlderThan(123L)
+        assertEquals(0, ctrl.invalidationCount)
+    }
+
     @Test fun getAll() {
         val r = listOf(TilePos(0, 1))
         on(dao.getAll(123)).thenReturn(r)

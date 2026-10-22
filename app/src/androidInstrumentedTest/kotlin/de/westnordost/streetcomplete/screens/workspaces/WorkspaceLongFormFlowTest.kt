@@ -6,6 +6,7 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.os.Parcel
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -354,9 +355,16 @@ class WorkspaceLongFormFlowTest {
     }
 
     private fun waitForText(text: String) {
-        composeTestRule.waitUntil(timeoutMillis = 20_000) {
-            composeTestRule.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        composeTestRule.waitUntil(timeoutMillis = 20_000) { hasNodes(hasText(text, substring = true)) }
+    }
+
+    // fetchSemanticsNodes throws while no compose hierarchy exists, e.g. for a moment while one
+    // activity replaces another (opening a workspace, the forced logout restarting
+    // WorkSpaceActivity) - that is "not there yet", not a reason to end the wait early
+    private fun hasNodes(matcher: SemanticsMatcher): Boolean = try {
+        composeTestRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
+    } catch (_: IllegalStateException) {
+        false
     }
 
     private fun mapLaunches(): List<Intent> =

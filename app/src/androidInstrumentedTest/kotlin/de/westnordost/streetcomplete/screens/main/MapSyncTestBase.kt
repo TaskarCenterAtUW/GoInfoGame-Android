@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.provider.MediaStore
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -138,6 +139,8 @@ abstract class MapSyncTestBase {
     protected lateinit var scenario: ActivityScenario<WorkSpaceActivity>
 
     @Volatile protected var overrideConflicts: String = "null"
+    /** The quest definition the workspace API returns - a test can change it, like an admin would. */
+    @Volatile protected var longForm: String = LONG_FORM
     private var previousAnimationScales: List<String> = emptyList()
 
     @Before
@@ -411,9 +414,16 @@ abstract class MapSyncTestBase {
     //region waiting
 
     protected fun waitForText(text: String) {
-        composeTestRule.waitUntil(timeoutMillis = TIMEOUT) {
-            composeTestRule.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
-        }
+        composeTestRule.waitUntil(timeoutMillis = TIMEOUT) { hasNodes(hasText(text, substring = true)) }
+    }
+
+    // fetchSemanticsNodes throws while no compose hierarchy exists, e.g. for a moment while one
+    // activity replaces another (opening a workspace, the forced logout restarting
+    // WorkSpaceActivity) - that is "not there yet", not a reason to end the wait early
+    private fun hasNodes(matcher: SemanticsMatcher): Boolean = try {
+        composeTestRule.onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
+    } catch (_: IllegalStateException) {
+        false
     }
 
     /** Polls [condition] while letting both Compose and the main looper run. */
@@ -463,7 +473,7 @@ abstract class MapSyncTestBase {
         "id": $WORKSPACE_ID, "title": "${FakeWorkspaceRepository.TEST_WORKSPACE_TITLE}", "type": "osw",
         "description": null, "createdAt": "2025-01-01T00:00:00Z", "createdBy": "user-1",
         "createdByName": "Jane Doe", "externalAppAccess": 1, "overrideConflicts": $overrideConflicts,
-        "imageryListDef": null, "kartaViewToken": null, "longFormQuestDef": $LONG_FORM,
+        "imageryListDef": null, "kartaViewToken": null, "longFormQuestDef": $longForm,
         "tdeiMetadata": null, "tdeiProjectGroupId": null, "tdeiRecordId": null, "tdeiServiceId": null
     }"""
 

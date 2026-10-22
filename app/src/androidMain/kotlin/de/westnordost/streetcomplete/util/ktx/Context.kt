@@ -63,8 +63,23 @@ fun Context.sendEmail(to: String, subject: String, text: String? = null) {
 fun Context.sendErrorReportEmail(errorReport: String) = sendEmail(
     to = ApplicationConstants.ERROR_REPORTS_EMAIL,
     subject = ApplicationConstants.USER_AGENT + " " + "Error Report",
-    text = "Describe how to reproduce it here:\n\n\n\n$errorReport"
+    text = "Describe how to reproduce it here:\n\n\n\n${errorReport.truncatedForIntent()}"
 )
+
+// an intent extra must fit in the ~1MB binder transaction buffer (TransactionTooLargeException
+// otherwise) - the attached log can be far larger. Keep the head (device info + stack trace) and
+// the newest log lines.
+internal const val MAX_REPORT_HEAD_LENGTH = 20_000
+internal const val MAX_REPORT_TAIL_LENGTH = 80_000
+
+internal fun String.truncatedForIntent(): String =
+    if (length <= MAX_REPORT_HEAD_LENGTH + MAX_REPORT_TAIL_LENGTH) {
+        this
+    } else {
+        take(MAX_REPORT_HEAD_LENGTH) +
+            "\n\n[... ${length - MAX_REPORT_HEAD_LENGTH - MAX_REPORT_TAIL_LENGTH} characters omitted ...]\n\n" +
+            takeLast(MAX_REPORT_TAIL_LENGTH)
+    }
 
 fun Context.openUri(uri: String): Boolean =
     try {
