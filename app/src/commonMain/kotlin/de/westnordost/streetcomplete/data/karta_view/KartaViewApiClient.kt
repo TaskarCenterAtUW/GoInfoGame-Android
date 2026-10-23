@@ -78,7 +78,10 @@ class KartaViewApiClient(
         // edit for the next sync" and count it towards the stuck-photo notice. Anything else
         // escaped them and aborted the whole upload run with a generic "Upload error" dialog.
         catch (e: Exception) {
-            throw KartaViewException("Could not reach KartaView. Image upload failed. Please try again later: $e")
+            throw KartaViewException(
+                "Could not reach KartaView. Image upload failed. Please try again later: $e",
+                isUnreachable = true
+            )
         }
     }
 
@@ -188,4 +191,9 @@ class KartaViewApiClient(
     }
 }
 
-class KartaViewException(message: String) : RuntimeException(message)
+/** @property isUnreachable KartaView didn't answer at all (no connection, timeout, ...) - unlike an
+ *  error status for this one upload, the next upload right after would most likely fail the same */
+class KartaViewException(
+    message: String,
+    val isUnreachable: Boolean = false,
+) : RuntimeException(message)

@@ -24,6 +24,7 @@ import de.westnordost.streetcomplete.util.satellite_layers.ImageryRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -211,6 +212,15 @@ val appModule = module {
                 retryOnServerErrors(maxRetries = 3)
                 retryOnException(maxRetries = 3, retryOnTimeout = true)
                 exponentialDelay()
+            }
+            // without this, the CIO engine gives every request 15s in total: a photo upload over a
+            // weak mobile connection (~360 KB, ~20s at 150 kbps) timed out, was sent again 3 times
+            // by the retry above, and all of it again on the next sync. Instead, give it time as
+            // long as data is moving, and give up on a connection that stalls.
+            install(HttpTimeout) {
+                requestTimeoutMillis = 120_000
+                connectTimeoutMillis = 15_000
+                socketTimeoutMillis = 30_000
             }
         }
     }

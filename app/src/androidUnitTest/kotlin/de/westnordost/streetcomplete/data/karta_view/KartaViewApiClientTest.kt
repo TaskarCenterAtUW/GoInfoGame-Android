@@ -17,6 +17,8 @@ import java.nio.channels.UnresolvedAddressException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** Every way a photo upload can fail must surface as [KartaViewException] - that's what the edit
  *  and note uploaders treat as "photo failed, keep the edit for the next sync" (and count towards
@@ -52,6 +54,22 @@ class KartaViewApiClientTest {
         assertFailsWith<KartaViewException> {
             client { respond("down", HttpStatusCode.ServiceUnavailable) }.uploadImages(image, position)
         }
+    }
+
+    // the edit uploader stops trying the other queued photos for the run on an unreachable
+    // KartaView, but not on an error status for one upload
+    @Test fun `unreachable KartaView is marked as unreachable`() = runTest {
+        val e = assertFailsWith<KartaViewException> {
+            client { throw IOException("timeout") }.uploadImages(image, position)
+        }
+        assertTrue(e.isUnreachable)
+    }
+
+    @Test fun `error status is not marked as unreachable`() = runTest {
+        val e = assertFailsWith<KartaViewException> {
+            client { respond("bad request", HttpStatusCode.BadRequest) }.uploadImages(image, position)
+        }
+        assertFalse(e.isUnreachable)
     }
 
     @Test fun `nothing to upload makes no request`() = runTest {

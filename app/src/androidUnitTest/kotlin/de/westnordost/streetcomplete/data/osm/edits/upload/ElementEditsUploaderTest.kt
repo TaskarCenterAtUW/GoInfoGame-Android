@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.osm.edits.upload
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.karta_view.KartaViewException
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
@@ -274,6 +275,56 @@ class ElementEditsUploaderTest {
         uploader.upload()
 
         verifyNoInteractions(imageUploader)
+    }
+
+    //endregion
+
+    //region KartaView failing with photos queued
+
+    private fun answerWithPhoto(id: Long): ElementEdit {
+        val edit = edit(id = id, action = UpdateElementTagsAction(
+            node(id = id),
+            StringMapChanges(listOf(StringMapEntryAdd("surface", "concrete")))
+        ))
+        on(featurePhotosController.get(id)).thenReturn(listOf(FeaturePhoto("/photos/$id.jpg", 0f)))
+        return edit
+    }
+
+    @Test fun `once KartaView is unreachable, the other queued photos are not tried in the same run`() = runBlocking<Unit> {
+        val first = answerWithPhoto(1)
+        val second = answerWithPhoto(2)
+        val withoutPhoto = edit(id = 3)
+        on(elementEditsController.getOldestUnsynced(any()))
+            .thenReturn(first).thenReturn(second).thenReturn(withoutPhoto).thenReturn(null)
+        on(imageUploader.upload(any(), any())).thenThrow(KartaViewException("timeout", isUnreachable = true))
+        on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
+
+        uploader.upload()
+
+        verify(imageUploader).upload(listOf("/photos/1.jpg" to 0f), first.position)
+        verify(imageUploader, never()).upload(eq(listOf("/photos/2.jpg" to 0f)), any())
+        // only an edit that was actually tried counts towards the stuck-photo notice
+        verify(featurePhotosController).incrementUploadAttempts(1)
+        verify(featurePhotosController, never()).incrementUploadAttempts(2)
+        // an answer without a photo doesn't need KartaView
+        verify(singleUploader).upload(eq(withoutPhoto), any())
+        verify(elementEditsController, never()).markSynced(eq(second), any())
+    }
+
+    @Test fun `after an error status for one photo, the next photo is still tried`() = runBlocking<Unit> {
+        val first = answerWithPhoto(1)
+        val second = answerWithPhoto(2)
+        on(elementEditsController.getOldestUnsynced(any()))
+            .thenReturn(first).thenReturn(second).thenReturn(null)
+        on(imageUploader.upload(eq(listOf("/photos/1.jpg" to 0f)), any()))
+            .thenThrow(KartaViewException("400 Bad Request"))
+        on(imageUploader.upload(eq(listOf("/photos/2.jpg" to 0f)), any())).thenReturn(listOf(PHOTO_URL))
+        on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
+
+        uploader.upload()
+
+        verify(imageUploader).upload(listOf("/photos/2.jpg" to 0f), second.position)
+        verify(elementEditsController).markSynced(any(), any())
     }
 
     //endregion

@@ -16,6 +16,7 @@ import org.hamcrest.Description
 import org.hamcrest.Matcher
 import android.app.Instrumentation
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.core.content.IntentCompat
@@ -450,6 +451,18 @@ class LongFormFormTest {
         assertEquals(capturedUris[1].lastPathSegment, File(photo.path).name)
     }
 
+    // long form photos go to KartaView, often over mobile data - a camera's full size photo is cut down
+    @Test
+    fun capturedPhotoIsScaledDownForUpload() {
+        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "bollard;other"))
+        capturePhoto(width = 3200, height = 2400)
+        submit()
+
+        val size = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(waitForPhotos(firstEditId).single().path, size)
+        assertEquals(1600 to 1200, size.outWidth to size.outHeight)
+    }
+
     @Test
     fun tappingANewPhotoShowsItFullScreen() {
         open(mapOf("ext:obstruction" to "yes"))
@@ -574,14 +587,34 @@ class LongFormFormTest {
     }
 
     /** Taps the photo prompt (or retake) with the camera stubbed to "take" a small real JPEG -
-     *  onTookPhoto reads its EXIF and rescales it, so an empty file wouldn't do. */
-    private fun capturePhoto(button: Int = R.id.choice_follow_up) {
+     *  onTookPhoto reads its EXIF and rescales it, so an empty file wouldn't do. That happens in a
+     *  coroutine Espresso can't see: waits until the photo is attached (and a retake has deleted
+     *  the photo it replaces). */
+    private fun capturePhoto(button: Int = R.id.choice_follow_up, width: Int = 64, height: Int = 48) {
+        val earlierCaptures = capturedUris.toList()
+        takePhoto(button, width, height)
+        val deadline = SystemClock.uptimeMillis() + EDIT_TIMEOUT_MS
+        while (true) {
+            try {
+                onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo attached")))
+                if (capturedUris.size > earlierCaptures.size && earlierCaptures.none { exists(it) }) return
+            } catch (e: Throwable) {
+                if (SystemClock.uptimeMillis() > deadline) throw e
+            }
+            if (SystemClock.uptimeMillis() > deadline) throw AssertionError("photo not attached")
+            Thread.sleep(100)
+        }
+    }
+
+    private fun takePhoto(button: Int, width: Int, height: Int) {
         intending(hasAction(MediaStore.ACTION_IMAGE_CAPTURE)).respondWithFunction { intent ->
             val uri = IntentCompat.getParcelableExtra(intent, MediaStore.EXTRA_OUTPUT, Uri::class.java)!!
             capturedUris.add(uri)
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             context.contentResolver.openOutputStream(uri)!!.use {
-                Bitmap.createBitmap(64, 48, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 90, it)
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
+                bitmap.recycle()
             }
             Instrumentation.ActivityResult(Activity.RESULT_OK, null)
         }
