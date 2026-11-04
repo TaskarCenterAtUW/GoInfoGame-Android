@@ -34,7 +34,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 29
+    const val DB_VERSION = 30
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -358,6 +358,11 @@ object DatabaseInitializer {
             // per download) used to be stored here, kept for 14 days - they go to logcat only now
             // (see LogcatHttpLogger), drop the ones already stored
             db.delete(LogsTable.NAME, where = "${LogsTable.Columns.TAG} IN ($HTTP_LOG_TAGS)")
+        }
+
+        if (oldVersion <= 29 && newVersion >= 30) {
+            // per-photo long-form question, sent along to Panoramax as a semantic tag
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUESTIONS} text")
         }
     }
 }

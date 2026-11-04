@@ -5,6 +5,8 @@ enum class Environment(
     val tdeiBaseUrl: String,
     val osmUrl: String,
     val tdeiWebUrl: String,
+    /** Panoramax instance photos are uploaded to, with trailing slash */
+    val panoramaxBaseUrl: String = PANORAMAX_DEV_URL,
     val appUpdateVersionCheckUrl: String = APP_UPDATE_VERSION_CHECKER_URL,
     val firebaseUpdateUrl: String = FIREBASE_UPDATE_URL,
 ) {
@@ -28,6 +30,9 @@ enum class Environment(
     );
 
     companion object {
+        // TODO: stage/prod instances - all environments upload to the dev one until they exist
+        const val PANORAMAX_DEV_URL =
+            "https://panoramax-dev-faaadghgcfgwcchk.westus2-01.azurewebsites.net/"
         const val APP_UPDATE_VERSION_CHECKER_URL =
             "https://raw.githubusercontent.com/TaskarCenterAtUW/asr-config/refs/heads/main/force-update/app-force-update.json"
         const val FIREBASE_UPDATE_URL =

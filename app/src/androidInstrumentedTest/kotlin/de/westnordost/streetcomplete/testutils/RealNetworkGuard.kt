@@ -32,6 +32,8 @@ object RealNetworkGuard {
         guard(koin.get(named("osmClient")), "osmClient") { MockOsmServer.isActive }
         guard(koin.get(named("kartaViewClient")), "kartaViewClient") { MockKartaView.isActive }
         guard(koin.get(named("refreshClient")), "refreshClient") { false }
+        // no mock for Panoramax yet - photo uploads in tests are blocked
+        guard(koin.get(named("panoramaxClient")), "panoramaxClient") { false }
     }
 
     private fun guard(client: HttpClient, name: String, answeredByMock: () -> Boolean) {

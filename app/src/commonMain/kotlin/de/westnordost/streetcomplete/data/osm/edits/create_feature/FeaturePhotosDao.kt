@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUESTIONS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.NAME
@@ -26,6 +27,7 @@ class FeaturePhotosDao(
             EDIT_ID to editId,
             PHOTO_PATHS to json.encodeToString(photos.map { it.path }),
             PHOTO_BEARINGS to json.encodeToString(photos.map { it.bearing }),
+            PHOTO_QUESTIONS to json.encodeToString(photos.map { it.question }),
             WORKSPACE_ID to workspaceId
         ))
     }
@@ -38,7 +40,11 @@ class FeaturePhotosDao(
             val paths = json.decodeFromString<List<String>>(row.getString(PHOTO_PATHS))
             // absent on rows written before PHOTO_BEARINGS existed - treated as all-zero bearings
             val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float>>(it) }
-            paths.mapIndexed { i, path -> FeaturePhoto(path, bearings?.getOrNull(i) ?: 0f) }
+            // absent on rows written before PHOTO_QUESTIONS existed
+            val questions = row.getStringOrNull(PHOTO_QUESTIONS)?.let { json.decodeFromString<List<String?>>(it) }
+            paths.mapIndexed { i, path ->
+                FeaturePhoto(path, bearings?.getOrNull(i) ?: 0f, questions?.getOrNull(i))
+            }
         } ?: emptyList()
 
     fun delete(editId: Long): Boolean =

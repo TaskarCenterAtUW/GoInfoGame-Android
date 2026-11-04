@@ -62,6 +62,15 @@ val kartaViewAccessToken: String = System.getenv("KARTAVIEW_ACCESS_TOKEN")
     }
     ?: ""
 
+/** Panoramax Bearer token for photo uploads: from env var, else root secrets.properties
+ *  (git-ignored), else empty (build succeeds but Panoramax photo uploads fail auth at runtime).
+ *  Never commit the token. */
+val panoramaxAccessToken: String = System.getenv("PANORAMAX_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("panoramaxAccessToken")
+    }
+    ?: ""
+
 buildkonfig {
     packageName = "de.westnordost.streetcomplete"
     objectName = "BuildConfig"
@@ -71,6 +80,7 @@ buildkonfig {
         buildConfigField(STRING, "VERSION_NAME", appVersionName)
         buildConfigField(BOOLEAN, "DEBUG", "true")
         buildConfigField(STRING, "KARTAVIEW_ACCESS_TOKEN", kartaViewAccessToken)
+        buildConfigField(STRING, "PANORAMAX_ACCESS_TOKEN", panoramaxAccessToken)
     }
 
     targetConfigs {

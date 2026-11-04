@@ -562,7 +562,7 @@ private fun createLongFormPhotoFile(context: Context): File {
     return file
 }
 
-/* Long form photos go to KartaView, often over a weak mobile connection while surveying. A street
+/* Long form photos go to Panoramax, often over a weak mobile connection while surveying. A street
    photo at 1600px / quality 60 is ~360 KB, vs ~560 KB at the 1920px / 65 used for note photos
    (ApplicationConstants.ATTACH_PHOTO_*) - still plenty of detail to judge e.g. a kerb or surface */
 private const val LONG_FORM_PHOTO_MAX_SIZE = 1600

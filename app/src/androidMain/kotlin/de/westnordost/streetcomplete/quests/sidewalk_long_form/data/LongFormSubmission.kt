@@ -2,7 +2,15 @@ package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 
+/** URL of the (Panoramax) photo attached to the element - see ElementEditsUploader */
+const val STREET_IMAGES_TAG = "ext:street_images"
+/** where the photo URL went before the switch from KartaView to Panoramax - still read, and
+ *  removed along with the photo */
 const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
+
+/** The URL of the photo already attached to an element with [tags], if any */
+fun getAttachedPhotoUrl(tags: Map<String, String>): String? =
+    tags[STREET_IMAGES_TAG] ?: tags[KARTAVIEW_URL_TAG]
 
 /** The photo-related state of a long-form quest while it is open - see ALongForm. Kept as plain
  *  values (with the pure transitions below) rather than private Fragment state so the photo
@@ -146,9 +154,14 @@ fun computeLongFormSubmission(
     // later, in the background sync - see AbstractOsmQuestForm.applyAnswer) - only an
     // explicit removal of an already-synced photo (without a replacement) is a tag change we
     // can express right away
-    val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let { FeaturePhoto(it.path, it.bearing) }
+    // the question whose choiceFollowUp asked for the photo - the same one whose row shows it
+    // (see LongFormAdapter.photoAttachment)
+    val photoQuestion = givenItems.firstOrNull { it.visible && it.activeChoiceFollowUp() != null }?.questTitle
+    val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let {
+        FeaturePhoto(it.path, it.bearing, photoQuestion)
+    }
     val removeTagKeys = if (photo == null && finalPhotoState.existingPhotoRemoved) {
-        listOf(KARTAVIEW_URL_TAG)
+        listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG)
     } else {
         emptyList()
     }

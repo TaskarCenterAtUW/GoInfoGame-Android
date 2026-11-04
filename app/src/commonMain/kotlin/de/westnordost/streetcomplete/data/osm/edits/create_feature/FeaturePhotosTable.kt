@@ -11,6 +11,9 @@ object FeaturePhotosTable {
          *  was facing at capture time for each photo, or absent/null on rows written before this
          *  column existed (treated as all-zero bearings for those - see FeaturePhotosDao.get). */
         const val PHOTO_BEARINGS = "photo_bearings"
+        /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the long-form question
+         *  each photo was taken for, or absent/null on rows written before this column existed */
+        const val PHOTO_QUESTIONS = "photo_questions"
         /** How many times uploading this edit's photo(s) has failed in a row - see
          *  ElementEditsUploader.uploadPendingPhotos and StuckPhotoUploadNotice. Reset to 0 once
          *  the user picks "keep trying" on the resulting notice. */
@@ -24,6 +27,7 @@ object FeaturePhotosTable {
             ${Columns.EDIT_ID} int NOT NULL,
             ${Columns.PHOTO_PATHS} text NOT NULL,
             ${Columns.PHOTO_BEARINGS} text,
+            ${Columns.PHOTO_QUESTIONS} text,
             ${Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0,
             ${Columns.WORKSPACE_ID} int NOT NULL
         );

@@ -886,7 +886,7 @@ private fun openLocalPhotoFullScreen(context: Context, path: String) {
     }
 }
 
-/** Opens the KartaView photo at [url] full-screen via a plain ACTION_VIEW intent - the browser,
+/** Opens the uploaded photo at [url] full-screen via a plain ACTION_VIEW intent - the browser,
  *  typically, since it's a plain https URL. */
 private fun openRemotePhotoFullScreen(context: Context, url: String) {
     try {

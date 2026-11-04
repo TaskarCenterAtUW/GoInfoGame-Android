@@ -17,7 +17,7 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestLongFormListBinding
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormQuest
-import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.KARTAVIEW_URL_TAG
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.getAttachedPhotoUrl
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoAttachment
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoState
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoTransition
@@ -40,7 +40,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
 
     /** The (at most one) photo attached to this quest - either just captured locally this visit
      *  (not yet uploaded - upload happens in the background sync, see AbstractOsmQuestForm) or
-     *  read back from the element's own ext:kartaview_url tag on open (already synced from a
+     *  read back from the element's own ext:street_images (or older ext:kartaview_url) tag on open (already synced from a
      *  previous visit) - plus whether an already-synced one was removed. The attachment is
      *  mirrored onto the adapter so the row showing the relevant choiceFollowUp can render it -
      *  see LongFormAdapter.updateChoiceFollowUp. Transitions live in LongFormSubmission.kt. */
@@ -128,7 +128,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         // LongFormQuest.seedFrom for individual questions - not shown in multi-select, since
         // that's about to be applied to several elements that may not share the same photo
         if (!isMultiSelectActive) {
-            element.tags[KARTAVIEW_URL_TAG]?.let { photoState = PhotoState(PhotoAttachment.Uploaded(it)) }
+            getAttachedPhotoUrl(element.tags)?.let { photoState = PhotoState(PhotoAttachment.Uploaded(it)) }
         }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(activity)
