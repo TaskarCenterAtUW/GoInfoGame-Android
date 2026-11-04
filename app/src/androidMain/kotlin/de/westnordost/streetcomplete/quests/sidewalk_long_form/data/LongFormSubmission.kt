@@ -32,7 +32,7 @@ data class PhotoTransition(val state: PhotoState, val fileToDelete: String? = nu
  *  it ever existed. Retaking again before submitting (Pending -> camera -> new Pending)
  *  carries the ORIGINAL replaces forward, not the intermediate Pending, so no matter how
  *  many times the user retakes, cancelling always lands back on the true starting point. */
-fun PhotoState.afterPhotoCaptured(path: String, bearing: Float): PhotoTransition {
+fun PhotoState.afterPhotoCaptured(path: String, bearing: Float?): PhotoTransition {
     val previous = attachment
     val replaces = when (previous) {
         is PhotoAttachment.Pending -> previous.replaces

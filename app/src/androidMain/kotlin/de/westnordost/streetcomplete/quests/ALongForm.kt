@@ -163,7 +163,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
         }
     }
 
-    override fun onPhotoCaptured(path: String, bearing: Float) {
+    override fun onPhotoCaptured(path: String, bearing: Float?) {
         applyPhotoTransition(photoState.afterPhotoCaptured(path, bearing))
     }
 

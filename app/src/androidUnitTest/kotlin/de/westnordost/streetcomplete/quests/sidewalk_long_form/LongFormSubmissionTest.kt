@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.KARTAVIEW_URL_TAG
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.STREET_IMAGES_TAG
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormSubmission
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoAttachment
@@ -295,7 +296,7 @@ class LongFormSubmissionTest {
         val submission = adapter.submit(PhotoState(PhotoAttachment.PendingRemoval(photoUrl), existingPhotoRemoved = true))
         assertFalse(submission.isEmpty)
         assertEquals(emptyList(), submission.items)
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         assertNull(submission.photo)
     }
 
@@ -322,7 +323,7 @@ class LongFormSubmissionTest {
         val adapter = openForm(obstructionWithPhotoTags)
         adapter.tapChoice(OBSTRUCTION_TYPE, "other")
         val submission = adapter.submit(PhotoState(PhotoAttachment.Uploaded(photoUrl)))
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         assertNull(submission.photoTransition!!.fileToDelete)
     }
 
@@ -333,7 +334,7 @@ class LongFormSubmissionTest {
 
         val submission = adapter.submit(photo)
         assertEquals(pendingPath, submission.photoTransition!!.fileToDelete)
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         val tags = submission.applyTo(obstructionWithPhotoTags + (KARTAVIEW_URL_TAG to photoUrl))
         assertEquals(mapOf("ext:obstruction" to "no"), tags)
     }

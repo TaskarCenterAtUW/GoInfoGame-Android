@@ -7,12 +7,12 @@ import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 
 /** One photo attached to a not-yet-synced edit, with the compass bearing (0-359, clockwise from
- *  north) the device was facing at capture time - or 0f when a caller doesn't track it (not every
+ *  true north) the camera was facing at capture time - or null if unknown (not every
  *  photo-attaching flow captures a bearing yet) - and the long-form [question] it was taken for,
  *  if any. Uploaded with those at sync time - see
  *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
 @Serializable
-data class FeaturePhoto(val path: String, val bearing: Float = 0f, val question: String? = null)
+data class FeaturePhoto(val path: String, val bearing: Float? = null, val question: String? = null)
 
 /** Manages the photos attached to not-yet-synced create-feature/tag-update edits: their file
  *  paths (and capture bearings) are held here until the edit is uploaded, at which point the

@@ -7,9 +7,9 @@ object FeaturePhotosTable {
         const val ID = "id"
         const val EDIT_ID = "edit_id"
         const val PHOTO_PATHS = "photo_paths"
-        /** JSON list of Floats, index-aligned with PHOTO_PATHS - the compass bearing the device
-         *  was facing at capture time for each photo, or absent/null on rows written before this
-         *  column existed (treated as all-zero bearings for those - see FeaturePhotosDao.get). */
+        /** JSON list of nullable Floats, index-aligned with PHOTO_PATHS - the compass bearing the
+         *  camera was facing at capture time for each photo (null: unknown), or absent/null on
+         *  rows written before this column existed (unknown bearings - see FeaturePhotosDao.get). */
         const val PHOTO_BEARINGS = "photo_bearings"
         /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the long-form question
          *  each photo was taken for, or absent/null on rows written before this column existed */

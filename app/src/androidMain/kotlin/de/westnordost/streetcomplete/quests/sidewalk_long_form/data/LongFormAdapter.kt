@@ -58,7 +58,7 @@ sealed class PhotoAttachment {
      *  so cancelling this capture (the remove button) can revert to it instead of always dropping to
      *  [None] and silently losing track of an already-synced photo that was never actually asked
      *  to be removed. */
-    data class Pending(val path: String, val bearing: Float = 0f, val replaces: PhotoAttachment? = null) : PhotoAttachment()
+    data class Pending(val path: String, val bearing: Float? = null, val replaces: PhotoAttachment? = null) : PhotoAttachment()
     /** Attached and synced on a previous visit, read back from the element's own tags. */
     data class Uploaded(val url: String) : PhotoAttachment()
     /** Was [Uploaded] as [url], but the user tapped delete this visit - shown as a distinct,
@@ -514,8 +514,14 @@ class LongFormAdapter<T>(
             // survive rebinds and holders recycled from other questions
             updateChoiceFollowUp(item)
 
+            // from the live givenItems entry, not [item]: that may be a snapshot taken before the
+            // selection was made (items is only resynced for questions in needRefreshIds), e.g.
+            // when this row is rebound after a photo was attached to its choiceFollowUp - the
+            // selection highlight vanished while the photo card (resolved live, see
+            // updateChoiceFollowUp) still showed
+            val live = item.questId?.let { id -> givenItems.firstOrNull { it.questId == id } } ?: item
             imageSelectAdapter.selectedIndices =
-                item.selectedIndex ?: emptyList()
+                live.selectedIndex ?: emptyList()
 
             selectionListener?.let { imageSelectAdapter.listeners.remove(it) }
             val listener = object : ImageSelectAdapter.OnItemSelectionListener {

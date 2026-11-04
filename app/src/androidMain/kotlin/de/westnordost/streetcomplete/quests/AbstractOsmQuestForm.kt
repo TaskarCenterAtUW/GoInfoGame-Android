@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.hardware.GeomagneticField
 import android.hardware.SensorManager
 import android.location.Location
 import android.net.Uri
@@ -14,7 +15,6 @@ import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.PopupMenu
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,7 +55,6 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
-import de.westnordost.streetcomplete.screens.main.map.Compass
 import de.westnordost.streetcomplete.util.decodeScaledBitmapAndNormalize
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.isSplittable
@@ -64,6 +63,7 @@ import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.add
 import de.westnordost.streetcomplete.view.confirmIsSurvey
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -73,7 +73,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Locale
-import kotlin.math.PI
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
 abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDetails {
@@ -110,7 +109,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     // overridable by child classes
     open val otherAnswers = listOf<IAnswerItem>()
     open val buttonPanelAnswers = listOf<IAnswerItem>()
-    private var compassBearing: Double = 0.0
 
     interface Listener {
         /** The GPS position at which the user is displayed at */
@@ -141,17 +139,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
-    private lateinit var compass: Compass
+    private lateinit var cameraBearingSensor: CameraBearingSensor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        compass = Compass(
-            context?.getSystemService<SensorManager>()!!,
-            context?.getSystemService<WindowManager>()!!.defaultDisplay,
-            this::onCompassRotationChanged
-        )
-        lifecycle.addObserver(compass)
+        cameraBearingSensor = CameraBearingSensor(requireContext().getSystemService<SensorManager>()!!)
 
         val args = requireArguments()
 
@@ -164,22 +157,6 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         pendingPhotoFile = savedInstanceState?.getString(ARG_PENDING_PHOTO_FILE)?.let { File(it) }
         takePhotoLauncher =
             registerForActivityResult(ActivityResultContracts.TakePicture(), ::onTookPhoto)
-    }
-
-    private fun onCompassRotationChanged(rot: Float, tilt: Float) {
-        compassBearing = rot * 180 / PI
-    }
-
-    /** The compass bearing (0-359, clockwise from north) to record for a photo captured right
-     *  now - the live GPS bearing if the map is currently pointed somewhere meaningful, otherwise
-     *  the device's own compass sensor reading. */
-    private fun capturedPhotoBearing(): Float {
-        val displayedLocation = listener?.displayedMapLocation
-        return if (displayedLocation?.hasBearing() == true && displayedLocation.bearing != 0f) {
-            displayedLocation.bearing
-        } else {
-            compassBearing.toFloat()
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -521,23 +498,35 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             file?.delete()
             return
         }
-        val bearing = capturedPhotoBearing()
-        // decoding the full camera photo, scaling and re-encoding it takes long enough to
-        // visibly freeze the form when done on the main thread
+        val location = listener?.displayedMapLocation
         viewLifecycleScope.launch {
-            val processed = withContext(Dispatchers.IO) {
+            // The photo's direction: the one the camera app wrote into the photo, if any - it
+            // knows the moment of the shot. Otherwise where the back camera points right now: we
+            // only get control back after the shot, while the user is usually still aiming. The
+            // GPS direction of travel is not used - it is not where the camera points.
+            val sensorBearing = async { cameraBearingSensor.awaitBearing(location) }
+            // decoding the full camera photo, scaling and re-encoding it takes long enough to
+            // visibly freeze the form when done on the main thread
+            val exifBearing = withContext(Dispatchers.IO) {
                 try {
                     val exif = ExifInterface(file)
                     rescalePhotoFile(file)
                     copyDirectionExifData(file, exif)
-                    true
+                    Result.success(exif.getTrueNorthImageDirection(location))
                 } catch (e: IOException) {
                     Log.e(TAG, "Unable to process photo", e)
                     file.delete()
-                    false
+                    null
                 }
             }
-            if (processed) onPhotoCaptured(file.path, bearing)
+            if (exifBearing == null) {
+                sensorBearing.cancel()
+                return@launch
+            }
+            val bearing = exifBearing.getOrNull()
+                ?.also { sensorBearing.cancel() }
+                ?: sensorBearing.await()
+            onPhotoCaptured(file.path, bearing)
         }
     }
 
@@ -574,6 +563,21 @@ private fun rescalePhotoFile(file: File) {
         bitmap.compress(Bitmap.CompressFormat.JPEG, LONG_FORM_PHOTO_QUALITY, out)
     }
     bitmap.recycle()
+}
+
+/** The GPSImgDirection the camera app wrote into the photo (0-359, clockwise from true north),
+ *  or null if it didn't. Converted from magnetic north with the declination at [location], if
+ *  that's what the camera recorded. */
+private fun ExifInterface.getTrueNorthImageDirection(location: Location?): Float? {
+    val direction = getAttributeDouble(TAG_GPS_IMG_DIRECTION, Double.NaN)
+    if (direction.isNaN()) return null
+    val declination = if (getAttribute(TAG_GPS_IMG_DIRECTION_REF) == "M" && location != null) {
+        GeomagneticField(
+            location.latitude.toFloat(), location.longitude.toFloat(), location.altitude.toFloat(),
+            System.currentTimeMillis()
+        ).declination
+    } else 0f
+    return (direction.toFloat() + declination).mod(360f)
 }
 
 private fun copyDirectionExifData(file: File, exif: ExifInterface) {

@@ -133,8 +133,8 @@ class NoteEditsUploader(
 
     private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>, position: LatLon): String {
         if (imagePaths.isNotEmpty()) {
-            // note photos don't carry a capture bearing yet - see FeaturePhoto/ElementEditsUploader
-            // for the long-form equivalent this could follow if notes gain the same later
+            // note photos don't carry a capture bearing yet (none is sent then) - see
+            // FeaturePhoto/ElementEditsUploader for the long-form equivalent
             val urls = imageUploader.upload(imagePaths.map { PanoramaxPhoto(it) }, position)
             if (urls.isNotEmpty()) {
                 return "\n\nAttached photo:\n" + urls.joinToString("\n")

@@ -38,12 +38,12 @@ class FeaturePhotosDao(
             where = "$WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId"
         ) { row ->
             val paths = json.decodeFromString<List<String>>(row.getString(PHOTO_PATHS))
-            // absent on rows written before PHOTO_BEARINGS existed - treated as all-zero bearings
-            val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float>>(it) }
+            // absent on rows written before PHOTO_BEARINGS existed - unknown bearings then
+            val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float?>>(it) }
             // absent on rows written before PHOTO_QUESTIONS existed
             val questions = row.getStringOrNull(PHOTO_QUESTIONS)?.let { json.decodeFromString<List<String?>>(it) }
             paths.mapIndexed { i, path ->
-                FeaturePhoto(path, bearings?.getOrNull(i) ?: 0f, questions?.getOrNull(i))
+                FeaturePhoto(path, bearings?.getOrNull(i), questions?.getOrNull(i))
             }
         } ?: emptyList()
 

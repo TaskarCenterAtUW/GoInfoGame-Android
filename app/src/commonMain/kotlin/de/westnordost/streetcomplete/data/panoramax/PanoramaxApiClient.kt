@@ -34,12 +34,12 @@ import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 
 /** A photo to upload: the image file at [path], the compass [bearing] (0-359 clockwise from
- *  north) the device was facing at capture time - 0f where a caller doesn't track it - and
+ *  true north) the camera was facing at capture time - null if unknown, then none is sent - and
  *  semantic tags to attach to the picture, on top of the ones every picture gets (see
  *  [PanoramaxApiClient.upload]). */
 data class PanoramaxPhoto(
     val path: String,
-    val bearing: Float = 0f,
+    val bearing: Float? = null,
     val semantics: Map<String, String> = emptyMap(),
 )
 
@@ -170,20 +170,23 @@ class PanoramaxApiClient(
         index: Int,
         image: ByteArray,
         position: LatLon,
-        bearing: Float,
+        bearing: Float?,
         semantics: Map<String, String>,
     ): String {
-        // the (rescaled) photos carry no EXIF any more, so position, time and heading are given
-        // as overrides - Panoramax rejects pictures without position and capture time
-        val heading = bearing.roundToInt().mod(360)
+        // the (rescaled) photos carry no position and time in their EXIF any more, so these are
+        // given as overrides - Panoramax rejects pictures without. Same for the heading - but only
+        // if known: 0 would claim the photo faces north
+        val heading = bearing?.roundToInt()?.mod(360)
         val response = httpClient.post(baseUrl + "api/upload_sets/$uploadSetId/files") {
             bearerAuth(accessToken)
             setBody(MultiPartFormDataContent(formData {
                 append("override_latitude", position.latitude.toString())
                 append("override_longitude", position.longitude.toString())
                 append("override_capture_time", systemTimeNow().toString())
-                append("override_Exif.GPSInfo.GPSImgDirection", "$heading/1")
-                append("override_Exif.GPSInfo.GPSImgDirectionRef", "T")
+                if (heading != null) {
+                    append("override_Exif.GPSInfo.GPSImgDirection", "$heading/1")
+                    append("override_Exif.GPSInfo.GPSImgDirectionRef", "T")
+                }
                 if (semantics.isNotEmpty()) {
                     // must be a JSON part, see the API docs
                     append(

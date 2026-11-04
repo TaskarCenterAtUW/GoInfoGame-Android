@@ -152,9 +152,9 @@ abstract class AbstractQuestForm :
     open fun setCameraIntent() {}
 
     /** Called when a photo was captured to local disk at [path], facing compass [bearing]
-     *  (0-359, clockwise from north) - upload happens later, in the background sync, not at
-     *  capture time (see AbstractOsmQuestForm). */
-    open fun onPhotoCaptured(path: String, bearing: Float) {}
+     *  (0-359, clockwise from true north; null if unknown) - upload happens later, in the
+     *  background sync, not at capture time (see AbstractOsmQuestForm). */
+    open fun onPhotoCaptured(path: String, bearing: Float?) {}
 
     protected fun showProgressbar() {
         binding.progressBar.visibility = View.VISIBLE
