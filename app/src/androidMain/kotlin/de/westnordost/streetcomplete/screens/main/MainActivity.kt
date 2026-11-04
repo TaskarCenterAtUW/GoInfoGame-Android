@@ -1797,9 +1797,6 @@ class MainActivity :
             questTypes.add(index to AddGenericLong(item, recencyPeriodInDays))
         }
         questTypeRegistry.addItem(questTypes)
-        // the quest cache outlives this activity - quests cached under the previous long form
-        // would show stale pins whose quest type is no longer registered (form crashes on open)
-        visibleQuestsSource.clearAllCaches()
 
         allEditTypes.registries.clear()
         allEditTypes.registries.addAll(listOf(questTypeRegistry))
@@ -1811,6 +1808,12 @@ class MainActivity :
         allEditTypes.unknownTypeFallback = { name ->
             AddGenericLong(Elements(elementType = name), recencyPeriodInDays)
         }
+
+        // the quest cache outlives this activity - quests cached under the previous long form
+        // would show stale pins whose quest type is no longer registered (form crashes on open).
+        // Only after the edit types are set up: on a fresh process this first access creates
+        // MapDataWithEditsSource, which loads the unsynced edits and needs to resolve their types
+        visibleQuestsSource.clearAllCaches()
     }
 
     private fun onClickImageryLayerButton() {
