@@ -277,7 +277,7 @@ class LongFormSubmissionTest {
         adapter.typeNumber(WIDTH, "60")
         val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath)))
         assertEquals(listOf(WIDTH), submission.submittedIds())
-        assertEquals(FeaturePhoto(pendingPath, 0f), submission.photo)
+        assertEquals(FeaturePhoto(pendingPath), submission.photo)
     }
 
     @Test fun `a new photo replacing an existing one does not remove the tag up front`() {

@@ -11,7 +11,7 @@ import java.util.Collections
 
 /**
  * Keeps every instrumented test off the real network on the app's own Ktor clients - the main
- * workspace/TDEI client, "osmClient", "kartaViewClient" and "refreshClient" (the one the 401
+ * workspace/TDEI client, "osmClient", "kartaViewClient", "panoramaxClient" and "refreshClient" (the one the 401
  * token refresh uses). A request that no mock answered is blocked: it fails like an unreachable
  * server (IOException, so the app treats it as offline), is logged under [TAG] and recorded in
  * [blocked]. Installed once per test process by [SandboxedTestRunner].
@@ -30,10 +30,9 @@ object RealNetworkGuard {
     fun install(koin: Koin) {
         guard(koin.get<HttpClient>(), "default") { false }
         guard(koin.get(named("osmClient")), "osmClient") { MockOsmServer.isActive }
-        guard(koin.get(named("kartaViewClient")), "kartaViewClient") { MockKartaView.isActive }
+        guard(koin.get(named("kartaViewClient")), "kartaViewClient") { false }
         guard(koin.get(named("refreshClient")), "refreshClient") { false }
-        // no mock for Panoramax yet - photo uploads in tests are blocked
-        guard(koin.get(named("panoramaxClient")), "panoramaxClient") { false }
+        guard(koin.get(named("panoramaxClient")), "panoramaxClient") { MockPanoramax.isActive }
     }
 
     private fun guard(client: HttpClient, name: String, answeredByMock: () -> Boolean) {

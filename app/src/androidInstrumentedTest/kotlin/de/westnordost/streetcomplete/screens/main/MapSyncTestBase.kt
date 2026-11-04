@@ -73,7 +73,7 @@ import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
 import de.westnordost.streetcomplete.screens.workspaces.FakeWorkspaceRepository
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.testutils.MockGps
-import de.westnordost.streetcomplete.testutils.MockKartaView
+import de.westnordost.streetcomplete.testutils.MockPanoramax
 import de.westnordost.streetcomplete.testutils.MockOsmServer
 import de.westnordost.streetcomplete.testutils.MockOsmServer.MockNode
 import de.westnordost.streetcomplete.testutils.MockOsmServer.MockWay
@@ -109,7 +109,7 @@ import org.koin.dsl.module
  * is downloaded from [MockOsmServer], and the sidewalk's quest pin can be tapped on the map.
  *
  * Everything past the fake login is the app's own code. The network is [MockOsmServer] and
- * [MockKartaView], both hooked into the app's own HttpClients (see [MockOsmServer.attachTo] for
+ * [MockPanoramax], both hooked into the app's own HttpClients (see [MockOsmServer.attachTo] for
  * why), and a mock workspace API behind the real [WorkspaceApiService] / [WorkspaceRepositoryImpl]
  * / [WorkspaceDao].
  */
@@ -150,7 +150,7 @@ abstract class MapSyncTestBase {
 
         MockOsmServer.reset()
         MockOsmServer.put(*sidewalkNodes.toTypedArray(), sidewalk, *otherElements.toTypedArray())
-        MockKartaView.reset()
+        MockPanoramax.reset()
 
         val realRepository = WorkspaceRepositoryImpl(workspaceApiService(), workspaceDao)
         fakeRepository.workspaces = { realRepository.getWorkspaces(it) }
@@ -160,9 +160,9 @@ abstract class MapSyncTestBase {
         })
         MockOsmServer.attachTo(koin.get(named("osmClient")))
         MockOsmServer.isActive = true
-        // photo uploads must never reach the real KartaView either
-        MockKartaView.attachTo(koin.get(named("kartaViewClient")))
-        MockKartaView.isActive = true
+        // photo uploads must never reach the real Panoramax either
+        MockPanoramax.attachTo(koin.get(named("panoramaxClient")))
+        MockPanoramax.isActive = true
 
         // photo thumbnails of existing answers are real https URLs (loaded by Coil, which the
         // network guard doesn't cover) - never fetch them in tests
@@ -190,7 +190,7 @@ abstract class MapSyncTestBase {
         finishAllActivities()
         clearAppState()
         MockOsmServer.isActive = false
-        MockKartaView.isActive = false
+        MockPanoramax.isActive = false
         preferences.isLowBandwidthModeEnabled = wasLowBandwidth
     }
 

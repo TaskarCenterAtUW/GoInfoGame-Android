@@ -9,20 +9,24 @@ import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesControll
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryChange
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryDelete
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryModify
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsController
@@ -281,6 +285,94 @@ class ElementEditsUploaderTest {
         verifyNoInteractions(imageUploader)
     }
 
+    @Test fun `the question the photo was taken for is sent along`() = runBlocking<Unit> {
+        val edit = givenAnswerWithPhoto()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", null, "Is it steep?")))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto("/photos/p.jpg", null, mapOf("element_id" to "node/1", "question" to "Is it steep?"))),
+            edit.position
+        )
+    }
+
+    // photos uploaded to KartaView before the switch to Panoramax
+    @Test fun `a new photo replaces the element's KartaView photo URL`() = runBlocking<Unit> {
+        givenAnswerWithPhoto(existingTags = mapOf("ext:kartaview_url" to "https://old/photo.jpg"))
+
+        uploader.upload()
+
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("surface", "concrete"),
+                StringMapEntryAdd("ext:street_images", PHOTO_URL),
+                StringMapEntryDelete("ext:kartaview_url", "https://old/photo.jpg"),
+            ),
+            uploadedChanges()
+        )
+    }
+
+    //endregion
+
+    //region photos of a new node
+
+    /** A new node with two photos waiting to be uploaded, which is created as node 42 */
+    private suspend fun givenNewNodeWithPhotos(): ElementEdit {
+        val edit = edit(action = CreateNodeAction(LatLon(1.0, 2.0), mapOf("amenity" to "bench")))
+        on(elementEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/a.jpg"), FeaturePhoto("/photos/b.jpg")))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf(PHOTO_URL, PHOTO_URL_2))
+        on(singleUploader.upload(any(), any())).thenReturn(
+            MapDataUpdates(idUpdates = listOf(ElementIdUpdate(ElementType.NODE, -1, 42)))
+        )
+        return edit
+    }
+
+    @Test fun `photos of a new node are uploaded without element id and go up with the node`() = runBlocking<Unit> {
+        val edit = givenNewNodeWithPhotos()
+
+        uploader.upload()
+
+        // its id is not known yet
+        verify(imageUploader).upload(listOf(PanoramaxPhoto("/photos/a.jpg"), PanoramaxPhoto("/photos/b.jpg")), edit.position)
+        val uploaded = argumentCaptor<ElementEdit>()
+        verify(singleUploader).upload(capture(uploaded), any())
+        assertEquals(
+            mapOf("amenity" to "bench", "ext:image_url1" to PHOTO_URL, "ext:image_url2" to PHOTO_URL_2),
+            (uploaded.value.action as CreateNodeAction).tags
+        )
+    }
+
+    @Test fun `once the new node is uploaded, its id is added to its photos`() = runBlocking<Unit> {
+        givenNewNodeWithPhotos()
+
+        uploader.upload()
+
+        verify(imageUploader).addSemantics(PHOTO_URL, mapOf("element_id" to "node/42"))
+        verify(imageUploader).addSemantics(PHOTO_URL_2, mapOf("element_id" to "node/42"))
+    }
+
+    // the node is already uploaded at that point - that must not be undone or repeated
+    @Test fun `failing to add the id to the photos doesn't fail the upload`() = runBlocking<Unit> {
+        givenNewNodeWithPhotos()
+        on(imageUploader.addSemantics(any(), any())).thenThrow(PanoramaxException("down", isUnreachable = true))
+
+        uploader.upload()
+
+        verify(elementEditsController).markSynced(any(), any())
+        // still tried for the other photo
+        verify(imageUploader).addSemantics(PHOTO_URL_2, mapOf("element_id" to "node/42"))
+    }
+
+    @Test fun `a tag update's photos are not patched afterwards`() = runBlocking<Unit> {
+        givenAnswerWithPhoto()
+
+        uploader.upload()
+
+        verify(imageUploader, never()).addSemantics(any(), any())
+    }
+
     //endregion
 
     //region Panoramax failing with photos queued
@@ -338,6 +430,7 @@ class ElementEditsUploaderTest {
 
     private companion object {
         const val PHOTO_URL = "https://panoramax.example/api/pictures/1/hd.jpg"
+        const val PHOTO_URL_2 = "https://panoramax.example/api/pictures/2/hd.jpg"
     }
 }
 

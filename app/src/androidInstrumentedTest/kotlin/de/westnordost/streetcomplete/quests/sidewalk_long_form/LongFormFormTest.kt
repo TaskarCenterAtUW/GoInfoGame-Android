@@ -26,6 +26,7 @@ import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.KARTAVIEW_URL_TAG
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.STREET_IMAGES_TAG
 import org.hamcrest.Matchers.allOf
 import java.io.File
 import android.os.ParcelFileDescriptor
@@ -385,7 +386,7 @@ class LongFormFormTest {
 
     @Test
     fun existingPhotoCanBeMarkedForRemovalUndoneAndRemoved() {
-        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "other", KARTAVIEW_URL_TAG to PHOTO_URL))
+        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "other", STREET_IMAGES_TAG to PHOTO_URL))
         onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_title)).perform(scrollIntoView()).check(matches(withText("Photo from last visit")))
 
         onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_delete)).perform(scrollIntoView(), click())
@@ -395,7 +396,7 @@ class LongFormFormTest {
 
         onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_delete)).perform(scrollIntoView(), click())
         submit()
-        assertFalse(KARTAVIEW_URL_TAG in edits.resultingTags(originalTags))
+        assertFalse(STREET_IMAGES_TAG in edits.resultingTags(originalTags))
     }
 
     @Test
@@ -451,7 +452,7 @@ class LongFormFormTest {
         assertEquals(capturedUris[1].lastPathSegment, File(photo.path).name)
     }
 
-    // long form photos go to KartaView, often over mobile data - a camera's full size photo is cut down
+    // long form photos go to Panoramax, often over mobile data - a camera's full size photo is cut down
     @Test
     fun capturedPhotoIsScaledDownForUpload() {
         open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "bollard;other"))
@@ -477,7 +478,7 @@ class LongFormFormTest {
 
     @Test
     fun tappingThePhotoFromLastVisitShowsItFullScreen() {
-        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "other", KARTAVIEW_URL_TAG to PHOTO_URL))
+        open(mapOf("ext:obstruction" to "yes", "ext:obstruction:type" to "other", STREET_IMAGES_TAG to PHOTO_URL))
         intending(hasAction(Intent.ACTION_VIEW)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
 
         onView(inRowOf(OBSTRUCTION_TYPE_Q, R.id.photo_thumb)).perform(scrollIntoView(), click())
@@ -686,7 +687,7 @@ class LongFormFormTest {
     private companion object {
         val ANIMATION_SCALES = listOf("animator_duration_scale", "transition_animation_scale", "window_animation_scale")
         const val QUEST_TYPE_NAME = "LongFormUiTestSidewalks"
-        const val PHOTO_URL = "https://kartaview.org/details/1/2/track-info"
+        const val PHOTO_URL = "https://panoramax.example/api/pictures/1/hd.jpg"
         const val EDIT_TIMEOUT_MS = 5_000L
         const val NO_EDIT_GRACE_MS = 1_000L
     }
