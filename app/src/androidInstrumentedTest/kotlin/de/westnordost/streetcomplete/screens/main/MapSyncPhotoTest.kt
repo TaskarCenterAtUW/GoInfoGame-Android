@@ -78,6 +78,9 @@ class MapSyncPhotoTest : MapSyncTestBase() {
         val photoBody = MockPanoramax.fileBodies.single()
         assertTrue(photoBody, photoBody.contains("""{"key":"element_id","value":"way/${SIDEWALK.id}"}"""))
         assertTrue(photoBody, photoBody.contains("""{"key":"question","value":"$OBSTRUCTION_Q"}"""))
+        assertTrue(photoBody, photoBody.contains("""{"key":"quest_id","value":"103"}"""))
+        // nothing identifying the user, the pictures are public (MapSyncTestBase logs in with an email)
+        assertFalse(photoBody, photoBody.contains("user_email"))
         // the photo is done with: its record (and file) are gone, nothing is left queued
         waitUntil("answer synced") { unsyncedEditsCount() == 0 }
         assertEquals(0, koin.get<Database>().query(FeaturePhotosTable.NAME) { 1 }.size)

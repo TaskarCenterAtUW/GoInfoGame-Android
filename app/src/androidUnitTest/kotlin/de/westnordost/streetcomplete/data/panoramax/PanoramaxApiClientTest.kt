@@ -160,29 +160,33 @@ class PanoramaxApiClientTest {
         assertFalse(fileBodies.single().contains("GPSImgDirection"))
     }
 
-    @Test fun `workspace, user and the photo's own semantics are sent along`() = runTest {
+    @Test fun `workspace and the photo's own semantics are sent along`() = runTest {
         preferences.workspaceId = 7
-        preferences.workspaceUserEmail = "surveyor@example.org"
 
         client().upload(
-            listOf(PanoramaxPhoto(photo1.path, 0f, mapOf("element_id" to "way/123", "question" to "Is it steep?"))),
+            listOf(PanoramaxPhoto(photo1.path, 0f, mapOf(
+                "element_id" to "way/123", "question" to "Is it steep?", "quest_id" to "12"
+            ))),
             position
         )
 
         val body = fileBodies.single()
         assertTrue(body.contains(
-            """[{"key":"workspace_id","value":"7"},{"key":"user_email","value":"surveyor@example.org"},""" +
-                """{"key":"element_id","value":"way/123"},{"key":"question","value":"Is it steep?"}]"""
-        ))
+            """[{"key":"workspace_id","value":"7"},{"key":"element_id","value":"way/123"},""" +
+                """{"key":"question","value":"Is it steep?"},{"key":"quest_id","value":"12"}]"""
+        ), body)
     }
 
-    @Test fun `no user_email is sent if unknown`() = runTest {
+    // the pictures are public
+    @Test fun `the user's email is never sent`() = runTest {
         preferences.workspaceId = 7
+        preferences.workspaceUserEmail = "surveyor@example.org"
 
         client().upload(listOf(PanoramaxPhoto(photo1.path)), position)
 
         val body = fileBodies.single()
-        assertTrue(body.contains("""[{"key":"workspace_id","value":"7"}]"""))
+        assertTrue(body.contains("""[{"key":"workspace_id","value":"7"}]"""), body)
+        assertFalse(body.contains("surveyor@example.org"))
         assertFalse(body.contains("user_email"))
     }
 

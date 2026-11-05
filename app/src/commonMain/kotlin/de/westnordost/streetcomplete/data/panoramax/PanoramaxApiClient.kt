@@ -60,8 +60,9 @@ class PanoramaxApiClient(
      *  the upload set and returns the HD picture URL for each uploaded image, in the same order.
      *  Photos whose file doesn't exist are skipped.
      *
-     *  Every picture gets the semantic tags [WORKSPACE_ID] and (if known) [USER_EMAIL] of the
-     *  logged-in user, plus the photo's own [PanoramaxPhoto.semantics].
+     *  Every picture gets the semantic tag [WORKSPACE_ID] of the logged-in user, plus the photo's
+     *  own [PanoramaxPhoto.semantics]. Nothing identifying the user (e.g. their email) is sent -
+     *  the pictures are public.
      *
      *  The URLs are known right away (they only depend on the picture id), but only answer with
      *  the image once the server has processed the picture, usually within seconds.
@@ -142,7 +143,6 @@ class PanoramaxApiClient(
 
     private fun getCommonSemantics(): Map<String, String> = buildMap {
         preferences.workspaceId?.let { put(WORKSPACE_ID, it.toString()) }
-        preferences.workspaceUserEmail?.takeIf { it.isNotBlank() }?.let { put(USER_EMAIL, it) }
     }
 
     private suspend fun createUploadSet(fileCount: Int): String {
@@ -242,11 +242,12 @@ class PanoramaxApiClient(
 
         /** semantic tag keys put on the uploaded pictures */
         const val WORKSPACE_ID = "workspace_id"
-        const val USER_EMAIL = "user_email"
         /** the OSM element the photo is of, e.g. "way/123" */
         const val ELEMENT_ID = "element_id"
         /** the long-form question the photo was taken for */
         const val QUESTION = "question"
+        /** the quest_id of that long-form question */
+        const val QUEST_ID = "quest_id"
     }
 }
 

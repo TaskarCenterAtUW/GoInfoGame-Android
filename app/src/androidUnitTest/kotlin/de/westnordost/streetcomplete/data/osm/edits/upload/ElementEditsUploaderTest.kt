@@ -287,12 +287,14 @@ class ElementEditsUploaderTest {
 
     @Test fun `the question the photo was taken for is sent along`() = runBlocking<Unit> {
         val edit = givenAnswerWithPhoto()
-        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", null, "Is it steep?")))
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", null, "Is it steep?", 12)))
 
         uploader.upload()
 
         verify(imageUploader).upload(
-            listOf(PanoramaxPhoto("/photos/p.jpg", null, mapOf("element_id" to "node/1", "question" to "Is it steep?"))),
+            listOf(PanoramaxPhoto("/photos/p.jpg", null, mapOf(
+                "element_id" to "node/1", "question" to "Is it steep?", "quest_id" to "12"
+            ))),
             edit.position
         )
     }

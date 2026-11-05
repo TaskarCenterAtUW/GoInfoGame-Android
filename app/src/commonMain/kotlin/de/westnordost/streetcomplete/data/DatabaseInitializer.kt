@@ -361,8 +361,10 @@ object DatabaseInitializer {
         }
 
         if (oldVersion <= 29 && newVersion >= 30) {
-            // per-photo long-form question, sent along to Panoramax as a semantic tag
+            // per-photo long-form question (title and quest_id), sent along to Panoramax as
+            // semantic tags
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUESTIONS} text")
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUEST_IDS} text")
         }
     }
 }

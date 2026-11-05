@@ -14,6 +14,9 @@ object FeaturePhotosTable {
         /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the long-form question
          *  each photo was taken for, or absent/null on rows written before this column existed */
         const val PHOTO_QUESTIONS = "photo_questions"
+        /** JSON list of nullable Ints, index-aligned with PHOTO_PATHS - the quest_id of that
+         *  long-form question, or absent/null on rows written before this column existed */
+        const val PHOTO_QUEST_IDS = "photo_quest_ids"
         /** How many times uploading this edit's photo(s) has failed in a row - see
          *  ElementEditsUploader.uploadPendingPhotos and StuckPhotoUploadNotice. Reset to 0 once
          *  the user picks "keep trying" on the resulting notice. */
@@ -28,6 +31,7 @@ object FeaturePhotosTable {
             ${Columns.PHOTO_PATHS} text NOT NULL,
             ${Columns.PHOTO_BEARINGS} text,
             ${Columns.PHOTO_QUESTIONS} text,
+            ${Columns.PHOTO_QUEST_IDS} text,
             ${Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0,
             ${Columns.WORKSPACE_ID} int NOT NULL
         );

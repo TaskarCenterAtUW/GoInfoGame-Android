@@ -5,6 +5,7 @@ import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotos
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUESTIONS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUEST_IDS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.NAME
@@ -28,6 +29,7 @@ class FeaturePhotosDao(
             PHOTO_PATHS to json.encodeToString(photos.map { it.path }),
             PHOTO_BEARINGS to json.encodeToString(photos.map { it.bearing }),
             PHOTO_QUESTIONS to json.encodeToString(photos.map { it.question }),
+            PHOTO_QUEST_IDS to json.encodeToString(photos.map { it.questId }),
             WORKSPACE_ID to workspaceId
         ))
     }
@@ -40,10 +42,11 @@ class FeaturePhotosDao(
             val paths = json.decodeFromString<List<String>>(row.getString(PHOTO_PATHS))
             // absent on rows written before PHOTO_BEARINGS existed - unknown bearings then
             val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float?>>(it) }
-            // absent on rows written before PHOTO_QUESTIONS existed
+            // absent on rows written before PHOTO_QUESTIONS / PHOTO_QUEST_IDS existed
             val questions = row.getStringOrNull(PHOTO_QUESTIONS)?.let { json.decodeFromString<List<String?>>(it) }
+            val questIds = row.getStringOrNull(PHOTO_QUEST_IDS)?.let { json.decodeFromString<List<Int?>>(it) }
             paths.mapIndexed { i, path ->
-                FeaturePhoto(path, bearings?.getOrNull(i), questions?.getOrNull(i))
+                FeaturePhoto(path, bearings?.getOrNull(i), questions?.getOrNull(i), questIds?.getOrNull(i))
             }
         } ?: emptyList()
 

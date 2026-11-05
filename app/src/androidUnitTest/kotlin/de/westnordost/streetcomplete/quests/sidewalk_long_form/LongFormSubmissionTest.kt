@@ -268,7 +268,8 @@ class LongFormSubmissionTest {
         val adapter = openForm(obstructionWithPhotoTags)
         val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath, 90f)))
         assertEquals(listOf(OBSTRUCTION_TYPE), submission.submittedIds())
-        assertEquals(FeaturePhoto(pendingPath, 90f), submission.photo)
+        // with the question whose follow-up asked for it
+        assertEquals(FeaturePhoto(pendingPath, 90f, questId = OBSTRUCTION_TYPE), submission.photo)
         assertNull(submission.photoTransition)
     }
 
@@ -277,7 +278,7 @@ class LongFormSubmissionTest {
         adapter.typeNumber(WIDTH, "60")
         val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath)))
         assertEquals(listOf(WIDTH), submission.submittedIds())
-        assertEquals(FeaturePhoto(pendingPath), submission.photo)
+        assertEquals(FeaturePhoto(pendingPath, questId = OBSTRUCTION_TYPE), submission.photo)
     }
 
     @Test fun `a new photo replacing an existing one does not remove the tag up front`() {

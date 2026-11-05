@@ -156,9 +156,9 @@ fun computeLongFormSubmission(
     // can express right away
     // the question whose choiceFollowUp asked for the photo - the same one whose row shows it
     // (see LongFormAdapter.photoAttachment)
-    val photoQuestion = givenItems.firstOrNull { it.visible && it.activeChoiceFollowUp() != null }?.questTitle
+    val photoQuestion = givenItems.firstOrNull { it.visible && it.activeChoiceFollowUp() != null }
     val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let {
-        FeaturePhoto(it.path, it.bearing, photoQuestion)
+        FeaturePhoto(it.path, it.bearing, photoQuestion?.questTitle, photoQuestion?.questId)
     }
     val removeTagKeys = if (photo == null && finalPhotoState.existingPhotoRemoved) {
         listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG)

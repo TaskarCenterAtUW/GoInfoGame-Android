@@ -12,7 +12,12 @@ import kotlinx.serialization.Serializable
  *  if any. Uploaded with those at sync time - see
  *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
 @Serializable
-data class FeaturePhoto(val path: String, val bearing: Float? = null, val question: String? = null)
+data class FeaturePhoto(
+    val path: String,
+    val bearing: Float? = null,
+    val question: String? = null,
+    val questId: Int? = null,
+)
 
 /** Manages the photos attached to not-yet-synced create-feature/tag-update edits: their file
  *  paths (and capture bearings) are held here until the edit is uploaded, at which point the

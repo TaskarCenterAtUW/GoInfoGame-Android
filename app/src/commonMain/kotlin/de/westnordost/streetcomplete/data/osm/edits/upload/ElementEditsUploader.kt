@@ -223,6 +223,7 @@ class ElementEditsUploader(
                 PanoramaxPhoto(photo.path, photo.bearing, buildMap {
                     elementId?.let { put(PanoramaxApiClient.ELEMENT_ID, it) }
                     photo.question?.let { put(PanoramaxApiClient.QUESTION, it) }
+                    photo.questId?.let { put(PanoramaxApiClient.QUEST_ID, it.toString()) }
                 })
             },
             edit.position
