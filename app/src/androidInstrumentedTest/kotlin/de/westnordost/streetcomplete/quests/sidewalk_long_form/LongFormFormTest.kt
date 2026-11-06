@@ -382,6 +382,9 @@ class LongFormFormTest {
         val photos = waitForPhotos(firstEditId)
         assertEquals(1, photos.size)
         assertTrue(File(photos.single().path).exists())
+        // stored with the question that asked for it - sent along to Panoramax on upload
+        assertEquals(OBSTRUCTION_TYPE_Q, photos.single().question)
+        assertEquals(105, photos.single().questId)
     }
 
     @Test

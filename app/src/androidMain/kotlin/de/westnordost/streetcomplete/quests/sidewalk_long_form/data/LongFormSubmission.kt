@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
+import de.westnordost.streetcomplete.data.preferences.Environment
 
 /** URL of the (Panoramax) photo attached to the element - see ElementEditsUploader */
 const val STREET_IMAGES_TAG = "ext:street_images"
@@ -11,6 +12,18 @@ const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
 /** The URL of the photo already attached to an element with [tags], if any */
 fun getAttachedPhotoUrl(tags: Map<String, String>): String? =
     tags[STREET_IMAGES_TAG] ?: tags[KARTAVIEW_URL_TAG]
+
+/** The URL to show the attached photo at [url] with in the form's small preview: for a picture of
+ *  our Panoramax instance its thumbnail (~500px wide) instead of the HD image - the tag may also
+ *  come from other clients that upload full-size photos (several MB). Opening the photo
+ *  full-screen still uses [url]. Any other URL (e.g. KartaView) is returned as is. */
+fun getPhotoPreviewUrl(url: String): String {
+    val isPanoramaxHd = url.endsWith(PANORAMAX_HD_SUFFIX) &&
+        Environment.entries.any { url.startsWith(it.panoramaxBaseUrl + "api/pictures/") }
+    return if (isPanoramaxHd) url.removeSuffix(PANORAMAX_HD_SUFFIX) + "/thumb.jpg" else url
+}
+
+private const val PANORAMAX_HD_SUFFIX = "/hd.jpg"
 
 /** The photo-related state of a long-form quest while it is open - see ALongForm. Kept as plain
  *  values (with the pure transitions below) rather than private Fragment state so the photo

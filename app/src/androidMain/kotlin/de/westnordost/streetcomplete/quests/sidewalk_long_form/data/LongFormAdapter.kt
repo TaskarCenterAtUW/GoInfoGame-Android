@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import coil.dispose
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -650,6 +651,9 @@ class LongFormAdapter<T>(
                     showUndo = false,
                     onThumbClick = { openLocalPhotoFullScreen(binding.root.context, attachment.path) },
                 ) {
+                    // a still running load of a previously shown uploaded photo mustn't replace it
+                    binding.photoThumb.dispose()
+                    binding.photoThumb.tag = null
                     binding.photoThumb.doOnLayout {
                         val bitmap = decodeScaledBitmapAndNormalize(attachment.path, it.width, it.height)
                         binding.photoThumb.setImageBitmap(bitmap)
@@ -657,19 +661,41 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Retake or remove it",
+                    subtitle = "You can retake or remove it",
                     showDelete = true,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
-                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
+                ) { loadUploadedPhotoThumb(attachment.url) }
                 is PhotoAttachment.PendingRemoval -> bindPhotoCard(
                     title = "Photo will be removed",
                     subtitle = "Removed when you submit",
                     showDelete = false,
                     showUndo = true,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
-                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
+                ) { loadUploadedPhotoThumb(attachment.url) }
             }
+        }
+
+        /** Shows the already uploaded photo at [url] in the small preview - by its thumbnail (see
+         *  getPhotoPreviewUrl) or, if that can't be loaded (e.g. 404), by [url] itself. Only one
+         *  retry: the fallback's own failure leaves the preview blank, as before. (setImage reports
+         *  a failed load - and a load skipped in low-bandwidth mode - via imageIsEmptyUpdateTextSize;
+         *  rebinding the view cancels a pending load, so a late failure can't load into a recycled
+         *  view.) */
+        private fun loadUploadedPhotoThumb(url: String) {
+            val previewUrl = getPhotoPreviewUrl(url)
+            binding.photoThumb.tag = url
+            binding.photoThumb.setImage(
+                ImageUrl(previewUrl),
+                imageIsEmptyUpdateTextSize = {
+                    // still meant to show this photo (not rebound in the meantime)
+                    val stillShown = binding.photoThumb.tag == url
+                    if (stillShown && previewUrl != url && !preferences.isLowBandwidthModeEnabled) {
+                        binding.photoThumb.setImage(ImageUrl(url), progressBar = binding.photoThumbProgress)
+                    }
+                },
+                progressBar = binding.photoThumbProgress,
+            )
         }
 
         /** The retake camera icon is always shown once any photo exists - capturing a new one
