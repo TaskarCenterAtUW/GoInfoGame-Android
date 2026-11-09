@@ -64,9 +64,17 @@ class ElementEditsUploader(
         // failed edit, so it's a completely normal unsynced edit again afterwards, and the very
         // next upload run (auto-triggered often - see QuestAutoSyncer) retries it fresh.
         val failedEditIds = mutableSetOf<Long>()
+        // once KartaView couldn't be reached at all, don't try the photos of every other queued
+        // edit in this run too: each would wait for its timeouts and retries (with its photo
+        // sent again each time) while holding the sync lock, which the map download waits for
+        var isKartaViewUnreachable = false
         try {
             while (true) {
                 val edit = elementEditsController.getOldestUnsynced(failedEditIds) ?: break
+                if (isKartaViewUnreachable && hasPendingPhotos(edit)) {
+                    failedEditIds += edit.id
+                    continue
+                }
                 val getIdProvider: () -> ElementIdProvider = { elementEditsController.getIdProvider(edit.id) }
                 try {
                     /* the sync of local change -> API and its response should not be cancellable
@@ -83,6 +91,7 @@ class ElementEditsUploader(
                     Log.w(TAG, "Failed to upload photos for edit ${edit.id}, will retry on next sync: ${e.message}")
                     failedEditIds += edit.id
                     onPhotoUploadFailed(edit)
+                    if (e.isUnreachable) isKartaViewUnreachable = true
                 }
             }
         } finally {
@@ -196,9 +205,8 @@ class ElementEditsUploader(
      *  Returns the edit whose action carries the URL tag(s). */
     private suspend fun uploadPendingPhotos(edit: ElementEdit): ElementEdit {
         val action = edit.action
-        if (action !is CreateNodeAction && action !is UpdateElementTagsAction) return edit
+        if (!hasPendingPhotos(edit)) return edit
         val photos = featurePhotosController.get(edit.id)
-        if (photos.isEmpty()) return edit
 
         val urls = imageUploader.upload(photos.map { it.path to it.bearing }, edit.position)
         var uploadedEdit = edit
@@ -221,6 +229,10 @@ class ElementEditsUploader(
         featurePhotosController.markUploaded(edit.id)
         return uploadedEdit
     }
+
+    private fun hasPendingPhotos(edit: ElementEdit): Boolean =
+        (edit.action is CreateNodeAction || edit.action is UpdateElementTagsAction)
+            && featurePhotosController.get(edit.id).isNotEmpty()
 
     private suspend fun fetchElementComplete(elementType: ElementType, elementId: Long): MapData? =
         when (elementType) {

@@ -27,7 +27,6 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION
 import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION_REF
 import de.westnordost.osmfeatures.FeatureDictionary
-import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.location.SurveyChecker
 import de.westnordost.streetcomplete.data.osm.edits.AddElementEditsController
@@ -522,14 +521,23 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
             file?.delete()
             return
         }
-        try {
-            val exif = ExifInterface(file)
-            rescalePhotoFile(file)
-            copyDirectionExifData(file, exif)
-            onPhotoCaptured(file.path, capturedPhotoBearing())
-        } catch (e: IOException) {
-            Log.e(TAG, "Unable to process photo", e)
-            file.delete()
+        val bearing = capturedPhotoBearing()
+        // decoding the full camera photo, scaling and re-encoding it takes long enough to
+        // visibly freeze the form when done on the main thread
+        viewLifecycleScope.launch {
+            val processed = withContext(Dispatchers.IO) {
+                try {
+                    val exif = ExifInterface(file)
+                    rescalePhotoFile(file)
+                    copyDirectionExifData(file, exif)
+                    true
+                } catch (e: IOException) {
+                    Log.e(TAG, "Unable to process photo", e)
+                    file.delete()
+                    false
+                }
+            }
+            if (processed) onPhotoCaptured(file.path, bearing)
         }
     }
 
@@ -554,10 +562,18 @@ private fun createLongFormPhotoFile(context: Context): File {
     return file
 }
 
+/* Long form photos go to KartaView, often over a weak mobile connection while surveying. A street
+   photo at 1600px / quality 60 is ~360 KB, vs ~560 KB at the 1920px / 65 used for note photos
+   (ApplicationConstants.ATTACH_PHOTO_*) - still plenty of detail to judge e.g. a kerb or surface */
+private const val LONG_FORM_PHOTO_MAX_SIZE = 1600
+private const val LONG_FORM_PHOTO_QUALITY = 60
+
 private fun rescalePhotoFile(file: File) {
-    val bitmap = decodeScaledBitmapAndNormalize(file.path, ApplicationConstants.ATTACH_PHOTO_MAX_SIZE, ApplicationConstants.ATTACH_PHOTO_MAX_SIZE) ?: throw IOException()
-    val out = FileOutputStream(file.path)
-    bitmap.compress(Bitmap.CompressFormat.JPEG, ApplicationConstants.ATTACH_PHOTO_QUALITY, out)
+    val bitmap = decodeScaledBitmapAndNormalize(file.path, LONG_FORM_PHOTO_MAX_SIZE, LONG_FORM_PHOTO_MAX_SIZE) ?: throw IOException()
+    FileOutputStream(file.path).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, LONG_FORM_PHOTO_QUALITY, out)
+    }
+    bitmap.recycle()
 }
 
 private fun copyDirectionExifData(file: File, exif: ExifInterface) {

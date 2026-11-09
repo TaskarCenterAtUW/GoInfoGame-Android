@@ -301,6 +301,14 @@ class MainActivity :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        // started without a workspace's long form - e.g. from the sync notification after this
+        // activity was closed, or by a geo: link - there are no quest types to show: pick one first
+        if (!intent.hasExtra("LONG_FORM")) {
+            super.onCreate(null)
+            startActivity(Intent(this, WorkSpaceActivity::class.java))
+            finish()
+            return
+        }
         // before super.onCreate: that restores the fragments, and a quest form restored after
         // process death looks up its quest type in the registry, which is still empty until then
         doLongForm()
@@ -1789,9 +1797,6 @@ class MainActivity :
             questTypes.add(index to AddGenericLong(item, recencyPeriodInDays))
         }
         questTypeRegistry.addItem(questTypes)
-        // the quest cache outlives this activity - quests cached under the previous long form
-        // would show stale pins whose quest type is no longer registered (form crashes on open)
-        visibleQuestsSource.clearAllCaches()
 
         allEditTypes.registries.clear()
         allEditTypes.registries.addAll(listOf(questTypeRegistry))
@@ -1803,6 +1808,12 @@ class MainActivity :
         allEditTypes.unknownTypeFallback = { name ->
             AddGenericLong(Elements(elementType = name), recencyPeriodInDays)
         }
+
+        // the quest cache outlives this activity - quests cached under the previous long form
+        // would show stale pins whose quest type is no longer registered (form crashes on open).
+        // Only after the edit types are set up: on a fresh process this first access creates
+        // MapDataWithEditsSource, which loads the unsynced edits and needs to resolve their types
+        visibleQuestsSource.clearAllCaches()
     }
 
     private fun onClickImageryLayerButton() {
