@@ -80,7 +80,7 @@ class MapSyncAnswersTest : MapSyncTestBase() {
     }
 
     private companion object {
-        const val OLD_PHOTO_URL = "${MockPanoramax.PHOTO_URL}?from-last-visit"
+        val OLD_PHOTO_URL get() = "${MockPanoramax.PHOTO_URL}?from-last-visit"
         val FULLY_ANSWERED = SIDEWALK.tags + mapOf(
             "surface" to "asphalt", "width" to "60", "obstacle" to "bollard", "note" to "all good",
         )

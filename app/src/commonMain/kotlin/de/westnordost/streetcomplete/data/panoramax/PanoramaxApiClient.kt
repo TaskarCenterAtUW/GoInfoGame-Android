@@ -1,6 +1,5 @@
 package de.westnordost.streetcomplete.data.panoramax
 
-import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.panoramax.domain.model.CreateUploadSetRequest
 import de.westnordost.streetcomplete.data.panoramax.domain.model.PatchPictureRequest
@@ -51,9 +50,12 @@ class PanoramaxApiClient(
     private val fileSystem: FileSystem,
     private val httpClient: HttpClient,
     private val environmentManager: EnvironmentManager,
-    private val accessToken: String = BuildConfig.PANORAMAX_ACCESS_TOKEN,
+    /** overrides the current environment's token (tests) */
+    private val accessTokenOverride: String? = null,
 ) {
     private val baseUrl: String get() = environmentManager.currentEnvironment.panoramaxBaseUrl
+    private val accessToken: String
+        get() = accessTokenOverride ?: environmentManager.currentEnvironment.panoramaxAccessToken
     private val preferences get() = environmentManager.preferences
 
     /** Uploads [photos] into one new Panoramax upload set at [position], in list order, completes

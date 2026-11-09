@@ -74,7 +74,7 @@ class PanoramaxApiClientTest {
                 install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             },
             EnvironmentManager(preferences),
-            accessToken = "token",
+            accessTokenOverride = "token",
         )
 
     /** like the real API when all goes well, picture ids pic-1, pic-2, ... */
@@ -123,6 +123,29 @@ class PanoramaxApiClientTest {
             ),
             requests
         )
+    }
+
+    @Test fun `uploads to the Panoramax instance of the current environment`() = runTest {
+        preferences.environment = Environment.STAGE.name
+        val hosts = mutableListOf<String>()
+
+        val urls = client { request ->
+            hosts.add(request.url.host)
+            ok(request)
+        }.upload(listOf(PanoramaxPhoto(photo1.path)), position)
+
+        assertEquals(listOf("${Environment.PANORAMAX_STAGE_URL}api/pictures/pic-1/hd.jpg"), urls)
+        val stageHost = Environment.PANORAMAX_STAGE_URL.removePrefix("https://").trimEnd('/')
+        assertEquals(listOf(stageHost), hosts.distinct())
+    }
+
+    // until the prod instance exists
+    @Test fun `PROD uploads to the dev Panoramax instance for now`() = runTest {
+        preferences.environment = Environment.PROD.name
+
+        val urls = client().upload(listOf(PanoramaxPhoto(photo1.path)), position)
+
+        assertEquals(listOf("${Environment.PANORAMAX_DEV_URL}api/pictures/pic-1/hd.jpg"), urls)
     }
 
     // all photos of an edit are at the same position - with the server's deduplication, it'd drop

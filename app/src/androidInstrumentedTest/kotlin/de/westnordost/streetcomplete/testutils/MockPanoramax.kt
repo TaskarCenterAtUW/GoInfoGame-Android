@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.testutils
 
-import de.westnordost.streetcomplete.data.preferences.Environment
+import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -20,6 +20,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.koin.core.context.GlobalContext
 import java.io.IOException
 import java.util.Collections
 import java.util.WeakHashMap
@@ -35,8 +36,10 @@ import java.util.WeakHashMap
 object MockPanoramax {
 
     const val PICTURE_ID = "mock-picture-1"
-    /** all environments upload to the same instance for now, see Environment.panoramaxBaseUrl */
-    const val PHOTO_URL = "${Environment.PANORAMAX_DEV_URL}api/pictures/$PICTURE_ID/hd.jpg"
+    /** on the instance of the environment the app is on, see Environment.panoramaxBaseUrl */
+    val PHOTO_URL: String
+        get() = "${GlobalContext.get().get<EnvironmentManager>().currentEnvironment.panoramaxBaseUrl}" +
+            "api/pictures/$PICTURE_ID/hd.jpg"
 
     sealed interface Failure {
         data object Unreachable : Failure
