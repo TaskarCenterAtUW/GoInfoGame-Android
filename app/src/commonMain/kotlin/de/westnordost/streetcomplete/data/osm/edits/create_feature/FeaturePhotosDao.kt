@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_FEATURE_TYPES
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUESTIONS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUEST_IDS
@@ -32,6 +33,7 @@ class FeaturePhotosDao(
             PHOTO_QUESTIONS to json.encodeToString(photos.map { it.question }),
             PHOTO_QUEST_IDS to json.encodeToString(photos.map { it.questId }),
             PHOTO_CAPTURED_AT to json.encodeToString(photos.map { it.capturedAt }),
+            PHOTO_FEATURE_TYPES to json.encodeToString(photos.map { it.featureType }),
             WORKSPACE_ID to workspaceId
         ))
     }
@@ -49,10 +51,11 @@ class FeaturePhotosDao(
             val questIds = row.getStringOrNull(PHOTO_QUEST_IDS)?.let { json.decodeFromString<List<Int?>>(it) }
             // absent on rows written before PHOTO_CAPTURED_AT existed
             val capturedAts = row.getStringOrNull(PHOTO_CAPTURED_AT)?.let { json.decodeFromString<List<Long?>>(it) }
+            val featureTypes = row.getStringOrNull(PHOTO_FEATURE_TYPES)?.let { json.decodeFromString<List<String?>>(it) }
             paths.mapIndexed { i, path ->
                 FeaturePhoto(
                     path, bearings?.getOrNull(i), questions?.getOrNull(i), questIds?.getOrNull(i),
-                    capturedAts?.getOrNull(i)
+                    capturedAts?.getOrNull(i), featureTypes?.getOrNull(i)
                 )
             }
         } ?: emptyList()

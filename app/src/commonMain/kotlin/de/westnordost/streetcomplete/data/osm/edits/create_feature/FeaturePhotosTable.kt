@@ -20,6 +20,10 @@ object FeaturePhotosTable {
         /** JSON list of nullable Longs, index-aligned with PHOTO_PATHS - when each photo was
          *  taken (epoch milliseconds), or absent/null on rows written before this column existed */
         const val PHOTO_CAPTURED_AT = "photo_captured_at"
+        /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the feature preset name
+         *  of the new feature each photo was taken of, or absent/null on rows written before this
+         *  column existed */
+        const val PHOTO_FEATURE_TYPES = "photo_feature_types"
         /** How many times uploading this edit's photo(s) has failed in a row - see
          *  ElementEditsUploader.uploadPendingPhotos and StuckPhotoUploadNotice. Reset to 0 once
          *  the user picks "keep trying" on the resulting notice. */
@@ -36,6 +40,7 @@ object FeaturePhotosTable {
             ${Columns.PHOTO_QUESTIONS} text,
             ${Columns.PHOTO_QUEST_IDS} text,
             ${Columns.PHOTO_CAPTURED_AT} text,
+            ${Columns.PHOTO_FEATURE_TYPES} text,
             ${Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0,
             ${Columns.WORKSPACE_ID} int NOT NULL
         );

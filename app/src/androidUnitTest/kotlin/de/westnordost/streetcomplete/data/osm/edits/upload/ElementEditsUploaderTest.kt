@@ -344,6 +344,24 @@ class ElementEditsUploaderTest {
         return edit
     }
 
+    @Test fun `photos of a new node are uploaded with its feature type`() = runBlocking<Unit> {
+        val edit = givenNewNodeWithPhotos()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(
+            FeaturePhoto("/photos/a.jpg", 45f, capturedAt = 100L, featureType = "Intersection"),
+        ))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto(
+                "/photos/a.jpg", 45f,
+                mapOf("source" to "new_feature", "feature_type" to "Intersection"),
+                captureTime = 100L
+            )),
+            edit.position
+        )
+    }
+
     @Test fun `photos of a new node are uploaded without element id and go up with the node`() = runBlocking<Unit> {
         val edit = givenNewNodeWithPhotos()
 
@@ -351,10 +369,11 @@ class ElementEditsUploaderTest {
 
         // its id is not known yet
         // nor when they were taken: right before the node was made
+        val semantics = mapOf("source" to "new_feature")
         verify(imageUploader).upload(
             listOf(
-                PanoramaxPhoto("/photos/a.jpg", captureTime = edit.createdTimestamp),
-                PanoramaxPhoto("/photos/b.jpg", captureTime = edit.createdTimestamp),
+                PanoramaxPhoto("/photos/a.jpg", null, semantics, edit.createdTimestamp),
+                PanoramaxPhoto("/photos/b.jpg", null, semantics, edit.createdTimestamp),
             ),
             edit.position
         )

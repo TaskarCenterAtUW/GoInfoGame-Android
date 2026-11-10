@@ -222,6 +222,10 @@ class ElementEditsUploader(
             photos.map { photo ->
                 photo.captured.toPanoramaxPhoto(edit.createdTimestamp, buildMap {
                     elementId?.let { put(PanoramaxApiClient.ELEMENT_ID, it) }
+                    if (action is CreateNodeAction) {
+                        put(PanoramaxApiClient.SOURCE, PanoramaxApiClient.SOURCE_NEW_FEATURE)
+                        photo.featureType?.let { put(PanoramaxApiClient.FEATURE_TYPE, it) }
+                    }
                     photo.question?.let { put(PanoramaxApiClient.QUESTION, it) }
                     photo.questId?.let { put(PanoramaxApiClient.QUEST_ID, it.toString()) }
                 })

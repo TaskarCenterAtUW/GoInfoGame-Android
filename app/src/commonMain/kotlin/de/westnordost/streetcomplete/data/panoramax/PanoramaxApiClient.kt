@@ -270,6 +270,12 @@ class PanoramaxApiClient(
         const val QUESTION = "question"
         /** the quest_id of that long-form question */
         const val QUEST_ID = "quest_id"
+        /** the feature preset name of the new feature the photo is of, e.g. "Intersection" */
+        const val FEATURE_TYPE = "feature_type"
+        /** what the photo was taken for, see [SOURCE_NEW_FEATURE] */
+        const val SOURCE = "source"
+        /** [SOURCE] of the photos of a new feature (Add Feature) */
+        const val SOURCE_NEW_FEATURE = "new_feature"
     }
 }
 

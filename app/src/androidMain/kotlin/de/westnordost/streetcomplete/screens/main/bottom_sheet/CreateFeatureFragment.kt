@@ -286,7 +286,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
                 // point they are uploaded and cleaned up (or deleted with the edit if it is undone)
                 if (photos.isNotEmpty()) {
                     // each with its own bearing and capture time
-                    featurePhotosController.add(editId, photos.map { FeaturePhoto(it) })
+                    featurePhotosController.add(editId, photos.map { FeaturePhoto(it, featureType = preset.name) })
                 }
             }
             listener?.onCreatedFeature(position)

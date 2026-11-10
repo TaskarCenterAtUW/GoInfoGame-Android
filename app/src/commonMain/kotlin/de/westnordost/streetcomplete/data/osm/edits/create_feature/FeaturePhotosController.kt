@@ -11,7 +11,8 @@ import kotlinx.serialization.Serializable
  *  true north) the camera was facing at capture time - or null if unknown (not every
  *  photo-attaching flow captures a bearing yet) - and the long-form [question] it was taken for,
  *  if any, and when it was taken ([capturedAt], epoch milliseconds - null if not tracked, the
- *  edit's creation time is used then). Uploaded with those at sync time - see
+ *  edit's creation time is used then), and the [featureType] (feature preset name, e.g.
+ *  "Intersection") of the new feature it was taken of, if any. Uploaded with those at sync time - see
  *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
 @Serializable
 data class FeaturePhoto(
@@ -20,9 +21,14 @@ data class FeaturePhoto(
     val question: String? = null,
     val questId: Int? = null,
     val capturedAt: Long? = null,
+    val featureType: String? = null,
 ) {
-    constructor(photo: CapturedPhoto, question: String? = null, questId: Int? = null) :
-        this(photo.path, photo.bearing, question, questId, photo.capturedAt)
+    constructor(
+        photo: CapturedPhoto,
+        question: String? = null,
+        questId: Int? = null,
+        featureType: String? = null,
+    ) : this(photo.path, photo.bearing, question, questId, photo.capturedAt, featureType)
 
     val captured: CapturedPhoto get() = CapturedPhoto(path, bearing, capturedAt)
 }

@@ -368,6 +368,8 @@ object DatabaseInitializer {
             // per-photo capture time, sent to Panoramax as the picture's capture time instead of
             // the (possibly much later) upload time
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT} text")
+            // feature preset name of a new feature's photos, sent along as a semantic tag
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_FEATURE_TYPES} text")
             // same for the photos of notes - bearing and capture time of each one
             db.tryExec("ALTER TABLE ${NoteEditsTable.NAME} ADD COLUMN ${NoteEditsTable.Columns.IMAGE_BEARINGS} text")
             db.tryExec("ALTER TABLE ${NoteEditsTable.NAME} ADD COLUMN ${NoteEditsTable.Columns.IMAGE_CAPTURE_TIMES} text")
