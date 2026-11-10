@@ -171,7 +171,9 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf(PanoramaxPhoto("a"), PanoramaxPhoto("b"), PanoramaxPhoto("c")), pos)
+        // taken right before the note was made
+        val photos = listOf("a", "b", "c").map { PanoramaxPhoto(it, captureTime = edit.createdTimestamp) }
+        verify(imageUploader).upload(photos, pos)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
@@ -196,7 +198,9 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf(PanoramaxPhoto("a"), PanoramaxPhoto("b"), PanoramaxPhoto("c")), pos)
+        // taken right before the note was made
+        val photos = listOf("a", "b", "c").map { PanoramaxPhoto(it, captureTime = edit.createdTimestamp) }
+        verify(imageUploader).upload(photos, pos)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 

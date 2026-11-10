@@ -28,6 +28,13 @@ class PhotoStateTest {
         )
     }
 
+    @Test fun `capture keeps when the photo was taken`() {
+        assertEquals(
+            Pending("a.jpg", 45f, capturedAt = 100L),
+            PhotoState().afterPhotoCaptured("a.jpg", 45f, 100L).state.attachment
+        )
+    }
+
     @Test fun `capture over an existing photo remembers what it replaces`() {
         assertEquals(
             PhotoState(Pending("a.jpg", 0f, replaces = Uploaded(url))),

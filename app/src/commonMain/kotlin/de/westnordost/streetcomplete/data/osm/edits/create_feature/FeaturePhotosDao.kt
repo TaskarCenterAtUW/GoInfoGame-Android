@@ -3,6 +3,7 @@ package de.westnordost.streetcomplete.data.osm.edits.create_feature
 import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUESTIONS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUEST_IDS
@@ -30,6 +31,7 @@ class FeaturePhotosDao(
             PHOTO_BEARINGS to json.encodeToString(photos.map { it.bearing }),
             PHOTO_QUESTIONS to json.encodeToString(photos.map { it.question }),
             PHOTO_QUEST_IDS to json.encodeToString(photos.map { it.questId }),
+            PHOTO_CAPTURED_AT to json.encodeToString(photos.map { it.capturedAt }),
             WORKSPACE_ID to workspaceId
         ))
     }
@@ -45,8 +47,13 @@ class FeaturePhotosDao(
             // absent on rows written before PHOTO_QUESTIONS / PHOTO_QUEST_IDS existed
             val questions = row.getStringOrNull(PHOTO_QUESTIONS)?.let { json.decodeFromString<List<String?>>(it) }
             val questIds = row.getStringOrNull(PHOTO_QUEST_IDS)?.let { json.decodeFromString<List<Int?>>(it) }
+            // absent on rows written before PHOTO_CAPTURED_AT existed
+            val capturedAts = row.getStringOrNull(PHOTO_CAPTURED_AT)?.let { json.decodeFromString<List<Long?>>(it) }
             paths.mapIndexed { i, path ->
-                FeaturePhoto(path, bearings?.getOrNull(i), questions?.getOrNull(i), questIds?.getOrNull(i))
+                FeaturePhoto(
+                    path, bearings?.getOrNull(i), questions?.getOrNull(i), questIds?.getOrNull(i),
+                    capturedAts?.getOrNull(i)
+                )
             }
         } ?: emptyList()
 

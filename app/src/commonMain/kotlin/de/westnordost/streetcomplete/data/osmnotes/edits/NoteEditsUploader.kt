@@ -81,7 +81,7 @@ class NoteEditsUploader(
 
     private suspend fun uploadEdit(edit: NoteEdit) {
         // try to upload the image and track if we have them
-        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths, edit.position)
+        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths, edit.position, edit.createdTimestamp)
         val trackText = uploadAndGetAttachedTrackText(edit.track, edit.text)
         val text = edit.text.orEmpty() + imageText + trackText
 
@@ -131,11 +131,16 @@ class NoteEditsUploader(
         }
     }
 
-    private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>, position: LatLon): String {
+    private suspend fun uploadAndGetAttachedPhotosText(
+        imagePaths: List<String>,
+        position: LatLon,
+        /** when the note was made, i.e. right after its photos were taken */
+        captureTime: Long,
+    ): String {
         if (imagePaths.isNotEmpty()) {
             // note photos don't carry a capture bearing yet (none is sent then) - see
             // FeaturePhoto/ElementEditsUploader for the long-form equivalent
-            val urls = imageUploader.upload(imagePaths.map { PanoramaxPhoto(it) }, position)
+            val urls = imageUploader.upload(imagePaths.map { PanoramaxPhoto(it, captureTime = captureTime) }, position)
             if (urls.isNotEmpty()) {
                 return "\n\nAttached photo:\n" + urls.joinToString("\n")
             }

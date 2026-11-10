@@ -365,6 +365,9 @@ object DatabaseInitializer {
             // semantic tags
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUESTIONS} text")
             db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUEST_IDS} text")
+            // per-photo capture time, sent to Panoramax as the picture's capture time instead of
+            // the (possibly much later) upload time
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT} text")
         }
     }
 }

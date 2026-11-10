@@ -45,7 +45,7 @@ data class PhotoTransition(val state: PhotoState, val fileToDelete: String? = nu
  *  it ever existed. Retaking again before submitting (Pending -> camera -> new Pending)
  *  carries the ORIGINAL replaces forward, not the intermediate Pending, so no matter how
  *  many times the user retakes, cancelling always lands back on the true starting point. */
-fun PhotoState.afterPhotoCaptured(path: String, bearing: Float?): PhotoTransition {
+fun PhotoState.afterPhotoCaptured(path: String, bearing: Float?, capturedAt: Long? = null): PhotoTransition {
     val previous = attachment
     val replaces = when (previous) {
         is PhotoAttachment.Pending -> previous.replaces
@@ -53,7 +53,7 @@ fun PhotoState.afterPhotoCaptured(path: String, bearing: Float?): PhotoTransitio
         PhotoAttachment.None -> null
     }
     return PhotoTransition(
-        copy(attachment = PhotoAttachment.Pending(path, bearing, replaces)),
+        copy(attachment = PhotoAttachment.Pending(path, bearing, replaces, capturedAt)),
         fileToDelete = (previous as? PhotoAttachment.Pending)?.path
     )
 }
@@ -171,7 +171,7 @@ fun computeLongFormSubmission(
     // (see LongFormAdapter.photoAttachment)
     val photoQuestion = givenItems.firstOrNull { it.visible && it.activeChoiceFollowUp() != null }
     val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let {
-        FeaturePhoto(it.path, it.bearing, photoQuestion?.questTitle, photoQuestion?.questId)
+        FeaturePhoto(it.path, it.bearing, photoQuestion?.questTitle, photoQuestion?.questId, it.capturedAt)
     }
     val removeTagKeys = if (photo == null && finalPhotoState.existingPhotoRemoved) {
         listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG)

@@ -273,6 +273,12 @@ class LongFormSubmissionTest {
         assertNull(submission.photoTransition)
     }
 
+    @Test fun `a new photo is submitted with the time it was taken`() {
+        val adapter = openForm(obstructionWithPhotoTags)
+        val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath, 90f, capturedAt = 100L)))
+        assertEquals(FeaturePhoto(pendingPath, 90f, questId = OBSTRUCTION_TYPE, capturedAt = 100L), submission.photo)
+    }
+
     @Test fun `a new photo rides along with other changes`() {
         val adapter = openForm(obstructionWithPhotoTags)
         adapter.typeNumber(WIDTH, "60")

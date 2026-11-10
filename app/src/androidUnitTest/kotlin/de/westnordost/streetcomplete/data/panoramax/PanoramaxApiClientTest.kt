@@ -28,6 +28,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -139,13 +140,19 @@ class PanoramaxApiClientTest {
         assertEquals(listOf(stageHost), hosts.distinct())
     }
 
-    // until the prod instance exists
-    @Test fun `PROD uploads to the dev Panoramax instance for now`() = runTest {
+    @Test fun `PROD uploads to the prod Panoramax instance`() = runTest {
         preferences.environment = Environment.PROD.name
+        val hosts = mutableListOf<String>()
 
-        val urls = client().upload(listOf(PanoramaxPhoto(photo1.path)), position)
+        val urls = client { request ->
+            hosts.add(request.url.host)
+            ok(request)
+        }.upload(listOf(PanoramaxPhoto(photo1.path)), position)
 
-        assertEquals(listOf("${Environment.PANORAMAX_DEV_URL}api/pictures/pic-1/hd.jpg"), urls)
+        assertEquals(listOf("${Environment.PANORAMAX_PROD_URL}api/pictures/pic-1/hd.jpg"), urls)
+        val prodHost = Environment.PANORAMAX_PROD_URL.removePrefix("https://").trimEnd('/')
+        assertEquals(listOf(prodHost), hosts.distinct())
+        assertNotEquals(Environment.PANORAMAX_DEV_URL, Environment.PANORAMAX_PROD_URL)
     }
 
     // all photos of an edit are at the same position - with the server's deduplication, it'd drop
@@ -168,6 +175,26 @@ class PanoramaxApiClientTest {
         assertTrue(body.hasField("override_Exif.GPSInfo.GPSImgDirection", "90/1"))
         assertTrue(body.hasField("override_Exif.GPSInfo.GPSImgDirectionRef", "T"))
         assertTrue(Regex("name=\"?override_capture_time\"?\r\n").containsMatchIn(body))
+    }
+
+    @Test fun `capture time is the time the photo was taken, not the upload time`() = runTest {
+        // 2026-11-10T08:30:00Z
+        client().upload(listOf(PanoramaxPhoto(photo1.path, captureTime = 1_794_299_400_000L)), position)
+
+        assertTrue(fileBodies.single().hasField("override_capture_time", "2026-11-10T08:30:00Z"))
+    }
+
+    @Test fun `each photo is sent with its own capture time`() = runTest {
+        client().upload(
+            listOf(
+                PanoramaxPhoto(photo1.path, captureTime = 1_794_299_400_000L),
+                PanoramaxPhoto(photo2.path, captureTime = 1_794_299_460_000L),
+            ),
+            position
+        )
+
+        assertTrue(fileBodies[0].hasField("override_capture_time", "2026-11-10T08:30:00Z"))
+        assertTrue(fileBodies[1].hasField("override_capture_time", "2026-11-10T08:31:00Z"))
     }
 
     @Test fun `negative bearing is sent as 0-359`() = runTest {

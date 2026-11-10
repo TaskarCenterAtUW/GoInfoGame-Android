@@ -58,9 +58,8 @@ private const val PANORAMAX_DEV_BASE_URL =
     "https://panoramax-dev-faaadghgcfgwcchk.westus2-01.azurewebsites.net/"
 private const val PANORAMAX_STAGE_BASE_URL =
     "https://panoramax-stage-eubgh6hxgmf8ase5.westus2-01.azurewebsites.net/"
-// TODO: the prod instance - until it exists, PROD uploads to the dev one (and with its token, see
-//  panoramaxProdAccessToken in app/build.gradle.kts)
-private const val PANORAMAX_PROD_BASE_URL = PANORAMAX_DEV_BASE_URL
+private const val PANORAMAX_PROD_BASE_URL =
+    "https://panoramax-h8a0fha2ebcpgkdn.westus2-01.azurewebsites.net/"
 
 class EnvironmentManager(val preferences: Preferences) {
     var currentEnvironment: Environment = Environment.valueOf(preferences.environment)

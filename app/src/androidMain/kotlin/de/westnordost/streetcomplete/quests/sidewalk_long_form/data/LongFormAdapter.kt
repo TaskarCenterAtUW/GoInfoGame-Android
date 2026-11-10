@@ -58,8 +58,13 @@ sealed class PhotoAttachment {
      *  replace, if any (never another [Pending] or [None] - see ALongForm.onPhotoCaptured) - kept
      *  so cancelling this capture (the remove button) can revert to it instead of always dropping to
      *  [None] and silently losing track of an already-synced photo that was never actually asked
-     *  to be removed. */
-    data class Pending(val path: String, val bearing: Float? = null, val replaces: PhotoAttachment? = null) : PhotoAttachment()
+     *  to be removed. [capturedAt] is when it was taken (epoch milliseconds). */
+    data class Pending(
+        val path: String,
+        val bearing: Float? = null,
+        val replaces: PhotoAttachment? = null,
+        val capturedAt: Long? = null,
+    ) : PhotoAttachment()
     /** Attached and synced on a previous visit, read back from the element's own tags. */
     data class Uploaded(val url: String) : PhotoAttachment()
     /** Was [Uploaded] as [url], but the user tapped delete this visit - shown as a distinct,

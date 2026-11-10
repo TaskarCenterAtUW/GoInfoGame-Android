@@ -78,13 +78,12 @@ val panoramaxStageAccessToken: String = System.getenv("PANORAMAX_STAGE_ACCESS_TO
     }
     ?: ""
 
-/** Same, for the prod Panoramax instance (used in the PROD environment). TODO: until that instance
- *  exists, PROD uploads to the dev one - so this falls back to the dev token */
+/** Same, for the prod Panoramax instance (used in the PROD environment) */
 val panoramaxProdAccessToken: String = System.getenv("PANORAMAX_PROD_ACCESS_TOKEN")
     ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
         Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("panoramaxProdAccessToken")
     }
-    ?: panoramaxDevAccessToken
+    ?: ""
 
 buildkonfig {
     packageName = "de.westnordost.streetcomplete"

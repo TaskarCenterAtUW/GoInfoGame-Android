@@ -25,6 +25,7 @@ import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoCa
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoDeleted
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.afterPhotoUndoRemoval
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.computeLongFormSubmission
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.coroutines.launch
 import java.io.File
@@ -164,7 +165,7 @@ abstract class ALongForm<T> : AbstractOsmQuestForm<T>() {
     }
 
     override fun onPhotoCaptured(path: String, bearing: Float?) {
-        applyPhotoTransition(photoState.afterPhotoCaptured(path, bearing))
+        applyPhotoTransition(photoState.afterPhotoCaptured(path, bearing, nowAsEpochMilliseconds()))
     }
 
     private fun onPhotoDeleted() {

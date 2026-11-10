@@ -9,7 +9,8 @@ import kotlinx.serialization.Serializable
 /** One photo attached to a not-yet-synced edit, with the compass bearing (0-359, clockwise from
  *  true north) the camera was facing at capture time - or null if unknown (not every
  *  photo-attaching flow captures a bearing yet) - and the long-form [question] it was taken for,
- *  if any. Uploaded with those at sync time - see
+ *  if any, and when it was taken ([capturedAt], epoch milliseconds - null if not tracked, the
+ *  edit's creation time is used then). Uploaded with those at sync time - see
  *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
 @Serializable
 data class FeaturePhoto(
@@ -17,6 +18,7 @@ data class FeaturePhoto(
     val bearing: Float? = null,
     val question: String? = null,
     val questId: Int? = null,
+    val capturedAt: Long? = null,
 )
 
 /** Manages the photos attached to not-yet-synced create-feature/tag-update edits: their file

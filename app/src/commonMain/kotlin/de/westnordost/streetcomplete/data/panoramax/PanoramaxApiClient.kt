@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.panoramax.domain.model.SemanticTag
 import de.westnordost.streetcomplete.data.panoramax.domain.model.UploadSet
 import de.westnordost.streetcomplete.data.panoramax.domain.model.UploadSetFile
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
+import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.systemTimeNow
 import de.westnordost.streetcomplete.util.logs.Log
 import io.ktor.client.HttpClient
@@ -31,6 +32,8 @@ import kotlinx.io.files.Path
 import kotlinx.io.readByteArray
 import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /** A photo to upload: the image file at [path], the compass [bearing] (0-359 clockwise from
  *  true north) the camera was facing at capture time - null if unknown, then none is sent - and
@@ -40,6 +43,8 @@ data class PanoramaxPhoto(
     val path: String,
     val bearing: Float? = null,
     val semantics: Map<String, String> = emptyMap(),
+    /** when the photo was taken, epoch milliseconds - the upload time if null */
+    val captureTime: Long? = null,
 )
 
 /** Uploads photos to our Panoramax instance, see
@@ -87,6 +92,7 @@ class PanoramaxApiClient(
             val pictureIds = images.mapIndexed { index, (photo, image) ->
                 uploadPhoto(
                     uploadSetId, index + 1, image, position, photo.bearing,
+                    photo.captureTime ?: nowAsEpochMilliseconds(),
                     commonSemantics + photo.semantics
                 )
             }
@@ -167,24 +173,29 @@ class PanoramaxApiClient(
         return uploadSet.id
     }
 
+    @OptIn(ExperimentalTime::class)
     private suspend fun uploadPhoto(
         uploadSetId: String,
         index: Int,
         image: ByteArray,
         position: LatLon,
         bearing: Float?,
+        /** epoch milliseconds */
+        captureTime: Long,
         semantics: Map<String, String>,
     ): String {
         // the (rescaled) photos carry no position and time in their EXIF any more, so these are
-        // given as overrides - Panoramax rejects pictures without. Same for the heading - but only
-        // if known: 0 would claim the photo faces north
+        // given as overrides - Panoramax rejects pictures without. The time is when it was taken,
+        // not now: photos are often uploaded much later, see ElementEditsUploader. Same for the
+        // heading - but only if known: 0 would claim the photo faces north
         val heading = bearing?.roundToInt()?.mod(360)
         val response = httpClient.post(baseUrl + "api/upload_sets/$uploadSetId/files") {
             bearerAuth(accessToken)
             setBody(MultiPartFormDataContent(formData {
                 append("override_latitude", position.latitude.toString())
                 append("override_longitude", position.longitude.toString())
-                append("override_capture_time", systemTimeNow().toString())
+                // ISO 8601, e.g. 2026-11-10T08:30:00Z
+                append("override_capture_time", Instant.fromEpochMilliseconds(captureTime).toString())
                 if (heading != null) {
                     append("override_Exif.GPSInfo.GPSImgDirection", "$heading/1")
                     append("override_Exif.GPSInfo.GPSImgDirectionRef", "T")

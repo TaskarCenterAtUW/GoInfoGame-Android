@@ -236,7 +236,7 @@ class ElementEditsUploaderTest {
         uploader.upload()
 
         verify(imageUploader).upload(
-            listOf(PanoramaxPhoto("/photos/p.jpg", 90f, mapOf("element_id" to "node/1"))),
+            listOf(PanoramaxPhoto("/photos/p.jpg", 90f, mapOf("element_id" to "node/1"), edit.createdTimestamp)),
             edit.position
         )
         assertEquals(
@@ -294,7 +294,20 @@ class ElementEditsUploaderTest {
         verify(imageUploader).upload(
             listOf(PanoramaxPhoto("/photos/p.jpg", null, mapOf(
                 "element_id" to "node/1", "question" to "Is it steep?", "quest_id" to "12"
-            ))),
+            ), edit.createdTimestamp)),
+            edit.position
+        )
+    }
+
+    // not the edit's creation time (or the upload time): the form may have stayed open a while
+    @Test fun `the time the photo was taken is sent as its capture time`() = runBlocking<Unit> {
+        val edit = givenAnswerWithPhoto()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", 90f, capturedAt = 100L)))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto("/photos/p.jpg", 90f, mapOf("element_id" to "node/1"), captureTime = 100L)),
             edit.position
         )
     }
@@ -337,7 +350,14 @@ class ElementEditsUploaderTest {
         uploader.upload()
 
         // its id is not known yet
-        verify(imageUploader).upload(listOf(PanoramaxPhoto("/photos/a.jpg"), PanoramaxPhoto("/photos/b.jpg")), edit.position)
+        // nor when they were taken: right before the node was made
+        verify(imageUploader).upload(
+            listOf(
+                PanoramaxPhoto("/photos/a.jpg", captureTime = edit.createdTimestamp),
+                PanoramaxPhoto("/photos/b.jpg", captureTime = edit.createdTimestamp),
+            ),
+            edit.position
+        )
         val uploaded = argumentCaptor<ElementEdit>()
         verify(singleUploader).upload(capture(uploaded), any())
         assertEquals(
@@ -388,8 +408,10 @@ class ElementEditsUploaderTest {
         return edit
     }
 
-    /** what answerWithPhoto([id])'s photo is uploaded as */
-    private fun photo(id: Long) = PanoramaxPhoto("/photos/$id.jpg", 0f, mapOf("element_id" to "node/$id"))
+    /** what answerWithPhoto([id])'s photo is uploaded as - taken when the edit was made */
+    private fun photo(id: Long) = PanoramaxPhoto(
+        "/photos/$id.jpg", 0f, mapOf("element_id" to "node/$id"), captureTime = edit(id = id).createdTimestamp
+    )
 
     @Test fun `once Panoramax is unreachable, the other queued photos are not tried in the same run`() = runBlocking<Unit> {
         val first = answerWithPhoto(1)
