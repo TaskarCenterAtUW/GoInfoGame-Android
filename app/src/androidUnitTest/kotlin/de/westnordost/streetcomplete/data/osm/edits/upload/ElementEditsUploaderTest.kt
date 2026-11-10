@@ -2,26 +2,31 @@ package de.westnordost.streetcomplete.data.osm.edits.upload
 
 import de.westnordost.streetcomplete.data.AuthorizationException
 import de.westnordost.streetcomplete.data.ConflictException
-import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
-import de.westnordost.streetcomplete.data.karta_view.KartaViewException
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxException
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxPhoto
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
+import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryAdd
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryChange
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryDelete
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryModify
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
+import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApiClient
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
+import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsController
@@ -55,7 +60,7 @@ class ElementEditsUploaderTest {
     private lateinit var mapDataApi: MapDataApiClient
     private lateinit var statisticsController: StatisticsController
     private lateinit var discardedEditNoticesController: DiscardedEditNoticesController
-    private lateinit var imageUploader: KartaViewApiClient
+    private lateinit var imageUploader: PanoramaxApiClient
     private lateinit var featurePhotosController: FeaturePhotosController
     private lateinit var stuckPhotoUploadNoticesController: StuckPhotoUploadNoticesController
     private lateinit var changesetManager: OpenChangesetsManager
@@ -204,9 +209,9 @@ class ElementEditsUploaderTest {
 
     //endregion
 
-    //region photo uploaded successfully (long form: ext:kartaview_url)
+    //region photo uploaded successfully (long form: ext:street_images)
 
-    /** A long-form answer (surface) with a photo waiting to be uploaded; KartaView answers [url]. */
+    /** A long-form answer (surface) with a photo waiting to be uploaded; Panoramax answers [url]. */
     private suspend fun givenAnswerWithPhoto(existingTags: Map<String, String> = emptyMap(), url: String? = PHOTO_URL): ElementEdit {
         val edit = edit(action = UpdateElementTagsAction(
             node(id = 1, tags = existingTags),
@@ -230,20 +235,23 @@ class ElementEditsUploaderTest {
 
         uploader.upload()
 
-        verify(imageUploader).upload(listOf("/photos/p.jpg" to 90f), edit.position)
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto("/photos/p.jpg", 90f, mapOf("element_id" to "node/1"), edit.createdTimestamp)),
+            edit.position
+        )
         assertEquals(
-            setOf(StringMapEntryAdd("surface", "concrete"), StringMapEntryAdd("ext:kartaview_url", PHOTO_URL)),
+            setOf(StringMapEntryAdd("surface", "concrete"), StringMapEntryAdd("ext:street_images", PHOTO_URL)),
             uploadedChanges()
         )
         verify(elementEditsController).markSynced(any(), any())
     }
 
     @Test fun `a new photo replaces the element's existing photo URL`() = runBlocking<Unit> {
-        givenAnswerWithPhoto(existingTags = mapOf("ext:kartaview_url" to "https://old/photo.jpg"))
+        givenAnswerWithPhoto(existingTags = mapOf("ext:street_images" to "https://old/photo.jpg"))
 
         uploader.upload()
 
-        assertTrue(StringMapEntryModify("ext:kartaview_url", "https://old/photo.jpg", PHOTO_URL) in uploadedChanges())
+        assertTrue(StringMapEntryModify("ext:street_images", "https://old/photo.jpg", PHOTO_URL) in uploadedChanges())
     }
 
     // a crash between the two must neither lose the URL nor upload the photo twice
@@ -258,7 +266,7 @@ class ElementEditsUploaderTest {
         order.verify(singleUploader).upload(any(), any())
     }
 
-    @Test fun `no URL from KartaView uploads the answer as it is`() = runBlocking<Unit> {
+    @Test fun `no URL from Panoramax uploads the answer as it is`() = runBlocking<Unit> {
         val edit = givenAnswerWithPhoto(url = null)
 
         uploader.upload()
@@ -268,7 +276,7 @@ class ElementEditsUploaderTest {
         verify(featurePhotosController).markUploaded(edit.id)
     }
 
-    @Test fun `an answer without a photo doesn't touch KartaView`() = runBlocking<Unit> {
+    @Test fun `an answer without a photo doesn't touch Panoramax`() = runBlocking<Unit> {
         on(elementEditsController.getOldestUnsynced()).thenReturn(edit()).thenReturn(null)
         on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
 
@@ -277,9 +285,138 @@ class ElementEditsUploaderTest {
         verifyNoInteractions(imageUploader)
     }
 
+    @Test fun `the question the photo was taken for is sent along`() = runBlocking<Unit> {
+        val edit = givenAnswerWithPhoto()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", null, "Is it steep?", 12)))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto("/photos/p.jpg", null, mapOf(
+                "element_id" to "node/1", "question" to "Is it steep?", "quest_id" to "12"
+            ), edit.createdTimestamp)),
+            edit.position
+        )
+    }
+
+    // not the edit's creation time (or the upload time): the form may have stayed open a while
+    @Test fun `the time the photo was taken is sent as its capture time`() = runBlocking<Unit> {
+        val edit = givenAnswerWithPhoto()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/p.jpg", 90f, capturedAt = 100L)))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto("/photos/p.jpg", 90f, mapOf("element_id" to "node/1"), captureTime = 100L)),
+            edit.position
+        )
+    }
+
+    // photos uploaded to KartaView before the switch to Panoramax
+    @Test fun `a new photo replaces the element's KartaView photo URL`() = runBlocking<Unit> {
+        givenAnswerWithPhoto(existingTags = mapOf("ext:kartaview_url" to "https://old/photo.jpg"))
+
+        uploader.upload()
+
+        assertEquals(
+            setOf(
+                StringMapEntryAdd("surface", "concrete"),
+                StringMapEntryAdd("ext:street_images", PHOTO_URL),
+                StringMapEntryDelete("ext:kartaview_url", "https://old/photo.jpg"),
+            ),
+            uploadedChanges()
+        )
+    }
+
     //endregion
 
-    //region KartaView failing with photos queued
+    //region photos of a new node
+
+    /** A new node with two photos waiting to be uploaded, which is created as node 42 */
+    private suspend fun givenNewNodeWithPhotos(): ElementEdit {
+        val edit = edit(action = CreateNodeAction(LatLon(1.0, 2.0), mapOf("amenity" to "bench")))
+        on(elementEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(FeaturePhoto("/photos/a.jpg"), FeaturePhoto("/photos/b.jpg")))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf(PHOTO_URL, PHOTO_URL_2))
+        on(singleUploader.upload(any(), any())).thenReturn(
+            MapDataUpdates(idUpdates = listOf(ElementIdUpdate(ElementType.NODE, -1, 42)))
+        )
+        return edit
+    }
+
+    @Test fun `photos of a new node are uploaded with its feature type`() = runBlocking<Unit> {
+        val edit = givenNewNodeWithPhotos()
+        on(featurePhotosController.get(edit.id)).thenReturn(listOf(
+            FeaturePhoto("/photos/a.jpg", 45f, capturedAt = 100L, featureType = "Intersection"),
+        ))
+
+        uploader.upload()
+
+        verify(imageUploader).upload(
+            listOf(PanoramaxPhoto(
+                "/photos/a.jpg", 45f,
+                mapOf("source" to "new_feature", "feature_type" to "Intersection"),
+                captureTime = 100L
+            )),
+            edit.position
+        )
+    }
+
+    @Test fun `photos of a new node are uploaded without element id and go up with the node`() = runBlocking<Unit> {
+        val edit = givenNewNodeWithPhotos()
+
+        uploader.upload()
+
+        // its id is not known yet
+        // nor when they were taken: right before the node was made
+        val semantics = mapOf("source" to "new_feature")
+        verify(imageUploader).upload(
+            listOf(
+                PanoramaxPhoto("/photos/a.jpg", null, semantics, edit.createdTimestamp),
+                PanoramaxPhoto("/photos/b.jpg", null, semantics, edit.createdTimestamp),
+            ),
+            edit.position
+        )
+        val uploaded = argumentCaptor<ElementEdit>()
+        verify(singleUploader).upload(capture(uploaded), any())
+        assertEquals(
+            mapOf("amenity" to "bench", "ext:image_url1" to PHOTO_URL, "ext:image_url2" to PHOTO_URL_2),
+            (uploaded.value.action as CreateNodeAction).tags
+        )
+    }
+
+    @Test fun `once the new node is uploaded, its id is added to its photos`() = runBlocking<Unit> {
+        givenNewNodeWithPhotos()
+
+        uploader.upload()
+
+        verify(imageUploader).addSemantics(PHOTO_URL, mapOf("element_id" to "node/42"))
+        verify(imageUploader).addSemantics(PHOTO_URL_2, mapOf("element_id" to "node/42"))
+    }
+
+    // the node is already uploaded at that point - that must not be undone or repeated
+    @Test fun `failing to add the id to the photos doesn't fail the upload`() = runBlocking<Unit> {
+        givenNewNodeWithPhotos()
+        on(imageUploader.addSemantics(any(), any())).thenThrow(PanoramaxException("down", isUnreachable = true))
+
+        uploader.upload()
+
+        verify(elementEditsController).markSynced(any(), any())
+        // still tried for the other photo
+        verify(imageUploader).addSemantics(PHOTO_URL_2, mapOf("element_id" to "node/42"))
+    }
+
+    @Test fun `a tag update's photos are not patched afterwards`() = runBlocking<Unit> {
+        givenAnswerWithPhoto()
+
+        uploader.upload()
+
+        verify(imageUploader, never()).addSemantics(any(), any())
+    }
+
+    //endregion
+
+    //region Panoramax failing with photos queued
 
     private fun answerWithPhoto(id: Long): ElementEdit {
         val edit = edit(id = id, action = UpdateElementTagsAction(
@@ -290,23 +427,28 @@ class ElementEditsUploaderTest {
         return edit
     }
 
-    @Test fun `once KartaView is unreachable, the other queued photos are not tried in the same run`() = runBlocking<Unit> {
+    /** what answerWithPhoto([id])'s photo is uploaded as - taken when the edit was made */
+    private fun photo(id: Long) = PanoramaxPhoto(
+        "/photos/$id.jpg", 0f, mapOf("element_id" to "node/$id"), captureTime = edit(id = id).createdTimestamp
+    )
+
+    @Test fun `once Panoramax is unreachable, the other queued photos are not tried in the same run`() = runBlocking<Unit> {
         val first = answerWithPhoto(1)
         val second = answerWithPhoto(2)
         val withoutPhoto = edit(id = 3)
         on(elementEditsController.getOldestUnsynced(any()))
             .thenReturn(first).thenReturn(second).thenReturn(withoutPhoto).thenReturn(null)
-        on(imageUploader.upload(any(), any())).thenThrow(KartaViewException("timeout", isUnreachable = true))
+        on(imageUploader.upload(any(), any())).thenThrow(PanoramaxException("timeout", isUnreachable = true))
         on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
 
         uploader.upload()
 
-        verify(imageUploader).upload(listOf("/photos/1.jpg" to 0f), first.position)
-        verify(imageUploader, never()).upload(eq(listOf("/photos/2.jpg" to 0f)), any())
+        verify(imageUploader).upload(listOf(photo(1)), first.position)
+        verify(imageUploader, never()).upload(eq(listOf(photo(2))), any())
         // only an edit that was actually tried counts towards the stuck-photo notice
         verify(featurePhotosController).incrementUploadAttempts(1)
         verify(featurePhotosController, never()).incrementUploadAttempts(2)
-        // an answer without a photo doesn't need KartaView
+        // an answer without a photo doesn't need Panoramax
         verify(singleUploader).upload(eq(withoutPhoto), any())
         verify(elementEditsController, never()).markSynced(eq(second), any())
     }
@@ -316,21 +458,22 @@ class ElementEditsUploaderTest {
         val second = answerWithPhoto(2)
         on(elementEditsController.getOldestUnsynced(any()))
             .thenReturn(first).thenReturn(second).thenReturn(null)
-        on(imageUploader.upload(eq(listOf("/photos/1.jpg" to 0f)), any()))
-            .thenThrow(KartaViewException("400 Bad Request"))
-        on(imageUploader.upload(eq(listOf("/photos/2.jpg" to 0f)), any())).thenReturn(listOf(PHOTO_URL))
+        on(imageUploader.upload(eq(listOf(photo(1))), any()))
+            .thenThrow(PanoramaxException("400 Bad Request"))
+        on(imageUploader.upload(eq(listOf(photo(2))), any())).thenReturn(listOf(PHOTO_URL))
         on(singleUploader.upload(any(), any())).thenReturn(MapDataUpdates())
 
         uploader.upload()
 
-        verify(imageUploader).upload(listOf("/photos/2.jpg" to 0f), second.position)
+        verify(imageUploader).upload(listOf(photo(2)), second.position)
         verify(elementEditsController).markSynced(any(), any())
     }
 
     //endregion
 
     private companion object {
-        const val PHOTO_URL = "https://storage.kartaview.org/files/photo/lth/1.jpg"
+        const val PHOTO_URL = "https://panoramax.example/api/pictures/1/hd.jpg"
+        const val PHOTO_URL_2 = "https://panoramax.example/api/pictures/2/hd.jpg"
     }
 }
 

@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.quests
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -83,7 +84,7 @@ class LeaveNoteInsteadFragment : AbstractCreateNoteFragment() {
         _binding = null
     }
 
-    override fun onComposedNote(text: String, imagePaths: List<String>) {
+    override fun onComposedNote(text: String, photos: List<CapturedPhoto>) {
         val fullText = mutableListOf<String>()
         leaveNoteContext?.let { fullText += it }
         fullText += "– https://osm.org/${elementType.name.lowercase()}/$elementId"
@@ -91,7 +92,7 @@ class LeaveNoteInsteadFragment : AbstractCreateNoteFragment() {
 
         viewLifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                noteEditsController.add(0, NoteEditAction.CREATE, position, fullText.joinToString(" "), imagePaths)
+                noteEditsController.add(0, NoteEditAction.CREATE, position, fullText.joinToString(" "), photos)
             }
             listener?.onCreatedNote(position)
         }

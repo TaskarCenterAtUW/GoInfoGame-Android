@@ -62,6 +62,29 @@ val kartaViewAccessToken: String = System.getenv("KARTAVIEW_ACCESS_TOKEN")
     }
     ?: ""
 
+/** Bearer token for photo uploads to the dev Panoramax instance (DEV environment): from env var, else root secrets.properties
+ *  (git-ignored), else empty (build succeeds but Panoramax photo uploads fail auth at runtime).
+ *  Never commit the token. */
+val panoramaxDevAccessToken: String = System.getenv("PANORAMAX_DEV_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("panoramaxDevAccessToken")
+    }
+    ?: ""
+
+/** Same, for the stage Panoramax instance (used in the STAGE environment) */
+val panoramaxStageAccessToken: String = System.getenv("PANORAMAX_STAGE_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("panoramaxStageAccessToken")
+    }
+    ?: ""
+
+/** Same, for the prod Panoramax instance (used in the PROD environment) */
+val panoramaxProdAccessToken: String = System.getenv("PANORAMAX_PROD_ACCESS_TOKEN")
+    ?: rootProject.file("secrets.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { FileInputStream(file).use { load(it) } }.getProperty("panoramaxProdAccessToken")
+    }
+    ?: ""
+
 buildkonfig {
     packageName = "de.westnordost.streetcomplete"
     objectName = "BuildConfig"
@@ -71,6 +94,9 @@ buildkonfig {
         buildConfigField(STRING, "VERSION_NAME", appVersionName)
         buildConfigField(BOOLEAN, "DEBUG", "true")
         buildConfigField(STRING, "KARTAVIEW_ACCESS_TOKEN", kartaViewAccessToken)
+        buildConfigField(STRING, "PANORAMAX_DEV_ACCESS_TOKEN", panoramaxDevAccessToken)
+        buildConfigField(STRING, "PANORAMAX_STAGE_ACCESS_TOKEN", panoramaxStageAccessToken)
+        buildConfigField(STRING, "PANORAMAX_PROD_ACCESS_TOKEN", panoramaxProdAccessToken)
     }
 
     targetConfigs {

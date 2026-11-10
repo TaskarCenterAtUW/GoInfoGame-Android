@@ -1,8 +1,29 @@
 package de.westnordost.streetcomplete.quests.sidewalk_long_form.data
 
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhoto
+import de.westnordost.streetcomplete.data.preferences.Environment
 
+/** URL of the (Panoramax) photo attached to the element - see ElementEditsUploader */
+const val STREET_IMAGES_TAG = "ext:street_images"
+/** where the photo URL went before the switch from KartaView to Panoramax - still read, and
+ *  removed along with the photo */
 const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
+
+/** The URL of the photo already attached to an element with [tags], if any */
+fun getAttachedPhotoUrl(tags: Map<String, String>): String? =
+    tags[STREET_IMAGES_TAG] ?: tags[KARTAVIEW_URL_TAG]
+
+/** The URL to show the attached photo at [url] with in the form's small preview: for a picture of
+ *  our Panoramax instance its thumbnail (~500px wide) instead of the HD image - the tag may also
+ *  come from other clients that upload full-size photos (several MB). Opening the photo
+ *  full-screen still uses [url]. Any other URL (e.g. KartaView) is returned as is. */
+fun getPhotoPreviewUrl(url: String): String {
+    val isPanoramaxHd = url.endsWith(PANORAMAX_HD_SUFFIX) &&
+        Environment.entries.any { url.startsWith(it.panoramaxBaseUrl + "api/pictures/") }
+    return if (isPanoramaxHd) url.removeSuffix(PANORAMAX_HD_SUFFIX) + "/thumb.jpg" else url
+}
+
+private const val PANORAMAX_HD_SUFFIX = "/hd.jpg"
 
 /** The photo-related state of a long-form quest while it is open - see ALongForm. Kept as plain
  *  values (with the pure transitions below) rather than private Fragment state so the photo
@@ -24,7 +45,7 @@ data class PhotoTransition(val state: PhotoState, val fileToDelete: String? = nu
  *  it ever existed. Retaking again before submitting (Pending -> camera -> new Pending)
  *  carries the ORIGINAL replaces forward, not the intermediate Pending, so no matter how
  *  many times the user retakes, cancelling always lands back on the true starting point. */
-fun PhotoState.afterPhotoCaptured(path: String, bearing: Float): PhotoTransition {
+fun PhotoState.afterPhotoCaptured(path: String, bearing: Float?, capturedAt: Long? = null): PhotoTransition {
     val previous = attachment
     val replaces = when (previous) {
         is PhotoAttachment.Pending -> previous.replaces
@@ -32,7 +53,7 @@ fun PhotoState.afterPhotoCaptured(path: String, bearing: Float): PhotoTransition
         PhotoAttachment.None -> null
     }
     return PhotoTransition(
-        copy(attachment = PhotoAttachment.Pending(path, bearing, replaces)),
+        copy(attachment = PhotoAttachment.Pending(path, bearing, replaces, capturedAt)),
         fileToDelete = (previous as? PhotoAttachment.Pending)?.path
     )
 }
@@ -146,9 +167,14 @@ fun computeLongFormSubmission(
     // later, in the background sync - see AbstractOsmQuestForm.applyAnswer) - only an
     // explicit removal of an already-synced photo (without a replacement) is a tag change we
     // can express right away
-    val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let { FeaturePhoto(it.path, it.bearing) }
+    // the question whose choiceFollowUp asked for the photo - the same one whose row shows it
+    // (see LongFormAdapter.photoAttachment)
+    val photoQuestion = givenItems.firstOrNull { it.visible && it.activeChoiceFollowUp() != null }
+    val photo = (finalPhotoState.attachment as? PhotoAttachment.Pending)?.let {
+        FeaturePhoto(it.path, it.bearing, photoQuestion?.questTitle, photoQuestion?.questId, it.capturedAt)
+    }
     val removeTagKeys = if (photo == null && finalPhotoState.existingPhotoRemoved) {
-        listOf(KARTAVIEW_URL_TAG)
+        listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG)
     } else {
         emptyList()
     }

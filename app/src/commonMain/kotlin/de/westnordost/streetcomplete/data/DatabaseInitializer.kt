@@ -34,7 +34,7 @@ import de.westnordost.streetcomplete.util.logs.Log
 
 /** Creates the database and upgrades it */
 object DatabaseInitializer {
-    const val DB_VERSION = 29
+    const val DB_VERSION = 30
 
     fun onCreate(db: Database) {
         // OSM notes
@@ -358,6 +358,21 @@ object DatabaseInitializer {
             // per download) used to be stored here, kept for 14 days - they go to logcat only now
             // (see LogcatHttpLogger), drop the ones already stored
             db.delete(LogsTable.NAME, where = "${LogsTable.Columns.TAG} IN ($HTTP_LOG_TAGS)")
+        }
+
+        if (oldVersion <= 29 && newVersion >= 30) {
+            // per-photo long-form question (title and quest_id), sent along to Panoramax as
+            // semantic tags
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUESTIONS} text")
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_QUEST_IDS} text")
+            // per-photo capture time, sent to Panoramax as the picture's capture time instead of
+            // the (possibly much later) upload time
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT} text")
+            // feature preset name of a new feature's photos, sent along as a semantic tag
+            db.tryExec("ALTER TABLE ${FeaturePhotosTable.NAME} ADD COLUMN ${FeaturePhotosTable.Columns.PHOTO_FEATURE_TYPES} text")
+            // same for the photos of notes - bearing and capture time of each one
+            db.tryExec("ALTER TABLE ${NoteEditsTable.NAME} ADD COLUMN ${NoteEditsTable.Columns.IMAGE_BEARINGS} text")
+            db.tryExec("ALTER TABLE ${NoteEditsTable.NAME} ADD COLUMN ${NoteEditsTable.Columns.IMAGE_CAPTURE_TIMES} text")
         }
     }
 }

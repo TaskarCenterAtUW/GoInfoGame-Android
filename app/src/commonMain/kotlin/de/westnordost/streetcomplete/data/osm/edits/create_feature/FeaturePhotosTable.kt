@@ -7,10 +7,23 @@ object FeaturePhotosTable {
         const val ID = "id"
         const val EDIT_ID = "edit_id"
         const val PHOTO_PATHS = "photo_paths"
-        /** JSON list of Floats, index-aligned with PHOTO_PATHS - the compass bearing the device
-         *  was facing at capture time for each photo, or absent/null on rows written before this
-         *  column existed (treated as all-zero bearings for those - see FeaturePhotosDao.get). */
+        /** JSON list of nullable Floats, index-aligned with PHOTO_PATHS - the compass bearing the
+         *  camera was facing at capture time for each photo (null: unknown), or absent/null on
+         *  rows written before this column existed (unknown bearings - see FeaturePhotosDao.get). */
         const val PHOTO_BEARINGS = "photo_bearings"
+        /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the long-form question
+         *  each photo was taken for, or absent/null on rows written before this column existed */
+        const val PHOTO_QUESTIONS = "photo_questions"
+        /** JSON list of nullable Ints, index-aligned with PHOTO_PATHS - the quest_id of that
+         *  long-form question, or absent/null on rows written before this column existed */
+        const val PHOTO_QUEST_IDS = "photo_quest_ids"
+        /** JSON list of nullable Longs, index-aligned with PHOTO_PATHS - when each photo was
+         *  taken (epoch milliseconds), or absent/null on rows written before this column existed */
+        const val PHOTO_CAPTURED_AT = "photo_captured_at"
+        /** JSON list of nullable Strings, index-aligned with PHOTO_PATHS - the feature preset name
+         *  of the new feature each photo was taken of, or absent/null on rows written before this
+         *  column existed */
+        const val PHOTO_FEATURE_TYPES = "photo_feature_types"
         /** How many times uploading this edit's photo(s) has failed in a row - see
          *  ElementEditsUploader.uploadPendingPhotos and StuckPhotoUploadNotice. Reset to 0 once
          *  the user picks "keep trying" on the resulting notice. */
@@ -24,6 +37,10 @@ object FeaturePhotosTable {
             ${Columns.EDIT_ID} int NOT NULL,
             ${Columns.PHOTO_PATHS} text NOT NULL,
             ${Columns.PHOTO_BEARINGS} text,
+            ${Columns.PHOTO_QUESTIONS} text,
+            ${Columns.PHOTO_QUEST_IDS} text,
+            ${Columns.PHOTO_CAPTURED_AT} text,
+            ${Columns.PHOTO_FEATURE_TYPES} text,
             ${Columns.UPLOAD_ATTEMPTS} int NOT NULL DEFAULT 0,
             ${Columns.WORKSPACE_ID} int NOT NULL
         );

@@ -2,16 +2,36 @@ package de.westnordost.streetcomplete.data.osm.edits.create_feature
 
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
 
 /** One photo attached to a not-yet-synced edit, with the compass bearing (0-359, clockwise from
- *  north) the device was facing at capture time - or 0f when a caller doesn't track it (not every
- *  photo-attaching flow captures a bearing yet). Uploaded with that bearing at sync time - see
+ *  true north) the camera was facing at capture time - or null if unknown (not every
+ *  photo-attaching flow captures a bearing yet) - and the long-form [question] it was taken for,
+ *  if any, and when it was taken ([capturedAt], epoch milliseconds - null if not tracked, the
+ *  edit's creation time is used then), and the [featureType] (feature preset name, e.g.
+ *  "Intersection") of the new feature it was taken of, if any. Uploaded with those at sync time - see
  *  [de.westnordost.streetcomplete.data.osm.edits.upload.ElementEditsUploader.uploadPendingPhotos]. */
 @Serializable
-data class FeaturePhoto(val path: String, val bearing: Float = 0f)
+data class FeaturePhoto(
+    val path: String,
+    val bearing: Float? = null,
+    val question: String? = null,
+    val questId: Int? = null,
+    val capturedAt: Long? = null,
+    val featureType: String? = null,
+) {
+    constructor(
+        photo: CapturedPhoto,
+        question: String? = null,
+        questId: Int? = null,
+        featureType: String? = null,
+    ) : this(photo.path, photo.bearing, question, questId, photo.capturedAt, featureType)
+
+    val captured: CapturedPhoto get() = CapturedPhoto(path, bearing, capturedAt)
+}
 
 /** Manages the photos attached to not-yet-synced create-feature/tag-update edits: their file
  *  paths (and capture bearings) are held here until the edit is uploaded, at which point the

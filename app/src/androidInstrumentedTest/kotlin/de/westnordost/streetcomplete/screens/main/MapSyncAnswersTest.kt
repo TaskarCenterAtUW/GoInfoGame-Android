@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
 import de.westnordost.streetcomplete.testutils.MockOsmServer
+import de.westnordost.streetcomplete.testutils.MockPanoramax
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -40,7 +41,7 @@ class MapSyncAnswersTest : MapSyncTestBase() {
 
     @Test
     fun removingThePhotoFromTheLastVisit_removesItsTagOnOsm() {
-        val tags = SIDEWALK.tags + mapOf("obstacle" to "other", "ext:kartaview_url" to OLD_PHOTO_URL)
+        val tags = SIDEWALK.tags + mapOf("obstacle" to "other", "ext:street_images" to OLD_PHOTO_URL)
         MockOsmServer.put(SIDEWALK.copy(tags = tags))
         openWorkspaceAndSidewalkQuest()
 
@@ -51,7 +52,7 @@ class MapSyncAnswersTest : MapSyncTestBase() {
         submit()
 
         val way = awaitUploads(1).single().modifiedWays.single()
-        assertEquals(tags - "ext:kartaview_url", way.tags)
+        assertEquals(tags - "ext:street_images", way.tags)
     }
 
     // last edited long ago (the mock's default: 2025-01-01) - due for a recheck
@@ -79,7 +80,7 @@ class MapSyncAnswersTest : MapSyncTestBase() {
     }
 
     private companion object {
-        const val OLD_PHOTO_URL = "https://storage.kartaview.org/files/photo/lth/from-last-visit.jpg"
+        val OLD_PHOTO_URL get() = "${MockPanoramax.PHOTO_URL}?from-last-visit"
         val FULLY_ANSWERED = SIDEWALK.tags + mapOf(
             "surface" to "asphalt", "width" to "60", "obstacle" to "bollard", "note" to "all good",
         )

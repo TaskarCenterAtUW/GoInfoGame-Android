@@ -4,6 +4,7 @@ import de.westnordost.streetcomplete.data.edithistory.Edit
 import de.westnordost.streetcomplete.data.edithistory.NoteEditKey
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 
 /** Contains all necessary information to create/comment on an OSM note. */
 data class NoteEdit(
@@ -37,8 +38,19 @@ data class NoteEdit(
 
     /** attached GPS location history */
     val track: List<Trackpoint>,
-    override var workspaceId: Int = 0
+    override var workspaceId: Int = 0,
+
+    /** compass bearing the camera faced for each of [imagePaths], index-aligned (null: unknown) */
+    val imageBearings: List<Float?> = emptyList(),
+
+    /** when each of [imagePaths] was taken (epoch ms), index-aligned (null: unknown) */
+    val imageCaptureTimes: List<Long?> = emptyList(),
 ) : Edit {
+    /** the attached photos with their bearing and capture time */
+    val photos: List<CapturedPhoto> get() = imagePaths.mapIndexed { i, path ->
+        CapturedPhoto(path, imageBearings.getOrNull(i), imageCaptureTimes.getOrNull(i))
+    }
+
     override val isUndoable: Boolean get() = !isSynced
     override val key: NoteEditKey get() = NoteEditKey(id)
 }

@@ -7,6 +7,7 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.Elements
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.KARTAVIEW_URL_TAG
+import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.STREET_IMAGES_TAG
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormAdapter
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.LongFormSubmission
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.data.PhotoAttachment
@@ -267,8 +268,15 @@ class LongFormSubmissionTest {
         val adapter = openForm(obstructionWithPhotoTags)
         val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath, 90f)))
         assertEquals(listOf(OBSTRUCTION_TYPE), submission.submittedIds())
-        assertEquals(FeaturePhoto(pendingPath, 90f), submission.photo)
+        // with the question whose follow-up asked for it
+        assertEquals(FeaturePhoto(pendingPath, 90f, questId = OBSTRUCTION_TYPE), submission.photo)
         assertNull(submission.photoTransition)
+    }
+
+    @Test fun `a new photo is submitted with the time it was taken`() {
+        val adapter = openForm(obstructionWithPhotoTags)
+        val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath, 90f, capturedAt = 100L)))
+        assertEquals(FeaturePhoto(pendingPath, 90f, questId = OBSTRUCTION_TYPE, capturedAt = 100L), submission.photo)
     }
 
     @Test fun `a new photo rides along with other changes`() {
@@ -276,7 +284,7 @@ class LongFormSubmissionTest {
         adapter.typeNumber(WIDTH, "60")
         val submission = adapter.submit(PhotoState(PhotoAttachment.Pending(pendingPath)))
         assertEquals(listOf(WIDTH), submission.submittedIds())
-        assertEquals(FeaturePhoto(pendingPath, 0f), submission.photo)
+        assertEquals(FeaturePhoto(pendingPath, questId = OBSTRUCTION_TYPE), submission.photo)
     }
 
     @Test fun `a new photo replacing an existing one does not remove the tag up front`() {
@@ -295,7 +303,7 @@ class LongFormSubmissionTest {
         val submission = adapter.submit(PhotoState(PhotoAttachment.PendingRemoval(photoUrl), existingPhotoRemoved = true))
         assertFalse(submission.isEmpty)
         assertEquals(emptyList(), submission.items)
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         assertNull(submission.photo)
     }
 
@@ -322,7 +330,7 @@ class LongFormSubmissionTest {
         val adapter = openForm(obstructionWithPhotoTags)
         adapter.tapChoice(OBSTRUCTION_TYPE, "other")
         val submission = adapter.submit(PhotoState(PhotoAttachment.Uploaded(photoUrl)))
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         assertNull(submission.photoTransition!!.fileToDelete)
     }
 
@@ -333,7 +341,7 @@ class LongFormSubmissionTest {
 
         val submission = adapter.submit(photo)
         assertEquals(pendingPath, submission.photoTransition!!.fileToDelete)
-        assertEquals(listOf(KARTAVIEW_URL_TAG), submission.removeTagKeys)
+        assertEquals(listOf(STREET_IMAGES_TAG, KARTAVIEW_URL_TAG), submission.removeTagKeys)
         val tags = submission.applyTo(obstructionWithPhotoTags + (KARTAVIEW_URL_TAG to photoUrl))
         assertEquals(mapOf("ext:obstruction" to "no"), tags)
     }

@@ -13,7 +13,7 @@ import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
-import de.westnordost.streetcomplete.testutils.MockKartaView
+import de.westnordost.streetcomplete.testutils.MockPanoramax
 import de.westnordost.streetcomplete.testutils.MockOsmServer
 import de.westnordost.streetcomplete.testutils.MockOsmServer.MockNode
 import io.ktor.http.HttpStatusCode
@@ -69,23 +69,23 @@ class MapSyncMultiSelectTest : MapSyncTestBase() {
         onView(withId(R.id.yesButton)).perform(click())
         waitUntil("long form opened") { isDisplayed(SURFACE_Q) }
 
-        // KartaView down at first, so the photos stay around to be looked at
-        MockKartaView.failure = MockKartaView.Failure.Status(HttpStatusCode.ServiceUnavailable)
+        // Panoramax down at first, so the photos stay around to be looked at
+        MockPanoramax.failure = MockPanoramax.Failure.Status(HttpStatusCode.ServiceUnavailable)
         tapTile(SURFACE_Q, "Concrete")
         tapTile(OBSTRUCTION_Q, "Other obstruction")
         capturePhoto()
         submit()
 
         val uploads: UploadProgressSource = koin.get()
-        waitUntil("photo upload attempted") { MockKartaView.requests.isNotEmpty() && !uploads.isUploadInProgress }
+        waitUntil("photo upload attempted") { MockPanoramax.requests.isNotEmpty() && !uploads.isUploadInProgress }
         val edits = koin.get<ElementEditsController>().getAllUnsynced()
         assertEquals("one edit per selected sidewalk", 2, edits.size)
         val photos = edits.map { koin.get<FeaturePhotosController>().get(it.id).single() }
         assertEquals("each edit owns its own photo file", 2, photos.map { it.path }.toSet().size)
         assertTrue(photos.all { File(it.path).exists() })
 
-        // KartaView back - both go up, each carrying its photo's URL
-        MockKartaView.failure = null
+        // Panoramax back - both go up, each carrying its photo's URL
+        MockPanoramax.failure = null
         tapUploadButton()
         waitUntil("both sidewalks uploaded") {
             MockOsmServer.snapshot().uploads.flatMap { it.modifiedWays }.map { it.id }.toSet() == setOf(SIDEWALK.id, SECOND_SIDEWALK_ID)
@@ -93,7 +93,7 @@ class MapSyncMultiSelectTest : MapSyncTestBase() {
         for (way in MockOsmServer.snapshot().uploads.flatMap { it.modifiedWays }) {
             assertEquals(
                 "way ${way.id}",
-                SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other", "ext:kartaview_url" to MockKartaView.PHOTO_URL),
+                SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other", "ext:street_images" to MockPanoramax.PHOTO_URL),
                 way.tags
             )
         }

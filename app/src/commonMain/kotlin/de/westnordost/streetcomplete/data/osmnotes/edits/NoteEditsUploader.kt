@@ -2,8 +2,10 @@ package de.westnordost.streetcomplete.data.osmnotes.edits
 
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
-import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
-import de.westnordost.streetcomplete.data.karta_view.KartaViewException
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxException
+import de.westnordost.streetcomplete.data.panoramax.toPanoramaxPhoto
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
@@ -32,7 +34,7 @@ class NoteEditsUploader(
     private val userDataSource: UserDataSource,
     private val notesApi: NotesApiClient,
     private val tracksApi: TracksApiClient,
-    private val imageUploader: KartaViewApiClient,
+    private val imageUploader: PanoramaxApiClient,
     private val fileSystem: FileSystem,
 ) {
     var uploadedChangeListener: OnUploadedChangeListener? = null
@@ -53,8 +55,8 @@ class NoteEditsUploader(
     } }
 
     private suspend fun uploadMissedImageActivations() {
-        // KartaView photos need no activation step (their URLs are embedded in the note text at
-        // upload) - just clear any flags still set, e.g. from before the switch to KartaView
+        // Panoramax photos need no activation step (their URLs are embedded in the note text at
+        // upload) - just clear any flags still set, e.g. from before the switch to KartaView/Panoramax
         while (true) {
             val edit = noteEditsController.getOldestNeedingImagesActivation() ?: break
             noteEditsController.markImagesActivated(edit.id)
@@ -69,7 +71,7 @@ class NoteEditsUploader(
                  * because otherwise an inconsistency in the data would occur. E.g. a note could
                  * be uploaded twice */
                 withContext(scope.coroutineContext) { uploadEdit(edit) }
-            } catch (e: KartaViewException) {
+            } catch (e: PanoramaxException) {
                 // photo upload failed (plain network failure) - leave the note edit unsynced for
                 // the next sync attempt instead of aborting the whole upload (see class KDoc)
                 Log.w(TAG, "Failed to upload photos, will retry on next sync: ${e.message}")
@@ -80,7 +82,7 @@ class NoteEditsUploader(
 
     private suspend fun uploadEdit(edit: NoteEdit) {
         // try to upload the image and track if we have them
-        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths, edit.position)
+        val imageText = uploadAndGetAttachedPhotosText(edit.photos, edit.position, edit.createdTimestamp)
         val trackText = uploadAndGetAttachedTrackText(edit.track, edit.text)
         val text = edit.text.orEmpty() + imageText + trackText
 
@@ -130,11 +132,15 @@ class NoteEditsUploader(
         }
     }
 
-    private suspend fun uploadAndGetAttachedPhotosText(imagePaths: List<String>, position: LatLon): String {
-        if (imagePaths.isNotEmpty()) {
-            // note photos don't carry a capture bearing yet - see FeaturePhoto/ElementEditsUploader
-            // for the long-form equivalent this could follow if notes gain the same later
-            val urls = imageUploader.upload(imagePaths.map { it to 0f }, position)
+    private suspend fun uploadAndGetAttachedPhotosText(
+        photos: List<CapturedPhoto>,
+        position: LatLon,
+        /** when the note was made, i.e. right after its photos were taken - used for photos whose
+         *  capture time is unknown (queued before it was recorded) */
+        createdTimestamp: Long,
+    ): String {
+        if (photos.isNotEmpty()) {
+            val urls = imageUploader.upload(photos.map { it.toPanoramaxPhoto(createdTimestamp) }, position)
             if (urls.isNotEmpty()) {
                 return "\n\nAttached photo:\n" + urls.joinToString("\n")
             }

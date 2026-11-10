@@ -23,7 +23,7 @@ import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotos
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.inRowOf
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.scrollIntoView
-import de.westnordost.streetcomplete.testutils.MockKartaView
+import de.westnordost.streetcomplete.testutils.MockPanoramax
 import de.westnordost.streetcomplete.testutils.MockOsmServer
 import io.ktor.http.HttpStatusCode
 import org.junit.After
@@ -35,9 +35,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * A long-form answer with a photo, when the photo can't be uploaded to KartaView: after three
+ * A long-form answer with a photo, when the photo can't be uploaded to Panoramax: after three
  * failed upload runs the user is told and can remove the photo (the answer then uploads without
- * it) or keep trying. KartaView is [MockKartaView], hooked into the app's own client - no photo
+ * it) or keep trying. Panoramax is [MockPanoramax], hooked into the app's own client - no photo
  * ever reaches the real service. See [MapSyncTestBase] for the rest of the setup.
  */
 @RunWith(AndroidJUnit4::class)
@@ -53,23 +53,34 @@ class MapSyncPhotoTest : MapSyncTestBase() {
         Intents.release()
     }
 
-    // the normal case: KartaView takes the photo, and the answer goes up carrying its public URL
+    // the normal case: Panoramax takes the photo, and the answer goes up carrying its public URL
     @Test
     fun photoUploads_andTheAnswerCarriesItsUrl() {
-        MockKartaView.failure = null
+        MockPanoramax.failure = null
         openWorkspaceAndSidewalkQuest()
         answerWithPhoto()
 
         val way = awaitUploads(1).single().modifiedWays.single()
         assertEquals(
-            SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other", "ext:kartaview_url" to MockKartaView.PHOTO_URL),
+            SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other", "ext:street_images" to MockPanoramax.PHOTO_URL),
             way.tags
         )
         // uploaded the way the real API expects it, before the answer
         assertEquals(
-            listOf("POST /1.0/sequence/", "POST /1.0/photo/", "POST /1.0/sequence/finished-uploading/", "GET /2.0/photo/mock-photo-1"),
-            MockKartaView.requests.toList()
+            listOf(
+                "POST /api/upload_sets",
+                "POST /api/upload_sets/mock-upload-set-1/files",
+                "POST /api/upload_sets/mock-upload-set-1/complete",
+            ),
+            MockPanoramax.requests.toList()
         )
+        // with what the photo is of: the sidewalk, and the question that asked for it
+        val photoBody = MockPanoramax.fileBodies.single()
+        assertTrue(photoBody, photoBody.contains("""{"key":"element_id","value":"way/${SIDEWALK.id}"}"""))
+        assertTrue(photoBody, photoBody.contains("""{"key":"question","value":"$OBSTRUCTION_Q"}"""))
+        assertTrue(photoBody, photoBody.contains("""{"key":"quest_id","value":"103"}"""))
+        // nothing identifying the user, the pictures are public (MapSyncTestBase logs in with an email)
+        assertFalse(photoBody, photoBody.contains("user_email"))
         // the photo is done with: its record (and file) are gone, nothing is left queued
         waitUntil("answer synced") { unsyncedEditsCount() == 0 }
         assertEquals(0, koin.get<Database>().query(FeaturePhotosTable.NAME) { 1 }.size)
@@ -79,7 +90,7 @@ class MapSyncPhotoTest : MapSyncTestBase() {
 
     @Test
     fun photoKeepsFailingToUpload_userIsTold_andCanRemoveIt_thenTheAnswerUploads() {
-        MockKartaView.failure = MockKartaView.Failure.Status(HttpStatusCode.ServiceUnavailable)
+        MockPanoramax.failure = MockPanoramax.Failure.Status(HttpStatusCode.ServiceUnavailable)
         openWorkspaceAndSidewalkQuest()
         answerWithPhoto()
 
@@ -90,12 +101,12 @@ class MapSyncPhotoTest : MapSyncTestBase() {
 
         val way = awaitUploads(1).single().modifiedWays.single()
         assertEquals(SIDEWALK.tags + mapOf("surface" to "concrete", "obstacle" to "other"), way.tags)
-        assertFalse(way.tags.keys.any { it.startsWith("ext:kartaview") })
+        assertFalse(way.tags.keys.any { it == "ext:street_images" || it.startsWith("ext:kartaview") })
     }
 
     @Test
     fun keepTrying_closesTheNotice_andTheAnswerStaysQueued() {
-        MockKartaView.failure = MockKartaView.Failure.Status(HttpStatusCode.ServiceUnavailable)
+        MockPanoramax.failure = MockPanoramax.Failure.Status(HttpStatusCode.ServiceUnavailable)
         openWorkspaceAndSidewalkQuest()
         answerWithPhoto()
 
@@ -109,12 +120,12 @@ class MapSyncPhotoTest : MapSyncTestBase() {
         assertEquals(1, unsyncedEditsCount())
     }
 
-    // KartaView not answering at all (no connection, DNS, timeout) must be handled like it
+    // Panoramax not answering at all (no connection, DNS, timeout) must be handled like it
     // answering with an error: the photo's answer is held, the others aren't, and after three
     // runs the user is told
     @Test
-    fun kartaViewUnreachable_isHandledLikeAKartaViewError() {
-        MockKartaView.failure = MockKartaView.Failure.Unreachable
+    fun panoramaxUnreachable_isHandledLikeAPanoramaxError() {
+        MockPanoramax.failure = MockPanoramax.Failure.Unreachable
         openWorkspaceAndSidewalkQuest()
         answerWithPhoto()
 
@@ -139,7 +150,7 @@ class MapSyncPhotoTest : MapSyncTestBase() {
         for (run in 1..3) {
             if (run > 1) tapUploadButton()
             waitUntil("photo upload attempt $run") {
-                MockKartaView.requests.size >= run && !uploads.isUploadInProgress
+                MockPanoramax.requests.size >= run && !uploads.isUploadInProgress
             }
         }
         assertTrue(MockOsmServer.snapshot().uploads.isEmpty())

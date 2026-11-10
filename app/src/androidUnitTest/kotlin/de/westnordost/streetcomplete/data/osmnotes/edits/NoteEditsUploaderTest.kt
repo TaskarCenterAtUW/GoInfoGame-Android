@@ -2,7 +2,8 @@ package de.westnordost.streetcomplete.data.osmnotes.edits
 
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
-import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxPhoto
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
@@ -33,7 +34,7 @@ class NoteEditsUploaderTest {
     private lateinit var noteEditsController: NoteEditsController
     private lateinit var notesApi: NotesApiClient
     private lateinit var tracksApi: TracksApiClient
-    private lateinit var imageUploader: KartaViewApiClient
+    private lateinit var imageUploader: PanoramaxApiClient
     private lateinit var userDataSource: UserDataSource
 
     private lateinit var uploader: NoteEditsUploader
@@ -170,8 +171,31 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a" to 0f, "b" to 0f, "c" to 0f), pos)
+        // taken right before the note was made
+        val photos = listOf("a", "b", "c").map { PanoramaxPhoto(it, captureTime = edit.createdTimestamp) }
+        verify(imageUploader).upload(photos, pos)
         verify(listener)!!.onUploaded("NOTE", pos)
+    }
+
+    @Test fun `each attached image is uploaded with its own bearing and capture time`() = runBlocking<Unit> {
+        val pos = p(1.0, 13.0)
+        val edit = noteEdit(noteId = 1L, action = NoteEditAction.COMMENT, text = "test", pos = pos, imagePaths = listOf("a", "b"))
+            .copy(imageBearings = listOf(90f, null), imageCaptureTimes = listOf(100L, null))
+
+        on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
+        on(notesApi.comment(anyLong(), any())).thenReturn(note(1))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf("x", "y"))
+
+        upload()
+
+        verify(imageUploader).upload(
+            listOf(
+                PanoramaxPhoto("a", 90f, captureTime = 100L),
+                // capture time unknown: the note was made right after it was taken
+                PanoramaxPhoto("b", null, captureTime = edit.createdTimestamp),
+            ),
+            pos
+        )
     }
 
     @Test fun `upload create note with attached images`() = runBlocking {
@@ -195,7 +219,9 @@ class NoteEditsUploaderTest {
         verify(noteController).put(note)
         verify(noteEditsController).markSynced(edit, note)
         verify(noteEditsController).markImagesActivated(1L)
-        verify(imageUploader).upload(listOf("a" to 0f, "b" to 0f, "c" to 0f), pos)
+        // taken right before the note was made
+        val photos = listOf("a", "b", "c").map { PanoramaxPhoto(it, captureTime = edit.createdTimestamp) }
+        verify(imageUploader).upload(photos, pos)
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
@@ -229,7 +255,7 @@ class NoteEditsUploaderTest {
     }
 
     @Test fun `upload missed image activations`(): Unit = runBlocking {
-        // KartaView photos need no activation step (unlike the old PhotoServiceApiClient) - this
+        // Panoramax photos need no activation step (unlike the old PhotoServiceApiClient) - this
         // just clears any leftover flags from before the switch, with no imageUploader call at all
         val edit = noteEdit(noteId = 3)
 

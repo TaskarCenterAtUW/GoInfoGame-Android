@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <!-- resolves to getExternalFilesDir(DIRECTORY_PICTURES) of whatever package/build this is,
-         no hardcoded applicationId needed (see AttachPhotoFragment.createImageFile) -->
+         no hardcoded applicationId needed (see PhotoCapture's createPhotoFile) -->
     <external-files-path name="images" path="Pictures" />
 </paths>

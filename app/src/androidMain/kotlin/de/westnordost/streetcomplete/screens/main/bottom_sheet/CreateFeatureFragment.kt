@@ -266,7 +266,7 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
         screenPos.offset(0, -statusBarHeight)
 
         val position = listener?.getMapPositionAt(screenPos.toPointF()) ?: return
-        val imagePaths = attachPhotoFragment?.imagePaths.orEmpty()
+        val photos = attachPhotoFragment?.photos.orEmpty()
         val notes = contentBinding.notesInput.text.toString().trim()
         val tags = if (notes.isNotEmpty()) preset.tags + ("ext:notes" to notes) else preset.tags
 
@@ -284,10 +284,9 @@ class CreateFeatureFragment : AbstractBottomSheetFragment() {
                 )
                 // photos are NOT deleted here - they live on disk until the edit syncs, at which
                 // point they are uploaded and cleaned up (or deleted with the edit if it is undone)
-                if (imagePaths.isNotEmpty()) {
-                    // no capture bearing tracked here yet - see FeaturePhoto/ALongForm for the
-                    // long-form equivalent this could follow if Add Feature gains it later
-                    featurePhotosController.add(editId, imagePaths.map { FeaturePhoto(it) })
+                if (photos.isNotEmpty()) {
+                    // each with its own bearing and capture time
+                    featurePhotosController.add(editId, photos.map { FeaturePhoto(it, featureType = preset.name) })
                 }
             }
             listener?.onCreatedFeature(position)

@@ -41,7 +41,9 @@ class NoteEditsDaoTest : ApplicationDbTestCase() {
             listOf(
                 Trackpoint(LatLon(3.0, 4.0), 1234L, 1f, 2f),
                 Trackpoint(LatLon(1.0, 5.0), 12345L, 2f, 3f),
-            )
+            ),
+            imageBearings = listOf(90f, null, 359f),
+            imageCaptureTimes = listOf(100L, 200L, null),
         )
         dao.add(edit)
         assertEquals(edit, dao.get(1L))

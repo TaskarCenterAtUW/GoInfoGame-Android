@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.quests
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -151,10 +152,9 @@ abstract class AbstractQuestForm :
 
     open fun setCameraIntent() {}
 
-    /** Called when a photo was captured to local disk at [path], facing compass [bearing]
-     *  (0-359, clockwise from north) - upload happens later, in the background sync, not at
-     *  capture time (see AbstractOsmQuestForm). */
-    open fun onPhotoCaptured(path: String, bearing: Float) {}
+    /** Called when a [photo] was captured to local disk - upload happens later, in the
+     *  background sync, not at capture time (see AbstractOsmQuestForm). */
+    open fun onPhotoCaptured(photo: CapturedPhoto) {}
 
     protected fun showProgressbar() {
         binding.progressBar.visibility = View.VISIBLE

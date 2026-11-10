@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.AssetManager
 import android.content.res.Resources
 import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.user.UserLoginController
@@ -226,6 +227,33 @@ val appModule = module {
     }
 
     single { KartaViewApiClient(get(), get(named("kartaViewClient")), get()) }
+
+    // photo uploads (replaced KartaView) - same setup as kartaViewClient above
+    single(named("panoramaxClient")) {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+            install(Logging) {
+                logger = LogcatHttpLogger("KtorClient")
+                level = HTTP_LOG_LEVEL
+                sanitizeHeader { it == HttpHeaders.Authorization }
+            }
+            install(HttpRequestRetry) {
+                retryOnServerErrors(maxRetries = 3)
+                retryOnException(maxRetries = 3, retryOnTimeout = true)
+                exponentialDelay()
+            }
+            // see kartaViewClient
+            install(HttpTimeout) {
+                requestTimeoutMillis = 120_000
+                connectTimeoutMillis = 15_000
+                socketTimeoutMillis = 30_000
+            }
+        }
+    }
+
+    single { PanoramaxApiClient(get(), get(named("panoramaxClient")), get()) }
 
     single<Res> { Res }
     single<FileSystem> { SystemFileSystem }

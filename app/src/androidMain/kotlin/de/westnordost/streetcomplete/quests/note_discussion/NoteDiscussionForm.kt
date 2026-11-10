@@ -109,10 +109,10 @@ class NoteDiscussionForm : AbstractQuestForm() {
 
     override fun onClickOk() {
         require(noteText != null) { "NoteQuest has been answered with an empty comment!" }
-        val imagePaths = attachPhotoFragment?.imagePaths.orEmpty()
+        val photos = attachPhotoFragment?.photos.orEmpty()
         viewLifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                noteEditsController.add(noteId, NoteEditAction.COMMENT, geometry.center, noteText, imagePaths)
+                noteEditsController.add(noteId, NoteEditAction.COMMENT, geometry.center, noteText, photos)
             }
             listener?.onNoteQuestSolved(questType, noteId, geometry.center)
         }

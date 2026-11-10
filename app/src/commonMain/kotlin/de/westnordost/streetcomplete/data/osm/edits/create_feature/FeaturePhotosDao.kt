@@ -3,7 +3,11 @@ package de.westnordost.streetcomplete.data.osm.edits.create_feature
 import de.westnordost.streetcomplete.data.Database
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.EDIT_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_BEARINGS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_CAPTURED_AT
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_FEATURE_TYPES
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_PATHS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUESTIONS
+import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.PHOTO_QUEST_IDS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.UPLOAD_ATTEMPTS
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.Columns.WORKSPACE_ID
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosTable.NAME
@@ -26,6 +30,10 @@ class FeaturePhotosDao(
             EDIT_ID to editId,
             PHOTO_PATHS to json.encodeToString(photos.map { it.path }),
             PHOTO_BEARINGS to json.encodeToString(photos.map { it.bearing }),
+            PHOTO_QUESTIONS to json.encodeToString(photos.map { it.question }),
+            PHOTO_QUEST_IDS to json.encodeToString(photos.map { it.questId }),
+            PHOTO_CAPTURED_AT to json.encodeToString(photos.map { it.capturedAt }),
+            PHOTO_FEATURE_TYPES to json.encodeToString(photos.map { it.featureType }),
             WORKSPACE_ID to workspaceId
         ))
     }
@@ -36,9 +44,20 @@ class FeaturePhotosDao(
             where = "$WORKSPACE_ID = $workspaceId AND $EDIT_ID = $editId"
         ) { row ->
             val paths = json.decodeFromString<List<String>>(row.getString(PHOTO_PATHS))
-            // absent on rows written before PHOTO_BEARINGS existed - treated as all-zero bearings
-            val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float>>(it) }
-            paths.mapIndexed { i, path -> FeaturePhoto(path, bearings?.getOrNull(i) ?: 0f) }
+            // absent on rows written before PHOTO_BEARINGS existed - unknown bearings then
+            val bearings = row.getStringOrNull(PHOTO_BEARINGS)?.let { json.decodeFromString<List<Float?>>(it) }
+            // absent on rows written before PHOTO_QUESTIONS / PHOTO_QUEST_IDS existed
+            val questions = row.getStringOrNull(PHOTO_QUESTIONS)?.let { json.decodeFromString<List<String?>>(it) }
+            val questIds = row.getStringOrNull(PHOTO_QUEST_IDS)?.let { json.decodeFromString<List<Int?>>(it) }
+            // absent on rows written before PHOTO_CAPTURED_AT existed
+            val capturedAts = row.getStringOrNull(PHOTO_CAPTURED_AT)?.let { json.decodeFromString<List<Long?>>(it) }
+            val featureTypes = row.getStringOrNull(PHOTO_FEATURE_TYPES)?.let { json.decodeFromString<List<String?>>(it) }
+            paths.mapIndexed { i, path ->
+                FeaturePhoto(
+                    path, bearings?.getOrNull(i), questions?.getOrNull(i), questIds?.getOrNull(i),
+                    capturedAts?.getOrNull(i), featureTypes?.getOrNull(i)
+                )
+            }
         } ?: emptyList()
 
     fun delete(editId: Long): Boolean =

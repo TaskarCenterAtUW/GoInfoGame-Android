@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import coil.dispose
 import com.google.android.material.textfield.TextInputLayout
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.preferences.Preferences
@@ -57,8 +58,13 @@ sealed class PhotoAttachment {
      *  replace, if any (never another [Pending] or [None] - see ALongForm.onPhotoCaptured) - kept
      *  so cancelling this capture (the remove button) can revert to it instead of always dropping to
      *  [None] and silently losing track of an already-synced photo that was never actually asked
-     *  to be removed. */
-    data class Pending(val path: String, val bearing: Float = 0f, val replaces: PhotoAttachment? = null) : PhotoAttachment()
+     *  to be removed. [capturedAt] is when it was taken (epoch milliseconds). */
+    data class Pending(
+        val path: String,
+        val bearing: Float? = null,
+        val replaces: PhotoAttachment? = null,
+        val capturedAt: Long? = null,
+    ) : PhotoAttachment()
     /** Attached and synced on a previous visit, read back from the element's own tags. */
     data class Uploaded(val url: String) : PhotoAttachment()
     /** Was [Uploaded] as [url], but the user tapped delete this visit - shown as a distinct,
@@ -514,8 +520,14 @@ class LongFormAdapter<T>(
             // survive rebinds and holders recycled from other questions
             updateChoiceFollowUp(item)
 
+            // from the live givenItems entry, not [item]: that may be a snapshot taken before the
+            // selection was made (items is only resynced for questions in needRefreshIds), e.g.
+            // when this row is rebound after a photo was attached to its choiceFollowUp - the
+            // selection highlight vanished while the photo card (resolved live, see
+            // updateChoiceFollowUp) still showed
+            val live = item.questId?.let { id -> givenItems.firstOrNull { it.questId == id } } ?: item
             imageSelectAdapter.selectedIndices =
-                item.selectedIndex ?: emptyList()
+                live.selectedIndex ?: emptyList()
 
             selectionListener?.let { imageSelectAdapter.listeners.remove(it) }
             val listener = object : ImageSelectAdapter.OnItemSelectionListener {
@@ -644,6 +656,9 @@ class LongFormAdapter<T>(
                     showUndo = false,
                     onThumbClick = { openLocalPhotoFullScreen(binding.root.context, attachment.path) },
                 ) {
+                    // a still running load of a previously shown uploaded photo mustn't replace it
+                    binding.photoThumb.dispose()
+                    binding.photoThumb.tag = null
                     binding.photoThumb.doOnLayout {
                         val bitmap = decodeScaledBitmapAndNormalize(attachment.path, it.width, it.height)
                         binding.photoThumb.setImageBitmap(bitmap)
@@ -651,19 +666,41 @@ class LongFormAdapter<T>(
                 }
                 is PhotoAttachment.Uploaded -> bindPhotoCard(
                     title = "Photo from last visit",
-                    subtitle = "Retake or remove it",
+                    subtitle = "You can retake or remove it",
                     showDelete = true,
                     showUndo = false,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
-                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
+                ) { loadUploadedPhotoThumb(attachment.url) }
                 is PhotoAttachment.PendingRemoval -> bindPhotoCard(
                     title = "Photo will be removed",
                     subtitle = "Removed when you submit",
                     showDelete = false,
                     showUndo = true,
                     onThumbClick = { openRemotePhotoFullScreen(binding.root.context, attachment.url) },
-                ) { binding.photoThumb.setImage(ImageUrl(attachment.url), progressBar = binding.photoThumbProgress) }
+                ) { loadUploadedPhotoThumb(attachment.url) }
             }
+        }
+
+        /** Shows the already uploaded photo at [url] in the small preview - by its thumbnail (see
+         *  getPhotoPreviewUrl) or, if that can't be loaded (e.g. 404), by [url] itself. Only one
+         *  retry: the fallback's own failure leaves the preview blank, as before. (setImage reports
+         *  a failed load - and a load skipped in low-bandwidth mode - via imageIsEmptyUpdateTextSize;
+         *  rebinding the view cancels a pending load, so a late failure can't load into a recycled
+         *  view.) */
+        private fun loadUploadedPhotoThumb(url: String) {
+            val previewUrl = getPhotoPreviewUrl(url)
+            binding.photoThumb.tag = url
+            binding.photoThumb.setImage(
+                ImageUrl(previewUrl),
+                imageIsEmptyUpdateTextSize = {
+                    // still meant to show this photo (not rebound in the meantime)
+                    val stillShown = binding.photoThumb.tag == url
+                    if (stillShown && previewUrl != url && !preferences.isLowBandwidthModeEnabled) {
+                        binding.photoThumb.setImage(ImageUrl(url), progressBar = binding.photoThumbProgress)
+                    }
+                },
+                progressBar = binding.photoThumbProgress,
+            )
         }
 
         /** The retake camera icon is always shown once any photo exists - capturing a new one
@@ -886,7 +923,7 @@ private fun openLocalPhotoFullScreen(context: Context, path: String) {
     }
 }
 
-/** Opens the KartaView photo at [url] full-screen via a plain ACTION_VIEW intent - the browser,
+/** Opens the uploaded photo at [url] full-screen via a plain ACTION_VIEW intent - the browser,
  *  typically, since it's a plain https URL. */
 private fun openRemotePhotoFullScreen(context: Context, url: String) {
     try {

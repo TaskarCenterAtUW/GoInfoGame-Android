@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.bottom_sheet
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
@@ -32,7 +33,7 @@ abstract class AbstractCreateNoteFragment : AbstractBottomSheetFragment() {
     }
 
     protected fun onClickOk() {
-        onComposedNote(noteText!!, attachPhotoFragment?.imagePaths.orEmpty())
+        onComposedNote(noteText!!, attachPhotoFragment?.photos.orEmpty())
     }
 
     override fun onDiscard() {
@@ -53,5 +54,5 @@ abstract class AbstractCreateNoteFragment : AbstractBottomSheetFragment() {
         }
     }
 
-    protected abstract fun onComposedNote(text: String, imagePaths: List<String>)
+    protected abstract fun onComposedNote(text: String, photos: List<CapturedPhoto>)
 }

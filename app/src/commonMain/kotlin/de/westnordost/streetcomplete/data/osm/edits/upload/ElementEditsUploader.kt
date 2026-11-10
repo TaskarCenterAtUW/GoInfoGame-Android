@@ -1,8 +1,9 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload
 
 import de.westnordost.streetcomplete.data.ConflictException
-import de.westnordost.streetcomplete.data.karta_view.KartaViewApiClient
-import de.westnordost.streetcomplete.data.karta_view.KartaViewException
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
+import de.westnordost.streetcomplete.data.panoramax.PanoramaxException
+import de.westnordost.streetcomplete.data.panoramax.toPanoramaxPhoto
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
@@ -13,6 +14,8 @@ import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.FeaturePhotosController
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNotice
 import de.westnordost.streetcomplete.data.osm.edits.create_feature.StuckPhotoUploadNoticesController
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapChanges
+import de.westnordost.streetcomplete.data.osm.edits.update_tags.StringMapEntryDelete
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.UpdateElementTagsAction
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.withTag
 import de.westnordost.streetcomplete.data.osm.edits.upload.changesets.OpenChangesetsManager
@@ -29,6 +32,7 @@ import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsController
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +50,7 @@ class ElementEditsUploader(
     private val mapDataApi: MapDataApiClient,
     private val statisticsController: StatisticsController,
     private val discardedEditNoticesController: DiscardedEditNoticesController,
-    private val imageUploader: KartaViewApiClient,
+    private val imageUploader: PanoramaxApiClient,
     private val featurePhotosController: FeaturePhotosController,
     private val stuckPhotoUploadNoticesController: StuckPhotoUploadNoticesController,
     private val changesetManager: OpenChangesetsManager,
@@ -57,21 +61,21 @@ class ElementEditsUploader(
     private val scope = CoroutineScope(SupervisorJob() + CoroutineName("ElementEditsUploader"))
 
     suspend fun upload() = mutex.withLock { withContext(Dispatchers.IO) {
-        // KartaView is a third-party service outside our control, and can be down/flaky
+        // Panoramax is a separate service, and can be down/flaky
         // independently of everything else - a photo upload failure here must never block every
         // OTHER queued edit (e.g. plain tag-only quests with no photo at all) from uploading.
         // Tracked only in memory, for this one upload() run: nothing is written to the DB for a
         // failed edit, so it's a completely normal unsynced edit again afterwards, and the very
         // next upload run (auto-triggered often - see QuestAutoSyncer) retries it fresh.
         val failedEditIds = mutableSetOf<Long>()
-        // once KartaView couldn't be reached at all, don't try the photos of every other queued
+        // once Panoramax couldn't be reached at all, don't try the photos of every other queued
         // edit in this run too: each would wait for its timeouts and retries (with its photo
         // sent again each time) while holding the sync lock, which the map download waits for
-        var isKartaViewUnreachable = false
+        var isPhotoServiceUnreachable = false
         try {
             while (true) {
                 val edit = elementEditsController.getOldestUnsynced(failedEditIds) ?: break
-                if (isKartaViewUnreachable && hasPendingPhotos(edit)) {
+                if (isPhotoServiceUnreachable && hasPendingPhotos(edit)) {
                     failedEditIds += edit.id
                     continue
                 }
@@ -81,7 +85,7 @@ class ElementEditsUploader(
                      * because otherwise an inconsistency in the data would occur. E.g. no "star" for
                      * an uploaded change, a change could be uploaded twice etc */
                     withContext(scope.coroutineContext) { uploadEdit(edit, getIdProvider) }
-                } catch (e: KartaViewException) {
+                } catch (e: PanoramaxException) {
                     /* the edit's photos failed to upload (plain network failure) - leave the edit
                      * unsynced for the next sync attempt instead of letting this bubble up and abort
                      * uploading of any other edits still queued, e.g. note edits (see
@@ -91,7 +95,7 @@ class ElementEditsUploader(
                     Log.w(TAG, "Failed to upload photos for edit ${edit.id}, will retry on next sync: ${e.message}")
                     failedEditIds += edit.id
                     onPhotoUploadFailed(edit)
-                    if (e.isUnreachable) isKartaViewUnreachable = true
+                    if (e.isUnreachable) isPhotoServiceUnreachable = true
                 }
             }
         } finally {
@@ -104,7 +108,7 @@ class ElementEditsUploader(
     } }
 
     /** Bumps the edit's photo-upload-failure streak and, once it reaches [STUCK_PHOTO_UPLOAD_ATTEMPTS]
-     *  (KartaView failing this many times in a row - not just a one-off network blip), raises a
+     *  (Panoramax failing this many times in a row - not just a one-off network blip), raises a
      *  notice so the user can choose to keep waiting or drop the photo and submit without it.
      *  Only fires once per streak: as long as the notice is still unresolved, further failures
      *  keep incrementing past the threshold without adding duplicate notices for the same edit. */
@@ -143,6 +147,7 @@ class ElementEditsUploader(
             elementEditsController.markSynced(edit, updates)
             mapDataController.updateAll(updates)
             noteEditsController.updateElementIds(updates.idUpdates)
+            addElementIdToNewNodePhotos(edit, updates)
 
             if (edit.action is IsRevertAction) {
                 statisticsController.subtractOne(edit.type.name, edit.position)
@@ -197,9 +202,9 @@ class ElementEditsUploader(
     }
 
     /** If the edit is a node creation or a long-form tag update with photo(s) still awaiting
-     *  upload, uploads them to KartaView and folds the resulting URL(s) into the action's tags -
+     *  upload, uploads them to Panoramax and folds the resulting URL(s) into the action's tags -
      *  ext:image_url1, ext:image_url2, ... (one per image, in attach order) for a node creation,
-     *  or the single ext:kartaview_url for a tag update (long form only ever attaches one photo
+     *  or the single ext:street_images for a tag update (long form only ever attaches one photo
      *  per edit - see ALongForm). The rewritten action is persisted BEFORE the photo records/files
      *  are deleted, so a crash in between cannot lose the URL(s) or upload the photos twice.
      *  Returns the edit whose action carries the URL tag(s). */
@@ -208,7 +213,25 @@ class ElementEditsUploader(
         if (!hasPendingPhotos(edit)) return edit
         val photos = featurePhotosController.get(edit.id)
 
-        val urls = imageUploader.upload(photos.map { it.path to it.bearing }, edit.position)
+        // the element is only known for a tag update - a new node gets its id on upload, which is
+        // added to the pictures afterwards, see addElementIdToNewNodePhotos
+        val elementId = (action as? UpdateElementTagsAction)?.originalElement?.let { element ->
+            toElementIdSemantic(element.type, element.id)
+        }
+        val urls = imageUploader.upload(
+            photos.map { photo ->
+                photo.captured.toPanoramaxPhoto(edit.createdTimestamp, buildMap {
+                    elementId?.let { put(PanoramaxApiClient.ELEMENT_ID, it) }
+                    if (action is CreateNodeAction) {
+                        put(PanoramaxApiClient.SOURCE, PanoramaxApiClient.SOURCE_NEW_FEATURE)
+                        photo.featureType?.let { put(PanoramaxApiClient.FEATURE_TYPE, it) }
+                    }
+                    photo.question?.let { put(PanoramaxApiClient.QUESTION, it) }
+                    photo.questId?.let { put(PanoramaxApiClient.QUEST_ID, it.toString()) }
+                })
+            },
+            edit.position
+        )
         var uploadedEdit = edit
         if (urls.isNotEmpty()) {
             uploadedEdit = when (action) {
@@ -217,9 +240,16 @@ class ElementEditsUploader(
                     edit.copy(action = action.copy(tags = action.tags + urlTags))
                 }
                 is UpdateElementTagsAction -> {
-                    val changes = action.changes.withTag(
-                        KARTAVIEW_URL_TAG, urls.first(), action.originalElement.tags
-                    )
+                    val originalTags = action.originalElement.tags
+                    var changes = action.changes.withTag(STREET_IMAGES_TAG, urls.first(), originalTags)
+                    // a photo uploaded to KartaView before the switch to Panoramax is replaced
+                    // by this one, don't leave its URL behind next to the new one
+                    originalTags[KARTAVIEW_URL_TAG]?.let { oldUrl ->
+                        changes = StringMapChanges(
+                            changes.changes.filterNot { it.key == KARTAVIEW_URL_TAG }.toSet() +
+                                StringMapEntryDelete(KARTAVIEW_URL_TAG, oldUrl)
+                        )
+                    }
                     edit.copy(action = action.copy(changes = changes))
                 }
                 else -> edit
@@ -229,6 +259,30 @@ class ElementEditsUploader(
         featurePhotosController.markUploaded(edit.id)
         return uploadedEdit
     }
+
+    /** Once a node created with photos is uploaded, its id is known: add it to the photos'
+     *  pictures on Panoramax (the URLs are in its ext:image_url* tags, see uploadPendingPhotos).
+     *  Best effort - the edit is already uploaded at this point, a failure here must not undo or
+     *  repeat that, so it is only logged. */
+    private suspend fun addElementIdToNewNodePhotos(edit: ElementEdit, updates: MapDataUpdates) {
+        val action = edit.action as? CreateNodeAction ?: return
+        val urls = action.tags.filterKeys { it.startsWith("ext:image_url") }.values
+        if (urls.isEmpty()) return
+        val newNodeId = updates.idUpdates.firstOrNull { it.elementType == ElementType.NODE }?.newElementId ?: return
+        val semantics = mapOf(PanoramaxApiClient.ELEMENT_ID to toElementIdSemantic(ElementType.NODE, newNodeId))
+        for (url in urls) {
+            try {
+                imageUploader.addSemantics(url, semantics)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to add the element id to the photo $url of edit ${edit.id}: ${e.message}")
+            }
+        }
+    }
+
+    /** e.g. "way/123" */
+    private fun toElementIdSemantic(type: ElementType, id: Long): String = "${type.name.lowercase()}/$id"
 
     private fun hasPendingPhotos(edit: ElementEdit): Boolean =
         (edit.action is CreateNodeAction || edit.action is UpdateElementTagsAction)
@@ -243,8 +297,10 @@ class ElementEditsUploader(
 
     companion object {
         private const val TAG = "ElementEditsUploader"
+        private const val STREET_IMAGES_TAG = "ext:street_images"
+        /** where the photo URL went before the switch to Panoramax */
         private const val KARTAVIEW_URL_TAG = "ext:kartaview_url"
-        /** consecutive KartaView upload failures for the same edit before nagging the user about it */
+        /** consecutive Panoramax upload failures for the same edit before nagging the user about it */
         private const val STUCK_PHOTO_UPLOAD_ATTEMPTS = 3
     }
 }

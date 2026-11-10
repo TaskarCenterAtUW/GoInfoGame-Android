@@ -34,7 +34,7 @@ import de.westnordost.streetcomplete.screens.user.UserActivity
 import de.westnordost.streetcomplete.screens.workspaces.FakeWorkspaceRepository
 import de.westnordost.streetcomplete.screens.workspaces.WorkSpaceActivity
 import de.westnordost.streetcomplete.testutils.A11yScanner
-import de.westnordost.streetcomplete.testutils.MockKartaView
+import de.westnordost.streetcomplete.testutils.MockPanoramax
 import de.westnordost.streetcomplete.testutils.MockOsmServer
 import de.westnordost.streetcomplete.testutils.MockOsmServer.Failure
 import io.ktor.http.HttpStatusCode
@@ -247,7 +247,7 @@ class AccessibilityScanTest : MapSyncTestBase() {
 
     @Test
     fun longFormPhotoFromLastVisit() {
-        MockOsmServer.put(SIDEWALK.copy(tags = SIDEWALK.tags + mapOf("obstacle" to "other", "ext:kartaview_url" to "https://storage.kartaview.org/files/photo/lth/x.jpg")))
+        MockOsmServer.put(SIDEWALK.copy(tags = SIDEWALK.tags + mapOf("obstacle" to "other", "ext:street_images" to MockPanoramax.PHOTO_URL)))
         openWorkspaceAndSidewalkQuest()
         expandSheet()
         onView(inRowOf(OBSTRUCTION_Q, R.id.photo_title)).perform(scrollIntoView())
@@ -304,7 +304,7 @@ class AccessibilityScanTest : MapSyncTestBase() {
     fun stuckPhotoNotice() {
         Intents.init()
         try {
-            MockKartaView.failure = MockKartaView.Failure.Status(HttpStatusCode.ServiceUnavailable)
+            MockPanoramax.failure = MockPanoramax.Failure.Status(HttpStatusCode.ServiceUnavailable)
             openWorkspaceAndSidewalkQuest()
             tapTile(OBSTRUCTION_Q, "Other obstruction")
             capturePhoto()
@@ -312,7 +312,7 @@ class AccessibilityScanTest : MapSyncTestBase() {
             val uploads: UploadProgressSource = koin.get()
             for (run in 1..3) {
                 if (run > 1) tapUploadButton()
-                waitUntil("photo upload attempt $run") { MockKartaView.requests.size >= run && !uploads.isUploadInProgress }
+                waitUntil("photo upload attempt $run") { MockPanoramax.requests.size >= run && !uploads.isUploadInProgress }
             }
             waitForText("Photo upload failed")
             scan("Photo upload failed notice")
