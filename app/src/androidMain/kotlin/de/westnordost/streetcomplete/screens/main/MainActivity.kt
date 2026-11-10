@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main
 
+import de.westnordost.streetcomplete.quests.note_discussion.AttachPhotoFragment
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
@@ -221,6 +222,7 @@ class MainActivity :
     LeaveNoteInsteadFragment.Listener,
     CreateNoteFragment.Listener,
     CreateFeatureFragment.Listener,
+    AttachPhotoFragment.Listener,
     MoveNodeFragment.Listener,
     // listeners to changes to data:
     VisibleQuestsSource.Listener,

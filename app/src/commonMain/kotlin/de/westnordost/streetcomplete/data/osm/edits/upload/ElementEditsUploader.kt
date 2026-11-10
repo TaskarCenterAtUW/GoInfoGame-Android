@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.data.osm.edits.upload
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
 import de.westnordost.streetcomplete.data.panoramax.PanoramaxException
-import de.westnordost.streetcomplete.data.panoramax.PanoramaxPhoto
+import de.westnordost.streetcomplete.data.panoramax.toPanoramaxPhoto
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNotice
 import de.westnordost.streetcomplete.data.osm.edits.DiscardedEditNoticesController
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
@@ -220,18 +220,11 @@ class ElementEditsUploader(
         }
         val urls = imageUploader.upload(
             photos.map { photo ->
-                PanoramaxPhoto(
-                    photo.path,
-                    photo.bearing,
-                    buildMap {
-                        elementId?.let { put(PanoramaxApiClient.ELEMENT_ID, it) }
-                        photo.question?.let { put(PanoramaxApiClient.QUESTION, it) }
-                        photo.questId?.let { put(PanoramaxApiClient.QUEST_ID, it.toString()) }
-                    },
-                    // not tracked for every photo (e.g. those of a new node): the edit was made
-                    // right after they were taken, which is much closer than the upload time
-                    captureTime = photo.capturedAt ?: edit.createdTimestamp,
-                )
+                photo.captured.toPanoramaxPhoto(edit.createdTimestamp, buildMap {
+                    elementId?.let { put(PanoramaxApiClient.ELEMENT_ID, it) }
+                    photo.question?.let { put(PanoramaxApiClient.QUESTION, it) }
+                    photo.questId?.let { put(PanoramaxApiClient.QUEST_ID, it.toString()) }
+                })
             },
             edit.position
         )

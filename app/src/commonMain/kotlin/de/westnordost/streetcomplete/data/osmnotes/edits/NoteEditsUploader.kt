@@ -4,7 +4,8 @@ import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.panoramax.PanoramaxApiClient
 import de.westnordost.streetcomplete.data.panoramax.PanoramaxException
-import de.westnordost.streetcomplete.data.panoramax.PanoramaxPhoto
+import de.westnordost.streetcomplete.data.panoramax.toPanoramaxPhoto
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.NoteController
 import de.westnordost.streetcomplete.data.osmnotes.NotesApiClient
@@ -81,7 +82,7 @@ class NoteEditsUploader(
 
     private suspend fun uploadEdit(edit: NoteEdit) {
         // try to upload the image and track if we have them
-        val imageText = uploadAndGetAttachedPhotosText(edit.imagePaths, edit.position, edit.createdTimestamp)
+        val imageText = uploadAndGetAttachedPhotosText(edit.photos, edit.position, edit.createdTimestamp)
         val trackText = uploadAndGetAttachedTrackText(edit.track, edit.text)
         val text = edit.text.orEmpty() + imageText + trackText
 
@@ -132,15 +133,14 @@ class NoteEditsUploader(
     }
 
     private suspend fun uploadAndGetAttachedPhotosText(
-        imagePaths: List<String>,
+        photos: List<CapturedPhoto>,
         position: LatLon,
-        /** when the note was made, i.e. right after its photos were taken */
-        captureTime: Long,
+        /** when the note was made, i.e. right after its photos were taken - used for photos whose
+         *  capture time is unknown (queued before it was recorded) */
+        createdTimestamp: Long,
     ): String {
-        if (imagePaths.isNotEmpty()) {
-            // note photos don't carry a capture bearing yet (none is sent then) - see
-            // FeaturePhoto/ElementEditsUploader for the long-form equivalent
-            val urls = imageUploader.upload(imagePaths.map { PanoramaxPhoto(it, captureTime = captureTime) }, position)
+        if (photos.isNotEmpty()) {
+            val urls = imageUploader.upload(photos.map { it.toPanoramaxPhoto(createdTimestamp) }, position)
             if (urls.isNotEmpty()) {
                 return "\n\nAttached photo:\n" + urls.joinToString("\n")
             }

@@ -1,5 +1,10 @@
 package de.westnordost.streetcomplete.data.osmnotes.edits
 
+import kotlin.test.assertTrue
+import kotlin.test.assertEquals
+import de.westnordost.streetcomplete.testutils.capture
+import de.westnordost.streetcomplete.testutils.argumentCaptor
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.testutils.any
@@ -36,6 +41,19 @@ class NoteEditsControllerTest {
 
         verify(db).add(any())
         verify(listener).onAddedEdit(any())
+    }
+
+    @Test fun `add keeps the bearing and capture time of each photo`() {
+        ctrl.add(1L, NoteEditAction.COMMENT, p(1.0, 1.0), "hi", listOf(
+            CapturedPhoto("a.jpg", 90f, 100L),
+            CapturedPhoto("b.jpg", null, 200L),
+        ))
+
+        val added = argumentCaptor<NoteEdit>()
+        verify(db).add(capture(added))
+        assertEquals(listOf("a.jpg", "b.jpg"), added.value.imagePaths)
+        assertEquals(listOf(CapturedPhoto("a.jpg", 90f, 100L), CapturedPhoto("b.jpg", null, 200L)), added.value.photos)
+        assertTrue(added.value.imagesNeedActivation)
     }
 
     @Test fun syncFailed() {

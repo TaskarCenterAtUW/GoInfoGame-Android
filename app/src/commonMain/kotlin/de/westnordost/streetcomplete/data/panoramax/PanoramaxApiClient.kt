@@ -6,6 +6,7 @@ import de.westnordost.streetcomplete.data.panoramax.domain.model.PatchPictureReq
 import de.westnordost.streetcomplete.data.panoramax.domain.model.SemanticTag
 import de.westnordost.streetcomplete.data.panoramax.domain.model.UploadSet
 import de.westnordost.streetcomplete.data.panoramax.domain.model.UploadSetFile
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import de.westnordost.streetcomplete.data.preferences.EnvironmentManager
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.systemTimeNow
@@ -46,6 +47,14 @@ data class PanoramaxPhoto(
     /** when the photo was taken, epoch milliseconds - the upload time if null */
     val captureTime: Long? = null,
 )
+
+/** This photo as uploaded to Panoramax, with [semantics]. If when it was taken is unknown (e.g.
+ *  queued before that was recorded), [fallbackCaptureTime] is used: the time its edit was made,
+ *  right after the photo was taken, which is much closer than the upload time. */
+fun CapturedPhoto.toPanoramaxPhoto(
+    fallbackCaptureTime: Long,
+    semantics: Map<String, String> = emptyMap(),
+) = PanoramaxPhoto(path, bearing, semantics, capturedAt ?: fallbackCaptureTime)
 
 /** Uploads photos to our Panoramax instance, see
  *  https://docs.panoramax.fr/backend/api/api/ - via the upload set API: create an upload set, add

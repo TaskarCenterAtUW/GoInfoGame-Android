@@ -7,6 +7,8 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.CREATED_TIMESTAMP
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.ID
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.IMAGES_NEED_ACTIVATION
+import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.IMAGE_BEARINGS
+import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.IMAGE_CAPTURE_TIMES
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.IMAGE_PATHS
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.IS_SYNCED
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsTable.Columns.LATITUDE
@@ -137,6 +139,8 @@ class NoteEditsDao(private val db: Database, private val preferences: Preference
         TEXT to text,
         IMAGE_PATHS to Json.encodeToString(imagePaths),
         IMAGES_NEED_ACTIVATION to if (imagesNeedActivation) 1 else 0,
+        IMAGE_BEARINGS to Json.encodeToString(imageBearings),
+        IMAGE_CAPTURE_TIMES to Json.encodeToString(imageCaptureTimes),
         TRACK to Json.encodeToString(track),
         TYPE to action.name,
         WORKSPACE_ID to workspaceId
@@ -153,6 +157,9 @@ class NoteEditsDao(private val db: Database, private val preferences: Preference
         getInt(IS_SYNCED) == 1,
         getInt(IMAGES_NEED_ACTIVATION) == 1,
         Json.decodeFromString(getString(TRACK)),
-        getInt(WORKSPACE_ID)
+        getInt(WORKSPACE_ID),
+        // absent on rows written before these columns existed
+        getStringOrNull(IMAGE_BEARINGS)?.let { Json.decodeFromString<List<Float?>>(it) }.orEmpty(),
+        getStringOrNull(IMAGE_CAPTURE_TIMES)?.let { Json.decodeFromString<List<Long?>>(it) }.orEmpty(),
     )
 }

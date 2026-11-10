@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.screens.main.bottom_sheet
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import android.content.res.Configuration
 import android.graphics.PointF
 import android.os.Bundle
@@ -160,7 +161,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
         binding.markerCreateLayout.markerLayoutContainer.visibility = View.INVISIBLE
     }
 
-    override fun onComposedNote(text: String, imagePaths: List<String>) {
+    override fun onComposedNote(text: String, photos: List<CapturedPhoto>) {
         /* pressing once on "OK" should first only close the keyboard, so that the user can review
            the position of the note he placed */
         if (contentBinding.noteInput.isKeyboardOpen) {
@@ -188,7 +189,7 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
                     if (hasGpxAttached) listener?.getRecordedTrack().orEmpty() else emptyList()
                 noteEditsController.add(
                     0, NoteEditAction.CREATE, position,
-                    text, imagePaths, recordedTrack
+                    text, photos, recordedTrack
                 )
             }
         }

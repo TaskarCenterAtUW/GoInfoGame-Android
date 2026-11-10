@@ -177,6 +177,27 @@ class NoteEditsUploaderTest {
         verify(listener)!!.onUploaded("NOTE", pos)
     }
 
+    @Test fun `each attached image is uploaded with its own bearing and capture time`() = runBlocking<Unit> {
+        val pos = p(1.0, 13.0)
+        val edit = noteEdit(noteId = 1L, action = NoteEditAction.COMMENT, text = "test", pos = pos, imagePaths = listOf("a", "b"))
+            .copy(imageBearings = listOf(90f, null), imageCaptureTimes = listOf(100L, null))
+
+        on(noteEditsController.getOldestUnsynced()).thenReturn(edit).thenReturn(null)
+        on(notesApi.comment(anyLong(), any())).thenReturn(note(1))
+        on(imageUploader.upload(any(), any())).thenReturn(listOf("x", "y"))
+
+        upload()
+
+        verify(imageUploader).upload(
+            listOf(
+                PanoramaxPhoto("a", 90f, captureTime = 100L),
+                // capture time unknown: the note was made right after it was taken
+                PanoramaxPhoto("b", null, captureTime = edit.createdTimestamp),
+            ),
+            pos
+        )
+    }
+
     @Test fun `upload create note with attached images`() = runBlocking {
         val pos = p(1.0, 13.0)
         val edit = noteEdit(

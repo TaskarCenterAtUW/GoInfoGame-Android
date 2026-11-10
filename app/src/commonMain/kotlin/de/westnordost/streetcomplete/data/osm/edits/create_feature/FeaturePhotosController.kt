@@ -2,6 +2,7 @@ package de.westnordost.streetcomplete.data.osm.edits.create_feature
 
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
@@ -19,7 +20,12 @@ data class FeaturePhoto(
     val question: String? = null,
     val questId: Int? = null,
     val capturedAt: Long? = null,
-)
+) {
+    constructor(photo: CapturedPhoto, question: String? = null, questId: Int? = null) :
+        this(photo.path, photo.bearing, question, questId, photo.capturedAt)
+
+    val captured: CapturedPhoto get() = CapturedPhoto(path, bearing, capturedAt)
+}
 
 /** Manages the photos attached to not-yet-synced create-feature/tag-update edits: their file
  *  paths (and capture bearings) are held here until the edit is uploaded, at which point the

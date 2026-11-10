@@ -1,31 +1,18 @@
 package de.westnordost.streetcomplete.quests
 
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.graphics.Bitmap
-import android.hardware.GeomagneticField
-import android.hardware.SensorManager
 import android.location.Location
-import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.FileProvider
-import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.children
-import androidx.exifinterface.media.ExifInterface
-import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION
-import androidx.exifinterface.media.ExifInterface.TAG_GPS_IMG_DIRECTION_REF
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.location.SurveyChecker
@@ -55,23 +42,18 @@ import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.visiblequests.HideQuestController
 import de.westnordost.streetcomplete.data.visiblequests.QuestsHiddenController
 import de.westnordost.streetcomplete.quests.sidewalk_long_form.AddGenericLong
-import de.westnordost.streetcomplete.util.decodeScaledBitmapAndNormalize
 import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.isSplittable
-import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.add
 import de.westnordost.streetcomplete.view.confirmIsSurvey
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.util.Locale
 
 /** Abstract base class for any bottom sheet with which the user answers a specific quest(ion)  */
@@ -87,8 +69,13 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
 
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
     private val featurePhotosController: FeaturePhotosController by inject()
-    private lateinit var takePhotoLauncher: ActivityResultLauncher<Uri>
-    private var pendingPhotoFile: File? = null
+    private val photoCapture = PhotoCapture(
+        fragment = this,
+        fileNamePrefix = "long_form_photo",
+        size = LONG_FORM_PHOTO_SIZE,
+        getLocation = { listener?.displayedMapLocation },
+        onCaptured = { onPhotoCaptured(it) },
+    )
 
     // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
     var addElementEditsController: AddElementEditsController = elementEditsController
@@ -139,12 +126,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     private val listener: Listener? get() = parentFragment as? Listener ?: activity as? Listener
-    private lateinit var cameraBearingSensor: CameraBearingSensor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        cameraBearingSensor = CameraBearingSensor(requireContext().getSystemService<SensorManager>()!!)
 
         val args = requireArguments()
 
@@ -154,14 +138,12 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         if (getElement != null) {
             element = getElement
         }
-        pendingPhotoFile = savedInstanceState?.getString(ARG_PENDING_PHOTO_FILE)?.let { File(it) }
-        takePhotoLauncher =
-            registerForActivityResult(ActivityResultContracts.TakePicture(), ::onTookPhoto)
+        photoCapture.restoreState(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        pendingPhotoFile?.let { outState.putString(ARG_PENDING_PHOTO_FILE, it.path) }
+        photoCapture.saveState(outState)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -475,15 +457,9 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 
     override fun setCameraIntent() {
-        val activity = activity ?: return
         try {
-            val file = createLongFormPhotoFile(activity)
-            pendingPhotoFile = file
-            val uri = FileProvider.getUriForFile(activity, activity.getString(R.string.fileprovider_authority), file)
-            takePhotoLauncher.launch(uri)
+            photoCapture.launch()
         } catch (e: Exception) {
-            pendingPhotoFile?.delete()
-            pendingPhotoFile = null
             if (e !is ActivityNotFoundException) {
                 Log.e(TAG, "Unable to create photo", e)
             }
@@ -491,50 +467,10 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
         }
     }
 
-    private fun onTookPhoto(hasSavedPhoto: Boolean) {
-        val file = pendingPhotoFile
-        pendingPhotoFile = null
-        if (!hasSavedPhoto || file == null) {
-            file?.delete()
-            return
-        }
-        val location = listener?.displayedMapLocation
-        viewLifecycleScope.launch {
-            // The photo's direction: the one the camera app wrote into the photo, if any - it
-            // knows the moment of the shot. Otherwise where the back camera points right now: we
-            // only get control back after the shot, while the user is usually still aiming. The
-            // GPS direction of travel is not used - it is not where the camera points.
-            val sensorBearing = async { cameraBearingSensor.awaitBearing(location) }
-            // decoding the full camera photo, scaling and re-encoding it takes long enough to
-            // visibly freeze the form when done on the main thread
-            val exifBearing = withContext(Dispatchers.IO) {
-                try {
-                    val exif = ExifInterface(file)
-                    rescalePhotoFile(file)
-                    copyDirectionExifData(file, exif)
-                    Result.success(exif.getTrueNorthImageDirection(location))
-                } catch (e: IOException) {
-                    Log.e(TAG, "Unable to process photo", e)
-                    file.delete()
-                    null
-                }
-            }
-            if (exifBearing == null) {
-                sensorBearing.cancel()
-                return@launch
-            }
-            val bearing = exifBearing.getOrNull()
-                ?.also { sensorBearing.cancel() }
-                ?: sensorBearing.await()
-            onPhotoCaptured(file.path, bearing)
-        }
-    }
-
     companion object {
         private const val TAG = "AbstractOsmQuestForm"
         private const val ARG_ELEMENT = "element"
         private const val ARG_DISPLAYED_LOCATION = "displayedLocation"
-        private const val ARG_PENDING_PHOTO_FILE = "pendingPhotoFile"
 
         fun createArguments(element: Element, displayedLocation: Location? = null) = bundleOf(
             ARG_ELEMENT to Json.encodeToString(element),
@@ -543,46 +479,7 @@ abstract class AbstractOsmQuestForm<T> : AbstractQuestForm(), IsShowingQuestDeta
     }
 }
 
-private fun createLongFormPhotoFile(context: Context): File {
-    val directory = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    val imageFileName = "long_form_photo_" + nowAsEpochMilliseconds() + ".jpg"
-    val file = File(directory, imageFileName)
-    if (!file.createNewFile()) throw IOException("Photo file with exactly the same name already exists")
-    return file
-}
-
 /* Long form photos go to Panoramax, often over a weak mobile connection while surveying. A street
    photo at 1600px / quality 60 is ~360 KB, vs ~560 KB at the 1920px / 65 used for note photos
    (ApplicationConstants.ATTACH_PHOTO_*) - still plenty of detail to judge e.g. a kerb or surface */
-private const val LONG_FORM_PHOTO_MAX_SIZE = 1600
-private const val LONG_FORM_PHOTO_QUALITY = 60
-
-private fun rescalePhotoFile(file: File) {
-    val bitmap = decodeScaledBitmapAndNormalize(file.path, LONG_FORM_PHOTO_MAX_SIZE, LONG_FORM_PHOTO_MAX_SIZE) ?: throw IOException()
-    FileOutputStream(file.path).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, LONG_FORM_PHOTO_QUALITY, out)
-    }
-    bitmap.recycle()
-}
-
-/** The GPSImgDirection the camera app wrote into the photo (0-359, clockwise from true north),
- *  or null if it didn't. Converted from magnetic north with the declination at [location], if
- *  that's what the camera recorded. */
-private fun ExifInterface.getTrueNorthImageDirection(location: Location?): Float? {
-    val direction = getAttributeDouble(TAG_GPS_IMG_DIRECTION, Double.NaN)
-    if (direction.isNaN()) return null
-    val declination = if (getAttribute(TAG_GPS_IMG_DIRECTION_REF) == "M" && location != null) {
-        GeomagneticField(
-            location.latitude.toFloat(), location.longitude.toFloat(), location.altitude.toFloat(),
-            System.currentTimeMillis()
-        ).declination
-    } else 0f
-    return (direction.toFloat() + declination).mod(360f)
-}
-
-private fun copyDirectionExifData(file: File, exif: ExifInterface) {
-    val newExif = ExifInterface(file.path)
-    newExif.setAttribute(TAG_GPS_IMG_DIRECTION, exif.getAttribute(TAG_GPS_IMG_DIRECTION))
-    newExif.setAttribute(TAG_GPS_IMG_DIRECTION_REF, exif.getAttribute(TAG_GPS_IMG_DIRECTION_REF))
-    newExif.saveAttributes()
-}
+private val LONG_FORM_PHOTO_SIZE = PhotoStorageSize(maxSize = 1600, quality = 60)

@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.osmnotes.edits
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementIdUpdate
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
@@ -28,7 +29,7 @@ class NoteEditsController(
         action: NoteEditAction,
         position: LatLon,
         text: String? = null,
-        imagePaths: List<String> = emptyList(),
+        photos: List<CapturedPhoto> = emptyList(),
         track: List<Trackpoint> = emptyList(),
     ) {
         val edit = NoteEdit(
@@ -37,11 +38,13 @@ class NoteEditsController(
             position,
             action,
             text,
-            imagePaths,
+            photos.map { it.path },
             nowAsEpochMilliseconds(),
             false,
-            imagePaths.isNotEmpty(),
-            track, workspaceId
+            photos.isNotEmpty(),
+            track, workspaceId,
+            imageBearings = photos.map { it.bearing },
+            imageCaptureTimes = photos.map { it.capturedAt },
         )
         lock.withLock { editsDB.add(edit) }
         onAddedEdit(edit)

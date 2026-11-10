@@ -14,6 +14,12 @@ object NoteEditsTable {
         const val TEXT = "text"
         const val IMAGE_PATHS = "image_paths"
         const val IMAGES_NEED_ACTIVATION = "images_need_activation"
+        /** JSON list of nullable Floats, index-aligned with IMAGE_PATHS - the bearing of each
+         *  photo, or null on rows written before this column existed */
+        const val IMAGE_BEARINGS = "image_bearings"
+        /** JSON list of nullable Longs, index-aligned with IMAGE_PATHS - when each photo was taken
+         *  (epoch ms), or null on rows written before this column existed */
+        const val IMAGE_CAPTURE_TIMES = "image_capture_times"
         const val TRACK = "track"
         const val WORKSPACE_ID = "workspace_id"
     }
@@ -29,6 +35,8 @@ object NoteEditsTable {
             ${Columns.TEXT} text,
             ${Columns.IMAGE_PATHS} text NOT NULL,
             ${Columns.IMAGES_NEED_ACTIVATION} int NOT NULL,
+            ${Columns.IMAGE_BEARINGS} text,
+            ${Columns.IMAGE_CAPTURE_TIMES} text,
             ${Columns.TRACK} text NOT NULL,
             ${Columns.TYPE} varchar(255),
             ${Columns.WORKSPACE_ID} int NOT NULL

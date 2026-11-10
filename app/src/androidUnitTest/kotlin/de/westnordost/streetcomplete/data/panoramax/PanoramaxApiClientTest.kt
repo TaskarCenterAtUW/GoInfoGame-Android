@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.panoramax
 
+import de.westnordost.streetcomplete.data.photos.CapturedPhoto
 import com.russhwolf.settings.MapSettings
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.preferences.Environment
@@ -195,6 +196,20 @@ class PanoramaxApiClientTest {
 
         assertTrue(fileBodies[0].hasField("override_capture_time", "2026-11-10T08:30:00Z"))
         assertTrue(fileBodies[1].hasField("override_capture_time", "2026-11-10T08:31:00Z"))
+    }
+
+    @Test fun `a captured photo keeps its bearing and capture time`() {
+        assertEquals(
+            PanoramaxPhoto("a.jpg", 90f, mapOf("question" to "q"), 100L),
+            CapturedPhoto("a.jpg", 90f, 100L).toPanoramaxPhoto(fallbackCaptureTime = 5L, mapOf("question" to "q"))
+        )
+    }
+
+    @Test fun `a captured photo without capture time is taken at the fallback time`() {
+        assertEquals(
+            PanoramaxPhoto("a.jpg", null, captureTime = 5L),
+            CapturedPhoto("a.jpg").toPanoramaxPhoto(fallbackCaptureTime = 5L)
+        )
     }
 
     @Test fun `negative bearing is sent as 0-359`() = runTest {
